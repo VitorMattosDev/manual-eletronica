@@ -1,0 +1,3 @@
+# Filtro RC passa-baixas e frequência de corte {#sec-cap-033}
+
+*(em elaboração)*

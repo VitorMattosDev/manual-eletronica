@@ -1,0 +1,3 @@
+# Conversão analógico-digital: amostragem, quantização e aliasing {#sec-cap-080}
+
+*(em elaboração)*

@@ -1,0 +1,3 @@
+# LEDs, fotodiodos e diodos especiais: Schottky, TVS e varicap {#sec-cap-051}
+
+*(em elaboração)*

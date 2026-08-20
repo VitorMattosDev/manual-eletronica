@@ -1,0 +1,7 @@
+_book/
+.quarto/
+*.log
+*.aux
+*.pdf
+!figuras/**/*.pdf
+.tikz-cache/

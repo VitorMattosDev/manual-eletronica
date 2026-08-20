@@ -1,0 +1,3 @@
+# O diodo real: curva, queda direta e modelos {#sec-cap-047}
+
+*(em elaboração)*

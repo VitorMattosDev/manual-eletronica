@@ -1,0 +1,3 @@
+# Emissor comum: ganho, impedâncias e limitações {#sec-cap-056}
+
+*(em elaboração)*

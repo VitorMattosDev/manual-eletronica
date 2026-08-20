@@ -1,0 +1,3 @@
+# Valor médio, valor eficaz (RMS) e o que o multímetro realmente mede {#sec-cap-028}
+
+*(em elaboração)*

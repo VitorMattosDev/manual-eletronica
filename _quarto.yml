@@ -1,0 +1,196 @@
+project:
+  type: book
+  output-dir: _book
+
+# lang no nivel raiz (NAO aninhar em book:)
+lang: pt
+
+book:
+  title: "Manual de Eletrônica"
+  subtitle: "Da lei de Ohm à máquina de estados"
+  author: "Vitor"
+  date: today
+  date-format: "DD/MM/YYYY"
+  search: true
+  repo-actions: [edit, issue]
+  page-footer:
+    left: "Manual de Eletrônica"
+    right: "Licença CC BY-SA 4.0"
+  chapters:
+    - index.qmd
+
+    # ===== Fase 1 - Fundamentos Eletricos =====
+    - part: "Volume 1 — A Bancada e o Método"
+      chapters:
+        - capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.qmd
+        - capitulos/002-seguranca-eletrica-choque-arco-capacitores.qmd
+        - capitulos/003-grandezas-unidades-e-ordens-de-grandeza.qmd
+        - capitulos/004-o-multimetro-tensao-corrente-resistencia-e.qmd
+        - capitulos/005-a-protoboard-a-fonte-de-bancada-e-a-montagem-limpa.qmd
+        - capitulos/006-componentes-passivos-identificacao-codigo-de-cores.qmd
+        - capitulos/007-esquematicos-como-ler-como-desenhar-como-nao-se.qmd
+    - part: "Volume 2 — Corrente Contínua: Leis Fundamentais"
+      chapters:
+        - capitulos/008-carga-corrente-e-o-modelo-de-conducao.qmd
+        - capitulos/009-tensao-potencial-e-referencia-terra.qmd
+        - capitulos/010-resistencia-resistividade-e-a-lei-de-ohm.qmd
+        - capitulos/011-potencia-energia-e-dissipacao-termica.qmd
+        - capitulos/012-associacao-serie-e-paralelo.qmd
+        - capitulos/013-as-leis-de-kirchhoff.qmd
+        - capitulos/014-divisores-de-tensao-e-de-corrente.qmd
+    - part: "Volume 3 — Análise de Circuitos"
+      chapters:
+        - capitulos/015-analise-nodal.qmd
+        - capitulos/016-analise-de-malhas.qmd
+        - capitulos/017-superposicao-e-linearidade.qmd
+        - capitulos/018-teoremas-de-thevenin-e-norton.qmd
+        - capitulos/019-maxima-transferencia-de-potencia-e-casamento.qmd
+        - capitulos/020-fontes-reais-resistencia-interna-e-carregamento-do.qmd
+    - part: "Volume 4 — Capacitores, Indutores e Transitórios"
+      chapters:
+        - capitulos/021-campo-eletrico-e-capacitancia.qmd
+        - capitulos/022-o-capacitor-real-tipos-esr-e-tensao-de-trabalho.qmd
+        - capitulos/023-campo-magnetico-e-indutancia.qmd
+        - capitulos/024-o-indutor-real-e-a-energia-armazenada.qmd
+        - capitulos/025-transitorios-rc-carga-descarga-e-constante-de-tempo.qmd
+        - capitulos/026-transitorios-rl-e-circuitos-rlc-no-dominio-do-tempo.qmd
+
+    # ===== Fase 2 - Corrente Alternada e Sinais =====
+    - part: "Volume 5 — Fundamentos de Corrente Alternada"
+      chapters:
+        - capitulos/027-do-cc-ao-ca-a-senoide-e-seus-parametros.qmd
+        - capitulos/028-valor-medio-valor-eficaz-rms-e-o-que-o-multimetro.qmd
+        - capitulos/029-fasores-e-numeros-complexos-aplicados.qmd
+        - capitulos/030-reatancia-e-impedancia.qmd
+        - capitulos/031-potencia-ativa-reativa-e-aparente.qmd
+        - capitulos/032-fator-de-potencia-e-correcao.qmd
+    - part: "Volume 6 — Filtros e Resposta em Frequência"
+      chapters:
+        - capitulos/033-filtro-rc-passa-baixas-e-frequencia-de-corte.qmd
+        - capitulos/034-filtro-rc-passa-altas-e-acoplamento.qmd
+        - capitulos/035-diagramas-de-bode-ganho-e-fase.qmd
+        - capitulos/036-filtros-lc-e-ordem-do-filtro.qmd
+        - capitulos/037-ressonancia-serie-e-paralela.qmd
+        - capitulos/038-fator-de-qualidade-largura-de-banda-e-seletividade.qmd
+    - part: "Volume 7 — Sinais, Ruído e Instrumentação"
+      chapters:
+        - capitulos/039-sinais-periodicos-forma-de-onda-e-ciclo-de-trabalho.qmd
+        - capitulos/040-fourier-na-pratica-harmonicos-e-largura-de-banda.qmd
+        - capitulos/041-o-decibel-e-as-escalas-logaritmicas.qmd
+        - capitulos/042-ruido-termico-de-disparo-e-interferencia-externa.qmd
+        - capitulos/043-o-osciloscopio-base-de-tempo-ganho-vertical-e.qmd
+        - capitulos/044-pontas-de-prova-compensacao-e-artefatos-de-medicao.qmd
+        - capitulos/045-gerador-de-funcoes-e-ensaio-de-resposta-em.qmd
+
+    # ===== Fase 3 - Semicondutores e Eletronica Analogica =====
+    - part: "Volume 8 — Diodos e Aplicações"
+      chapters:
+        - capitulos/046-semicondutores-dopagem-e-a-juncao-pn.qmd
+        - capitulos/047-o-diodo-real-curva-queda-direta-e-modelos.qmd
+        - capitulos/048-retificadores-de-meia-onda-e-de-onda-completa.qmd
+        - capitulos/049-filtragem-capacitiva-e-ondulacao.qmd
+        - capitulos/050-diodo-zener-e-regulacao-por-referencia.qmd
+        - capitulos/051-leds-fotodiodos-e-diodos-especiais-schottky-tvs-e.qmd
+    - part: "Volume 9 — Transistores Bipolares"
+      chapters:
+        - capitulos/052-o-transistor-bipolar-estrutura-e-funcionamento.qmd
+        - capitulos/053-curvas-caracteristicas-e-regioes-de-operacao.qmd
+        - capitulos/054-o-bjt-como-chave-corte-saturacao-e-acionamento-de.qmd
+        - capitulos/055-polarizacao-divisor-de-base-resistor-de-emissor-e.qmd
+        - capitulos/056-emissor-comum-ganho-impedancias-e-limitacoes.qmd
+        - capitulos/057-coletor-comum-e-base-comum.qmd
+        - capitulos/058-modelo-de-pequenos-sinais-e-analise-em-ca.qmd
+    - part: "Volume 10 — MOSFETs e Amplificação"
+      chapters:
+        - capitulos/059-jfet-e-mosfet-principio-de-funcionamento.qmd
+        - capitulos/060-curvas-regiao-ohmica-e-regiao-de-saturacao.qmd
+        - capitulos/061-o-mosfet-como-chave-de-potencia-rds-on-efeito.qmd
+        - capitulos/062-drivers-de-gate-e-a-comutacao-real.qmd
+        - capitulos/063-classes-de-amplificador-a-b-ab-c-e-d.qmd
+        - capitulos/064-realimentacao-negativa-ganho-distorcao-e.qmd
+    - part: "Volume 11 — Amplificadores Operacionais"
+      chapters:
+        - capitulos/065-o-amp-op-ideal-e-as-regras-de-ouro.qmd
+        - capitulos/066-amplificador-inversor-e-nao-inversor.qmd
+        - capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.qmd
+        - capitulos/068-integrador-derivador-e-fontes-de-corrente.qmd
+        - capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.qmd
+        - capitulos/070-comparadores-histerese-e-o-gatilho-de-schmitt.qmd
+        - capitulos/071-filtros-ativos-e-osciladores-wien-relaxacao-e-o-555.qmd
+
+    # ===== Fase 4 - Energia Interface e Construcao =====
+    - part: "Volume 12 — Fontes e Gestão de Energia"
+      chapters:
+        - capitulos/072-transformadores-e-acoplamento-magnetico.qmd
+        - capitulos/073-fontes-lineares-do-transformador-ao-regulador.qmd
+        - capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.qmd
+        - capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.qmd
+        - capitulos/076-baterias-celulas-e-circuitos-de-carga.qmd
+        - capitulos/077-aterramento-malhas-de-terra-desacoplamento-e.qmd
+    - part: "Volume 13 — Interface com o Mundo Físico"
+      chapters:
+        - capitulos/078-sensores-resistivos-capacitivos-e-ativos.qmd
+        - capitulos/079-condicionamento-de-sinal-e-a-cadeia-de-medicao.qmd
+        - capitulos/080-conversao-analogico-digital-amostragem-quantizacao.qmd
+        - capitulos/081-conversao-digital-analogica-e-pwm.qmd
+        - capitulos/082-atuadores-reles-solenoides-e-motores-cc.qmd
+    - part: "Volume 14 — Da Bancada ao Circuito Real"
+      chapters:
+        - capitulos/083-soldagem-tecnica-ferramentas-e-retrabalho.qmd
+        - capitulos/084-do-esquematico-ao-layout-de-pcb.qmd
+        - capitulos/085-fabricacao-montagem-e-componentes-smd.qmd
+        - capitulos/086-integridade-de-sinal-emi-e-compatibilidade.qmd
+        - capitulos/087-depuracao-de-placa-metodo-medicao-e-falhas-tipicas.qmd
+
+    # ===== Fase 5 - Eletronica Digital =====
+    - part: "Volume 15 — Lógica Digital: da Chave à Porta"
+      chapters:
+        - capitulos/088-do-analogico-ao-digital-niveis-margens-de-ruido-e-o.qmd
+        - capitulos/089-sistemas-de-numeracao-e-representacao-binaria.qmd
+        - capitulos/090-algebra-booleana-e-as-portas-fundamentais.qmd
+        - capitulos/091-portas-com-diodos-portas-com-transistores-e-a.qmd
+        - capitulos/092-a-familia-cmos-funcionamento-consumo-e-interface.qmd
+        - capitulos/093-circuitos-combinacionais-multiplexadores.qmd
+        - capitulos/094-simplificacao-formas-canonicas-e-mapas-de-karnaugh.qmd
+        - capitulos/095-aritmetica-binaria-em-hardware-somadores-e-a-ula.qmd
+    - part: "Volume 16 — Sequencial, Memória e a Ponte para o Computador"
+      chapters:
+        - capitulos/096-realimentacao-digital-o-latch-sr.qmd
+        - capitulos/097-flip-flops-d-e-jk-e-o-conceito-de-borda.qmd
+        - capitulos/098-o-clock-temporizacao-setup-e-hold.qmd
+        - capitulos/099-registradores-e-deslocadores.qmd
+        - capitulos/100-contadores-sincronos-e-assincronos.qmd
+        - capitulos/101-maquinas-de-estado-finito-moore-e-mealy.qmd
+        - capitulos/102-memorias-celula-sram-dram-e-nao-volateis.qmd
+        - capitulos/103-logica-programavel-cpld-fpga-e-a-descricao-de.qmd
+        - capitulos/104-da-porta-logica-ao-processador-a-fronteira-com-a.qmd
+
+    - referencias.qmd
+
+bibliography: referencias.bib
+csl: abnt.csl
+
+filters:
+  # danmackinlay/tikz SEMPRE antes de quarto
+  - danmackinlay/tikz
+  - quarto
+
+tikz:
+  svg-engine: dvisvgm
+  cache: true
+
+format:
+  html:
+    theme: [cosmo, styles.css]
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-copy: true
+  pdf:
+    documentclass: scrbook
+    papersize: a4
+    number-sections: true
+    toc-depth: 2
+    include-in-header:
+      text: |
+        \usepackage{float}

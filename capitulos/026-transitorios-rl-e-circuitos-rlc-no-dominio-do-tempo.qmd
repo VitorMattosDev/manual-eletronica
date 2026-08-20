@@ -1,0 +1,3 @@
+# Transitórios RL e circuitos RLC no domínio do tempo {#sec-cap-026}
+
+*(em elaboração)*

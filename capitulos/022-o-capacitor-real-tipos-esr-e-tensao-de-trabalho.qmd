@@ -1,0 +1,3 @@
+# O capacitor real: tipos, ESR e tensão de trabalho {#sec-cap-022}
+
+*(em elaboração)*

@@ -1,0 +1,3 @@
+# O BJT como chave: corte, saturação e acionamento de cargas {#sec-cap-054}
+
+*(em elaboração)*

@@ -1,0 +1,3 @@
+# Polarização: divisor de base, resistor de emissor e estabilidade térmica {#sec-cap-055}
+
+*(em elaboração)*

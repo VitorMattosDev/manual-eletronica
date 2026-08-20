@@ -1,0 +1,3 @@
+# Atuadores: relés, solenoides e motores CC {#sec-cap-082}
+
+*(em elaboração)*

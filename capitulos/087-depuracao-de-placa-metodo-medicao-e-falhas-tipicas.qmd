@@ -1,0 +1,3 @@
+# Depuração de placa: método, medição e falhas típicas {#sec-cap-087}
+
+*(em elaboração)*

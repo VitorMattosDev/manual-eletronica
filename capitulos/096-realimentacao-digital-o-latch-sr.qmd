@@ -1,0 +1,3 @@
+# Realimentação digital: o latch SR {#sec-cap-096}
+
+*(em elaboração)*

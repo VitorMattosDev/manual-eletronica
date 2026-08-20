@@ -1,0 +1,3 @@
+# Simplificação: formas canônicas e mapas de Karnaugh {#sec-cap-094}
+
+*(em elaboração)*

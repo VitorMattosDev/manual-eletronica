@@ -1,0 +1,3 @@
+# Diagramas de Bode: ganho e fase {#sec-cap-035}
+
+*(em elaboração)*

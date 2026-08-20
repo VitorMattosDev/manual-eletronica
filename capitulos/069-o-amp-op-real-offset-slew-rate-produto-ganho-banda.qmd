@@ -1,0 +1,3 @@
+# O amp-op real: offset, slew rate, produto ganho-banda e saturação {#sec-cap-069}
+
+*(em elaboração)*

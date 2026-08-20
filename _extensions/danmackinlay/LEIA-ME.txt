@@ -1,0 +1,21 @@
+COLOQUE AQUI A EXTENSAO TIKZ PATCHADA
+=====================================
+
+Este diretorio deve conter:
+
+    _extensions/danmackinlay/tikz/
+
+Copie de um manual existente da serie (Fisica, Quimica, Economia...) ou
+extraia de figuras-tikz-kit.zip.
+
+NAO rode "quarto add danmackinlay/tikz" nem "quarto update": isso baixa o
+upstream SEM os patches locais e quebra a renderizacao de todas as figuras.
+
+Depois de copiar, edite o template e acrescente, DEPOIS da linha que carrega
+pgfplots:
+
+    \usepackage{circuitikz}
+    \usepackage{tikz-timing}
+    \usetikzlibrary{circuits.logic.US}
+
+Apague este arquivo em seguida.

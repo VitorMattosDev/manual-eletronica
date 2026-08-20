@@ -1,0 +1,3 @@
+# Álgebra booleana e as portas fundamentais {#sec-cap-090}
+
+*(em elaboração)*

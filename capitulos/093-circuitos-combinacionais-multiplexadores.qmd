@@ -1,0 +1,3 @@
+# Circuitos combinacionais: multiplexadores, decodificadores e comparadores {#sec-cap-093}
+
+*(em elaboração)*

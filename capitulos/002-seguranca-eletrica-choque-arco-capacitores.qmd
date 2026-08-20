@@ -1,0 +1,11 @@
+# Segurança elétrica: choque, arco, capacitores carregados e a rede {#sec-cap-002}
+
+::: {.callout-warning}
+## Tensão perigosa
+
+Este capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve
+ser executado depois de ler integralmente o Capítulo 2. *(texto de aviso a
+escrever)*
+:::
+
+*(em elaboração)*

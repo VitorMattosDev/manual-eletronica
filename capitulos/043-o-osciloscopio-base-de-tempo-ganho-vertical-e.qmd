@@ -1,0 +1,3 @@
+# O osciloscópio: base de tempo, ganho vertical e gatilho {#sec-cap-043}
+
+*(em elaboração)*

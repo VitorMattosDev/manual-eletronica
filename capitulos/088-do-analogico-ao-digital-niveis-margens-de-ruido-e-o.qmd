@@ -1,0 +1,3 @@
+# Do analógico ao digital: níveis, margens de ruído e o sinal binário {#sec-cap-088}
+
+*(em elaboração)*

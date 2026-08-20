@@ -1,0 +1,3 @@
+# Classes de amplificador: A, B, AB, C e D {#sec-cap-063}
+
+*(em elaboração)*

@@ -1,0 +1,22 @@
+/*-- scss:rules --*/
+
+/* Marcador SCSS acima e OBRIGATORIO: styles.css listado em theme: e tratado
+   como camada SCSS pelo Quarto >= 1.9. Sem ele o render inteiro falha com erro
+   de layer boundary. Nao inserir comentario contendo a sequencia de fechamento
+   logo apos o marcador. */
+
+.lab-material {
+  border-left: 4px solid #2a6ebb;
+  padding: 0.6rem 1rem;
+  background: #f4f8fc;
+  margin-bottom: 1rem;
+}
+
+figure.tikz-figure svg {
+  max-width: 100%;
+  height: auto;
+}
+
+table {
+  font-variant-numeric: tabular-nums;
+}

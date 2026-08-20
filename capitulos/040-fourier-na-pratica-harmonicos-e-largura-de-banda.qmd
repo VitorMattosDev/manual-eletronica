@@ -1,0 +1,3 @@
+# Fourier na prática: harmônicos e largura de banda {#sec-cap-040}
+
+*(em elaboração)*

@@ -1,0 +1,3 @@
+# Comparadores, histerese e o gatilho de Schmitt {#sec-cap-070}
+
+*(em elaboração)*

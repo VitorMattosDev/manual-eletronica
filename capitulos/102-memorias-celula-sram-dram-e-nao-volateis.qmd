@@ -1,0 +1,3 @@
+# Memórias: célula SRAM, DRAM e não voláteis {#sec-cap-102}
+
+*(em elaboração)*

@@ -1,0 +1,3 @@
+# Contadores síncronos e assíncronos {#sec-cap-100}
+
+*(em elaboração)*

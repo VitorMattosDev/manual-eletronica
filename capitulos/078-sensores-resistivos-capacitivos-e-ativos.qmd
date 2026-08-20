@@ -1,0 +1,3 @@
+# Sensores: resistivos, capacitivos e ativos {#sec-cap-078}
+
+*(em elaboração)*

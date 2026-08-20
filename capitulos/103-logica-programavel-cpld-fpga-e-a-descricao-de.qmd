@@ -1,0 +1,3 @@
+# Lógica programável: CPLD, FPGA e a descrição de hardware {#sec-cap-103}
+
+*(em elaboração)*

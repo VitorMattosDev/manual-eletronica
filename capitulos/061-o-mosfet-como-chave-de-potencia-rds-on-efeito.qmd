@@ -1,0 +1,3 @@
+# O MOSFET como chave de potência: RDS(on), efeito Miller e dissipação {#sec-cap-061}
+
+*(em elaboração)*

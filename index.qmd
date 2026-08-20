@@ -1,0 +1,77 @@
+# Apresentação {.unnumbered}
+
+Este é o **Manual de Eletrônica**, parte da série *Manuais de Ciências*. Ele parte
+da carga elétrica e termina na máquina de estados finita — o ponto exato em que a
+eletrônica entrega o bastão para a arquitetura de computadores.
+
+## O que este manual é
+
+Um curso completo de eletrônica com bancada. Cada capítulo tem duas seções
+obrigatórias:
+
+- **🧪 Laboratório** — um roteiro prático, sempre precedido da lista de material.
+  Você sabe antes de começar se consegue fazer o experimento hoje.
+- **🔥 Onde Queima** — os modos de falha do assunto: o que destrói o componente,
+  o que estoura o cálculo, onde o instrumento mente.
+
+## O que este manual não é
+
+Não é um manual de arquitetura de computadores. A fronteira é a **porta lógica**:
+transistores, portas, combinacional e sequencial estão aqui; unidade lógica e
+aritmética completa, conjunto de instruções, pipeline e hierarquia de memória são
+do manual seguinte. O capítulo 104 é a dobradiça entre os dois.
+
+Também não é um manual de física. Lá se **deriva** a lei de Ohm a partir do modelo
+de condução; aqui se **dimensiona**: escolhe-se o resistor, calcula-se a
+dissipação e verifica-se se o encapsulamento aguenta.
+
+## Bancada mínima
+
+Multímetro, protoboard, fonte ajustável, ferro de solda e um kit de componentes
+passivos e discretos cobrem os Volumes 1 a 6. A partir do Volume 7 o osciloscópio
+passa a fazer diferença — e, quando ele faltar, cada laboratório oferece a variante
+simulada como plano B.
+
+## Mapa de pré-requisitos
+
+```{mermaid}
+graph TD
+    V1["V1 · A Bancada e o Método"]
+    V2["V2 · Corrente Contínua: Leis Fundamentais"]
+    V3["V3 · Análise de Circuitos"]
+    V4["V4 · Capacitores, Indutores e Transitórios"]
+    V5["V5 · Fundamentos de Corrente Alternada"]
+    V6["V6 · Filtros e Resposta em Frequência"]
+    V7["V7 · Sinais, Ruído e Instrumentação"]
+    V8["V8 · Diodos e Aplicações"]
+    V9["V9 · Transistores Bipolares"]
+    V10["V10 · MOSFETs e Amplificação"]
+    V11["V11 · Amplificadores Operacionais"]
+    V12["V12 · Fontes e Gestão de Energia"]
+    V13["V13 · Interface com o Mundo Físico"]
+    V14["V14 · Da Bancada ao Circuito Real"]
+    V15["V15 · Lógica Digital: da Chave à Porta"]
+    V16["V16 · Sequencial, Memória e a Ponte para o Computador"]
+    V1 --> V2
+    V2 --> V3
+    V3 --> V4
+    V4 --> V5
+    V5 --> V6
+    V6 --> V7
+    V7 --> V8
+    V8 --> V9
+    V9 --> V10
+    V10 --> V11
+    V11 --> V12
+    V12 --> V13
+    V13 --> V14
+    V11 --> V15
+    V15 --> V16
+```
+
+## Convenções
+
+Unidades vão escritas literalmente, com vírgula decimal: 4,7 kΩ, 230 V, 50 Hz.
+Todo valor de componente em figura ou exercício é valor comercial real (séries
+E12/E24). Quando o cálculo teórico cai fora de série, o texto mostra o
+arredondamento e recalcula o efeito — isso é metade do ofício.

@@ -1,0 +1,3 @@
+# Da porta lógica ao processador: a fronteira com a arquitetura {#sec-cap-104}
+
+*(em elaboração)*

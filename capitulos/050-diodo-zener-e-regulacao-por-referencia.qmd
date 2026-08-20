@@ -1,0 +1,3 @@
+# Diodo Zener e regulação por referência {#sec-cap-050}
+
+*(em elaboração)*

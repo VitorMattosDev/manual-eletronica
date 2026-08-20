@@ -1,0 +1,3 @@
+# Reguladores integrados: série, LDO e dissipação térmica {#sec-cap-074}
+
+*(em elaboração)*

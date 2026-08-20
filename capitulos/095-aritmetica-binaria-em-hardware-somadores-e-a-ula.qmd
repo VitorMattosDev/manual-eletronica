@@ -1,0 +1,3 @@
+# Aritmética binária em hardware: somadores e a ULA elementar {#sec-cap-095}
+
+*(em elaboração)*
