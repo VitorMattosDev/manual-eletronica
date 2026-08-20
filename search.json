@@ -1,0 +1,1294 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Manual de Eletrônica",
+    "section": "",
+    "text": "Apresentação\nEste é o Manual de Eletrônica, parte da série Manuais de Ciências. Ele parte da carga elétrica e termina na máquina de estados finita — o ponto exato em que a eletrônica entrega o bastão para a arquitetura de computadores.",
+    "crumbs": [
+      "Apresentação"
+    ]
+  },
+  {
+    "objectID": "index.html#o-que-este-manual-é",
+    "href": "index.html#o-que-este-manual-é",
+    "title": "Manual de Eletrônica",
+    "section": "O que este manual é",
+    "text": "O que este manual é\nUm curso completo de eletrônica com bancada. Cada capítulo tem duas seções obrigatórias:\n\n🧪 Laboratório — um roteiro prático, sempre precedido da lista de material. Você sabe antes de começar se consegue fazer o experimento hoje.\n🔥 Onde Queima — os modos de falha do assunto: o que destrói o componente, o que estoura o cálculo, onde o instrumento mente.",
+    "crumbs": [
+      "Apresentação"
+    ]
+  },
+  {
+    "objectID": "index.html#o-que-este-manual-não-é",
+    "href": "index.html#o-que-este-manual-não-é",
+    "title": "Manual de Eletrônica",
+    "section": "O que este manual não é",
+    "text": "O que este manual não é\nNão é um manual de arquitetura de computadores. A fronteira é a porta lógica: transistores, portas, combinacional e sequencial estão aqui; unidade lógica e aritmética completa, conjunto de instruções, pipeline e hierarquia de memória são do manual seguinte. O capítulo 104 é a dobradiça entre os dois.\nTambém não é um manual de física. Lá se deriva a lei de Ohm a partir do modelo de condução; aqui se dimensiona: escolhe-se o resistor, calcula-se a dissipação e verifica-se se o encapsulamento aguenta.",
+    "crumbs": [
+      "Apresentação"
+    ]
+  },
+  {
+    "objectID": "index.html#bancada-mínima",
+    "href": "index.html#bancada-mínima",
+    "title": "Manual de Eletrônica",
+    "section": "Bancada mínima",
+    "text": "Bancada mínima\nMultímetro, protoboard, fonte ajustável, ferro de solda e um kit de componentes passivos e discretos cobrem os Volumes 1 a 6. A partir do Volume 7 o osciloscópio passa a fazer diferença — e, quando ele faltar, cada laboratório oferece a variante simulada como plano B.",
+    "crumbs": [
+      "Apresentação"
+    ]
+  },
+  {
+    "objectID": "index.html#mapa-de-pré-requisitos",
+    "href": "index.html#mapa-de-pré-requisitos",
+    "title": "Manual de Eletrônica",
+    "section": "Mapa de pré-requisitos",
+    "text": "Mapa de pré-requisitos\n\n\n\n\n\ngraph TD\n    V1[\"V1 · A Bancada e o Método\"]\n    V2[\"V2 · Corrente Contínua: Leis Fundamentais\"]\n    V3[\"V3 · Análise de Circuitos\"]\n    V4[\"V4 · Capacitores, Indutores e Transitórios\"]\n    V5[\"V5 · Fundamentos de Corrente Alternada\"]\n    V6[\"V6 · Filtros e Resposta em Frequência\"]\n    V7[\"V7 · Sinais, Ruído e Instrumentação\"]\n    V8[\"V8 · Diodos e Aplicações\"]\n    V9[\"V9 · Transistores Bipolares\"]\n    V10[\"V10 · MOSFETs e Amplificação\"]\n    V11[\"V11 · Amplificadores Operacionais\"]\n    V12[\"V12 · Fontes e Gestão de Energia\"]\n    V13[\"V13 · Interface com o Mundo Físico\"]\n    V14[\"V14 · Da Bancada ao Circuito Real\"]\n    V15[\"V15 · Lógica Digital: da Chave à Porta\"]\n    V16[\"V16 · Sequencial, Memória e a Ponte para o Computador\"]\n    V1 --&gt; V2\n    V2 --&gt; V3\n    V3 --&gt; V4\n    V4 --&gt; V5\n    V5 --&gt; V6\n    V6 --&gt; V7\n    V7 --&gt; V8\n    V8 --&gt; V9\n    V9 --&gt; V10\n    V10 --&gt; V11\n    V11 --&gt; V12\n    V12 --&gt; V13\n    V13 --&gt; V14\n    V11 --&gt; V15\n    V15 --&gt; V16",
+    "crumbs": [
+      "Apresentação"
+    ]
+  },
+  {
+    "objectID": "index.html#convenções",
+    "href": "index.html#convenções",
+    "title": "Manual de Eletrônica",
+    "section": "Convenções",
+    "text": "Convenções\nUnidades vão escritas literalmente, com vírgula decimal: 4,7 kΩ, 230 V, 50 Hz. Todo valor de componente em figura ou exercício é valor comercial real (séries E12/E24). Quando o cálculo teórico cai fora de série, o texto mostra o arredondamento e recalcula o efeito — isso é metade do ofício.",
+    "crumbs": [
+      "Apresentação"
+    ]
+  },
+  {
+    "objectID": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html",
+    "href": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html",
+    "title": "1  O que é eletrônica e o que este manual cobre",
+    "section": "",
+    "text": "1.1 Eletricidade transporta energia; eletrônica transporta decisão\nQuase todo curso de eletrônica começa pela lei de Ohm. Este começa uma casa antes, por uma pergunta que raramente é feita em voz alta: o que exatamente distingue eletrônica de eletricidade? A resposta não é acadêmica. Ela decide o que entra neste livro, o que fica de fora, e por que o último capítulo para exatamente onde para.\nUm chuveiro elétrico e um rádio usam a mesma física. Elétrons se movem, campos se estabelecem, energia se dissipa. A diferença está no que cada um faz com esse movimento.\nNo chuveiro, a corrente é o produto. Ela existe para virar calor, e o projeto inteiro se resume a entregar potência com segurança. Ninguém liga para o formato da corrente ao longo do tempo — só para quanta energia ela deposita na resistência.\nNo rádio, a corrente é o veículo. O que interessa é o desenho dela no tempo: a amplitude que sobe e desce, o instante em que muda, a frequência que carrega. A energia é apenas o custo de manter esse desenho de pé. Um rádio que consome 30 W e reproduz ruído falhou; um que consome 0,5 W e reproduz música funcionou.\nEletrônica é o ofício de fazer um fluxo de carga carregar informação e obedecer a comandos. Eletricidade é o ofício de entregar energia. Os dois campos usam a mesma lei de Ohm, o mesmo multímetro, os mesmos condutores — e quase nenhuma das mesmas prioridades.",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>O que é eletrônica e o que este manual cobre</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-controle",
+    "href": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-controle",
+    "title": "1  O que é eletrônica e o que este manual cobre",
+    "section": "1.2 O componente que define o ofício",
+    "text": "1.2 O componente que define o ofício\nSe eletrônica é controle, existe uma peça sem a qual ela não existiria: o dispositivo de controle, um componente em que um sinal fraco governa um fluxo forte.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n \n \n \n \n \n \n\n\n\n\n\n\n\n\n \n \n \n \n \n \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n \n \n \n \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigura 1.1: A ideia central da eletrônica: um sinal fraco comanda um fluxo forte. A válvula fazia isso em 1906; o transistor faz isso desde 1947, e é por isso que ele cabe num chip.\n\n\n\nEsse componente já foi uma válvula de vidro aquecida a 200 °C consumindo alguns watts só para existir. Hoje é um transistor de alguns nanômetros, e há dezenas de bilhões deles num processador. A física mudou por completo; a função não mudou nada.\nVale registrar a consequência prática: tudo o mais neste livro existe para servir esse componente. Resistores definem em que ponto ele opera. Capacitores seguram a tensão de alimentação quando ele chaveia. Fontes entregam energia estável para ele. Filtros limpam o sinal antes e depois dele. Se em algum momento um capítulo parecer desconectado, a pergunta que reconecta é sempre a mesma: isso aqui está alimentando, polarizando, protegendo ou limpando o caminho de qual dispositivo de controle?",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>O que é eletrônica e o que este manual cobre</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-analogico-digital",
+    "href": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-analogico-digital",
+    "title": "1  O que é eletrônica e o que este manual cobre",
+    "section": "1.3 Analógico e digital são a mesma física, disciplinas diferentes",
+    "text": "1.3 Analógico e digital são a mesma física, disciplinas diferentes\nUma divisão que confunde muita gente: não existem “circuitos analógicos” e “circuitos digitais” como duas físicas separadas. Existe uma física — tensões e correntes contínuas no tempo — e duas maneiras de interpretá-la.\nNo modo analógico, o valor da tensão é a informação. Se o sensor entrega 1,84 V, a grandeza medida vale 1,84 V de alguma coisa, e um erro de 20 mV é um erro de 20 mV no resultado.\nNo modo digital, o valor exato da tensão é descartado de propósito. Combina-se que qualquer coisa abaixo de um limiar significa 0 e qualquer coisa acima de outro limiar significa 1. Entre os dois limiares existe uma faixa proibida, que o circuito atravessa depressa e onde nunca deve descansar.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigura 1.2: O mesmo sinal contínuo lido sob a disciplina digital. Tudo abaixo de 1,5 V é 0, tudo acima de 3,5 V é 1, e a faixa do meio é território que o circuito atravessa, nunca habita. Os limiares mostrados são os de uma família CMOS alimentada em 5 V.\n\n\n\nJogar fora informação parece desperdício, e é — em troca de uma propriedade extraordinária: ruído que não chega a cruzar o limiar simplesmente desaparece. Um sinal analógico que passa por dez estágios acumula o ruído dos dez. Um sinal digital que passa por dez estágios sai idêntico ao que entrou, desde que cada estágio tenha margem suficiente. É toda a razão pela qual um computador consegue ter bilhões de componentes em série sem virar ruído.\nOs dois modos convivem no mesmo circuito e frequentemente na mesma placa. Por isso este manual não separa “livro analógico” e “livro digital”: ele constrói o analógico primeiro porque o digital é feito de peças analógicas operadas com disciplina.",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>O que é eletrônica e o que este manual cobre</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-arco",
+    "href": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-arco",
+    "title": "1  O que é eletrônica e o que este manual cobre",
+    "section": "1.4 O arco deste manual",
+    "text": "1.4 O arco deste manual\nO caminho de 104 capítulos tem cinco fases, e elas não são temas soltos — cada uma é pré-requisito da seguinte.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n \n \n \n \n\n\n\n\n\n\n\n\n \n \n \n \n\n\n\n\n\n\n\n\n \n \n \n \n\n\n\n\n\n\n\n\n \n \n \n \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigura 1.3: As cinco fases do manual. A ordem é de dependência, não de preferência: cada fase usa ferramentas construídas na anterior.\n\n\n\nEm uma frase cada:\n\nFase 1 — Fundamentos elétricos. Corrente contínua, as leis de Kirchhoff, análise de circuitos, capacitores e indutores. É onde se aprende a calcular antes de ligar.\nFase 2 — Corrente alternada e sinais. Senoides, impedância, filtros, resposta em frequência e os instrumentos que enxergam tudo isso. É onde o circuito deixa de ser um número e vira uma forma no tempo.\nFase 3 — Semicondutores e analógica. Diodos, transistores bipolares, MOSFETs e amplificadores operacionais. É onde o dispositivo de controle finalmente aparece de corpo inteiro.\nFase 4 — Energia, interface e construção. Fontes, sensores, conversão A/D e D/A, soldagem e placa. É onde o circuito sai da protoboard.\nFase 5 — Eletrônica digital. Níveis lógicos, portas, combinacional, sequencial, memória e máquinas de estado. É onde a disciplina digital é construída a partir dos transistores da Fase 3.",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>O que é eletrônica e o que este manual cobre</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-limites",
+    "href": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-limites",
+    "title": "1  O que é eletrônica e o que este manual cobre",
+    "section": "1.5 Onde este manual começa e onde ele para",
+    "text": "1.5 Onde este manual começa e onde ele para\nDuas fronteiras foram desenhadas de propósito, e conhecê-las evita procurar aqui o que está deliberadamente em outro lugar.\n\n1.5.1 A fronteira de baixo: física deriva, eletrônica dimensiona\nO Manual de Física demonstra a lei de Ohm a partir do modelo de condução: por que a corrente é proporcional ao campo, o que o tempo médio entre colisões tem a ver com a resistividade, de onde vem a dependência com a temperatura.\nAqui a lei de Ohm é ferramenta, não teorema. A pergunta deste livro não é por que \\(V = R\\,I\\), e sim: qual resistor comprar, de que série, com que tolerância, com que potência nominal, e o que acontece com o circuito quando o valor calculado de 466,7 Ω vira o valor comercial de 470 Ω. Nós derivamos o suficiente para não aplicar fórmula às cegas — e paramos aí.\n\n\n1.5.2 A fronteira de cima: a porta lógica e a máquina de estados\nO manual termina na porta lógica e na máquina de estados finita. Do transistor até o flip-flop, do flip-flop até o contador e a máquina de estados: tudo isso é eletrônica, e está aqui.\nO que vem depois — unidade lógica e aritmética completa, banco de registradores, conjunto de instruções, pipeline, cache, hierarquia de memória — é arquitetura de computadores, assunto do manual seguinte da série. O capítulo 104 é a dobradiça explícita: ele mostra a porta lógica de um lado e o processador do outro, e entrega o bastão.\nA separação não é burocrática. Da porta lógica para baixo, a pergunta é sempre física: quanta corrente, quanto atraso, quanta margem de ruído, quanto calor. Da porta lógica para cima, a pergunta vira organizacional: quantos bits, quantos ciclos, qual instrução. São dois ofícios, e misturá-los num livro só produz capítulos rasos dos dois lados.",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>O que é eletrônica e o que este manual cobre</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-uso",
+    "href": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-uso",
+    "title": "1  O que é eletrônica e o que este manual cobre",
+    "section": "1.6 Como este manual é usado",
+    "text": "1.6 Como este manual é usado\n\n1.6.1 As duas seções fixas\nTodo capítulo, sem exceção, termina com duas seções:\n🧪 Laboratório é um roteiro executável, sempre precedido da lista de material. A lista vem antes do roteiro por um motivo prático: você precisa saber, em dez segundos, se consegue fazer o experimento hoje ou se precisa comprar alguma coisa. Quando o experimento exigir instrumento caro, há uma variante simulada marcada como tal — que é um plano B honesto, não um substituto.\n🔥 Onde Queima é o inventário de modos de falha do assunto: o que destrói o componente, o que estoura o cálculo, onde o instrumento mente. Nos capítulos mais teóricos, é o erro de raciocínio clássico — confundir valor de pico com eficaz, ignorar a impedância da fonte, esquecer a carga da ponta de prova. Essa seção existe porque a maior parte do que se aprende em eletrônica se aprende quebrando coisas, e sai mais barato aprender lendo.\n\n\n1.6.2 A bancada mínima\nMultímetro, protoboard, fonte ajustável, ferro de solda e um kit de componentes passivos e discretos cobrem confortavelmente os Volumes 1 a 6. A partir do Volume 7 o osciloscópio passa a fazer diferença real, e a partir daí cada laboratório que precisar dele traz a alternativa: osciloscópio USB barato, entrada de placa de som para sinais de áudio, ou simulação em ngspice/LTspice e Falstad.\n\n\n1.6.3 Valores comerciais: a régua deste livro\nUma regra vale para todo cálculo, figura e exercício daqui em diante: componente tem valor comercial. Resistores saem das séries E12 e E24; capacitores, das séries E6 e E12. Não existe resistor de 3,7 kΩ nem capacitor de 137 nF na gaveta de ninguém.\nIsso muda a forma de calcular. O cálculo teórico dá um número; o projeto real dá o valor comercial mais próximo e recalcula o efeito do arredondamento. Quando a tolerância importar — e ela importa mais vezes do que se imagina —, a faixa aparece escrita. Metade do ofício de projetar está exatamente aí, e é a metade que a maioria dos livros pula.",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>O que é eletrônica e o que este manual cobre</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-lab",
+    "href": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-lab",
+    "title": "1  O que é eletrônica e o que este manual cobre",
+    "section": "1.7 🧪 Laboratório",
+    "text": "1.7 🧪 Laboratório\nO primeiro circuito dimensionado. O objetivo não é acender um LED — é percorrer, num circuito de três peças, o ciclo completo que o livro inteiro vai repetir: calcular, arredondar para o valor comercial, recalcular, montar, medir e comparar.\n\n1.7.1 Material\n\n\n1 pilha (bateria) de 9 V, com clipe de conexão\n1 LED vermelho de 5 mm, difuso ou transparente\n1 resistor de 470 Ω, 1/4 W, tolerância 5 %\n1 resistor de 1 kΩ, 1/4 W, tolerância 5 % (para a segunda parte)\n1 protoboard\nFios jumper (3 unidades bastam)\nMultímetro digital comum\n\n\n\n\n1.7.2 Passo 1 — Calcular antes de ligar\nUm LED não é um resistor: ele tem uma tensão direta aproximadamente fixa e a corrente através dele precisa ser limitada por fora. Para um LED vermelho de 5 mm, adote \\(V_F \\approx 2{,}0\\) V, e escolha uma corrente de trabalho de 15 mA — bem dentro do que o encapsulamento aguenta e mais que suficiente para brilho pleno.\nA tensão que sobra para o resistor é \\(9{,}0 - 2{,}0 = 7{,}0\\) V, e portanto\n\\[\nR = \\frac{7{,}0\\ \\text{V}}{0{,}015\\ \\text{A}} = 466{,}7\\ \\Omega .\n\\]\n\n\n1.7.3 Passo 2 — Arredondar e recalcular\n466,7 Ω não existe para comprar. O vizinho comercial é 470 Ω, que está tanto na série E12 quanto na E24. Com ele:\n\\[\nI = \\frac{7{,}0\\ \\text{V}}{470\\ \\Omega} = 14{,}9\\ \\text{mA}.\n\\]\nA corrente caiu 0,7 % em relação ao alvo — diferença que nenhum olho percebe. Agora a verificação que não pode ser pulada, a dissipação no resistor:\n\\[\nP_R = I^{2} R = (0{,}0149)^{2} \\times 470 = 104\\ \\text{mW}.\n\\]\nUm resistor de 1/4 W dissipa 250 mW, então ele opera a 42 % da capacidade: folga confortável, aquecimento imperceptível. Um de 1/8 W (125 mW) também passaria, a 83 % da capacidade — e passaria quente, envelhecendo mais rápido. Essa é a diferença entre “funciona” e “está bem dimensionado”.\nE a tolerância: 470 Ω com 5 % vale entre 446,5 Ω e 493,5 Ω, o que coloca a corrente entre 14,2 mA e 15,7 mA. A faixa é aceitável para um LED, e é exatamente esse tipo de conta que decidirá, mais adiante no livro, quando 5 % basta e quando é preciso comprar 1 %.\n\n\n1.7.4 Passo 3 — Montar\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigura 1.4: O circuito do laboratório. Três componentes, dois pontos de medição, e todo o método do livro em miniatura.\n\n\n\nMonte na protoboard com a pilha desligada. O LED tem polaridade: a perna mais longa é o anodo (positivo, lado do resistor); do lado do catodo o encapsulamento tem um chanfro plano. Invertido, ele simplesmente não acende.\n\n\n1.7.5 Passo 4 — Medir e comparar\n\nTensão da pilha em vazio, antes de conectar: anote. Uma alcalina nova costuma marcar entre 9,3 V e 9,6 V, não 9,0 V.\nTensão no resistor (\\(V_R\\)) e tensão no LED (\\(V_\\text{LED}\\)), com o circuito ligado, medidas em paralelo com cada componente. Some as duas: o resultado tem de bater com a tensão da pilha sob carga. Essa soma é a lei das malhas de Kirchhoff, que ganha capítulo próprio no Volume 2.\nCorrente calculada: \\(I = V_R / 470\\). Anote.\nCorrente medida: mude o multímetro para a escala de corrente contínua, mova o cabo vermelho para o borne de corrente e insira o instrumento em série, abrindo o circuito para colocá-lo no caminho. Compare com o valor do item 3. Diferenças de 1 % a 3 % são normais e vêm da tolerância do resistor e da precisão do multímetro.\nCompare a \\(V_F\\) medida do LED com os 2,0 V que você supôs no Passo 1. Se deu 1,85 V ou 2,15 V, refaça a conta do Passo 2 com o valor real e veja quanto a corrente muda. Essa é a diferença entre valor de catálogo e componente real.\n\n\n\n1.7.6 Passo 5 — Trocar o resistor\nSubstitua os 470 Ω por 1 kΩ. A corrente cai para \\(I = 7{,}0/1000 = 7{,}0\\) mA, menos da metade. Olhe para o LED: o brilho cai muito menos do que a corrente. A percepção humana de luminosidade é aproximadamente logarítmica — motivo pelo qual o decibel e as escalas logarítmicas ganham um capítulo inteiro no Volume 7.\n\n\n1.7.7 Variante simulada (plano B)\nSem componentes à mão, monte o mesmo circuito no simulador Falstad, no navegador: fonte de 9 V, resistor de 470 Ω e um diodo emissor de luz em série. O simulador mostra corrente e tensão em cada ramo. Vale como treino do raciocínio, mas note o que ele não entrega: a queda real da pilha sob carga, a dispersão de \\(V_F\\) entre dois LEDs do mesmo saquinho e o resistor que esquenta. Simulador é para conferir a conta; a bancada é para descobrir o que a conta não previu.",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>O que é eletrônica e o que este manual cobre</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-queima",
+    "href": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-queima",
+    "title": "1  O que é eletrônica e o que este manual cobre",
+    "section": "1.8 🔥 Onde Queima",
+    "text": "1.8 🔥 Onde Queima\nLED direto na pilha, sem resistor. O modo de falha número um da eletrônica iniciante. A corrente de um diodo cresce exponencialmente com a tensão: os 7 V de excesso não produzem “um pouco mais de corrente”, produzem corrente de dezenas a centenas de vezes o limite, e o LED morre em milissegundos — às vezes acendendo forte uma última vez. Diodo nunca vai direto na fonte de tensão. Sempre há um elemento limitando a corrente.\nO multímetro em corrente, ligado em paralelo. Na escala de corrente o multímetro é praticamente um curto-circuito — é essa a definição de um amperímetro bom. Colocá-lo em paralelo com a pilha, ou esquecer o cabo vermelho no borne de corrente e depois medir tensão, curto-circuita a fonte pelo instrumento. Numa pilha de 9 V o resultado é o fusível interno aberto; numa fonte de bancada de vários ampères, é a ponta de prova derretendo. Regra permanente: terminada a medição de corrente, o cabo vermelho volta imediatamente para o borne de tensão.\nLED invertido em tensão alta. Ao contrário, o LED não acende — o que é inofensivo em 9 V. Mas muitos LEDs suportam apenas 5 V de tensão reversa, e valores maiores degradam a junção mesmo sem estrago visível. Não use o LED como “diodo de teste” num circuito de tensão desconhecida.\nTratar o LED como resistor. O erro de raciocínio clássico deste capítulo: pegar os 2,0 V medidos e a corrente de 14,9 mA e concluir que “o LED tem 134 Ω”. Esse número não descreve nada. Ele vale só naquele ponto de operação e muda a cada miliampère. Diodo não tem resistência; tem uma curva, e trabalhar com ela é assunto do Volume 8.\nConfiar no valor nominal da fonte. A pilha de 9 V raramente entrega 9,0 V: sai de fábrica com cerca de 9,5 V e termina a vida útil perto de 7 V. Com 9,5 V a corrente do laboratório sobe para 16,0 mA; com 7,5 V, cai para 11,7 mA. Toda conta feita com o valor da embalagem carrega esse erro embutido — e é por isso que o Passo 4 começa medindo a pilha, não lendo o rótulo.\nSubdimensionar a potência do resistor. Os 104 mW deste circuito cabem num 1/4 W com folga e num 1/8 W apertado. Trocar 470 Ω por 47 Ω “para brilhar mais” levaria a corrente a 149 mA e a dissipação a 1,04 W — oito vezes acima do que a peça aguenta, com o resistor escurecendo, cheirando a queimado e possivelmente abrindo. Corrente alta não é só problema do componente que você quer proteger; é problema de tudo o que está em série com ele.",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>O que é eletrônica e o que este manual cobre</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-resumo",
+    "href": "capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.html#sec-001-resumo",
+    "title": "1  O que é eletrônica e o que este manual cobre",
+    "section": "1.9 O que fica deste capítulo",
+    "text": "1.9 O que fica deste capítulo\nEletrônica é controle de fluxo de carga a serviço da informação, e todo o resto do livro gira em torno de um dispositivo que deixa um sinal fraco comandar um fluxo forte. O manual sobe de forma contínua da corrente contínua até a máquina de estados, parando de propósito na porta lógica.\nE o método do laboratório é o método do livro inteiro, em cinco passos que se repetirão por 104 capítulos: calcular, arredondar para o valor comercial, recalcular o efeito, verificar a dissipação, medir e comparar com o previsto. O próximo capítulo trata do que precisa estar no lugar antes de qualquer bancada ser ligada — segurança elétrica.",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>O que é eletrônica e o que este manual cobre</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/002-seguranca-eletrica-choque-arco-capacitores.html",
+    "href": "capitulos/002-seguranca-eletrica-choque-arco-capacitores.html",
+    "title": "2  Segurança elétrica: choque, arco, capacitores carregados e a rede",
+    "section": "",
+    "text": "AvisoTensão perigosa\n\n\n\nEste capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve ser executado depois de ler integralmente o Capítulo 2. (texto de aviso a escrever)\n\n\n(em elaboração)",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Segurança elétrica: choque, arco, capacitores carregados e a rede</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/003-grandezas-unidades-e-ordens-de-grandeza.html",
+    "href": "capitulos/003-grandezas-unidades-e-ordens-de-grandeza.html",
+    "title": "3  Grandezas, unidades e ordens de grandeza",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Grandezas, unidades e ordens de grandeza</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/004-o-multimetro-tensao-corrente-resistencia-e.html",
+    "href": "capitulos/004-o-multimetro-tensao-corrente-resistencia-e.html",
+    "title": "4  O multímetro: tensão, corrente, resistência e continuidade",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>O multímetro: tensão, corrente, resistência e continuidade</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/005-a-protoboard-a-fonte-de-bancada-e-a-montagem-limpa.html",
+    "href": "capitulos/005-a-protoboard-a-fonte-de-bancada-e-a-montagem-limpa.html",
+    "title": "5  A protoboard, a fonte de bancada e a montagem limpa",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>A protoboard, a fonte de bancada e a montagem limpa</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/006-componentes-passivos-identificacao-codigo-de-cores.html",
+    "href": "capitulos/006-componentes-passivos-identificacao-codigo-de-cores.html",
+    "title": "6  Componentes passivos: identificação, código de cores e tolerância",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Componentes passivos: identificação, código de cores e tolerância</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/007-esquematicos-como-ler-como-desenhar-como-nao-se.html",
+    "href": "capitulos/007-esquematicos-como-ler-como-desenhar-como-nao-se.html",
+    "title": "7  Esquemáticos: como ler, como desenhar, como não se perder",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 1 — A Bancada e o Método",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Esquemáticos: como ler, como desenhar, como não se perder</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/008-carga-corrente-e-o-modelo-de-conducao.html",
+    "href": "capitulos/008-carga-corrente-e-o-modelo-de-conducao.html",
+    "title": "8  Carga, corrente e o modelo de condução",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 2 — Corrente Contínua: Leis Fundamentais",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Carga, corrente e o modelo de condução</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/009-tensao-potencial-e-referencia-terra.html",
+    "href": "capitulos/009-tensao-potencial-e-referencia-terra.html",
+    "title": "9  Tensão, potencial e referência (terra)",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 2 — Corrente Contínua: Leis Fundamentais",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Tensão, potencial e referência (terra)</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/010-resistencia-resistividade-e-a-lei-de-ohm.html",
+    "href": "capitulos/010-resistencia-resistividade-e-a-lei-de-ohm.html",
+    "title": "10  Resistência, resistividade e a Lei de Ohm",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 2 — Corrente Contínua: Leis Fundamentais",
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>Resistência, resistividade e a Lei de Ohm</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/011-potencia-energia-e-dissipacao-termica.html",
+    "href": "capitulos/011-potencia-energia-e-dissipacao-termica.html",
+    "title": "11  Potência, energia e dissipação térmica",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 2 — Corrente Contínua: Leis Fundamentais",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Potência, energia e dissipação térmica</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/012-associacao-serie-e-paralelo.html",
+    "href": "capitulos/012-associacao-serie-e-paralelo.html",
+    "title": "12  Associação série e paralelo",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 2 — Corrente Contínua: Leis Fundamentais",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Associação série e paralelo</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/013-as-leis-de-kirchhoff.html",
+    "href": "capitulos/013-as-leis-de-kirchhoff.html",
+    "title": "13  As Leis de Kirchhoff",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 2 — Corrente Contínua: Leis Fundamentais",
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>As Leis de Kirchhoff</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/014-divisores-de-tensao-e-de-corrente.html",
+    "href": "capitulos/014-divisores-de-tensao-e-de-corrente.html",
+    "title": "14  Divisores de tensão e de corrente",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 2 — Corrente Contínua: Leis Fundamentais",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Divisores de tensão e de corrente</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/015-analise-nodal.html",
+    "href": "capitulos/015-analise-nodal.html",
+    "title": "15  Análise nodal",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 3 — Análise de Circuitos",
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Análise nodal</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/016-analise-de-malhas.html",
+    "href": "capitulos/016-analise-de-malhas.html",
+    "title": "16  Análise de malhas",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 3 — Análise de Circuitos",
+      "<span class='chapter-number'>16</span>  <span class='chapter-title'>Análise de malhas</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/017-superposicao-e-linearidade.html",
+    "href": "capitulos/017-superposicao-e-linearidade.html",
+    "title": "17  Superposição e linearidade",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 3 — Análise de Circuitos",
+      "<span class='chapter-number'>17</span>  <span class='chapter-title'>Superposição e linearidade</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/018-teoremas-de-thevenin-e-norton.html",
+    "href": "capitulos/018-teoremas-de-thevenin-e-norton.html",
+    "title": "18  Teoremas de Thévenin e Norton",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 3 — Análise de Circuitos",
+      "<span class='chapter-number'>18</span>  <span class='chapter-title'>Teoremas de Thévenin e Norton</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/019-maxima-transferencia-de-potencia-e-casamento.html",
+    "href": "capitulos/019-maxima-transferencia-de-potencia-e-casamento.html",
+    "title": "19  Máxima transferência de potência e casamento",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 3 — Análise de Circuitos",
+      "<span class='chapter-number'>19</span>  <span class='chapter-title'>Máxima transferência de potência e casamento</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/020-fontes-reais-resistencia-interna-e-carregamento-do.html",
+    "href": "capitulos/020-fontes-reais-resistencia-interna-e-carregamento-do.html",
+    "title": "20  Fontes reais, resistência interna e carregamento do circuito",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 3 — Análise de Circuitos",
+      "<span class='chapter-number'>20</span>  <span class='chapter-title'>Fontes reais, resistência interna e carregamento do circuito</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/021-campo-eletrico-e-capacitancia.html",
+    "href": "capitulos/021-campo-eletrico-e-capacitancia.html",
+    "title": "21  Campo elétrico e capacitância",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 4 — Capacitores, Indutores e Transitórios",
+      "<span class='chapter-number'>21</span>  <span class='chapter-title'>Campo elétrico e capacitância</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/022-o-capacitor-real-tipos-esr-e-tensao-de-trabalho.html",
+    "href": "capitulos/022-o-capacitor-real-tipos-esr-e-tensao-de-trabalho.html",
+    "title": "22  O capacitor real: tipos, ESR e tensão de trabalho",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 4 — Capacitores, Indutores e Transitórios",
+      "<span class='chapter-number'>22</span>  <span class='chapter-title'>O capacitor real: tipos, ESR e tensão de trabalho</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/023-campo-magnetico-e-indutancia.html",
+    "href": "capitulos/023-campo-magnetico-e-indutancia.html",
+    "title": "23  Campo magnético e indutância",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 4 — Capacitores, Indutores e Transitórios",
+      "<span class='chapter-number'>23</span>  <span class='chapter-title'>Campo magnético e indutância</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/024-o-indutor-real-e-a-energia-armazenada.html",
+    "href": "capitulos/024-o-indutor-real-e-a-energia-armazenada.html",
+    "title": "24  O indutor real e a energia armazenada",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 4 — Capacitores, Indutores e Transitórios",
+      "<span class='chapter-number'>24</span>  <span class='chapter-title'>O indutor real e a energia armazenada</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/025-transitorios-rc-carga-descarga-e-constante-de-tempo.html",
+    "href": "capitulos/025-transitorios-rc-carga-descarga-e-constante-de-tempo.html",
+    "title": "25  Transitórios RC: carga, descarga e constante de tempo",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 4 — Capacitores, Indutores e Transitórios",
+      "<span class='chapter-number'>25</span>  <span class='chapter-title'>Transitórios RC: carga, descarga e constante de tempo</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/026-transitorios-rl-e-circuitos-rlc-no-dominio-do-tempo.html",
+    "href": "capitulos/026-transitorios-rl-e-circuitos-rlc-no-dominio-do-tempo.html",
+    "title": "26  Transitórios RL e circuitos RLC no domínio do tempo",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 4 — Capacitores, Indutores e Transitórios",
+      "<span class='chapter-number'>26</span>  <span class='chapter-title'>Transitórios RL e circuitos RLC no domínio do tempo</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/027-do-cc-ao-ca-a-senoide-e-seus-parametros.html",
+    "href": "capitulos/027-do-cc-ao-ca-a-senoide-e-seus-parametros.html",
+    "title": "27  Do CC ao CA: a senoide e seus parâmetros",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 5 — Fundamentos de Corrente Alternada",
+      "<span class='chapter-number'>27</span>  <span class='chapter-title'>Do CC ao CA: a senoide e seus parâmetros</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/028-valor-medio-valor-eficaz-rms-e-o-que-o-multimetro.html",
+    "href": "capitulos/028-valor-medio-valor-eficaz-rms-e-o-que-o-multimetro.html",
+    "title": "28  Valor médio, valor eficaz (RMS) e o que o multímetro realmente mede",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 5 — Fundamentos de Corrente Alternada",
+      "<span class='chapter-number'>28</span>  <span class='chapter-title'>Valor médio, valor eficaz (RMS) e o que o multímetro realmente mede</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/029-fasores-e-numeros-complexos-aplicados.html",
+    "href": "capitulos/029-fasores-e-numeros-complexos-aplicados.html",
+    "title": "29  Fasores e números complexos aplicados",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 5 — Fundamentos de Corrente Alternada",
+      "<span class='chapter-number'>29</span>  <span class='chapter-title'>Fasores e números complexos aplicados</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/030-reatancia-e-impedancia.html",
+    "href": "capitulos/030-reatancia-e-impedancia.html",
+    "title": "30  Reatância e impedância",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 5 — Fundamentos de Corrente Alternada",
+      "<span class='chapter-number'>30</span>  <span class='chapter-title'>Reatância e impedância</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/031-potencia-ativa-reativa-e-aparente.html",
+    "href": "capitulos/031-potencia-ativa-reativa-e-aparente.html",
+    "title": "31  Potência ativa, reativa e aparente",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 5 — Fundamentos de Corrente Alternada",
+      "<span class='chapter-number'>31</span>  <span class='chapter-title'>Potência ativa, reativa e aparente</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/032-fator-de-potencia-e-correcao.html",
+    "href": "capitulos/032-fator-de-potencia-e-correcao.html",
+    "title": "32  Fator de potência e correção",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 5 — Fundamentos de Corrente Alternada",
+      "<span class='chapter-number'>32</span>  <span class='chapter-title'>Fator de potência e correção</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/033-filtro-rc-passa-baixas-e-frequencia-de-corte.html",
+    "href": "capitulos/033-filtro-rc-passa-baixas-e-frequencia-de-corte.html",
+    "title": "33  Filtro RC passa-baixas e frequência de corte",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 6 — Filtros e Resposta em Frequência",
+      "<span class='chapter-number'>33</span>  <span class='chapter-title'>Filtro RC passa-baixas e frequência de corte</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/034-filtro-rc-passa-altas-e-acoplamento.html",
+    "href": "capitulos/034-filtro-rc-passa-altas-e-acoplamento.html",
+    "title": "34  Filtro RC passa-altas e acoplamento",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 6 — Filtros e Resposta em Frequência",
+      "<span class='chapter-number'>34</span>  <span class='chapter-title'>Filtro RC passa-altas e acoplamento</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/035-diagramas-de-bode-ganho-e-fase.html",
+    "href": "capitulos/035-diagramas-de-bode-ganho-e-fase.html",
+    "title": "35  Diagramas de Bode: ganho e fase",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 6 — Filtros e Resposta em Frequência",
+      "<span class='chapter-number'>35</span>  <span class='chapter-title'>Diagramas de Bode: ganho e fase</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/036-filtros-lc-e-ordem-do-filtro.html",
+    "href": "capitulos/036-filtros-lc-e-ordem-do-filtro.html",
+    "title": "36  Filtros LC e ordem do filtro",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 6 — Filtros e Resposta em Frequência",
+      "<span class='chapter-number'>36</span>  <span class='chapter-title'>Filtros LC e ordem do filtro</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/037-ressonancia-serie-e-paralela.html",
+    "href": "capitulos/037-ressonancia-serie-e-paralela.html",
+    "title": "37  Ressonância série e paralela",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 6 — Filtros e Resposta em Frequência",
+      "<span class='chapter-number'>37</span>  <span class='chapter-title'>Ressonância série e paralela</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/038-fator-de-qualidade-largura-de-banda-e-seletividade.html",
+    "href": "capitulos/038-fator-de-qualidade-largura-de-banda-e-seletividade.html",
+    "title": "38  Fator de qualidade, largura de banda e seletividade",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 6 — Filtros e Resposta em Frequência",
+      "<span class='chapter-number'>38</span>  <span class='chapter-title'>Fator de qualidade, largura de banda e seletividade</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/039-sinais-periodicos-forma-de-onda-e-ciclo-de-trabalho.html",
+    "href": "capitulos/039-sinais-periodicos-forma-de-onda-e-ciclo-de-trabalho.html",
+    "title": "39  Sinais periódicos, forma de onda e ciclo de trabalho",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 7 — Sinais, Ruído e Instrumentação",
+      "<span class='chapter-number'>39</span>  <span class='chapter-title'>Sinais periódicos, forma de onda e ciclo de trabalho</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/040-fourier-na-pratica-harmonicos-e-largura-de-banda.html",
+    "href": "capitulos/040-fourier-na-pratica-harmonicos-e-largura-de-banda.html",
+    "title": "40  Fourier na prática: harmônicos e largura de banda",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 7 — Sinais, Ruído e Instrumentação",
+      "<span class='chapter-number'>40</span>  <span class='chapter-title'>Fourier na prática: harmônicos e largura de banda</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/041-o-decibel-e-as-escalas-logaritmicas.html",
+    "href": "capitulos/041-o-decibel-e-as-escalas-logaritmicas.html",
+    "title": "41  O decibel e as escalas logarítmicas",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 7 — Sinais, Ruído e Instrumentação",
+      "<span class='chapter-number'>41</span>  <span class='chapter-title'>O decibel e as escalas logarítmicas</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/042-ruido-termico-de-disparo-e-interferencia-externa.html",
+    "href": "capitulos/042-ruido-termico-de-disparo-e-interferencia-externa.html",
+    "title": "42  Ruído: térmico, de disparo e interferência externa",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 7 — Sinais, Ruído e Instrumentação",
+      "<span class='chapter-number'>42</span>  <span class='chapter-title'>Ruído: térmico, de disparo e interferência externa</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/043-o-osciloscopio-base-de-tempo-ganho-vertical-e.html",
+    "href": "capitulos/043-o-osciloscopio-base-de-tempo-ganho-vertical-e.html",
+    "title": "43  O osciloscópio: base de tempo, ganho vertical e gatilho",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 7 — Sinais, Ruído e Instrumentação",
+      "<span class='chapter-number'>43</span>  <span class='chapter-title'>O osciloscópio: base de tempo, ganho vertical e gatilho</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/044-pontas-de-prova-compensacao-e-artefatos-de-medicao.html",
+    "href": "capitulos/044-pontas-de-prova-compensacao-e-artefatos-de-medicao.html",
+    "title": "44  Pontas de prova, compensação e artefatos de medição",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 7 — Sinais, Ruído e Instrumentação",
+      "<span class='chapter-number'>44</span>  <span class='chapter-title'>Pontas de prova, compensação e artefatos de medição</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/045-gerador-de-funcoes-e-ensaio-de-resposta-em.html",
+    "href": "capitulos/045-gerador-de-funcoes-e-ensaio-de-resposta-em.html",
+    "title": "45  Gerador de funções e ensaio de resposta em frequência",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 7 — Sinais, Ruído e Instrumentação",
+      "<span class='chapter-number'>45</span>  <span class='chapter-title'>Gerador de funções e ensaio de resposta em frequência</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/046-semicondutores-dopagem-e-a-juncao-pn.html",
+    "href": "capitulos/046-semicondutores-dopagem-e-a-juncao-pn.html",
+    "title": "46  Semicondutores, dopagem e a junção PN",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 8 — Diodos e Aplicações",
+      "<span class='chapter-number'>46</span>  <span class='chapter-title'>Semicondutores, dopagem e a junção PN</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/047-o-diodo-real-curva-queda-direta-e-modelos.html",
+    "href": "capitulos/047-o-diodo-real-curva-queda-direta-e-modelos.html",
+    "title": "47  O diodo real: curva, queda direta e modelos",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 8 — Diodos e Aplicações",
+      "<span class='chapter-number'>47</span>  <span class='chapter-title'>O diodo real: curva, queda direta e modelos</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/048-retificadores-de-meia-onda-e-de-onda-completa.html",
+    "href": "capitulos/048-retificadores-de-meia-onda-e-de-onda-completa.html",
+    "title": "48  Retificadores de meia onda e de onda completa",
+    "section": "",
+    "text": "AvisoTensão perigosa\n\n\n\nEste capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve ser executado depois de ler integralmente o Capítulo 2. (texto de aviso a escrever)\n\n\n(em elaboração)",
+    "crumbs": [
+      "Volume 8 — Diodos e Aplicações",
+      "<span class='chapter-number'>48</span>  <span class='chapter-title'>Retificadores de meia onda e de onda completa</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/049-filtragem-capacitiva-e-ondulacao.html",
+    "href": "capitulos/049-filtragem-capacitiva-e-ondulacao.html",
+    "title": "49  Filtragem capacitiva e ondulação",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 8 — Diodos e Aplicações",
+      "<span class='chapter-number'>49</span>  <span class='chapter-title'>Filtragem capacitiva e ondulação</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/050-diodo-zener-e-regulacao-por-referencia.html",
+    "href": "capitulos/050-diodo-zener-e-regulacao-por-referencia.html",
+    "title": "50  Diodo Zener e regulação por referência",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 8 — Diodos e Aplicações",
+      "<span class='chapter-number'>50</span>  <span class='chapter-title'>Diodo Zener e regulação por referência</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/051-leds-fotodiodos-e-diodos-especiais-schottky-tvs-e.html",
+    "href": "capitulos/051-leds-fotodiodos-e-diodos-especiais-schottky-tvs-e.html",
+    "title": "51  LEDs, fotodiodos e diodos especiais: Schottky, TVS e varicap",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 8 — Diodos e Aplicações",
+      "<span class='chapter-number'>51</span>  <span class='chapter-title'>LEDs, fotodiodos e diodos especiais: Schottky, TVS e varicap</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/052-o-transistor-bipolar-estrutura-e-funcionamento.html",
+    "href": "capitulos/052-o-transistor-bipolar-estrutura-e-funcionamento.html",
+    "title": "52  O transistor bipolar: estrutura e funcionamento",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 9 — Transistores Bipolares",
+      "<span class='chapter-number'>52</span>  <span class='chapter-title'>O transistor bipolar: estrutura e funcionamento</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/053-curvas-caracteristicas-e-regioes-de-operacao.html",
+    "href": "capitulos/053-curvas-caracteristicas-e-regioes-de-operacao.html",
+    "title": "53  Curvas características e regiões de operação",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 9 — Transistores Bipolares",
+      "<span class='chapter-number'>53</span>  <span class='chapter-title'>Curvas características e regiões de operação</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/054-o-bjt-como-chave-corte-saturacao-e-acionamento-de.html",
+    "href": "capitulos/054-o-bjt-como-chave-corte-saturacao-e-acionamento-de.html",
+    "title": "54  O BJT como chave: corte, saturação e acionamento de cargas",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 9 — Transistores Bipolares",
+      "<span class='chapter-number'>54</span>  <span class='chapter-title'>O BJT como chave: corte, saturação e acionamento de cargas</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/055-polarizacao-divisor-de-base-resistor-de-emissor-e.html",
+    "href": "capitulos/055-polarizacao-divisor-de-base-resistor-de-emissor-e.html",
+    "title": "55  Polarização: divisor de base, resistor de emissor e estabilidade térmica",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 9 — Transistores Bipolares",
+      "<span class='chapter-number'>55</span>  <span class='chapter-title'>Polarização: divisor de base, resistor de emissor e estabilidade térmica</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/056-emissor-comum-ganho-impedancias-e-limitacoes.html",
+    "href": "capitulos/056-emissor-comum-ganho-impedancias-e-limitacoes.html",
+    "title": "56  Emissor comum: ganho, impedâncias e limitações",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 9 — Transistores Bipolares",
+      "<span class='chapter-number'>56</span>  <span class='chapter-title'>Emissor comum: ganho, impedâncias e limitações</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/057-coletor-comum-e-base-comum.html",
+    "href": "capitulos/057-coletor-comum-e-base-comum.html",
+    "title": "57  Coletor comum e base comum",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 9 — Transistores Bipolares",
+      "<span class='chapter-number'>57</span>  <span class='chapter-title'>Coletor comum e base comum</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/058-modelo-de-pequenos-sinais-e-analise-em-ca.html",
+    "href": "capitulos/058-modelo-de-pequenos-sinais-e-analise-em-ca.html",
+    "title": "58  Modelo de pequenos sinais e análise em CA",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 9 — Transistores Bipolares",
+      "<span class='chapter-number'>58</span>  <span class='chapter-title'>Modelo de pequenos sinais e análise em CA</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/059-jfet-e-mosfet-principio-de-funcionamento.html",
+    "href": "capitulos/059-jfet-e-mosfet-principio-de-funcionamento.html",
+    "title": "59  JFET e MOSFET: princípio de funcionamento",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 10 — MOSFETs e Amplificação",
+      "<span class='chapter-number'>59</span>  <span class='chapter-title'>JFET e MOSFET: princípio de funcionamento</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/060-curvas-regiao-ohmica-e-regiao-de-saturacao.html",
+    "href": "capitulos/060-curvas-regiao-ohmica-e-regiao-de-saturacao.html",
+    "title": "60  Curvas, região ôhmica e região de saturação",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 10 — MOSFETs e Amplificação",
+      "<span class='chapter-number'>60</span>  <span class='chapter-title'>Curvas, região ôhmica e região de saturação</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/061-o-mosfet-como-chave-de-potencia-rds-on-efeito.html",
+    "href": "capitulos/061-o-mosfet-como-chave-de-potencia-rds-on-efeito.html",
+    "title": "61  O MOSFET como chave de potência: RDS(on), efeito Miller e dissipação",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 10 — MOSFETs e Amplificação",
+      "<span class='chapter-number'>61</span>  <span class='chapter-title'>O MOSFET como chave de potência: RDS(on), efeito Miller e dissipação</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/062-drivers-de-gate-e-a-comutacao-real.html",
+    "href": "capitulos/062-drivers-de-gate-e-a-comutacao-real.html",
+    "title": "62  Drivers de gate e a comutação real",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 10 — MOSFETs e Amplificação",
+      "<span class='chapter-number'>62</span>  <span class='chapter-title'>Drivers de gate e a comutação real</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/063-classes-de-amplificador-a-b-ab-c-e-d.html",
+    "href": "capitulos/063-classes-de-amplificador-a-b-ab-c-e-d.html",
+    "title": "63  Classes de amplificador: A, B, AB, C e D",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 10 — MOSFETs e Amplificação",
+      "<span class='chapter-number'>63</span>  <span class='chapter-title'>Classes de amplificador: A, B, AB, C e D</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/064-realimentacao-negativa-ganho-distorcao-e.html",
+    "href": "capitulos/064-realimentacao-negativa-ganho-distorcao-e.html",
+    "title": "64  Realimentação negativa: ganho, distorção e estabilidade",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 10 — MOSFETs e Amplificação",
+      "<span class='chapter-number'>64</span>  <span class='chapter-title'>Realimentação negativa: ganho, distorção e estabilidade</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/065-o-amp-op-ideal-e-as-regras-de-ouro.html",
+    "href": "capitulos/065-o-amp-op-ideal-e-as-regras-de-ouro.html",
+    "title": "65  O amp-op ideal e as regras de ouro",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 11 — Amplificadores Operacionais",
+      "<span class='chapter-number'>65</span>  <span class='chapter-title'>O amp-op ideal e as regras de ouro</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/066-amplificador-inversor-e-nao-inversor.html",
+    "href": "capitulos/066-amplificador-inversor-e-nao-inversor.html",
+    "title": "66  Amplificador inversor e não inversor",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 11 — Amplificadores Operacionais",
+      "<span class='chapter-number'>66</span>  <span class='chapter-title'>Amplificador inversor e não inversor</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.html",
+    "href": "capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.html",
+    "title": "67  Somador, subtrator e amplificador de instrumentação",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 11 — Amplificadores Operacionais",
+      "<span class='chapter-number'>67</span>  <span class='chapter-title'>Somador, subtrator e amplificador de instrumentação</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/068-integrador-derivador-e-fontes-de-corrente.html",
+    "href": "capitulos/068-integrador-derivador-e-fontes-de-corrente.html",
+    "title": "68  Integrador, derivador e fontes de corrente",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 11 — Amplificadores Operacionais",
+      "<span class='chapter-number'>68</span>  <span class='chapter-title'>Integrador, derivador e fontes de corrente</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.html",
+    "href": "capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.html",
+    "title": "69  O amp-op real: offset, slew rate, produto ganho-banda e saturação",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 11 — Amplificadores Operacionais",
+      "<span class='chapter-number'>69</span>  <span class='chapter-title'>O amp-op real: offset, slew rate, produto ganho-banda e saturação</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/070-comparadores-histerese-e-o-gatilho-de-schmitt.html",
+    "href": "capitulos/070-comparadores-histerese-e-o-gatilho-de-schmitt.html",
+    "title": "70  Comparadores, histerese e o gatilho de Schmitt",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 11 — Amplificadores Operacionais",
+      "<span class='chapter-number'>70</span>  <span class='chapter-title'>Comparadores, histerese e o gatilho de Schmitt</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/071-filtros-ativos-e-osciladores-wien-relaxacao-e-o-555.html",
+    "href": "capitulos/071-filtros-ativos-e-osciladores-wien-relaxacao-e-o-555.html",
+    "title": "71  Filtros ativos e osciladores: Wien, relaxação e o 555",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 11 — Amplificadores Operacionais",
+      "<span class='chapter-number'>71</span>  <span class='chapter-title'>Filtros ativos e osciladores: Wien, relaxação e o 555</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/072-transformadores-e-acoplamento-magnetico.html",
+    "href": "capitulos/072-transformadores-e-acoplamento-magnetico.html",
+    "title": "72  Transformadores e acoplamento magnético",
+    "section": "",
+    "text": "AvisoTensão perigosa\n\n\n\nEste capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve ser executado depois de ler integralmente o Capítulo 2. (texto de aviso a escrever)\n\n\n(em elaboração)",
+    "crumbs": [
+      "Volume 12 — Fontes e Gestão de Energia",
+      "<span class='chapter-number'>72</span>  <span class='chapter-title'>Transformadores e acoplamento magnético</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/073-fontes-lineares-do-transformador-ao-regulador.html",
+    "href": "capitulos/073-fontes-lineares-do-transformador-ao-regulador.html",
+    "title": "73  Fontes lineares: do transformador ao regulador",
+    "section": "",
+    "text": "AvisoTensão perigosa\n\n\n\nEste capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve ser executado depois de ler integralmente o Capítulo 2. (texto de aviso a escrever)\n\n\n(em elaboração)",
+    "crumbs": [
+      "Volume 12 — Fontes e Gestão de Energia",
+      "<span class='chapter-number'>73</span>  <span class='chapter-title'>Fontes lineares: do transformador ao regulador</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.html",
+    "href": "capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.html",
+    "title": "74  Reguladores integrados: série, LDO e dissipação térmica",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 12 — Fontes e Gestão de Energia",
+      "<span class='chapter-number'>74</span>  <span class='chapter-title'>Reguladores integrados: série, LDO e dissipação térmica</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.html",
+    "href": "capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.html",
+    "title": "75  Fontes chaveadas: buck, boost e buck-boost",
+    "section": "",
+    "text": "AvisoTensão perigosa\n\n\n\nEste capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve ser executado depois de ler integralmente o Capítulo 2. (texto de aviso a escrever)\n\n\n(em elaboração)",
+    "crumbs": [
+      "Volume 12 — Fontes e Gestão de Energia",
+      "<span class='chapter-number'>75</span>  <span class='chapter-title'>Fontes chaveadas: buck, boost e buck-boost</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/076-baterias-celulas-e-circuitos-de-carga.html",
+    "href": "capitulos/076-baterias-celulas-e-circuitos-de-carga.html",
+    "title": "76  Baterias, células e circuitos de carga",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 12 — Fontes e Gestão de Energia",
+      "<span class='chapter-number'>76</span>  <span class='chapter-title'>Baterias, células e circuitos de carga</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/077-aterramento-malhas-de-terra-desacoplamento-e.html",
+    "href": "capitulos/077-aterramento-malhas-de-terra-desacoplamento-e.html",
+    "title": "77  Aterramento, malhas de terra, desacoplamento e proteção",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 12 — Fontes e Gestão de Energia",
+      "<span class='chapter-number'>77</span>  <span class='chapter-title'>Aterramento, malhas de terra, desacoplamento e proteção</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/078-sensores-resistivos-capacitivos-e-ativos.html",
+    "href": "capitulos/078-sensores-resistivos-capacitivos-e-ativos.html",
+    "title": "78  Sensores: resistivos, capacitivos e ativos",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 13 — Interface com o Mundo Físico",
+      "<span class='chapter-number'>78</span>  <span class='chapter-title'>Sensores: resistivos, capacitivos e ativos</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/079-condicionamento-de-sinal-e-a-cadeia-de-medicao.html",
+    "href": "capitulos/079-condicionamento-de-sinal-e-a-cadeia-de-medicao.html",
+    "title": "79  Condicionamento de sinal e a cadeia de medição",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 13 — Interface com o Mundo Físico",
+      "<span class='chapter-number'>79</span>  <span class='chapter-title'>Condicionamento de sinal e a cadeia de medição</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/080-conversao-analogico-digital-amostragem-quantizacao.html",
+    "href": "capitulos/080-conversao-analogico-digital-amostragem-quantizacao.html",
+    "title": "80  Conversão analógico-digital: amostragem, quantização e aliasing",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 13 — Interface com o Mundo Físico",
+      "<span class='chapter-number'>80</span>  <span class='chapter-title'>Conversão analógico-digital: amostragem, quantização e aliasing</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/081-conversao-digital-analogica-e-pwm.html",
+    "href": "capitulos/081-conversao-digital-analogica-e-pwm.html",
+    "title": "81  Conversão digital-analógica e PWM",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 13 — Interface com o Mundo Físico",
+      "<span class='chapter-number'>81</span>  <span class='chapter-title'>Conversão digital-analógica e PWM</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/082-atuadores-reles-solenoides-e-motores-cc.html",
+    "href": "capitulos/082-atuadores-reles-solenoides-e-motores-cc.html",
+    "title": "82  Atuadores: relés, solenoides e motores CC",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 13 — Interface com o Mundo Físico",
+      "<span class='chapter-number'>82</span>  <span class='chapter-title'>Atuadores: relés, solenoides e motores CC</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/083-soldagem-tecnica-ferramentas-e-retrabalho.html",
+    "href": "capitulos/083-soldagem-tecnica-ferramentas-e-retrabalho.html",
+    "title": "83  Soldagem: técnica, ferramentas e retrabalho",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 14 — Da Bancada ao Circuito Real",
+      "<span class='chapter-number'>83</span>  <span class='chapter-title'>Soldagem: técnica, ferramentas e retrabalho</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/084-do-esquematico-ao-layout-de-pcb.html",
+    "href": "capitulos/084-do-esquematico-ao-layout-de-pcb.html",
+    "title": "84  Do esquemático ao layout de PCB",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 14 — Da Bancada ao Circuito Real",
+      "<span class='chapter-number'>84</span>  <span class='chapter-title'>Do esquemático ao layout de PCB</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/085-fabricacao-montagem-e-componentes-smd.html",
+    "href": "capitulos/085-fabricacao-montagem-e-componentes-smd.html",
+    "title": "85  Fabricação, montagem e componentes SMD",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 14 — Da Bancada ao Circuito Real",
+      "<span class='chapter-number'>85</span>  <span class='chapter-title'>Fabricação, montagem e componentes SMD</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/086-integridade-de-sinal-emi-e-compatibilidade.html",
+    "href": "capitulos/086-integridade-de-sinal-emi-e-compatibilidade.html",
+    "title": "86  Integridade de sinal, EMI e compatibilidade eletromagnética",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 14 — Da Bancada ao Circuito Real",
+      "<span class='chapter-number'>86</span>  <span class='chapter-title'>Integridade de sinal, EMI e compatibilidade eletromagnética</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/087-depuracao-de-placa-metodo-medicao-e-falhas-tipicas.html",
+    "href": "capitulos/087-depuracao-de-placa-metodo-medicao-e-falhas-tipicas.html",
+    "title": "87  Depuração de placa: método, medição e falhas típicas",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 14 — Da Bancada ao Circuito Real",
+      "<span class='chapter-number'>87</span>  <span class='chapter-title'>Depuração de placa: método, medição e falhas típicas</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/088-do-analogico-ao-digital-niveis-margens-de-ruido-e-o.html",
+    "href": "capitulos/088-do-analogico-ao-digital-niveis-margens-de-ruido-e-o.html",
+    "title": "88  Do analógico ao digital: níveis, margens de ruído e o sinal binário",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 15 — Lógica Digital: da Chave à Porta",
+      "<span class='chapter-number'>88</span>  <span class='chapter-title'>Do analógico ao digital: níveis, margens de ruído e o sinal binário</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/089-sistemas-de-numeracao-e-representacao-binaria.html",
+    "href": "capitulos/089-sistemas-de-numeracao-e-representacao-binaria.html",
+    "title": "89  Sistemas de numeração e representação binária",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 15 — Lógica Digital: da Chave à Porta",
+      "<span class='chapter-number'>89</span>  <span class='chapter-title'>Sistemas de numeração e representação binária</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/090-algebra-booleana-e-as-portas-fundamentais.html",
+    "href": "capitulos/090-algebra-booleana-e-as-portas-fundamentais.html",
+    "title": "90  Álgebra booleana e as portas fundamentais",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 15 — Lógica Digital: da Chave à Porta",
+      "<span class='chapter-number'>90</span>  <span class='chapter-title'>Álgebra booleana e as portas fundamentais</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/091-portas-com-diodos-portas-com-transistores-e-a.html",
+    "href": "capitulos/091-portas-com-diodos-portas-com-transistores-e-a.html",
+    "title": "91  Portas com diodos, portas com transistores e a família TTL",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 15 — Lógica Digital: da Chave à Porta",
+      "<span class='chapter-number'>91</span>  <span class='chapter-title'>Portas com diodos, portas com transistores e a família TTL</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/092-a-familia-cmos-funcionamento-consumo-e-interface.html",
+    "href": "capitulos/092-a-familia-cmos-funcionamento-consumo-e-interface.html",
+    "title": "92  A família CMOS: funcionamento, consumo e interface entre famílias",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 15 — Lógica Digital: da Chave à Porta",
+      "<span class='chapter-number'>92</span>  <span class='chapter-title'>A família CMOS: funcionamento, consumo e interface entre famílias</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/093-circuitos-combinacionais-multiplexadores.html",
+    "href": "capitulos/093-circuitos-combinacionais-multiplexadores.html",
+    "title": "93  Circuitos combinacionais: multiplexadores, decodificadores e comparadores",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 15 — Lógica Digital: da Chave à Porta",
+      "<span class='chapter-number'>93</span>  <span class='chapter-title'>Circuitos combinacionais: multiplexadores, decodificadores e comparadores</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/094-simplificacao-formas-canonicas-e-mapas-de-karnaugh.html",
+    "href": "capitulos/094-simplificacao-formas-canonicas-e-mapas-de-karnaugh.html",
+    "title": "94  Simplificação: formas canônicas e mapas de Karnaugh",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 15 — Lógica Digital: da Chave à Porta",
+      "<span class='chapter-number'>94</span>  <span class='chapter-title'>Simplificação: formas canônicas e mapas de Karnaugh</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/095-aritmetica-binaria-em-hardware-somadores-e-a-ula.html",
+    "href": "capitulos/095-aritmetica-binaria-em-hardware-somadores-e-a-ula.html",
+    "title": "95  Aritmética binária em hardware: somadores e a ULA elementar",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 15 — Lógica Digital: da Chave à Porta",
+      "<span class='chapter-number'>95</span>  <span class='chapter-title'>Aritmética binária em hardware: somadores e a ULA elementar</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/096-realimentacao-digital-o-latch-sr.html",
+    "href": "capitulos/096-realimentacao-digital-o-latch-sr.html",
+    "title": "96  Realimentação digital: o latch SR",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 16 — Sequencial, Memória e a Ponte para o Computador",
+      "<span class='chapter-number'>96</span>  <span class='chapter-title'>Realimentação digital: o latch SR</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/097-flip-flops-d-e-jk-e-o-conceito-de-borda.html",
+    "href": "capitulos/097-flip-flops-d-e-jk-e-o-conceito-de-borda.html",
+    "title": "97  Flip-flops D e JK e o conceito de borda",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 16 — Sequencial, Memória e a Ponte para o Computador",
+      "<span class='chapter-number'>97</span>  <span class='chapter-title'>Flip-flops D e JK e o conceito de borda</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/098-o-clock-temporizacao-setup-e-hold.html",
+    "href": "capitulos/098-o-clock-temporizacao-setup-e-hold.html",
+    "title": "98  O clock, temporização, setup e hold",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 16 — Sequencial, Memória e a Ponte para o Computador",
+      "<span class='chapter-number'>98</span>  <span class='chapter-title'>O clock, temporização, setup e hold</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/099-registradores-e-deslocadores.html",
+    "href": "capitulos/099-registradores-e-deslocadores.html",
+    "title": "99  Registradores e deslocadores",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 16 — Sequencial, Memória e a Ponte para o Computador",
+      "<span class='chapter-number'>99</span>  <span class='chapter-title'>Registradores e deslocadores</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/100-contadores-sincronos-e-assincronos.html",
+    "href": "capitulos/100-contadores-sincronos-e-assincronos.html",
+    "title": "100  Contadores síncronos e assíncronos",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 16 — Sequencial, Memória e a Ponte para o Computador",
+      "<span class='chapter-number'>100</span>  <span class='chapter-title'>Contadores síncronos e assíncronos</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/101-maquinas-de-estado-finito-moore-e-mealy.html",
+    "href": "capitulos/101-maquinas-de-estado-finito-moore-e-mealy.html",
+    "title": "101  Máquinas de estado finito: Moore e Mealy",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 16 — Sequencial, Memória e a Ponte para o Computador",
+      "<span class='chapter-number'>101</span>  <span class='chapter-title'>Máquinas de estado finito: Moore e Mealy</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/102-memorias-celula-sram-dram-e-nao-volateis.html",
+    "href": "capitulos/102-memorias-celula-sram-dram-e-nao-volateis.html",
+    "title": "102  Memórias: célula SRAM, DRAM e não voláteis",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 16 — Sequencial, Memória e a Ponte para o Computador",
+      "<span class='chapter-number'>102</span>  <span class='chapter-title'>Memórias: célula SRAM, DRAM e não voláteis</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/103-logica-programavel-cpld-fpga-e-a-descricao-de.html",
+    "href": "capitulos/103-logica-programavel-cpld-fpga-e-a-descricao-de.html",
+    "title": "103  Lógica programável: CPLD, FPGA e a descrição de hardware",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 16 — Sequencial, Memória e a Ponte para o Computador",
+      "<span class='chapter-number'>103</span>  <span class='chapter-title'>Lógica programável: CPLD, FPGA e a descrição de hardware</span>"
+    ]
+  },
+  {
+    "objectID": "capitulos/104-da-porta-logica-ao-processador-a-fronteira-com-a.html",
+    "href": "capitulos/104-da-porta-logica-ao-processador-a-fronteira-com-a.html",
+    "title": "104  Da porta lógica ao processador: a fronteira com a arquitetura",
+    "section": "",
+    "text": "(em elaboração)",
+    "crumbs": [
+      "Volume 16 — Sequencial, Memória e a Ponte para o Computador",
+      "<span class='chapter-number'>104</span>  <span class='chapter-title'>Da porta lógica ao processador: a fronteira com a arquitetura</span>"
+    ]
+  }
+]
