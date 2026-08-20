@@ -12,6 +12,8 @@ book:
   date: today
   date-format: "DD/MM/YYYY"
   search: true
+  repo-url: https://github.com/VitorMattosDev/manual-eletronica
+  repo-branch: main
   repo-actions: [edit, issue]
   page-footer:
     left: "Manual de Eletrônica"

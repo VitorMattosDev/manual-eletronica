@@ -162,6 +162,12 @@ commit `cap NNN: <título>` com o status do `ROADMAP.md` atualizado **no mesmo c
 **Validação rápida** (sem abrir o HTML): contar `<svg` no `_book` contra o número
 de blocos `{.tikz}` nos `.qmd`; `grep` por `?@` e `[?]` órfãos.
 
+**Verificação visual das figuras** (capítulo com figura, antes do commit):
+`python figuras/verificar-figuras.py capitulos/NNN-....qmd` → gera um PNG com
+todas as figuras do capítulo, compiladas com o preâmbulo real. Contar `<svg`
+prova que a figura saiu, **nunca** que ela está certa: rótulo sobreposto, seta
+invertida e polaridade trocada passam ilesos por toda a validação textual.
+
 **Checklist antes de cada push:**
 
 1. `quarto render --to html` (livro inteiro)
@@ -185,6 +191,12 @@ e nesse caso **relatar** em vez de contornar.
 
 - Commits no Windows: `-m "..."` simples. Nunca here-string do PowerShell
   (`@'...'@`) dentro do Bash — o `@` vaza para a mensagem.
+- **Heredoc do Bash converte `\\` em `\` em silêncio.** Nunca escrever `.tex`,
+  `.qmd` ou script Python com `\\` por `cat > arquivo <<'EOF'`. O estrago é
+  invisível e o erro do LaTeX aponta para o lugar errado (`\begin` virando
+  `U+0008`, "Runaway argument" acusando pacote inocente). Conteúdo com barra
+  dupla vai pela ferramenta Write ou por script Python em arquivo. Barra simples
+  (`\draw`, `\usepackage`) sobrevive.
 - A ferramenta Write exige Read prévio se o arquivo foi alterado por fora
   (bash/heredoc). Não misturar heredoc com ferramentas de arquivo sem Read no meio.
 - Ignorar sem investigar: `LF will be replaced by CRLF`; "Node.js 20 is deprecated".

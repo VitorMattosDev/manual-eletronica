@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 0/104**
+**Progresso: 1/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -16,7 +16,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ### Volume 1 — A Bancada e o Método
 
-- [ ] 001 — O que é eletrônica e o que este manual cobre — `capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.qmd`
+- [x] 001 — O que é eletrônica e o que este manual cobre — `capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.qmd`
 - [ ] 002 — Segurança elétrica: choque, arco, capacitores carregados e a rede — `capitulos/002-seguranca-eletrica-choque-arco-capacitores.qmd`
 - [ ] 003 — Grandezas, unidades e ordens de grandeza — `capitulos/003-grandezas-unidades-e-ordens-de-grandeza.qmd`
 - [ ] 004 — O multímetro: tensão, corrente, resistência e continuidade — `capitulos/004-o-multimetro-tensao-corrente-resistencia-e.qmd`

@@ -1,0 +1,79 @@
+---
+title: "Smoke test das quatro categorias de figura"
+---
+
+## 1. circuitikz — esquemático
+
+::: {#fig-smoke-circuito}
+```{.tikz}
+%%| filename: smoke-circuito
+%%| alt: Divisor de tensão com dois resistores alimentado por fonte de 9 V.
+\begin{circuitikz}[american, scale=1.0]
+  \draw (0,0) to[battery1, l=$9\,\mathrm{V}$] (0,3);
+  \draw (0,3) -- (3,3) to[R=$R_1$, a=$10\,\mathrm{k}\Omega$] (3,1.5)
+        to[R=$R_2$, a=$4{,}7\,\mathrm{k}\Omega$] (3,0) -- (0,0);
+  \draw (3,1.5) to[short, -o] (4.5,1.5) node[right]{$V_\mathrm{out}$};
+  \node[ground] at (0,0) {};
+\end{circuitikz}
+```
+
+Divisor de tensão resistivo.
+:::
+
+## 2. tikz-timing — cronograma digital
+
+::: {#fig-smoke-timing}
+```{.tikz}
+%%| filename: smoke-timing
+%%| alt: Cronograma de clock, sinal de dado e saída registrada.
+\begin{tikztimingtable}[timing/wscale=1.4]
+  CLK  & 4{C}      \\
+  D    & LHHL LLHH \\
+  Q    & LLHH HHLL \\
+\end{tikztimingtable}
+```
+
+Cronograma de um flip-flop D.
+:::
+
+## 3. circuits.logic.US — porta lógica
+
+::: {#fig-smoke-porta}
+```{.tikz}
+%%| filename: smoke-porta
+%%| alt: Porta AND de duas entradas seguida de inversor.
+\begin{tikzpicture}[logica]
+  \node[and gate, inputs={nn}] (A) at (0,0) {};
+  \node[not gate] (N) at (2.4,0) {};
+  \draw (A.input 1) -- ++(-0.9,0) node[left]{$a$};
+  \draw (A.input 2) -- ++(-0.9,0) node[left]{$b$};
+  \draw (A.output) -- (N.input);
+  \draw (N.output) -- ++(0.9,0) node[right]{$\overline{a\cdot b}$};
+\end{tikzpicture}
+```
+
+Porta AND seguida de inversor — equivale a um NAND.
+:::
+
+## 4. pgfplots — curva característica
+
+::: {#fig-smoke-curva}
+```{.tikz}
+%%| filename: smoke-curva
+%%| alt: Curva exponencial de corrente do diodo em função da tensão direta.
+\begin{tikzpicture}
+\begin{axis}[
+  width=9cm, height=6cm,
+  xlabel={$V_D$ (V)}, ylabel={$I_D$ (mA)},
+  xmin=0, xmax=0.8, ymin=0, ymax=60,
+  axis lines=left, grid=major, grid style={manualgray!30},
+]
+\addplot[curva, domain=0:0.78, samples=200]
+  {50*exp((x-0.75)/0.0435)};
+\addplot[auxiliar] coordinates {(0.7,0) (0.7,60)};
+\end{axis}
+\end{tikzpicture}
+```
+
+Curva $I_D \times V_D$ de um diodo de silício.
+:::

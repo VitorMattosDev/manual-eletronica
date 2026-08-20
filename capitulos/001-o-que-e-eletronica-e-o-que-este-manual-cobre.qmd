@@ -1,3 +1,463 @@
 # O que é eletrônica e o que este manual cobre {#sec-cap-001}
 
-*(em elaboração)*
+Quase todo curso de eletrônica começa pela lei de Ohm. Este começa uma casa antes,
+por uma pergunta que raramente é feita em voz alta: **o que exatamente distingue
+eletrônica de eletricidade?** A resposta não é acadêmica. Ela decide o que entra
+neste livro, o que fica de fora, e por que o último capítulo para exatamente onde
+para.
+
+## Eletricidade transporta energia; eletrônica transporta decisão {#sec-001-fronteira}
+
+Um chuveiro elétrico e um rádio usam a mesma física. Elétrons se movem, campos se
+estabelecem, energia se dissipa. A diferença está no que cada um faz com esse
+movimento.
+
+No chuveiro, a corrente **é** o produto. Ela existe para virar calor, e o projeto
+inteiro se resume a entregar potência com segurança. Ninguém liga para o formato
+da corrente ao longo do tempo — só para quanta energia ela deposita na resistência.
+
+No rádio, a corrente é o **veículo**. O que interessa é o desenho dela no tempo:
+a amplitude que sobe e desce, o instante em que muda, a frequência que carrega. A
+energia é apenas o custo de manter esse desenho de pé. Um rádio que consome
+30 W e reproduz ruído falhou; um que consome 0,5 W e reproduz música funcionou.
+
+Eletrônica é o ofício de **fazer um fluxo de carga carregar informação e obedecer a
+comandos**. Eletricidade é o ofício de entregar energia. Os dois campos usam a mesma
+lei de Ohm, o mesmo multímetro, os mesmos condutores — e quase nenhuma das mesmas
+prioridades.
+
+## O componente que define o ofício {#sec-001-controle}
+
+Se eletrônica é controle, existe uma peça sem a qual ela não existiria: o
+**dispositivo de controle**, um componente em que um sinal fraco governa um fluxo
+forte.
+
+::: {#fig-controle-eletronica}
+
+```{.tikz}
+%%| filename: 001-controle-eletronica
+%%| alt: Diagrama conceitual: um fluxo de energia atravessa um dispositivo de controle, que é comandado por um sinal fraco vindo de cima.
+
+\begin{tikzpicture}[font=\small]
+  % fluxo de energia (grosso) entrando e saindo
+  \draw[manualblue!70, line width=7pt, -{Stealth[length=5mm,width=6mm]}]
+        (-3.6,0) -- (-1.15,0);
+  \draw[manualblue!70, line width=7pt, -{Stealth[length=5mm,width=6mm]}]
+        (1.15,0) -- (3.6,0);
+
+  % dispositivo
+  \draw[thick, fill=white, rounded corners=3pt]
+        (-1.15,-1.05) rectangle (1.15,1.05);
+  \node[align=center] at (0,0) {dispositivo\\de controle};
+
+  % sinal de comando (fino)
+  \draw[manualred, -{Stealth[length=3mm]}, very thick] (0,2.6) -- (0,1.05);
+  \node[manualred, above, align=center, font=\small] at (0,2.6)
+       {sinal de comando\\\emph{(fraco, carrega a informação)}};
+
+  \node[below, align=center, font=\footnotesize, manualgray] at (-2.4,-0.35)
+       {energia bruta\\da fonte};
+  \node[below, align=center, font=\footnotesize, manualgray] at (2.4,-0.35)
+       {energia moldada\\na carga};
+\end{tikzpicture}
+```
+
+A ideia central da eletrônica: um sinal fraco comanda um fluxo forte. A válvula
+fazia isso em 1906; o transistor faz isso desde 1947, e é por isso que ele cabe
+num chip.
+
+:::
+
+Esse componente já foi uma válvula de vidro aquecida a 200 °C consumindo alguns
+watts só para existir. Hoje é um transistor de alguns nanômetros, e há dezenas de
+bilhões deles num processador. A física mudou por completo; a função não mudou
+nada.
+
+Vale registrar a consequência prática: **tudo o mais neste livro existe para servir
+esse componente**. Resistores definem em que ponto ele opera. Capacitores seguram
+a tensão de alimentação quando ele chaveia. Fontes entregam energia estável para
+ele. Filtros limpam o sinal antes e depois dele. Se em algum momento um capítulo
+parecer desconectado, a pergunta que reconecta é sempre a mesma: *isso aqui está
+alimentando, polarizando, protegendo ou limpando o caminho de qual dispositivo de
+controle?*
+
+## Analógico e digital são a mesma física, disciplinas diferentes {#sec-001-analogico-digital}
+
+Uma divisão que confunde muita gente: não existem "circuitos analógicos" e
+"circuitos digitais" como duas físicas separadas. Existe **uma** física — tensões
+e correntes contínuas no tempo — e duas maneiras de interpretá-la.
+
+No modo analógico, o valor da tensão **é** a informação. Se o sensor entrega
+1,84 V, a grandeza medida vale 1,84 V de alguma coisa, e um erro de 20 mV é um erro
+de 20 mV no resultado.
+
+No modo digital, o valor exato da tensão é **descartado de propósito**. Combina-se
+que qualquer coisa abaixo de um limiar significa 0 e qualquer coisa acima de outro
+limiar significa 1. Entre os dois limiares existe uma faixa proibida, que o circuito
+atravessa depressa e onde nunca deve descansar.
+
+::: {#fig-niveis-logicos}
+
+```{.tikz}
+%%| filename: 001-niveis-logicos
+%%| alt: Sinal contínuo no tempo com duas faixas destacadas, mostrando os limiares de nível baixo e nível alto e a faixa proibida entre eles.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=11cm, height=6.2cm,
+  xlabel={tempo}, ylabel={tensão (V)},
+  xmin=0, xmax=10, ymin=0, ymax=5,
+  axis lines=left,
+  xtick=\empty, ytick={0,1.5,3.5,5},
+  yticklabels={$0$, $1{,}5$, $3{,}5$, $5$},
+  every axis y label/.style={at={(ticklabel* cs:1.0)}, anchor=south, yshift=2pt},
+]
+  % faixas
+  \addplot[draw=none, fill=manualgreen!12, forget plot]
+    coordinates {(0,0) (10,0) (10,1.5) (0,1.5)} \closedcycle;
+  \addplot[draw=none, fill=manualgreen!12, forget plot]
+    coordinates {(0,3.5) (10,3.5) (10,5) (0,5)} \closedcycle;
+  \addplot[draw=none, fill=manualred!10, forget plot]
+    coordinates {(0,1.5) (10,1.5) (10,3.5) (0,3.5)} \closedcycle;
+
+  \addplot[auxiliar, forget plot] coordinates {(0,1.5) (10,1.5)};
+  \addplot[auxiliar, forget plot] coordinates {(0,3.5) (10,3.5)};
+
+  \addplot[curva, domain=0:10, samples=300]
+    {2.5 + 2.3*sin(deg(1.15*x))};
+
+  \node[font=\footnotesize, manualgray, anchor=west] at (axis cs:0.2,0.7)  {nível 0};
+  \node[font=\footnotesize, manualred,  anchor=west] at (axis cs:0.2,2.5)  {faixa proibida};
+  \node[font=\footnotesize, manualgray, anchor=west] at (axis cs:0.2,4.3)  {nível 1};
+\end{axis}
+\end{tikzpicture}
+```
+
+O mesmo sinal contínuo lido sob a disciplina digital. Tudo abaixo de 1,5 V é 0,
+tudo acima de 3,5 V é 1, e a faixa do meio é território que o circuito atravessa,
+nunca habita. Os limiares mostrados são os de uma família CMOS alimentada em 5 V.
+
+:::
+
+Jogar fora informação parece desperdício, e é — em troca de uma propriedade
+extraordinária: **ruído que não chega a cruzar o limiar simplesmente desaparece**.
+Um sinal analógico que passa por dez estágios acumula o ruído dos dez. Um sinal
+digital que passa por dez estágios sai idêntico ao que entrou, desde que cada
+estágio tenha margem suficiente. É toda a razão pela qual um computador consegue
+ter bilhões de componentes em série sem virar ruído.
+
+Os dois modos convivem no mesmo circuito e frequentemente na mesma placa. Por isso
+este manual não separa "livro analógico" e "livro digital": ele constrói o
+analógico primeiro porque o digital é feito de peças analógicas operadas com
+disciplina.
+
+## O arco deste manual {#sec-001-arco}
+
+O caminho de 104 capítulos tem cinco fases, e elas não são temas soltos — cada uma
+é pré-requisito da seguinte.
+
+::: {#fig-arco-manual}
+
+```{.tikz}
+%%| filename: 001-arco-manual
+%%| alt: Cadeia horizontal com as cinco fases do manual, da corrente contínua até a eletrônica digital.
+
+\begin{tikzpicture}[
+  font=\footnotesize,
+  fase/.style={draw=manualgray, thick, rounded corners=2.5pt, fill=manualblue!8,
+               text width=1.85cm, align=center, minimum height=1.5cm, inner sep=3pt},
+  seta/.style={-{Stealth[length=2.5mm]}, thick, manualgray},
+]
+  \node[fase] (f1) at (0,0)    {\textbf{1}\\Fundamentos elétricos};
+  \node[fase] (f2) at (2.5,0)  {\textbf{2}\\Corrente alternada e sinais};
+  \node[fase] (f3) at (5.0,0)  {\textbf{3}\\Semicondutores e analógica};
+  \node[fase] (f4) at (7.5,0)  {\textbf{4}\\Energia, interface e construção};
+  \node[fase] (f5) at (10.0,0) {\textbf{5}\\Eletrônica digital};
+
+  \draw[seta] (f1) -- (f2);
+  \draw[seta] (f2) -- (f3);
+  \draw[seta] (f3) -- (f4);
+  \draw[seta] (f4) -- (f5);
+
+  \node[below=0.3cm of f1, font=\scriptsize, manualgray] {001–026};
+  \node[below=0.3cm of f2, font=\scriptsize, manualgray] {027–045};
+  \node[below=0.3cm of f3, font=\scriptsize, manualgray] {046–071};
+  \node[below=0.3cm of f4, font=\scriptsize, manualgray] {072–087};
+  \node[below=0.3cm of f5, font=\scriptsize, manualgray] {088–104};
+\end{tikzpicture}
+```
+
+As cinco fases do manual. A ordem é de dependência, não de preferência: cada fase
+usa ferramentas construídas na anterior.
+
+:::
+
+Em uma frase cada:
+
+- **Fase 1 — Fundamentos elétricos.** Corrente contínua, as leis de Kirchhoff,
+  análise de circuitos, capacitores e indutores. É onde se aprende a *calcular*
+  antes de ligar.
+- **Fase 2 — Corrente alternada e sinais.** Senoides, impedância, filtros,
+  resposta em frequência e os instrumentos que enxergam tudo isso. É onde o
+  circuito deixa de ser um número e vira uma forma no tempo.
+- **Fase 3 — Semicondutores e analógica.** Diodos, transistores bipolares,
+  MOSFETs e amplificadores operacionais. É onde o dispositivo de controle
+  finalmente aparece de corpo inteiro.
+- **Fase 4 — Energia, interface e construção.** Fontes, sensores, conversão
+  A/D e D/A, soldagem e placa. É onde o circuito sai da protoboard.
+- **Fase 5 — Eletrônica digital.** Níveis lógicos, portas, combinacional,
+  sequencial, memória e máquinas de estado. É onde a disciplina digital é
+  construída a partir dos transistores da Fase 3.
+
+## Onde este manual começa e onde ele para {#sec-001-limites}
+
+Duas fronteiras foram desenhadas de propósito, e conhecê-las evita procurar aqui
+o que está deliberadamente em outro lugar.
+
+### A fronteira de baixo: física deriva, eletrônica dimensiona
+
+O *Manual de Física* demonstra a lei de Ohm a partir do modelo de condução: por
+que a corrente é proporcional ao campo, o que o tempo médio entre colisões tem a
+ver com a resistividade, de onde vem a dependência com a temperatura.
+
+Aqui a lei de Ohm é **ferramenta**, não teorema. A pergunta deste livro não é *por
+que $V = R\,I$*, e sim: qual resistor comprar, de que série, com que tolerância,
+com que potência nominal, e o que acontece com o circuito quando o valor calculado
+de 466,7 Ω vira o valor comercial de 470 Ω. Nós derivamos o suficiente para não
+aplicar fórmula às cegas — e paramos aí.
+
+### A fronteira de cima: a porta lógica e a máquina de estados
+
+O manual termina na **porta lógica** e na **máquina de estados finita**. Do
+transistor até o flip-flop, do flip-flop até o contador e a máquina de estados:
+tudo isso é eletrônica, e está aqui.
+
+O que vem depois — unidade lógica e aritmética completa, banco de registradores,
+conjunto de instruções, pipeline, cache, hierarquia de memória — é *arquitetura de
+computadores*, assunto do manual seguinte da série. O capítulo 104 é a dobradiça
+explícita: ele mostra a porta lógica de um lado e o processador do outro, e entrega
+o bastão.
+
+A separação não é burocrática. Da porta lógica para baixo, a pergunta é sempre
+física: quanta corrente, quanto atraso, quanta margem de ruído, quanto calor. Da
+porta lógica para cima, a pergunta vira organizacional: quantos bits, quantos
+ciclos, qual instrução. São dois ofícios, e misturá-los num livro só produz
+capítulos rasos dos dois lados.
+
+## Como este manual é usado {#sec-001-uso}
+
+### As duas seções fixas
+
+Todo capítulo, sem exceção, termina com duas seções:
+
+**🧪 Laboratório** é um roteiro executável, sempre precedido da lista de material.
+A lista vem antes do roteiro por um motivo prático: você precisa saber, em dez
+segundos, se consegue fazer o experimento hoje ou se precisa comprar alguma coisa.
+Quando o experimento exigir instrumento caro, há uma variante simulada marcada
+como tal — que é um plano B honesto, não um substituto.
+
+**🔥 Onde Queima** é o inventário de modos de falha do assunto: o que destrói o
+componente, o que estoura o cálculo, onde o instrumento mente. Nos capítulos mais
+teóricos, é o erro de raciocínio clássico — confundir valor de pico com eficaz,
+ignorar a impedância da fonte, esquecer a carga da ponta de prova. Essa seção
+existe porque a maior parte do que se aprende em eletrônica se aprende quebrando
+coisas, e sai mais barato aprender lendo.
+
+### A bancada mínima
+
+Multímetro, protoboard, fonte ajustável, ferro de solda e um kit de componentes
+passivos e discretos cobrem confortavelmente os Volumes 1 a 6. A partir do
+Volume 7 o osciloscópio passa a fazer diferença real, e a partir daí cada
+laboratório que precisar dele traz a alternativa: osciloscópio USB barato, entrada
+de placa de som para sinais de áudio, ou simulação em ngspice/LTspice e Falstad.
+
+### Valores comerciais: a régua deste livro
+
+Uma regra vale para todo cálculo, figura e exercício daqui em diante: **componente
+tem valor comercial**. Resistores saem das séries E12 e E24; capacitores, das
+séries E6 e E12. Não existe resistor de 3,7 kΩ nem capacitor de 137 nF na gaveta
+de ninguém.
+
+Isso muda a forma de calcular. O cálculo teórico dá um número; o projeto real dá o
+valor comercial mais próximo **e recalcula o efeito do arredondamento**. Quando a
+tolerância importar — e ela importa mais vezes do que se imagina —, a faixa aparece
+escrita. Metade do ofício de projetar está exatamente aí, e é a metade que a
+maioria dos livros pula.
+
+## 🧪 Laboratório {#sec-001-lab}
+
+**O primeiro circuito dimensionado.** O objetivo não é acender um LED — é percorrer,
+num circuito de três peças, o ciclo completo que o livro inteiro vai repetir:
+calcular, arredondar para o valor comercial, recalcular, montar, medir e comparar.
+
+### Material
+
+::: {.lab-material}
+- 1 pilha (bateria) de 9 V, com clipe de conexão
+- 1 LED vermelho de 5 mm, difuso ou transparente
+- 1 resistor de 470 Ω, 1/4 W, tolerância 5 %
+- 1 resistor de 1 kΩ, 1/4 W, tolerância 5 % (para a segunda parte)
+- 1 protoboard
+- Fios jumper (3 unidades bastam)
+- Multímetro digital comum
+:::
+
+### Passo 1 — Calcular antes de ligar
+
+Um LED não é um resistor: ele tem uma **tensão direta** aproximadamente fixa e a
+corrente através dele precisa ser limitada por fora. Para um LED vermelho de 5 mm,
+adote $V_F \approx 2{,}0$ V, e escolha uma corrente de trabalho de 15 mA — bem dentro
+do que o encapsulamento aguenta e mais que suficiente para brilho pleno.
+
+A tensão que sobra para o resistor é $9{,}0 - 2{,}0 = 7{,}0$ V, e portanto
+
+$$
+R = \frac{7{,}0\ \text{V}}{0{,}015\ \text{A}} = 466{,}7\ \Omega .
+$$
+
+### Passo 2 — Arredondar e recalcular
+
+466,7 Ω não existe para comprar. O vizinho comercial é **470 Ω**, que está tanto
+na série E12 quanto na E24. Com ele:
+
+$$
+I = \frac{7{,}0\ \text{V}}{470\ \Omega} = 14{,}9\ \text{mA}.
+$$
+
+A corrente caiu 0,7 % em relação ao alvo — diferença que nenhum olho percebe. Agora
+a verificação que não pode ser pulada, a dissipação no resistor:
+
+$$
+P_R = I^{2} R = (0{,}0149)^{2} \times 470 = 104\ \text{mW}.
+$$
+
+Um resistor de 1/4 W dissipa 250 mW, então ele opera a 42 % da capacidade: folga
+confortável, aquecimento imperceptível. Um de 1/8 W (125 mW) também *passaria*, a
+83 % da capacidade — e passaria quente, envelhecendo mais rápido. Essa é a diferença
+entre "funciona" e "está bem dimensionado".
+
+E a tolerância: 470 Ω com 5 % vale entre 446,5 Ω e 493,5 Ω, o que coloca a corrente
+entre 14,2 mA e 15,7 mA. A faixa é aceitável para um LED, e é exatamente esse tipo
+de conta que decidirá, mais adiante no livro, quando 5 % basta e quando é preciso
+comprar 1 %.
+
+### Passo 3 — Montar
+
+::: {#fig-primeiro-circuito}
+
+```{.tikz}
+%%| filename: 001-primeiro-circuito
+%%| alt: Esquemático do circuito de bancada: pilha de 9 V em série com resistor de 470 ohms e LED vermelho.
+
+\begin{circuitikz}[american, font=\small]
+  % pilha: desenhada de baixo para cima, a placa longa (+) fica no topo
+  \draw (0,0) to[battery1, l_=$9\,\mathrm{V}$] (0,3.4);
+  \node[font=\footnotesize] at (0.32,2.05) {$+$};
+  \node[font=\footnotesize] at (0.32,1.35) {$-$};
+
+  \draw (0,3.4) -- (2.0,3.4)
+        to[R, l={$R = 470\,\Omega$}, v_>=$V_R$] (5.2,3.4);
+  \draw (5.2,3.4) -- (5.2,2.5)
+        to[leD, l_=LED, v^>=$V_\mathrm{LED}$] (5.2,0.5)
+        -- (5.2,0) -- (0,0);
+  \node[ground] at (0,0) {};
+\end{circuitikz}
+```
+
+O circuito do laboratório. Três componentes, dois pontos de medição, e todo o
+método do livro em miniatura.
+
+:::
+
+Monte na protoboard com a pilha desligada. O LED tem polaridade: a perna mais
+**longa** é o anodo (positivo, lado do resistor); do lado do catodo o
+encapsulamento tem um **chanfro plano**. Invertido, ele simplesmente não acende.
+
+### Passo 4 — Medir e comparar
+
+1. **Tensão da pilha em vazio**, antes de conectar: anote. Uma alcalina nova
+   costuma marcar entre 9,3 V e 9,6 V, não 9,0 V.
+2. **Tensão no resistor** ($V_R$) e **tensão no LED** ($V_\text{LED}$), com o
+   circuito ligado, medidas em paralelo com cada componente. Some as duas: o
+   resultado tem de bater com a tensão da pilha *sob carga*. Essa soma é a lei das
+   malhas de Kirchhoff, que ganha capítulo próprio no Volume 2.
+3. **Corrente calculada**: $I = V_R / 470$. Anote.
+4. **Corrente medida**: mude o multímetro para a escala de corrente contínua,
+   mova o cabo vermelho para o borne de corrente e insira o instrumento **em série**,
+   abrindo o circuito para colocá-lo no caminho. Compare com o valor do item 3.
+   Diferenças de 1 % a 3 % são normais e vêm da tolerância do resistor e da
+   precisão do multímetro.
+5. Compare a $V_F$ medida do LED com os 2,0 V que você **supôs** no Passo 1. Se
+   deu 1,85 V ou 2,15 V, refaça a conta do Passo 2 com o valor real e veja quanto
+   a corrente muda. Essa é a diferença entre valor de catálogo e componente real.
+
+### Passo 5 — Trocar o resistor
+
+Substitua os 470 Ω por **1 kΩ**. A corrente cai para
+$I = 7{,}0/1000 = 7{,}0$ mA, menos da metade. Olhe para o LED: o brilho cai muito
+menos do que a corrente. A percepção humana de luminosidade é aproximadamente
+logarítmica — motivo pelo qual o decibel e as escalas logarítmicas ganham um
+capítulo inteiro no Volume 7.
+
+### Variante simulada (plano B)
+
+Sem componentes à mão, monte o mesmo circuito no simulador Falstad, no navegador:
+fonte de 9 V, resistor de 470 Ω e um diodo emissor de luz em série. O simulador
+mostra corrente e tensão em cada ramo. Vale como treino do raciocínio, mas note o
+que ele **não** entrega: a queda real da pilha sob carga, a dispersão de $V_F$ entre
+dois LEDs do mesmo saquinho e o resistor que esquenta. Simulador é para conferir a
+conta; a bancada é para descobrir o que a conta não previu.
+
+## 🔥 Onde Queima {#sec-001-queima}
+
+**LED direto na pilha, sem resistor.** O modo de falha número um da eletrônica
+iniciante. A corrente de um diodo cresce *exponencialmente* com a tensão: os 7 V
+de excesso não produzem "um pouco mais de corrente", produzem corrente de dezenas
+a centenas de vezes o limite, e o LED morre em milissegundos — às vezes acendendo
+forte uma última vez. Diodo **nunca** vai direto na fonte de tensão. Sempre há um
+elemento limitando a corrente.
+
+**O multímetro em corrente, ligado em paralelo.** Na escala de corrente o
+multímetro é praticamente um curto-circuito — é essa a definição de um amperímetro
+bom. Colocá-lo em paralelo com a pilha, ou esquecer o cabo vermelho no borne de
+corrente e depois medir tensão, curto-circuita a fonte pelo instrumento. Numa pilha
+de 9 V o resultado é o fusível interno aberto; numa fonte de bancada de vários
+ampères, é a ponta de prova derretendo. **Regra permanente:** terminada a medição
+de corrente, o cabo vermelho volta imediatamente para o borne de tensão.
+
+**LED invertido em tensão alta.** Ao contrário, o LED não acende — o que é
+inofensivo em 9 V. Mas muitos LEDs suportam apenas 5 V de tensão reversa, e valores
+maiores degradam a junção mesmo sem estrago visível. Não use o LED como "diodo de
+teste" num circuito de tensão desconhecida.
+
+**Tratar o LED como resistor.** O erro de raciocínio clássico deste capítulo: pegar
+os 2,0 V medidos e a corrente de 14,9 mA e concluir que "o LED tem 134 Ω". Esse
+número não descreve nada. Ele vale só naquele ponto de operação e muda a cada
+miliampère. Diodo não tem resistência; tem uma **curva**, e trabalhar com ela é
+assunto do Volume 8.
+
+**Confiar no valor nominal da fonte.** A pilha de 9 V raramente entrega 9,0 V:
+sai de fábrica com cerca de 9,5 V e termina a vida útil perto de 7 V. Com 9,5 V
+a corrente do laboratório sobe para 16,0 mA; com 7,5 V, cai para 11,7 mA. Toda
+conta feita com o valor da embalagem carrega esse erro embutido — e é por isso que
+o Passo 4 começa medindo a pilha, não lendo o rótulo.
+
+**Subdimensionar a potência do resistor.** Os 104 mW deste circuito cabem num 1/4 W
+com folga e num 1/8 W apertado. Trocar 470 Ω por 47 Ω "para brilhar mais" levaria a
+corrente a 149 mA e a dissipação a 1,04 W — oito vezes acima do que a peça aguenta,
+com o resistor escurecendo, cheirando a queimado e possivelmente abrindo. Corrente
+alta não é só problema do componente que você quer proteger; é problema de tudo o
+que está em série com ele.
+
+## O que fica deste capítulo {#sec-001-resumo}
+
+Eletrônica é controle de fluxo de carga a serviço da informação, e todo o resto do
+livro gira em torno de um dispositivo que deixa um sinal fraco comandar um fluxo
+forte. O manual sobe de forma contínua da corrente contínua até a máquina de
+estados, parando de propósito na porta lógica.
+
+E o método do laboratório é o método do livro inteiro, em cinco passos que se
+repetirão por 104 capítulos: **calcular, arredondar para o valor comercial,
+recalcular o efeito, verificar a dissipação, medir e comparar com o previsto.**
+O próximo capítulo trata do que precisa estar no lugar antes de qualquer bancada
+ser ligada — segurança elétrica.

@@ -28,6 +28,46 @@ Vale para todos os manuais da série. Entradas novas vão no fim da seção corr
    Testar um TikZ genérico e assumir que os outros funcionam deixa passar a falha
    que só aparece noventa capítulos adiante.
 
+5. **Heredoc do Bash come a barra dupla.** Escrever `.tex`/`.qmd` por
+   `cat > arquivo <<'EOF'` transforma `\\` em `\`. Em LaTeX isso é catastrófico e
+   *silencioso*: `\\` de quebra de linha some, `\begin` vindo de string Python
+   vira `\b` (backspace, `U+0008`) e o erro que aparece — "Runaway argument",
+   "Missing `\begin{document}`" — aponta para o pacote errado. Custou uma
+   investigação inteira do `tikztimingtable`, que estava perfeito. **Regra:
+   conteúdo com `\\` vai pela ferramenta Write ou por script Python em arquivo,
+   nunca por heredoc.** Barra simples (`\draw`, `\usepackage`) sobrevive.
+
+6. **`pgfmath` estoura em ~16384.** Curva de diodo escrita ao natural
+   (`1e-6*(exp(x/0.02585)-1)*1000`) passa de $10^{7}$ dentro do domínio e o
+   pgfplots morre com "Missing number, treated as zero" + "Illegal unit of
+   measure" — e ainda assim **emite um SVG**, então a contagem de `<svg>` não
+   pega. Reescrever a exponencial ancorada no valor máximo:
+   `{50*exp((x-0.75)/0.0435)}` desenha a mesma curva sem nunca passar de 50.
+
+7. **`=` dentro de rótulo do `circuitikz` quebra o `pgfkeys`.**
+   `to[R, l=$R = 470\,\Omega$]` é lido como duas chaves e produz erro de `$`
+   desbalanceado. Sempre chavear o valor: `l={$R = 470\,\Omega$}`.
+
+8. **Polaridade se confere, não se adivinha.** `(0,0) to[battery1] (0,3)` põe a
+   placa longa (o **positivo**) no *fim* do caminho, ou seja, em cima. Já
+   `to[V=...]` desenhado de baixo para cima põe o `+` embaixo. Convenções
+   diferentes no mesmo pacote: desenhar um teste lado a lado e olhar custa dois
+   minutos e evita um esquemático errado impresso em 104 capítulos.
+
+9. **Contar `<svg>` prova que a figura saiu, não que ela está certa.** Rótulo
+   sobreposto, seta invertida e curva estourando o eixo passam por toda a
+   validação textual. Por isso existe `figuras/verificar-figuras.py`: extrai os
+   blocos `{.tikz}` do capítulo, compila com o preâmbulo real e rasteriza para
+   PNG. Rodar antes do commit de qualquer capítulo com figura — foi o que pegou
+   `$R$` colidindo com `$V_R$` e `LED` colidindo com `$V_\mathrm{LED}$` no
+   capítulo 001.
+
+10. **Emoji nos títulos das seções fixas some no PDF — e tudo bem.** `🧪` e `🔥`
+    renderizam no HTML e são descartados em silêncio no caminho LaTeX (sem
+    caixinha de glifo faltante, sem erro). O título sai "Laboratório" e "Onde
+    Queima", só com um espaço a mais. Comportamento **aceito**: não vale trocar a
+    toolchain para lualatex por causa disso.
+
 ---
 
 ## CI / GitHub Actions (`publish.yml`)

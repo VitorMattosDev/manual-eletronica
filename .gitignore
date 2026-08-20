@@ -5,3 +5,6 @@ _book/
 *.pdf
 !figuras/**/*.pdf
 .tikz-cache/
+
+/.quarto/
+**/*.quarto_ipynb
