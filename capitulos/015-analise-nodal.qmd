@@ -1,3 +1,699 @@
 # Análise nodal {#sec-cap-015}
 
-*(em elaboração)*
+O @sec-cap-013 entregou duas leis exatas e um método honesto: escreva uma equação
+de LKC para cada nó, uma de LKT para cada malha, resolva o sistema. Funciona
+sempre. O problema é o "sempre" custar caro: aquele circuito de três ramos exigiu
+três equações e meia página de substituição para produzir um único número.
+
+A ponte do @sec-cap-012 tem seis ramos. Pelo método de Kirchhoff cru, são seis
+incógnitas e seis equações — à mão, uma tarde perdida e três erros de sinal.
+
+A análise nodal resolve a mesma ponte com **duas** equações, e o circuito do
+@sec-cap-013 com **uma**. Ela não é uma lei nova: é a LKC aplicada com uma escolha
+esperta de incógnita. Trocar "corrente em cada ramo" por "tensão em cada nó" reduz
+o tamanho do sistema, elimina a necessidade de arbitrar sentidos de corrente e
+transforma a montagem das equações num procedimento tão mecânico que se pode fazer
+por inspeção — que é, aliás, exatamente o que todo simulador de circuitos faz por
+dentro.
+
+Este é o primeiro método geral do manual. Depois dele, nenhum circuito resistivo
+volta a ser um obstáculo.
+
+## Nó, nó essencial e o nó de referência {#sec-015-nos}
+
+Um **nó** é um ponto de conexão entre dois ou mais elementos. Como fio ideal não
+tem resistência, todo trecho de fio contínuo está no mesmo potencial e conta como
+**um único nó**, por mais espalhado que esteja no desenho — três jumpers, uma
+trilha e meia protoboard podem ser um nó só.
+
+Um **nó essencial** é um nó onde se encontram **três ou mais** elementos. Onde só
+dois elementos se encontram, não há repartição de corrente: os dois conduzem a
+mesma corrente, estão em série, e o ponto entre eles não precisa de equação. São os
+nós essenciais que interessam.
+
+E há a escolha que organiza tudo: um dos nós é eleito **nó de referência**, ou
+terra, e recebe por definição a tensão zero. Todas as outras tensões passam a ser
+medidas em relação a ele — são as **tensões de nó**. Isso é a mesma ideia do
+@sec-cap-009, agora usada como ferramenta de cálculo e não apenas de medição.
+
+A escolha do nó de referência é **livre**, e a física não muda com ela:
+
+::: {#fig-015-referencia}
+
+```{.tikz}
+%%| filename: 015-referencia
+%%| alt: O mesmo divisor de um kilo-ohm e dois vírgula dois kilo-ohms alimentado por doze volts, desenhado duas vezes com nós de referência diferentes. À esquerda, com a referência no nó de baixo, o nó de cima está a doze volts e o do meio a oito vírgula vinte e cinco volts. À direita, com a referência no nó do meio, o de cima está a três vírgula setenta e cinco volts e o de baixo a menos oito vírgula vinte e cinco volts. Nos dois casos a tensão sobre o resistor de um kilo-ohm é a mesma, três vírgula setenta e cinco volts.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ============ referência embaixo ============
+  \begin{scope}
+    \draw (0,0) to[battery1, invert, l_={$12$ V}] (0,4.6) -- (2.6,4.6);
+    \draw (2.6,4.6) to[R, l={$R_1 = 1\,\mathrm{k}$}] (2.6,2.6);
+    \draw (2.6,2.6) to[R, l={$R_2 = 2{,}2\,\mathrm{k}$}] (2.6,0.6);
+    \draw (2.6,0.6) -- (2.6,0) -- (0,0);
+    \draw (1.3,0) -- (1.3,-0.6);
+    \node[ground] at (1.3,-0.6) {};
+
+    \foreach \yy/\nome/\val in {4.6/T/{$12{,}00$ V}, 2.6/M/{$8{,}25$ V}, 0/B/{$0$ V}}{
+      \node[ponto] at (2.6,\yy) {};
+      \node[font=\scriptsize\bfseries, anchor=south east] at (2.5,\yy+0.1) {\nome};
+      \node[manualblue, font=\scriptsize, anchor=west] at (4.35,\yy) {\val};
+      \draw[manualgray, dashed, thin] (2.7,\yy) -- (4.25,\yy);
+    }
+
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.0,5.3) {referência em B};
+  \end{scope}
+
+  % ============ referência no meio ============
+  \begin{scope}[xshift=9.4cm]
+    \draw (0,0) to[battery1, invert, l_={$12$ V}] (0,4.6) -- (2.6,4.6);
+    \draw (2.6,4.6) to[R, l={$R_1 = 1\,\mathrm{k}$}] (2.6,2.6);
+    \draw (2.6,2.6) to[R, l={$R_2 = 2{,}2\,\mathrm{k}$}] (2.6,0.6);
+    \draw (2.6,0.6) -- (2.6,0) -- (0,0);
+    \draw (2.6,2.6) -- (1.3,2.6) -- (1.3,2.0);
+    \node[ground] at (1.3,2.0) {};
+
+    \foreach \yy/\nome/\val in {4.6/T/{$3{,}75$ V}, 2.6/M/{$0$ V}, 0/B/{$-8{,}25$ V}}{
+      \node[ponto] at (2.6,\yy) {};
+      \node[font=\scriptsize\bfseries, anchor=south east] at (2.5,\yy+0.1) {\nome};
+      \node[manualblue, font=\scriptsize, anchor=west] at (4.35,\yy) {\val};
+      \draw[manualgray, dashed, thin] (2.7,\yy) -- (4.25,\yy);
+    }
+
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.0,5.3) {referência em M};
+  \end{scope}
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.9,-1.4)
+       {As tensões \textbf{de nó} mudam com a escolha da referência.
+        As tensões \textbf{sobre os componentes} não:\\[3pt]
+        $V_{R_1} = V_T - V_M = 12{,}00 - 8{,}25 = 3{,}75$ V
+        \qquad e \qquad
+        $V_{R_1} = 3{,}75 - 0 = 3{,}75$ V.\\[3pt]
+        A corrente pelo divisor é $3{,}75/1000 = 3{,}75$ mA nos dois desenhos.
+        O circuito não sabe onde você pôs o terra.};
+
+\end{circuitikz}
+```
+
+A escolha do nó de referência é uma convenção de contabilidade. Ela muda o valor
+das tensões de nó e não muda uma única corrente, porque corrente depende de
+**diferença** de potencial.
+
+:::
+
+**Como escolher bem.** Livre não quer dizer indiferente. Duas escolhas economizam
+trabalho:
+
+- **O nó com mais elementos ligados.** Cada nó eleito como referência é uma equação
+  a menos; o mais conectado costuma ser o que mais simplifica os termos restantes.
+- **O nó onde já está o terra do circuito**, se houver um. Assim as tensões
+  calculadas coincidem com as que o multímetro vai ler na bancada com a ponta preta
+  no lugar de sempre.
+
+Se um dos nós tiver uma fonte de tensão ligada diretamente ao terra, ainda melhor:
+como veremos, isso elimina mais uma incógnita.
+
+## A tensão de nó como incógnita {#sec-015-incognita}
+
+Toda a economia da análise nodal vem de uma observação simples: **se você souber a
+tensão de todos os nós, você sabe tudo o que há para saber sobre o circuito.**
+
+A corrente num resistor ligado entre os nós $j$ e $k$ sai direto de Ohm:
+
+$$ I_{j \to k} = \frac{V_j - V_k}{R} = (V_j - V_k)\,G. $$
+
+Com $n$ nós essenciais e um deles eleito referência, restam $n-1$ incógnitas.
+Contra as $b$ correntes de ramo do método bruto do @sec-cap-013, a diferença cresce
+depressa: a ponte tem 6 ramos e 4 nós, isto é, 6 incógnitas contra 3 — e, como uma
+delas será fixada pela fonte, contra 2 na prática.
+
+Há um segundo ganho, menos óbvio e mais importante na bancada: **a LKT some das
+contas.** Escrever tensões como diferença entre potenciais de nó já garante que a
+soma ao longo de qualquer malha fechada dá zero — a lei das malhas está embutida na
+própria notação. Não há malha para percorrer, não há sentido de percurso para
+escolher, não há sinal para trocar.
+
+E um terceiro: **não é preciso adivinhar o sentido das correntes.** No
+@sec-cap-013 as setas foram arbitradas e um dos resultados saiu negativo. Aqui, o
+sentido nem entra na montagem: escreve-se toda corrente como saindo do nó, e o
+sinal do resultado se encarrega do resto.
+
+## O método em cinco passos {#sec-015-metodo}
+
+1. **Identifique os nós essenciais** e eleja um deles como referência.
+2. **Nomeie as tensões dos demais**: $V_1, V_2, \ldots$
+3. **Escreva a LKC em cada nó não-referência**, com todas as correntes **saindo**
+   do nó, cada uma escrita como $(V_\text{aqui} - V_\text{lá})\,G$. Fontes de
+   corrente entram como termos constantes.
+4. **Resolva o sistema.**
+5. **Volte aos ramos**: com as tensões de nó, calcule as correntes que interessam
+   por Ohm, e confira o balanço de potência.
+
+O passo 3 é o único que exige cuidado, e a regra que o torna mecânico é esta:
+**todas as correntes saem**. Não pense em qual sentido é "o certo". Escreva
+
+$$ \sum_{\text{ramos ligados ao nó}} (V_\text{nó} - V_\text{vizinho})\,G = 0, $$
+
+e uma corrente que na verdade entra sairá com sinal negativo, exatamente como
+deveria.
+
+## Uma equação no lugar de três {#sec-015-exemplo1}
+
+O circuito do @sec-cap-013, refeito. Duas fontes, três resistores, um único nó
+essencial além do terra:
+
+::: {#fig-015-um-no}
+
+```{.tikz}
+%%| filename: 015-um-no
+%%| alt: Circuito com uma fonte de nove volts em série com um kilo-ohm e uma fonte de cinco volts em série com um vírgula cinco kilo-ohm, ambas ligadas ao mesmo nó X, que se liga ao terra por dois vírgula dois kilo-ohms. As três correntes são desenhadas saindo do nó X. A tensão do nó resulta cinco vírgula oitenta e um volts, e a corrente do ramo de cinco volts sai negativa, indicando que a corrente entra naquela fonte.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, invert, l_={$9$ V}] (0,4.4) -- (2.0,4.4);
+  \draw (2.0,4.4) to[R, l={$R_1 = 1\,\mathrm{k}$}] (4.6,4.4);
+  \draw (9.2,0) to[battery1, invert, l_={$5$ V}] (9.2,4.4) -- (7.2,4.4);
+  \draw (4.6,4.4) to[R, l={$R_3 = 1{,}5\,\mathrm{k}$}] (7.2,4.4);
+  \draw (4.6,4.4) to[R, l={$R_2 = 2{,}2\,\mathrm{k}$}] (4.6,1.4);
+  \draw (4.6,1.4) -- (4.6,0) -- (0,0);
+  \draw (4.6,0) -- (9.2,0);
+  \node[ponto] at (4.6,0) {};
+  \draw (2.3,0) -- (2.3,-0.6);
+  \node[ground] at (2.3,-0.6) {};
+
+  \node[ponto] at (4.6,4.4) {};
+  \node[font=\scriptsize\bfseries, anchor=south] at (4.6,4.62) {X};
+  \node[manualblue, font=\scriptsize\bfseries, anchor=south] at (4.6,5.05)
+       {$V_X = ?$};
+
+  % correntes saindo do no
+  \draw[manualgreen!55!black, thick, -{Stealth[length=2.5mm]}]
+       (4.35,4.05) -- (3.65,4.05);
+  \node[manualgreen!55!black, font=\scriptsize, anchor=north] at (4.0,3.95)
+       {$I_1$};
+  \draw[manualgreen!55!black, thick, -{Stealth[length=2.5mm]}]
+       (4.85,4.05) -- (5.55,4.05);
+  \node[manualgreen!55!black, font=\scriptsize, anchor=north] at (5.2,3.95)
+       {$I_3$};
+  \draw[manualgreen!55!black, thick, -{Stealth[length=2.5mm]}]
+       (4.15,3.5) -- (4.15,2.7);
+  \node[manualgreen!55!black, font=\scriptsize, anchor=east] at (4.05,3.1)
+       {$I_2$};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.9,-1.3)
+       {As três setas verdes saem de X --- é a convenção do método, não um palpite
+        sobre o sentido real:\\[3pt]
+        $\dfrac{V_X - 9}{1000} + \dfrac{V_X - 5}{1500} + \dfrac{V_X - 0}{2200} = 0$
+        \qquad$\Longrightarrow$\qquad $V_X = 5{,}814$ V\\[4pt]
+        $I_1 = -3{,}186$ mA \ \textcolor{manualred}{(negativa: na verdade
+        \textbf{entra} em X)} \quad $I_2 = +2{,}643$ mA \quad
+        $I_3 = +0{,}543$ mA \ \textcolor{manualred}{(sai de X \textbf{para dentro}
+        da fonte de 5 V)}};
+
+\end{circuitikz}
+```
+
+Uma equação, uma incógnita. As três correntes que o @sec-cap-013 obteve com três
+equações e duas substituições caem de uma linha de Ohm cada.
+
+:::
+
+**A equação.** Correntes saindo de X, uma por ramo:
+
+$$ \frac{V_X - 9}{1000} + \frac{V_X - 5}{1500} + \frac{V_X}{2200} = 0. $$
+
+Reagrupando em condutâncias — todo termo com $V_X$ de um lado, todo termo de fonte
+do outro:
+
+$$ V_X\left(\frac{1}{1000} + \frac{1}{1500} + \frac{1}{2200}\right)
+   = \frac{9}{1000} + \frac{5}{1500}, $$
+
+$$ V_X = \frac{9{,}000 + 3{,}333}{1{,}0000 + 0{,}6667 + 0{,}4545}\ \text{(em mA e mS)}
+       = \frac{12{,}333}{2{,}1212} = 5{,}814\ \text{V}. $$
+
+Note o truque de unidades, que vale para o livro inteiro: **contas em volts,
+kilo-ohms, miliampères e milisiemens fecham entre si**. $1$ V dividido por
+$1$ kΩ dá $1$ mA. Isso elimina toda a ginástica de potências de dez, e é a razão de
+esta ser a escala natural da eletrônica de bancada.
+
+**Voltando aos ramos.** Adotando aqui os sentidos do @sec-cap-013 — $I_1$ e $I_3$
+**entrando** em X, $I_2$ saindo —, para que os números sejam diretamente
+comparáveis:
+
+$$ I_1 = \frac{9 - 5{,}814}{1000} = 3{,}186\ \text{mA}, \qquad
+   I_2 = \frac{5{,}814}{2200} = 2{,}643\ \text{mA}, \qquad
+   I_3 = \frac{5 - 5{,}814}{1500} = -0{,}543\ \text{mA}. $$
+
+Os mesmos três números do @sec-cap-013, incluindo o sinal negativo que revela a
+corrente entrando na fonte de 5 V. O método mudou; a física, não.
+
+Compare com o esforço: lá foram três equações, uma substituição em cadeia e uma
+página; aqui, uma equação de uma linha e três divisões. E note que o sentido real
+de $I_3$ **saiu do cálculo** — em nenhum momento foi preciso adivinhá-lo.
+
+::: {.callout-tip}
+## O caso de um nó só tem nome: Millman
+
+Quando o circuito é um punhado de ramos "fonte em série com resistor" todos ligados
+ao mesmo nó, a solução geral é
+
+$$ V_X = \frac{\sum V_k G_k}{\sum G_k}, $$
+
+conhecida como **teorema de Millman**. É uma média das tensões das fontes,
+ponderada pelas condutâncias: a fonte de menor resistência série "puxa" o nó com
+mais força.
+
+Não é um teorema novo — é a equação nodal de um nó, escrita já resolvida. Serve
+para conferir de cabeça: no exemplo acima, a fonte de 9 V tem a menor resistência
+série, então o nó tem de ficar mais perto de 9 do que de 5. Ficou: 5,81 V, e o
+terceiro ramo (para o terra, $V_k = 0$) puxa para baixo.
+:::
+
+## A matriz por inspeção {#sec-015-matriz}
+
+Quando o passo 3 é executado com disciplina, o sistema que sai tem sempre a mesma
+forma. Para dois nós:
+
+$$ \begin{aligned}
+   V_1\,G_{11} - V_2\,G_{12} &= I_1 \\
+   -V_1\,G_{21} + V_2\,G_{22} &= I_2
+   \end{aligned} $$
+
+com um significado fixo para cada termo:
+
+- $G_{11}$: **soma de todas as condutâncias ligadas ao nó 1**. Sempre positiva.
+- $G_{12} = G_{21}$: **condutância ligada diretamente entre os nós 1 e 2**. Entra
+  sempre com sinal **negativo**.
+- $I_1$: **soma das correntes injetadas no nó 1** por fontes — de corrente
+  diretamente, ou de tensão através de um resistor, caso em que o termo é $V/R$.
+
+Isso permite escrever o sistema **sem passar pela LKC**, olhando para o desenho.
+Diagonal positiva, fora da diagonal negativa e simétrica, lado direito com as
+fontes. Uma matriz nodal com um termo positivo fora da diagonal, ou assimétrica,
+está errada — e essa é a melhor conferência que existe antes de resolver o sistema.
+
+::: {.callout-note}
+## É isso que o simulador faz
+
+O @sec-cap-012 comentou que o simulador resolve a ponte sem hesitar porque não usa
+associação. Agora dá para dizer o que ele usa: **análise nodal modificada** (MNA),
+que é exatamente a matriz acima, estendida para acomodar fontes de tensão e
+elementos que a formulação em condutâncias não cobre.
+
+O SPICE monta essa matriz a partir da netlist, inverte, e para componentes não
+lineares repete o processo até convergir. Cada linha da matriz é uma LKC; cada erro
+de convergência que você vier a ver num simulador é essa matriz se recusando a
+fechar.
+:::
+
+## Fontes de tensão: o nó conhecido e o supernó {#sec-015-supernó}
+
+A formulação em condutâncias tem um ponto cego: **uma fonte de tensão ideal não tem
+condutância**. Não existe $G$ para escrever, porque a corrente que a atravessa não
+é determinada pela tensão sobre ela — é o que quer que o resto do circuito exija.
+
+Há dois casos, e os dois se resolvem.
+
+**Caso 1 — a fonte está entre um nó e a referência.** Então a tensão daquele nó
+está *dada*: ele não é incógnita, e não precisa de equação. Uma fonte de 12 V do
+terra ao nó A significa $V_A = 12$ V, ponto final. Cada fonte aterrada elimina uma
+incógnita — é por isso que vale a pena escolher a referência num nó que tenha
+fontes ligadas a ele.
+
+**Caso 2 — a fonte flutua entre dois nós.** Nenhum dos dois é conhecido, e não se
+pode escrever LKC em nenhum deles isoladamente, porque a corrente pela fonte é
+desconhecida. A saída é a **supernó**: englobar os dois nós numa superfície fechada
+única e escrever a LKC para ela. A corrente da fonte, que entra por um nó e sai pelo
+outro, some do balanço — ela é interna à superfície.
+
+A supernó dá **uma** equação de LKC para **dois** nós; a segunda vem de graça, da
+própria fonte: $V_1 - V_2 = V_\text{fonte}$. Duas equações, duas incógnitas.
+
+::: {#fig-015-supernode}
+
+```{.tikz}
+%%| filename: 015-supernode
+%%| alt: Circuito com fonte de doze volts alimentando por um resistor de um kilo-ohm o nó um, que se liga ao terra por dois vírgula dois kilo-ohms e ao nó dois por uma fonte flutuante de cinco volts. O nó dois se liga ao terra por três vírgula três kilo-ohms. Uma linha tracejada envolve os dois nós e a fonte flutuante, formando o supernó. O resultado é sete vírgula sessenta e nove volts no nó um e dois vírgula sessenta e nove volts no nó dois.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, invert, l_={$12$ V}] (0,4.4) -- (1.6,4.4);
+  \draw (1.6,4.4) to[R, l={$R_1 = 1\,\mathrm{k}$}] (4.2,4.4);
+  \draw (4.2,4.4) to[R, l_={$R_2 = 2{,}2\,\mathrm{k}$}] (4.2,1.0);
+  \draw (4.2,1.0) -- (4.2,0) -- (0,0);
+  \draw (8.6,4.4) to[battery1, invert, l={$5$ V}] (4.2,4.4);
+  \draw (8.6,4.4) to[R, l={$R_3 = 3{,}3\,\mathrm{k}$}] (8.6,1.0);
+  \draw (8.6,1.0) -- (8.6,0) -- (4.2,0);
+  \node[ponto] at (4.2,0) {};
+  \draw (2.1,0) -- (2.1,-0.6);
+  \node[ground] at (2.1,-0.6) {};
+
+  \node[ponto] at (4.2,4.4) {};
+  \node[ponto] at (8.6,4.4) {};
+  \node[manualblue, font=\scriptsize\bfseries, anchor=south west] at (4.35,4.6)
+       {$V_1 = 7{,}69$ V};
+  \node[manualblue, font=\scriptsize\bfseries, anchor=south east] at (8.45,4.6)
+       {$V_2 = 2{,}69$ V};
+
+  \draw[manualred, thick, dashed, rounded corners=8pt]
+       (3.65,3.5) rectangle (9.3,5.3);
+  \node[manualred, font=\scriptsize\bfseries, anchor=south west] at (3.65,5.35)
+       {supernó};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.9,-1.3)
+       {LKC na superfície inteira (a corrente da fonte de 5 V é interna e não
+        aparece):\\[3pt]
+        $\dfrac{V_1 - 12}{1000} + \dfrac{V_1}{2200} + \dfrac{V_2}{3300} = 0$
+        \qquad e \qquad $V_1 - V_2 = 5$\\[4pt]
+        Duas equações, duas incógnitas. Sem a supernó, faltaria uma corrente
+        desconhecida atravessando a fonte.};
+
+\end{circuitikz}
+```
+
+A supernó em serviço. A linha tracejada não é decoração: é a superfície fechada a
+que a LKC do @sec-cap-013 se aplica — a lei vale para qualquer superfície, não só
+para pontos.
+
+:::
+
+**Resolvendo.** Substituindo $V_1 = V_2 + 5$ na equação da supernó:
+
+$$ V_2\left(\frac{1}{1000} + \frac{1}{2200} + \frac{1}{3300}\right)
+   = \frac{12}{1000} - 5\left(\frac{1}{1000} + \frac{1}{2200}\right), $$
+
+$$ V_2 = \frac{12{,}000 - 7{,}273}{2{,}1212 - 0{,}3636} \ldots $$
+
+ou, mais seguro, em números diretos: $V_2 \times 1{,}7576 = 4{,}7273$, portanto
+$V_2 = 2{,}690$ V e $V_1 = 7{,}690$ V.
+
+**Conferência.** $I_{R_1} = (12 - 7{,}690)/1000 = 4{,}310$ mA entra no nó 1;
+$I_{R_2} = 7{,}690/2200 = 3{,}495$ mA desce por $R_2$; sobram
+$4{,}310 - 3{,}495 = 0{,}815$ mA atravessando a fonte de 5 V. E de fato
+$I_{R_3} = 2{,}690/3300 = 0{,}815$ mA. Fecha.
+
+## A ponte, finalmente {#sec-015-ponte}
+
+O @sec-cap-012 mandou guardar um número: a resistência medida entre A e D na ponte
+de cinco resistores que não se reduz por associação nenhuma. Chegou a hora.
+
+Com a fonte de 12 V ligada entre A e D, e a referência em D, temos $V_A = 12$ V
+conhecida (fonte aterrada, Caso 1) e duas incógnitas: $V_B$ e $V_C$.
+
+**Nó B** (correntes saindo, condutâncias em mS com resistências em kΩ):
+
+$$ \frac{V_B - 12}{1} + \frac{V_B - V_C}{1{,}5} + \frac{V_B}{3{,}3} = 0. $$
+
+**Nó C:**
+
+$$ \frac{V_C - 12}{2{,}2} + \frac{V_C - V_B}{1{,}5} + \frac{V_C}{4{,}7} = 0. $$
+
+Na forma matricial por inspeção:
+
+$$ \begin{aligned}
+   1{,}9697\,V_B - 0{,}6667\,V_C &= 12{,}0000 \\
+   -0{,}6667\,V_B + 1{,}3340\,V_C &= 5{,}4545
+   \end{aligned} $$
+
+Diagonal positiva, fora da diagonal negativa e simétrica: a montagem está sã.
+Resolvendo,
+
+$$ V_B = 8{,}998\ \text{V}, \qquad V_C = 8{,}586\ \text{V}. $$
+
+::: {#fig-015-ponte}
+
+```{.tikz}
+%%| filename: 015-ponte
+%%| alt: A ponte de cinco resistores do capítulo doze, agora resolvida por análise nodal. Com doze volts entre os nós A e D e a referência em D, o nó B fica a oito vírgula novecentos e noventa e oito volts e o nó C a oito vírgula quinhentos e oitenta e seis volts. O desequilíbrio entre B e C é quatrocentos e doze milivolts, a corrente total é quatro vírgula cinquenta e cinco miliampères e a resistência equivalente entre A e D é dois vírgula seiscentos e trinta e cinco kilo-ohms.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \coordinate (A) at (3,4.2);
+  \coordinate (B) at (0,2.1);
+  \coordinate (C) at (6,2.1);
+  \coordinate (D) at (3,0);
+
+  \draw (A) to[R, l_={$1\,\mathrm{k}$}] (B);
+  \draw (A) to[R, l={$2{,}2\,\mathrm{k}$}] (C);
+  \draw (B) to[R, l_={$3{,}3\,\mathrm{k}$}] (D);
+  \draw (C) to[R, l={$4{,}7\,\mathrm{k}$}] (D);
+  \draw (B) to[R, l={$1{,}5\,\mathrm{k}$}] (C);
+
+  \foreach \n/\pos in {A/{north}, B/{west}, C/{east}, D/{south}}{
+    \node[ponto] at (\n) {};
+  }
+  \node[font=\scriptsize\bfseries, anchor=east] at (2.85,4.45) {A};
+  \node[font=\scriptsize\bfseries, anchor=east] at (2.85,-0.25) {D};
+
+  \node[manualblue, font=\scriptsize\bfseries, anchor=east] at (-0.15,2.1)
+       {B: $8{,}998$ V};
+  \node[manualblue, font=\scriptsize\bfseries, anchor=west] at (6.15,2.1)
+       {C: $8{,}586$ V};
+
+  % fonte
+  \draw (D) -- (3,-1.0) -- (-3.8,-1.0);
+  \draw (-3.8,-1.0) to[battery1, invert, l={$12$ V}] (-3.8,5.2);
+  \draw (-3.8,5.2) -- (3,5.2) -- (A);
+  \draw (0.4,-1.0) -- (0.4,-1.6);
+  \node[ground] at (0.4,-1.6) {};
+
+  \draw[manualgreen!55!black, thick, -{Stealth[length=2.5mm]}]
+       (1.6,5.45) -- (2.4,5.45);
+  \node[manualgreen!55!black, font=\scriptsize, anchor=south] at (2.0,5.55)
+       {$I = 4{,}554$ mA};
+
+  \draw[manualred, thick, {Stealth[length=2mm]}-{Stealth[length=2mm]}]
+       (2.5,1.6) -- (3.5,1.6);
+  \node[manualred, font=\scriptsize, anchor=north] at (3.0,1.5)
+       {$412$ mV};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-4.2,-2.3)
+       {$I = \dfrac{12 - 8{,}998}{1} + \dfrac{12 - 8{,}586}{2{,}2}
+         = 3{,}002 + 1{,}552 = 4{,}554$ mA\\[4pt]
+        $R_{AD} = \dfrac{12}{4{,}554\ \text{mA}} = \mathbf{2{,}635}$ k$\Omega$
+        \quad --- e nenhuma associação dos cinco valores produz esse número.};
+
+\end{circuitikz}
+```
+
+A ponte resolvida. As duas equações nodais dão as tensões dos nós internos; daí
+saem todas as correntes, o desequilíbrio de 412 mV entre B e C, e a resistência
+equivalente que a associação não alcançava.
+
+:::
+
+**A resistência equivalente.** Com as tensões de nó em mãos, a corrente total que
+entra em A é a soma das correntes dos dois ramos superiores:
+
+$$ I = \frac{12 - 8{,}998}{1\ \text{k}\Omega} + \frac{12 - 8{,}586}{2{,}2\ \text{k}\Omega}
+     = 3{,}002 + 1{,}552 = 4{,}554\ \text{mA}, $$
+
+$$ R_{AD} = \frac{12\ \text{V}}{4{,}554\ \text{mA}} = 2{,}635\ \text{k}\Omega. $$
+
+Duas conferências que fecham o assunto:
+
+- **Pela LKC no nó D:** $8{,}998/3{,}3 + 8{,}586/4{,}7 = 2{,}727 + 1{,}827 =
+  4{,}554$ mA. A mesma corrente que entrou em A sai em D, como tinha de ser.
+- **Contra o caso reduzido:** removendo o resistor central de 1,5 kΩ, a rede vira
+  $(1 + 3{,}3) \parallel (2{,}2 + 4{,}7) = 4{,}3 \parallel 6{,}9 = 2{,}649$ kΩ. Com
+  o resistor central de volta, 2,635 kΩ — um pouco **menor**, porque o ramo central
+  acrescenta um caminho. A diferença é de apenas 0,5 % porque a ponte está quase
+  equilibrada e o ramo central conduz só 0,275 mA.
+
+Repare que $R_{AD} = 2{,}635$ kΩ não é combinação série-paralelo nenhuma dos cinco
+valores: é uma razão entre polinômios das cinco condutâncias. A ponte não se reduz
+porque essa razão simplesmente não é expressável como soma e paralelo — e é essa a
+diferença entre um truque e um método.
+
+## Fontes de corrente: o caso mais fácil {#sec-015-fontecorrente}
+
+Fontes de corrente, que são o pesadelo do método das malhas do próximo capítulo,
+são o **melhor caso** da análise nodal: uma fonte que injeta $I_S$ no nó $k$ entra
+como o termo $+I_S$ do lado direito da equação daquele nó, e nada mais. Não há
+condutância, não há incógnita extra, não há supernó.
+
+Isso já indica o critério de escolha entre os dois métodos, que o @sec-cap-016
+formaliza: **circuito com muitas fontes de corrente e poucos nós pede nodal;
+circuito com muitas fontes de tensão e poucas malhas pede malhas.**
+
+Fontes de corrente parecem exóticas agora — quase nada na sua bancada é uma. Elas
+deixam de ser exóticas no Volume 9, quando se descobre que um transistor
+polarizado é, para todos os efeitos de sinal, uma fonte de corrente controlada. A
+análise nodal é o método natural da eletrônica ativa por causa disso.
+
+## 🧪 Laboratório {#sec-015-lab}
+
+**Prever com duas equações, medir com duas pontas.** O experimento central é a
+ponte: você calculou 8,998 V e 8,586 V no papel; o multímetro vai dizer se o método
+merece confiança. Vale a regra de sempre — **nenhum valor é medido antes de ser
+previsto por escrito**.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada em 12,0 V (ou 9,0 V, refazendo as contas)
+- 1 multímetro digital
+- 2 resistores de 1 kΩ, 1/4 W
+- 1 resistor de 1,5 kΩ, 1/4 W
+- 1 resistor de 2,2 kΩ, 1/4 W
+- 1 resistor de 3,3 kΩ, 1/4 W
+- 1 resistor de 4,7 kΩ, 1/4 W
+- 1 pilha de 9 V com suporte (para a Parte 2) ou uma segunda fonte
+- 1 resistor de 10 kΩ e 1 de 100 kΩ (para a Parte 4)
+:::
+
+### Parte 1 — A ponte, prevista e medida
+
+1. Meça os cinco resistores com o ohmímetro e anote os valores **reais**.
+2. Refaça as duas equações nodais com esses valores. Não use os valores nominais:
+   a diferença entre previsão e medida que sobrar depois disso é do método, não da
+   tolerância.
+3. Monte a ponte com 12,0 V entre A e D.
+4. Meça $V_B$ e $V_C$ com a ponta preta em D. Compare.
+5. Meça $V_B - V_C$ diretamente, com as duas pontas nos dois nós. Confira contra a
+   diferença das duas leituras anteriores.
+6. Meça a corrente total, abrindo o ramo da fonte. Calcule $R_{AD} = 12/I$.
+7. Compare com o valor de $R_{AD}$ que você mediu no laboratório do @sec-cap-012
+   com o ohmímetro, meses atrás, sem conseguir explicar.
+
+O passo 7 é o ponto do capítulo inteiro.
+
+### Parte 2 — O nó com duas fontes
+
+1. Monte o circuito da @fig-015-um-no: 9,0 V através de 1 kΩ e 5,0 V através de
+   1,5 kΩ, os dois no nó X, e 2,2 kΩ de X ao terra. Os terras das duas fontes têm
+   de estar ligados entre si — é o mesmo nó de referência.
+2. Preveja $V_X$ pela equação de um nó (ou por Millman) e meça.
+3. Meça as três correntes de ramo. A do ramo de 5 V vai dar **entrando** na fonte.
+4. Confira a LKC no nó X com os três valores medidos.
+
+::: {.callout-warning}
+## Se usar pilha na fonte de 5 V, cuidado com a corrente reversa
+
+Este circuito empurra 0,54 mA **para dentro** da fonte de 5 V. Uma fonte de bancada
+absorve isso sem reclamar (ou desliga, se tiver proteção), e uma pilha recarregável
+também. Uma **pilha alcalina ou de zinco-carbono não deve ser carregada**: em
+correntes altas ela aquece, gaseifica e pode vazar ou romper. Meio miliampère é
+inofensivo, mas o hábito é ruim — o @sec-cap-013 já avisava. Use fonte de bancada
+ou pilha recarregável, e não deixe o circuito ligado a noite inteira.
+:::
+
+### Parte 3 — A supernó
+
+1. Monte o circuito da @fig-015-supernode. A fonte de 5 V fica **flutuando** entre
+   os nós 1 e 2: nenhum dos seus terminais vai ao terra.
+2. Preveja $V_1$ e $V_2$, meça os dois.
+3. Meça a corrente que atravessa a fonte de 5 V, abrindo um dos seus terminais.
+   Deve dar 0,815 mA — o mesmo valor de $I_{R_3}$, porque estão em série.
+4. **Agora tente o que não funciona:** escreva a LKC só no nó 1, sem a supernó.
+   Você vai ter duas incógnitas ($V_1$ e a corrente pela fonte) numa equação só.
+   Ver o método falhar é o que fixa por que a supernó existe.
+
+Se a sua fonte de bancada for de canal único, a fonte flutuante pode ser uma pilha
+de 9 V com um divisor, ou simplesmente refaça as contas para 9 V flutuantes em vez
+de 5 V.
+
+### Parte 4 — O erro que o método não vê
+
+1. Volte à ponte da Parte 1 e meça $V_B$ com o multímetro. Anote com todos os
+   dígitos.
+2. Ligue um resistor de 100 kΩ entre B e o terra e meça de novo.
+3. Ligue um de 10 kΩ no lugar e meça de novo.
+4. Recalcule as duas equações nodais **incluindo** o resistor extra como mais uma
+   condutância no nó B. Compare com as medidas.
+
+O resistor de 10 kΩ muda visivelmente o resultado: ele é comparável aos 3,3 kΩ do
+ramo B–D. O de 100 kΩ quase não muda. É o efeito de carga do @sec-cap-014 outra
+vez, agora visto por dentro do método — e é a razão de o seu multímetro de 10 MΩ
+não perturbar essa medida, mas perturbar a medida de um divisor de megaohms.
+
+### Variante simulada (plano B)
+
+Todas as partes rodam em qualquer simulador, e há um exercício que só o simulador
+permite: peça a **matriz nodal** ou o *operating point* detalhado e compare com as
+suas duas equações. No ngspice, `.op` seguido de `print all` lista exatamente as
+tensões de nó — que é a única coisa que o programa calcula; correntes de ramo ele
+deriva depois, como você fez no passo 5 do método.
+
+A Parte 4 é a que o simulador esconde: com voltímetro ideal, o efeito de carga do
+instrumento não existe, e você precisa acrescentar o resistor à mão. De novo, é
+preciso **saber** a resposta para simulá-la.
+
+## 🔥 Onde Queima {#sec-015-queima}
+
+**Esquecer de eleger a referência.** Sem nó de referência, o sistema fica com uma
+incógnita a mais do que equações independentes e é indeterminado — todas as tensões
+podem subir juntas de um mesmo valor sem mudar corrente nenhuma. O sintoma no papel
+é um sistema que "não fecha"; no simulador, é o clássico erro de nó flutuante.
+
+**Misturar sentidos na hora de escrever a LKC.** A regra é *todas as correntes
+saindo do nó*. Escrever duas saindo e uma entrando, por parecer mais físico, é o
+erro de sinal número um do método. Deixe o sinal do resultado dizer o sentido.
+
+**Trocar $V_\text{nó} - V_\text{vizinho}$ por $V_\text{vizinho} - V_\text{nó}$ em
+um termo só.** Produz uma matriz com um termo positivo fora da diagonal. Se você
+montou por inspeção e apareceu um sinal positivo fora da diagonal, ou uma matriz
+assimétrica, **pare e reveja** — em circuito puramente resistivo isso é sempre
+erro.
+
+**Escrever LKC num nó que tem fonte de tensão ideal ligada a ele.** Não há
+condutância para a fonte, e a corrente que a atravessa é desconhecida. Se a fonte
+vai ao terra, o nó é conhecido e não precisa de equação; se flutua, use supernó.
+
+**Somar resistências onde se deveria somar condutâncias.** O termo diagonal é
+$\sum G$, não $1/\sum R$. É o mesmo erro do paralelo do @sec-cap-012, agora dentro
+de uma matriz onde ele fica bem escondido.
+
+**Confundir nó essencial com "ponto do desenho".** Dois resistores em série criam
+um ponto entre eles que não é nó essencial e não precisa de equação. Incluí-lo não
+erra o resultado, só desperdiça uma linha do sistema. O oposto — tratar como um só
+nó dois pontos separados por um resistor, porque o desenho os pôs perto — erra
+tudo.
+
+**Ignorar que a protoboard tem nós que você não desenhou.** Uma fileira de cinco
+furos é um nó. Ligar dois componentes a fileiras vizinhas não os liga; ligar dois a
+furos diferentes da mesma fileira liga. Metade das pontes que "dão o valor errado"
+na bancada estão montadas com uma perna numa fileira errada — o @sec-cap-005 é o
+antídoto.
+
+**Confiar na previsão com valores nominais.** Resistores de 5 % deslocam os 8,998 V
+previstos em dezenas de milivolts. Se você quer testar o **método**, meça os
+resistores primeiro e alimente as equações com os valores reais. Se a previsão com
+valores nominais errar 1 %, o método não está em julgamento — a tolerância está.
+
+**Medir a tensão de um nó com a ponta preta em qualquer lugar.** Tensão de nó é
+sempre em relação à referência. Com a ponta preta num nó qualquer, você mede uma
+diferença que é legítima, mas não é a incógnita do seu sistema, e a comparação
+falha sem que nada esteja errado no cálculo.
+
+**Sobrecarregar a fonte ao medir corrente.** No passo 6 da Parte 1, o amperímetro
+vai em **série** com o ramo aberto, nunca em paralelo. Amperímetro em paralelo com
+uma fonte de 12 V é um curto — e é assim que se abre o fusível do multímetro, como
+o @sec-cap-004 avisou.
+
+## O que fica deste capítulo {#sec-015-resumo}
+
+A análise nodal troca as correntes de ramo pelas tensões de nó como incógnitas.
+Com $n$ nós essenciais, sobram $n-1$ equações, contra as $b$ do método bruto de
+Kirchhoff — e, como as tensões de nó já satisfazem a LKT por construção, restam
+apenas equações de LKC.
+
+O procedimento é mecânico: eleja a referência, nomeie as tensões, escreva **todas
+as correntes saindo** de cada nó, resolva, volte aos ramos por Ohm. A conferência é
+a estrutura da matriz — diagonal com a soma das condutâncias do nó, fora da
+diagonal com o negativo da condutância compartilhada, simétrica.
+
+Fontes de tensão exigem atenção porque não têm condutância. Aterradas, elas
+**dão** a tensão de um nó e eliminam uma incógnita; flutuantes, pedem a supernó —
+uma superfície fechada englobando os dois nós, mais a equação da própria fonte.
+Fontes de corrente, ao contrário, são o caso trivial: entram como termo constante.
+
+A ponte do @sec-cap-012 caiu: $V_B = 8{,}998$ V, $V_C = 8{,}586$ V,
+$R_{AD} = 2{,}635$ kΩ. Um número que nenhuma associação série-paralelo produz,
+obtido com duas equações de duas linhas.
+
+O @sec-cap-016 apresenta o método dual — malhas —, que troca as incógnitas outra
+vez e é mais econômico exatamente nos circuitos em que a nodal é mais cara. Ter os
+dois é ter a liberdade de escolher, para cada circuito, o sistema menor.
