@@ -1,3 +1,635 @@
 # Tensão, potencial e referência (terra) {#sec-cap-009}
 
-*(em elaboração)*
+O @sec-cap-008 tratou do *quê* se move. Este trata do *porquê*.
+
+Tensão é a grandeza mais medida da eletrônica e a mais mal enunciada. Quase todo
+mundo sabe dizer que a pilha "tem 9 V"; quase ninguém, ao dizer isso, tem
+consciência de que acabou de fazer uma afirmação sobre um **par** de pontos, e que
+a mesma pilha teria 9 V, −9 V, ou 9 V somados a qualquer constante, dependendo de
+onde se pusesse a ponta preta.
+
+Esse detalhe aparentemente filosófico é a origem de uma quantidade
+desproporcional de acidentes de bancada — desde leituras absurdas até
+osciloscópios destruídos e placas em curto. Vale gastar um capítulo com ele.
+
+## Volt: trabalho por unidade de carga {#sec-009-volt}
+
+Separar cargas custa energia. Aproximar uma carga positiva de outra carga positiva
+exige trabalho contra a repulsão, e esse trabalho fica armazenado no arranjo — é
+recuperável, como a energia de uma mola comprimida.
+
+A **diferença de potencial** entre dois pontos é o trabalho necessário para
+transportar uma carga de um ponto ao outro, **dividido pela carga**:
+
+$$ V_{AB} = \frac{W_{A \to B}}{q}. $$
+
+A unidade é o **volt** (V), e 1 V = 1 J/C. Uma diferença de potencial de 1 volt
+significa que cada coulomb que atravessa o trecho troca 1 joule de energia.
+
+A divisão por $q$ é o que torna a grandeza útil. Ela remove a dependência da carga
+específica e deixa uma propriedade **do circuito**: dois pontos separados por
+9 V entregam 9 joules por coulomb a *qualquer* carga que os percorra, muita ou
+pouca. É exatamente análogo à altura de uma queda d'água, que determina a energia
+por quilograma de água independentemente da vazão.
+
+Juntando com a definição de corrente do capítulo anterior, sai de graça a
+grandeza mais importante do Volume 2:
+
+$$ P = \underbrace{\frac{W}{Q}}_{V} \times \underbrace{\frac{Q}{t}}_{I} = V I. $$
+
+Joules por coulomb vezes coulombs por segundo dá joules por segundo — watts. O
+@sec-cap-011 vive dessa identidade.
+
+## Tensão é sempre entre dois pontos {#sec-009-doispontos}
+
+**Não existe "a tensão em um ponto".** Existe a diferença de potencial entre dois
+pontos, e a notação honesta é de dois índices:
+
+$$ V_{AB} = V_A - V_B, \qquad V_{BA} = -V_{AB}. $$
+
+Quando alguém diz "a tensão no nó A é 5 V", há uma segunda referência implícita —
+quase sempre o terra — e a frase completa seria "$V_{A,\text{terra}} = 5$ V". A
+abreviação é legítima e universal, mas só depois que a referência foi declarada. É
+por isso que:
+
+- **O voltímetro tem duas pontas.** Ele mede uma diferença, e nunca um valor
+  absoluto. Uma ponta solta não dá meia medida; dá lixo.
+- **A ordem das pontas define o sinal.** Trocar vermelho e preto troca o sinal da
+  leitura, e num instrumento digital isso aparece como um sinal de menos. Esse
+  menos não é defeito: é informação sobre a polaridade.
+- **Tensões se somam ao longo de um caminho.** Para quaisquer três pontos,
+  $V_{AC} = V_{AB} + V_{BC}$. Essa aditividade é o que permite percorrer uma
+  malha somando quedas — e é o embrião da Lei de Kirchhoff das Tensões do
+  @sec-cap-013.
+
+::: {#fig-009-escada}
+
+```{.tikz}
+%%| filename: 009-escada-potencial
+%%| alt: À esquerda, diagrama de potencial em degraus mostrando a pilha elevando o potencial de zero a nove volts, o primeiro resistor derrubando para quatro vírgula cinco volts e o segundo derrubando de volta a zero. À direita, o esquemático correspondente com os nós A, B e C rotulados com seus potenciais em relação ao terra.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ==================== diagrama de potencial ====================
+  \draw[eixo] (0,-0.4) -- (0,6.3);
+  \node[anchor=south west, font=\scriptsize] at (-0.5,6.35) {potencial (V)};
+  \foreach \v in {0,3,6,9}{
+    \pgfmathsetmacro{\yy}{\v*0.58}
+    \draw[auxiliar] (0,\yy) -- (8.0,\yy);
+    \node[anchor=east, font=\scriptsize] at (-0.12,\yy) {\v};
+  }
+  \pgfmathsetmacro{\ya}{9*0.58}
+  \pgfmathsetmacro{\yb}{4.5*0.58}
+
+  % patamares
+  \draw[curva] (0.5,0)   -- (1.4,0);
+  \draw[curva] (1.4,\ya) -- (3.6,\ya);
+  \draw[curva] (3.6,\yb) -- (5.8,\yb);
+  \draw[curva] (5.8,0)   -- (7.6,0);
+
+  % subida da pilha
+  \draw[manualgreen!55!black, line width=2pt, -{Stealth[length=3mm]}] (1.4,0) -- (1.4,\ya);
+  \node[manualgreen!55!black, font=\scriptsize, align=center, anchor=east] at (1.25,2.6)
+       {a pilha\\eleva\\9,0 V};
+
+  % quedas nos resistores
+  \draw[destaque, line width=2pt, -{Stealth[length=3mm]}] (3.6,\ya) -- (3.6,\yb);
+  \node[manualred, font=\scriptsize, align=left, anchor=west] at (3.75,3.95)
+       {$R_1$ derruba\\4,5 V};
+  \draw[destaque, line width=2pt, -{Stealth[length=3mm]}] (5.8,\yb) -- (5.8,0);
+  \node[manualred, font=\scriptsize, align=left, anchor=west] at (5.95,1.35)
+       {$R_2$ derruba\\4,5 V};
+
+  % rotulos de no
+  \node[ponto] at (1.4,\ya) {};  \node[anchor=south, font=\scriptsize\bfseries] at (2.5,\ya+0.12) {A};
+  \node[ponto] at (3.6,\yb) {};  \node[anchor=south, font=\scriptsize\bfseries] at (4.7,\yb+0.12) {B};
+  \node[ponto] at (5.8,0)   {};  \node[anchor=south, font=\scriptsize\bfseries] at (6.9,0.12) {C};
+
+  \node[font=\scriptsize, align=center, anchor=north] at (4.0,-0.7)
+       {a carga sobe uma vez e desce duas:\\o que a fonte entrega, os resistores gastam};
+
+  % ==================== esquematico ====================
+  \begin{scope}[xshift=9.6cm]
+    \draw (0,0) to[battery1, l_={$9\,\mathrm{V}$}] (0,\ya)
+                -- (2.2,\ya)
+                to[R, l={$4{,}7\,\mathrm{k}\Omega$}] (2.2,\yb)
+                to[R, l={$4{,}7\,\mathrm{k}\Omega$}] (2.2,0)
+                -- (0,0);
+    \draw (1.1,0) -- (1.1,-0.55);
+    \node[ground] at (1.1,-0.55) {};
+    \node[ponto] at (2.2,\ya) {};
+    \node[ponto] at (2.2,\yb) {};
+    \node[ponto] at (2.2,0)   {};
+    \node[anchor=west, font=\scriptsize] at (2.35,\ya) {\textbf{A}: $+9{,}0$ V};
+    \node[anchor=west, font=\scriptsize] at (2.35,\yb) {\textbf{B}: $+4{,}5$ V};
+    \node[anchor=west, font=\scriptsize] at (2.35,0)   {\textbf{C}: $0$ V (ref.)};
+    \node[font=\scriptsize, align=center, anchor=north] at (1.5,-1.3)
+         {o mesmo circuito,\\desenhado como esquemático};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+O circuito visto como paisagem. A altura de cada patamar é o potencial do nó em
+relação ao terra; a fonte é a única subida e os resistores são as descidas. O
+patamar do nó C está em zero **por escolha** — foi ali que se pôs o símbolo de
+terra. Mover o símbolo desloca os três patamares em bloco e não muda nenhuma
+diferença.
+
+:::
+
+## O terra é uma escolha, não um lugar {#sec-009-terra}
+
+Como só diferenças têm significado físico, o zero da escala é arbitrário — do
+mesmo modo que a altitude "zero" ao nível do mar é convenção, e não uma
+propriedade do planeta. Escolher o **nó de referência** de um circuito é declarar:
+*deste nó para diante, todos os números que eu escrever sem dois índices são
+medidos a partir daqui*.
+
+O nó escolhido recebe o símbolo de terra, e passa a se chamar terra, GND, comum ou
+referência. Consequências:
+
+- **Só há um zero por circuito.** Se dois pontos recebem o símbolo de terra, eles
+  são o mesmo nó — foi o que o @sec-cap-007 estabeleceu sobre rótulos de rede.
+- **A escolha é livre, mas não indiferente.** Ela não muda a física; muda a
+  aritmética e, principalmente, muda quais medições são cômodas. Escolhe-se
+  quase sempre o nó com mais conexões, porque isso torna a maior parte das
+  tensões diretamente mensuráveis com a ponta preta parada.
+- **Mudar a referência desloca todos os potenciais pela mesma constante.** As
+  diferenças ficam intactas. É a mesma invariância de somar 100 m a todas as
+  altitudes de um mapa.
+
+::: {#fig-009-referencia}
+
+```{.tikz}
+%%| filename: 009-referencia
+%%| alt: Duas pilhas de nove volts em série desenhadas duas vezes. À esquerda, o terra está no nó inferior e os potenciais valem zero, mais nove e mais dezoito volts. À direita, o terra está no nó do meio e os mesmos pontos valem menos nove, zero e mais nove volts. A diferença entre o topo e a base é dezoito volts nos dois casos.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---------- escolha 1: referencia embaixo ----------
+  \begin{scope}
+    \draw (0,0) to[battery1, l_={$9\,\mathrm{V}$}] (0,2.2)
+                to[battery1, l_={$9\,\mathrm{V}$}] (0,4.4);
+    \draw (0,4.4) -- (1.0,4.4);
+    \draw (0,2.2) -- (1.0,2.2);
+    \draw (0,0)   -- (1.0,0);
+    \node[ponto] at (0,2.2) {};
+    \node[anchor=west, font=\scriptsize] at (1.1,4.4) {$+18{,}0$ V};
+    \node[anchor=west, font=\scriptsize] at (1.1,2.2) {$+9{,}0$ V};
+    \node[anchor=west, font=\scriptsize] at (1.1,0)   {$0$ V};
+    \draw (0,0) -- (-0.9,0) -- (-0.9,-0.4);
+    \node[ground] at (-0.9,-0.4) {};
+    \node[align=center, font=\scriptsize\bfseries, anchor=north] at (0.3,-1.3)
+         {referência na base};
+    \node[align=center, font=\scriptsize, anchor=north] at (0.3,-1.8)
+         {alimentação simples};
+  \end{scope}
+
+  % ---------- escolha 2: referencia no meio ----------
+  \begin{scope}[xshift=6.4cm]
+    \draw (0,0) to[battery1, l_={$9\,\mathrm{V}$}] (0,2.2)
+                to[battery1, l_={$9\,\mathrm{V}$}] (0,4.4);
+    \draw (0,4.4) -- (1.0,4.4);
+    \draw (0,2.2) -- (1.0,2.2);
+    \draw (0,0)   -- (1.0,0);
+    \node[ponto] at (0,2.2) {};
+    \node[anchor=west, font=\scriptsize] at (1.1,4.4) {$+9{,}0$ V};
+    \node[anchor=west, font=\scriptsize] at (1.1,2.2) {$0$ V};
+    \node[anchor=west, font=\scriptsize] at (1.1,0)   {$-9{,}0$ V};
+    \draw (0,2.2) -- (-0.9,2.2) -- (-0.9,1.8);
+    \node[ground] at (-0.9,1.8) {};
+    \node[align=center, font=\scriptsize\bfseries, anchor=north] at (0.3,-1.3)
+         {referência no meio};
+    \node[align=center, font=\scriptsize, anchor=north] at (0.3,-1.8)
+         {alimentação simétrica};
+  \end{scope}
+
+  % ---------- o invariante ----------
+  \draw[manualred, thick, {Stealth[length=2.5mm]}-{Stealth[length=2.5mm]}]
+       (9.9,0) -- (9.9,4.4);
+  \node[manualred, font=\scriptsize\bfseries, align=left, anchor=west] at (10.1,2.2)
+       {$V_\text{topo} - V_\text{base} = 18{,}0$ V\\nas duas escolhas};
+
+\end{circuitikz}
+```
+
+O mesmo par de pilhas, duas referências. Nada no mundo físico mudou: as mesmas
+cargas, as mesmas reações químicas, a mesma corrente se você ligar a mesma carga.
+Só os rótulos mudaram. A escolha da direita é a alimentação simétrica de que todo
+amplificador operacional do Volume 11 vai precisar.
+
+:::
+
+## Três terras diferentes com o mesmo nome {#sec-009-tresterras}
+
+A palavra "terra" carrega pelo menos três significados distintos, e confundi-los é
+perigoso — no sentido literal do @sec-cap-002.
+
+::: {#fig-009-terras}
+
+```{.tikz}
+%%| filename: 009-terras
+%%| alt: Três símbolos de terra lado a lado com suas legendas: terra de sinal em triângulo, terra de chassi com hachuras, e terra de proteção com três barras decrescentes ligada ao solo real.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---------- terra de sinal ----------
+  \draw (0,1.0) -- (0,0.3);
+  \node[sground] at (0,0.3) {};
+  \node[align=center, font=\scriptsize\bfseries, anchor=north] at (0,-0.6)
+       {terra de sinal};
+  \node[align=center, font=\scriptsize, anchor=north] at (0,-1.1)
+       {o nó de referência\\deste circuito. Uma\\escolha do projetista.};
+
+  % ---------- chassi ----------
+  \draw (5,1.0) -- (5,0.3);
+  \draw[thick] (4.55,0.3) -- (5.45,0.3);
+  \foreach \i in {0,1,2,3}{
+    \pgfmathsetmacro{\xa}{4.55+\i*0.26}
+    \draw[thick] (\xa,0.3) -- (\xa-0.22,-0.05);
+  }
+  \node[align=center, font=\scriptsize\bfseries, anchor=north] at (5,-0.6)
+       {terra de chassi};
+  \node[align=center, font=\scriptsize, anchor=north] at (5,-1.1)
+       {a carcaça metálica.\\Pode ou não estar\\ligada às outras duas.};
+
+  % ---------- terra de protecao ----------
+  \draw (10,1.0) -- (10,0.3);
+  \node[ground] at (10,0.3) {};
+  \node[align=center, font=\scriptsize\bfseries, anchor=north] at (10,-0.6)
+       {terra de proteção};
+  \node[align=center, font=\scriptsize, anchor=north] at (10,-1.1)
+       {o pino redondo da tomada,\\ligado ao solo do prédio.\\Não é escolha de ninguém.};
+
+  % ---------- aviso ----------
+  \node[manualred, font=\scriptsize\bfseries, align=center, anchor=north] at (5,-2.7)
+       {três símbolos, três nós possivelmente diferentes --- e o da direita é o único
+        que já estava lá antes de você chegar};
+
+\end{circuitikz}
+```
+
+Os três símbolos e o que cada um promete. Num aparelho de bancada com carcaça
+metálica aterrada, os três costumam estar no mesmo nó; numa fonte chaveada barata
+de mesa, o terra de sinal flutua em relação ao terra de proteção, e a diferença
+pode passar de 100 V em corrente alternada.
+
+:::
+
+**Terra de sinal (GND, comum)** é o nó de referência do circuito: uma escolha do
+projetista, sem nenhuma relação obrigatória com o planeta. O terra de um circuito
+alimentado por pilha é apenas o polo negativo da pilha.
+
+**Terra de chassi** é a carcaça condutora do equipamento. Ela existe por
+blindagem e por segurança mecânica, e pode estar ligada ao terra de sinal, ligada
+através de um resistor e um capacitor, ou completamente isolada.
+
+**Terra de proteção (PE, *earth*)** é o pino redondo da tomada, ligado a uma haste
+enterrada. Não é convenção nenhuma: é um condutor real que existe para conduzir a
+corrente de falta até o disjuntor abrir. É o assunto do @sec-cap-002.
+
+::: {.callout-warning}
+## O formigamento do notebook não é sua imaginação
+
+Fontes chaveadas de dois pinos, sem terra de proteção, trazem um capacitor de
+filtro ligando o secundário à rede. Ele deixa o "terra" do aparelho a cerca de
+metade da tensão da rede em relação ao solo — 60 a 115 V CA no Brasil — com
+capacidade de corrente de algumas centenas de microampères. É pouco para machucar
+uma pessoa, é o suficiente para se sentir na ponta dos dedos, e é **muito** para
+o terra de um osciloscópio. Ligar dois aparelhos assim entre si põe essa tensão em
+cima do sinal, e ligar a garra de terra do osciloscópio a um nó vivo cria um
+caminho de curto pelo condutor de proteção. O tratamento completo está no Volume 7.
+:::
+
+## A convenção de sinal passiva {#sec-009-convencao}
+
+Para que as contas fechem, é preciso combinar como marcar polaridade e sentido de
+corrente num mesmo componente. A regra universal chama-se **convenção de sinal
+passiva**:
+
+> Marque a corrente **entrando pelo terminal marcado com $+$**. Com essa escolha,
+> $P = VI$ positivo significa que o elemento **absorve** potência, e negativo
+> significa que ele **fornece**.
+
+Um resistor sempre absorve, então com a convenção passiva a sua potência é sempre
+positiva. Uma pilha em descarga fornece, e a sua potência sai negativa — o que
+não é erro, é a convenção funcionando.
+
+::: {#fig-009-convencao}
+
+```{.tikz}
+%%| filename: 009-convencao
+%%| alt: Dois elementos com a convenção de sinal passiva aplicada. À esquerda um resistor com a corrente entrando pelo terminal mais, potência positiva, absorvendo. À direita uma pilha com a corrente saindo pelo terminal mais, potência negativa, fornecendo.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---------- resistor: absorve ----------
+  \begin{scope}
+    \draw (0,0) -- (0.9,0);
+    \draw (0.9,0) to[R, l={$R$}] (2.7,0);
+    \draw (2.7,0) -- (3.6,0);
+    \draw[thick, -{Stealth[length=2mm]}] (0.05,0.62) -- (0.85,0.62);
+    \node[anchor=south, font=\scriptsize] at (0.45,0.66) {$I$};
+    \node[font=\small] at (0.72,-0.5) {$+$};
+    \node[font=\small] at (2.88,-0.5) {$-$};
+    \node[font=\scriptsize] at (1.8,-0.52) {$V = +4{,}5$ V};
+    \node[manualgreen!55!black, font=\scriptsize\bfseries, anchor=north]
+         at (1.8,-1.15) {$P = VI > 0$};
+    \node[font=\scriptsize, align=center, anchor=north] at (1.8,-1.65)
+         {a corrente entra pelo terminal\\marcado $+$: o elemento \textbf{absorve}};
+  \end{scope}
+
+  % ---------- fonte: fornece ----------
+  \begin{scope}[xshift=7.4cm]
+    \draw (0,0) -- (0.9,0);
+    \draw (0.9,0) to[battery1] (2.7,0);
+    \draw (2.7,0) -- (3.6,0);
+    \node[anchor=south, font=\scriptsize] at (1.8,0.3) {pilha de 9 V};
+    \draw[thick, -{Stealth[length=2mm]}] (0.05,0.62) -- (0.85,0.62);
+    \node[anchor=south, font=\scriptsize] at (0.45,0.66) {$I$};
+    \node[font=\small] at (0.72,-0.5) {$+$};
+    \node[font=\small] at (2.88,-0.5) {$-$};
+    \node[font=\scriptsize] at (1.8,-0.52) {$V = -9{,}0$ V};
+    \node[manualred, font=\scriptsize\bfseries, anchor=north]
+         at (1.8,-1.15) {$P = VI < 0$};
+    \node[font=\scriptsize, align=center, anchor=north] at (1.8,-1.65)
+         {a marcação é a mesma, mas o $+$ físico\\da pilha está à direita: $V$ sai
+          negativa\\e o elemento \textbf{fornece}};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+A mesma marcação aplicada a um elemento passivo e a um ativo. Não é preciso saber
+de antemão o que cada elemento faz: marca-se tudo pela convenção passiva, resolve-se
+o circuito, e o sinal da potência conta quem absorveu e quem forneceu.
+
+:::
+
+Na prática de bancada, isso se traduz em uma disciplina simples: **decida a
+polaridade antes de medir e anote-a no desenho**. Um sinal negativo no visor então
+vira informação, e não confusão.
+
+## A fonte de tensão ideal, e por que ela não existe {#sec-009-fonteideal}
+
+Uma **fonte de tensão ideal** mantém a tensão entre seus terminais fixa,
+independentemente da corrente exigida. Se for de 5 V, entrega 5 V com 1 mA, com
+1 A e com 1000 A.
+
+Nenhuma fonte real faz isso, porque isso implicaria potência infinita. Toda fonte
+real tem uma **resistência interna** que derruba a tensão à medida que a corrente
+cresce. Numa pilha de 9 V nova, ela é de alguns ohms; numa pilha gasta, de
+dezenas — e é por isso que uma pilha "com 9 V" no voltímetro pode não acender um
+LED: os 9 V eram a tensão de circuito aberto. O modelo completo é o assunto do
+Volume 3.
+
+Duas regras que decorrem do conceito de fonte ideal e valem hoje:
+
+**Nunca ligue duas fontes de tensão diferentes em paralelo.** Duas fontes ideais
+de valores distintos ligadas em paralelo são uma contradição matemática — o mesmo
+par de nós não pode ter dois valores. Na prática, a de maior tensão empurra
+corrente para dentro da de menor, limitada só pelas resistências internas, e o
+resultado vai de aquecimento a explosão. Duas fontes iguais em paralelo exigem
+circuito de balanceamento; sem ele, uma acaba alimentando a outra.
+
+**Nunca curto-circuite uma fonte de tensão.** Uma fonte ideal em curto exigiria
+corrente infinita. Uma fonte real entrega o que a resistência interna permitir — o
+que numa pilha alcalina são poucos ampères e um invólucro muito quente, e numa
+bateria de lítio ou de chumbo são centenas de ampères e um incêndio.
+
+A **fonte de corrente ideal** é a dual: mantém a corrente fixa, ajustando a tensão
+ao que for preciso. Suas regras são espelhadas — nunca em série com outra fonte de
+corrente, nunca deixada em circuito aberto. O modo CC da fonte de bancada do
+@sec-cap-005 é a aproximação prática mais acessível.
+
+## Tensão flutuante e medição diferencial {#sec-009-flutuante}
+
+Um circuito alimentado por pilha, apoiado na bancada, **não tem referência
+nenhuma** em relação ao mundo. Ele flutua: o potencial do seu GND em relação ao
+solo do prédio é indeterminado, e depende de capacitâncias parasitas, umidade e de
+onde está a sua mão.
+
+Isso não é defeito. É a condição normal de todo circuito isolado, e é o que torna
+seguro tocar em ambos os polos de uma pilha de 9 V. Só quando se conecta esse
+circuito a algo aterrado — um computador pela USB, um osciloscópio pela garra de
+terra — é que a referência é forçada, e é nesse instante que erros de terra
+aparecem.
+
+Consequência instrumental importante:
+
+- **O voltímetro é diferencial por construção.** As duas pontas são simétricas e
+  nenhuma delas está ligada ao terra da tomada. Você pode medir entre dois nós
+  quaisquer, ambos "vivos", sem criar caminho nenhum.
+- **O osciloscópio comum não é.** A garra de terra da ponta de prova está
+  eletricamente ligada ao chassi e ao terra de proteção. Conectá-la a um nó que
+  não seja o terra do circuito cria um curto através do condutor de proteção. É a
+  causa clássica de placa queimada em bancada, e o Volume 7 dedica um capítulo
+  inteiro ao problema e às saídas (ponta diferencial, transformador isolador,
+  osciloscópio a bateria).
+
+## O voltímetro também carrega o circuito {#sec-009-carga}
+
+O @sec-cap-008 mostrou que o amperímetro rouba tensão do circuito. O voltímetro
+comete o pecado simétrico: ele **desvia corrente**. A entrada de um multímetro
+digital típico tem 10 MΩ, e esse resistor entra em paralelo com o que você está
+medindo.
+
+Em um nó de baixa impedância — a saída de uma fonte, um divisor de kilo-ohms —
+10 MΩ é invisível. Em um divisor feito de resistores de 1 MΩ, o instrumento muda
+a leitura em vários por cento, e a "tensão medida" simplesmente não é a tensão que
+existia antes de você encostar a ponta. O @sec-cap-014 quantifica esse efeito, que
+é o mesmo do carregamento de um divisor.
+
+A regra de ouro é a mesma dos dois casos: **estime a impedância do nó antes de
+medir**. Se ela passar de 100 kΩ, desconfie do número.
+
+## 🧪 Laboratório {#sec-009-lab}
+
+**A referência é sua, e o instrumento obedece.** Quatro experimentos que
+transformam "tensão é diferença de potencial" de frase decorada em resultado
+medido.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 2 pilhas de 9 V com suporte (ou 1 fonte de bancada com duas saídas isoladas)
+- 1 multímetro digital
+- 3 resistores de 4,7 kΩ, 1/4 W
+- 2 resistores de 1 MΩ, 1/4 W
+- 1 resistor de 10 kΩ, 1/4 W
+- Papel e lápis para a matriz de tensões da Parte 2
+:::
+
+### Parte 1 — O sinal está nas suas mãos
+
+1. Meça a tensão de uma pilha de 9 V com a ponta vermelha no polo positivo e a
+   preta no negativo. Anote.
+2. Inverta as pontas e meça de novo.
+
+A leitura muda de sinal e mantém o módulo. Não há um "valor verdadeiro" com sinal
+próprio: o que existe é $V_{AB} = -V_{BA}$, e qual dos dois aparece no visor é
+decisão de quem segura as pontas. Anote os dois números com os índices corretos —
+esse hábito de notação vale mais que a medição.
+
+### Parte 2 — A matriz de tensões de um divisor
+
+1. Monte três resistores de 4,7 kΩ em série entre o positivo de uma pilha de 9 V
+   e o negativo. Chame os quatro nós de A (topo), B, C e D (base).
+2. Prenda a ponta **preta** no nó D e meça A, B e C. Preencha a primeira coluna.
+3. Mude a ponta preta para o nó C e repita para A, B e D.
+4. Repita com a preta em B e depois em A, completando a matriz de 4 × 4.
+
+| medido \\ referência | A | B | C | D |
+|---|---|---|---|---|
+| **A** | 0 | | | |
+| **B** | | 0 | | |
+| **C** | | | 0 | |
+| **D** | | | | 0 |
+
+: Matriz de tensões da Parte 2, em volts. Preencha as doze células fora da
+diagonal. {#tbl-009-matriz}
+
+Três propriedades devem saltar da tabela preenchida:
+
+- **A diagonal é zero.** Um nó não tem tensão em relação a si mesmo.
+- **A matriz é antissimétrica**: $V_{XY} = -V_{YX}$. A metade de cima é o negativo
+  da metade de baixo.
+- **Cada linha é a linha de outra referência somada de uma constante.** Escolher
+  outro terra desloca todos os números em bloco, exatamente como a
+  @fig-009-referencia mostra.
+
+E há uma quarta, que é a que interessa: **doze números diferentes descrevem o
+mesmo circuito**. Nenhum deles é mais verdadeiro que os outros.
+
+### Parte 3 — Construir a alimentação simétrica
+
+1. Ligue as duas pilhas de 9 V **em série**: negativo da primeira ao positivo da
+   segunda. Chame o nó de baixo de $-$, o do meio de M e o de cima de $+$.
+2. Com a preta em $-$: meça M e $+$. Deve dar aproximadamente +9 V e +18 V.
+3. Agora **declare M como terra**: prenda a ponta preta em M e não a tire mais.
+   Meça $+$ e $-$. Deve dar +9 V e −9 V.
+4. Meça $V_{+,-}$ nas duas configurações. Dá 18 V nas duas.
+
+Você acabou de construir uma alimentação simétrica sem trocar um único fio. A
+única coisa que mudou foi onde você decidiu que ficava o zero. Guarde essa
+montagem mentalmente: ela é a alimentação padrão dos amplificadores operacionais
+do Volume 11.
+
+::: {.callout-note}
+## Cheque a polaridade antes de fechar o laço
+
+Ligar as duas pilhas em série significa negativo de uma no positivo da outra.
+Ligar positivo com positivo põe as duas em oposição: a tensão resultante é
+aproximadamente zero e as pilhas se descarregam uma na outra, aquecendo. Meça os
+18 V antes de conectar qualquer coisa ao conjunto.
+:::
+
+### Parte 4 — O voltímetro carregando o circuito
+
+1. Monte um divisor com **dois resistores de 4,7 kΩ** ligado aos 9 V. Meça a
+   tensão do nó do meio. Deve dar perto de 4,5 V.
+2. Agora monte um divisor com **dois resistores de 1 MΩ**, mesmos 9 V. Preveja
+   4,5 V. Meça.
+3. A leitura vem visivelmente menor. A razão: os 10 MΩ do instrumento estão em
+   paralelo com o resistor de baixo, e $1\ \text{M}\Omega \parallel 10\ \text{M}\Omega
+   \approx 0{,}91\ \text{M}\Omega$. O divisor efetivo virou 1 MΩ sobre 0,91 MΩ, e
+   a previsão corrigida é
+   $$ V = 9{,}0 \times \frac{0{,}91}{1{,}00 + 0{,}91} \approx 4{,}3\ \text{V}. $$
+4. Compare a previsão corrigida com o medido. Se bater, você acabou de **medir a
+   impedância de entrada do seu próprio multímetro** — inverta a conta e extraia o
+   valor. Muitos instrumentos baratos têm 1 MΩ, não 10 MΩ, e o resultado é
+   dramático.
+
+Este é o experimento mais importante do capítulo. Ele mostra, com números, que o
+instrumento faz parte do circuito, e que "o multímetro está mentindo" quase sempre
+significa "o multímetro está dizendo a verdade sobre um circuito que ele
+modificou".
+
+### Variante simulada (plano B)
+
+Qualquer simulador serve para as Partes 1 a 3, e vale especificamente pelo que
+força: o programa **exige** que você coloque um símbolo de terra antes de
+resolver, e recusa o circuito sem ele com uma mensagem sobre matriz singular. Essa
+recusa é a versão matemática da lição do capítulo. Mova o terra entre os nós e
+observe a tabela de potenciais inteira se deslocar. A Parte 4 exige que você
+acrescente à mão um resistor de 10 MΩ representando o voltímetro — o simulador
+mede sem carregar, o que é justamente o que a bancada não faz.
+
+## 🔥 Onde Queima {#sec-009-queima}
+
+**Dizer "a tensão no ponto X" sem declarar a referência.** É a raiz de quase todo
+mal-entendido sobre tensão, e vira erro concreto no instante em que duas pessoas
+usam referências diferentes sem perceber. Em anotação de bancada, escreva sempre
+em relação a quê.
+
+**Ligar a garra de terra do osciloscópio a um nó que não é o terra do circuito.**
+A garra está ligada ao terra de proteção da tomada. Prendê-la num nó a +12 V põe
+esse nó em curto com o planeta pelo caminho de menor resistência que houver — que
+costuma ser uma trilha da sua placa. Placa queimada, ponta de prova queimada, e às
+vezes o instrumento.
+
+**Ligar dois aparelhos de bancada aterrados a pontos diferentes do mesmo
+circuito.** Cria-se uma malha de terra: os dois "zeros" não são o mesmo ponto, e
+a diferença entre eles circula corrente pelo condutor de terra. O sintoma leve é
+ruído inexplicável na medição; o pesado é o mesmo curto do item anterior.
+
+**Confundir o GND do circuito com o terra de proteção.** São conceitos diferentes,
+com símbolos diferentes, e um deles é uma medida de segurança contra choque.
+Ligá-los indevidamente pode transformar a carcaça do aparelho num condutor vivo.
+
+**Somar tensões de circuitos com referências diferentes.** Dois módulos
+alimentados por fontes isoladas têm zeros independentes. Ligar o sinal de um à
+entrada do outro sem ligar antes os dois zeros não produz o valor esperado —
+produz uma tensão indefinida, dominada por acoplamento capacitivo. O fio de
+retorno comum não é opcional.
+
+**Duas fontes de tensão em paralelo.** Sem circuito de balanceamento, a de maior
+tensão descarrega na de menor. Com baterias, é o roteiro clássico do incêndio: uma
+célula carregada em paralelo com uma descarregada entrega toda a sua energia num
+caminho de miliohms.
+
+**Inverter a polaridade da alimentação.** Poucos circuitos integrados sobrevivem.
+Eletrolíticos invertidos abrem a válvula de alívio ou estouram, como o
+@sec-cap-006 descreve. Um diodo em série custa 0,7 V e evita o problema inteiro —
+técnica de proteção do Volume 12.
+
+**Medir tensão com o cabo ainda na entrada de corrente.** Repetido de propósito do
+capítulo anterior, porque a maior parte das vítimas cai justamente na transição
+entre medir corrente e medir tensão.
+
+**Confiar numa medida em nó de alta impedância.** Acima de umas centenas de
+kilo-ohms, o voltímetro passa a fazer parte do divisor. Se a leitura parece baixa
+demais e o circuito é de alta impedância, suspeite do instrumento antes do
+circuito.
+
+**Achar que "só 9 V" é seguro em qualquer situação.** É seguro para a pele. Não é
+seguro para um capacitor de 6,3 V, para uma entrada lógica de 3,3 V, nem para o
+seu dedo se o nó estiver ligado a uma bateria capaz de 20 A e você fechar o
+caminho com uma aliança metálica.
+
+## O que fica deste capítulo {#sec-009-resumo}
+
+Tensão é trabalho por unidade de carga, medida em volts, e 1 V = 1 J/C. Ela existe
+sempre **entre dois pontos**: $V_{AB} = V_A - V_B$, com $V_{BA} = -V_{AB}$, e ao
+longo de um caminho as diferenças se somam. É por isso que o voltímetro tem duas
+pontas e que trocá-las troca o sinal.
+
+O nó de referência — o terra — é uma escolha do projetista, não uma propriedade
+do circuito. Movê-lo desloca todos os potenciais pela mesma constante e não altera
+nenhuma diferença. Terra de sinal, terra de chassi e terra de proteção são três
+coisas diferentes com o mesmo nome, e a última é a única que já existia antes de
+você desenhar o circuito.
+
+A convenção de sinal passiva — corrente entrando pelo terminal positivo — faz o
+sinal de $P = VI$ dizer sozinho quem absorve e quem fornece. Fontes de tensão
+ideais não existem, não podem ser postas em paralelo umas com as outras e não
+podem ser curto-circuitadas.
+
+Por fim, todo instrumento participa do circuito: o amperímetro derruba tensão, o
+voltímetro desvia corrente, e o osciloscópio traz o terra da tomada junto.
+
+Com carga, corrente e tensão definidas, falta a relação entre elas. O próximo
+capítulo introduz a resistência e a lei que amarra as três — a mais usada e a mais
+mal compreendida da eletrônica.

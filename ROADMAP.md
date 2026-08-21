@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 8/104**
+**Progresso: 9/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -28,7 +28,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 ### Volume 2 — Corrente Contínua: Leis Fundamentais
 
 - [x] 008 — Carga, corrente e o modelo de condução — `capitulos/008-carga-corrente-e-o-modelo-de-conducao.qmd`
-- [ ] 009 — Tensão, potencial e referência (terra) — `capitulos/009-tensao-potencial-e-referencia-terra.qmd`
+- [x] 009 — Tensão, potencial e referência (terra) — `capitulos/009-tensao-potencial-e-referencia-terra.qmd`
 - [ ] 010 — Resistência, resistividade e a Lei de Ohm — `capitulos/010-resistencia-resistividade-e-a-lei-de-ohm.qmd`
 - [ ] 011 — Potência, energia e dissipação térmica — `capitulos/011-potencia-energia-e-dissipacao-termica.qmd`
 - [ ] 012 — Associação série e paralelo — `capitulos/012-associacao-serie-e-paralelo.qmd`
