@@ -1,3 +1,582 @@
 # Potência, energia e dissipação térmica {#sec-cap-011}
 
-*(em elaboração)*
+Este é o capítulo em que "Onde Queima" deixa de ser metáfora.
+
+Corrente, tensão e resistência descrevem o que o circuito faz. Potência descreve o
+preço: toda a energia que entra tem de sair, e num circuito eletrônico ela sai
+quase toda como calor. Um projeto elétrico correto que ignore a conta térmica é um
+projeto que funciona por dez minutos.
+
+O capítulo tem duas metades. A primeira é aritmética — três fórmulas, uma unidade
+e um cuidado com energia contra potência. A segunda é a parte que separa quem
+calcula circuitos de quem constrói equipamentos: quanto calor um componente
+consegue expulsar antes de deixar de existir.
+
+## As três formas de $P = VI$ {#sec-011-formulas}
+
+O @sec-cap-009 já entregou a definição pelo caminho mais curto: volt é joule por
+coulomb, ampère é coulomb por segundo, e o produto é joule por segundo — o
+**watt** (W).
+
+$$ P = V\,I. $$
+
+Substituindo a Lei de Ohm dentro dela, nascem duas variantes que são a mesma
+equação com maquiagem diferente:
+
+$$ P = V I, \qquad P = I^2 R, \qquad P = \frac{V^2}{R}. $$
+
+As três dão o mesmo número num resistor. A escolha entre elas é de conveniência, e
+saber escolher poupa tempo:
+
+| Use | Quando | Exemplo típico |
+|---|---|---|
+| $P = VI$ | você mediu ou conhece os dois | consumo total de uma placa |
+| $P = I^2 R$ | a **corrente** é a grandeza conhecida | resistores em série, fios, trilhas, resistor de emissor |
+| $P = V^2/R$ | a **tensão** é a grandeza conhecida | qualquer coisa ligada a um trilho de alimentação fixo |
+
+: Qual forma usar. Em série a corrente é comum a todos; em paralelo, a tensão.
+{#tbl-011-formas}
+
+Duas leituras que só ficam evidentes nas formas derivadas:
+
+**Em série, o maior resistor dissipa mais.** A corrente é a mesma para todos, e
+$P = I^2R$ é proporcional a $R$.
+
+**Em paralelo, o menor resistor dissipa mais.** A tensão é a mesma para todos, e
+$P = V^2/R$ é inversamente proporcional a $R$.
+
+Parece contraditório e não é: são situações diferentes, com a grandeza comum
+diferente. Errar isso é o modo clássico de escolher a potência nominal errada
+numa rede de resistores — e o @sec-cap-012 volta ao assunto com a rede montada.
+
+**A dependência quadrática merece um parágrafo próprio.** Em $P = I^2R$, dobrar a
+corrente **quadruplica** a dissipação. Um resistor confortável em 100 mA está em
+apuros em 200 mA e destruído em 400 mA. É por isso que margem de projeto em
+potência é medida em fatores, não em porcentagens.
+
+## Energia: joule, watt-hora e a mentira do mAh {#sec-011-energia}
+
+Potência é taxa; **energia** é o acumulado:
+
+$$ E = P\,t, $$
+
+em joules quando $P$ está em watts e $t$ em segundos. Na prática usam-se unidades
+maiores:
+
+$$ 1\ \text{Wh} = 3600\ \text{J}, \qquad 1\ \text{kWh} = 3{,}6\ \text{MJ}. $$
+
+O kWh da conta de luz é, portanto, mil watts sustentados por uma hora. Um ferro de
+solda de 40 W ligado oito horas por dia consome 0,32 kWh por dia — informação
+inútil para o projeto e útil para a discussão sobre deixar a bancada ligada.
+
+Agora o ponto que confunde quase todo iniciante em eletrônica portátil:
+
+::: {.callout-important}
+## mAh não é energia
+
+A capacidade de uma bateria é anunciada em **mAh** — miliampères-hora —, que é
+carga, não energia. Para virar energia é preciso multiplicar pela tensão:
+
+$$ E\ [\text{Wh}] = \frac{\text{capacidade [mAh]} \times \text{tensão [V]}}{1000}. $$
+
+Uma célula de 3000 mAh a 3,7 V guarda 11,1 Wh. Uma de 3000 mAh a 1,2 V guarda
+3,6 Wh — um terço, com o mesmo número na embalagem. Comparar baterias de
+químicas diferentes pelo mAh é comparar volumes de líquidos diferentes pelo peso
+da garrafa.
+:::
+
+**Exemplo completo.** Uma pilha de 9 V alcalina tem cerca de 500 mAh, ou seja
+$0{,}5 \times 9 = 4{,}5$ Wh = 16,2 kJ. Alimentando o circuito do @sec-cap-001 —
+um LED com resistor de 470 Ω, consumindo cerca de 15 mA — a autonomia teórica é
+
+$$ t = \frac{500\ \text{mAh}}{15\ \text{mA}} \approx 33\ \text{h}. $$
+
+Teórica porque a pilha não entrega 9 V até o fim: a tensão cai ao longo da
+descarga, o LED apaga bem antes de a carga acabar, e a capacidade anunciada é
+medida sob uma corrente de descarga específica. Autonomia real de vinte e poucas
+horas. A conta serve para a ordem de grandeza, que é o que ela precisa dar.
+
+## Para onde a energia vai {#sec-011-destino}
+
+Nenhum componente consome energia: todos a **convertem**. A pergunta útil é em
+quê.
+
+- **Resistor:** 100 % em calor. Não há exceção, não há eficiência, não há truque.
+- **LED:** parte em luz (de 10 % a 50 %, dependendo do tipo), o resto em calor.
+- **Motor:** parte em trabalho mecânico, o resto em calor nos enrolamentos e no
+  atrito.
+- **Capacitor e indutor ideais:** nada. Eles **armazenam** e devolvem — potência
+  média nula. É o que os torna diferentes de tudo o mais, e é o assunto do
+  Volume 4.
+- **Fonte:** fornece. Com o sinal da convenção passiva do @sec-cap-009, a sua
+  potência é negativa.
+
+E há uma lei de conservação por trás disso, que vale para qualquer circuito, por
+mais complicado:
+
+$$ \sum_{\text{todos os elementos}} P = 0. $$
+
+O que as fontes fornecem, os demais elementos absorvem, exatamente. Essa soma
+fechando é a melhor verificação que existe para um circuito resolvido no papel: se
+o balanço de potência não fecha, há erro na solução, e não adianta procurar em
+outro lugar.
+
+## O resistor real e a potência nominal {#sec-011-nominal}
+
+Um resistor tem dois números, não um: **valor** e **potência nominal**. O segundo
+não aparece no código de cores do @sec-cap-006 — ele se lê pelo tamanho do corpo.
+
+::: {#fig-011-tamanhos}
+
+```{.tikz}
+%%| filename: 011-tamanhos
+%%| alt: Seis corpos de resistor desenhados em escala três para um, do menor ao maior: um oitavo de watt com três vírgula dois por um vírgula oito milímetros, um quarto de watt com seis vírgula três por dois vírgula quatro, meio watt com nove por três vírgula dois, um watt com onze vírgula cinco por quatro vírgula cinco, dois watts com quinze vírgula cinco por cinco, e cinco watts de fio com vinte e dois por oito milímetros.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \foreach \yc/\pot/\cmp/\esp/\dsc in {%
+      -0.27/{1/8 W}/0.96/0.54/{3,2 $\times$ 1,8 mm},
+      -1.50/{1/4 W}/1.89/0.72/{6,3 $\times$ 2,4 mm},
+      -2.94/{1/2 W}/2.70/0.96/{9,0 $\times$ 3,2 mm},
+      -4.70/{1 W}/3.45/1.35/{11,5 $\times$ 4,5 mm},
+      -6.72/{2 W}/4.65/1.50/{15,5 $\times$ 5,0 mm},
+      -9.27/{5 W (fio)}/6.60/2.40/{22 $\times$ 8 mm}}{
+    \draw[thick, manualgray] (-0.9,\yc) -- (0,\yc);
+    \draw[thick, manualgray] (\cmp,\yc) -- ({\cmp+0.9},\yc);
+    \draw[rounded corners=2pt, fill=manualblue!14, draw=manualblue!70!black, thick]
+         (0,{\yc-\esp/2}) rectangle (\cmp,{\yc+\esp/2});
+    \node[anchor=west, align=left] at (8.2,\yc) {\textbf{\pot} --- corpo de \dsc};
+  }
+
+  \node[anchor=west, font=\scriptsize, manualgray] at (8.2,0.9)
+       {desenho em escala 3:1};
+  \draw[manualred, thick, -{Stealth[length=3mm]}] (7.4,-0.4) -- (7.4,-9.0);
+  \node[manualred, font=\scriptsize, align=center, rotate=90, anchor=south] at (7.15,-4.7)
+       {mais superfície = mais calor expulso};
+
+\end{tikzpicture}
+```
+
+Por que resistores de mesmo valor têm tamanhos diferentes. A potência nominal não
+tem nada a ver com o valor ôhmico: ela é uma medida de **área de superfície**, que
+é por onde o calor sai. Um resistor de 1 kΩ de 1/8 W e um de 1 kΩ de 2 W são
+eletricamente indistinguíveis; termicamente, um deles aguenta dezesseis vezes mais.
+
+:::
+
+E o número nominal vem com letra miúda. Ele é especificado a uma **temperatura
+ambiente de referência**, tipicamente 70 °C, ao ar livre, com terminais de
+comprimento padronizado soldados a uma placa de tamanho padronizado. Fora dessas
+condições, o valor cai:
+
+::: {#fig-011-derating}
+
+```{.tikz}
+%%| filename: 011-derating
+%%| alt: Curva de redução de potência admissível em função da temperatura ambiente. A potência permanece em cem por cento do nominal até setenta graus Celsius e cai linearmente até zero em cento e cinquenta e cinco graus. Uma segunda curva tracejada em verde mostra a prática recomendada de projeto, em cinquenta por cento do nominal.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=11.5cm, height=7.2cm,
+  xlabel={temperatura ambiente ($^\circ$C)},
+  ylabel={potência admissível (\% do nominal)},
+  xmin=0, xmax=170, ymin=0, ymax=118,
+  axis lines=left,
+  grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  xtick={0,25,50,70,100,125,150},
+  ytick={0,25,50,75,100},
+]
+
+  \addplot[draw=none, fill=manualgreen!16]
+    coordinates {(0,0) (0,50) (70,50) (155,0)} \closedcycle;
+
+  \addplot[manualgreen!55!black, thick, dashed]
+    coordinates {(0,50) (70,50) (155,0)};
+
+  \addplot[curva] coordinates {(0,100) (70,100) (155,0)};
+
+  \draw[auxiliar] (axis cs:70,0) -- (axis cs:70,100);
+
+  \node[manualblue, font=\scriptsize, align=left, anchor=north west]
+       at (axis cs:74,114) {limite absoluto do fabricante};
+  \node[manualgreen!45!black, font=\scriptsize\bfseries, align=center]
+       at (axis cs:44,25) {zona de projeto sensato};
+  \node[font=\scriptsize, align=left, anchor=north west]
+       at (axis cs:100,92) {acima de 70 $^\circ$C\\o nominal deixa de valer};
+  \node[manualred, font=\scriptsize, align=left, anchor=north west]
+       at (axis cs:124,62) {155 $^\circ$C: nenhuma\\potência admissível};
+  \draw[manualred, thin, -{Stealth[length=2mm]}]
+       (axis cs:138,44) -- (axis cs:153,4);
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A curva de *derating*, que vem em toda folha de dados de resistor e que quase
+ninguém consulta. Dentro de uma caixa fechada, com outros componentes aquecendo o
+ar, 50 °C de ambiente é comum e 70 °C não é raro — e a partir daí o número
+estampado no catálogo simplesmente não se aplica mais.
+
+:::
+
+Daí a regra de bolso mais útil deste capítulo:
+
+::: {.callout-tip}
+## Metade do nominal
+
+Dimensione todo resistor para dissipar, no máximo, **metade** da potência
+nominal. Custa quase nada — a diferença de preço entre 1/4 W e 1/2 W é
+insignificante —, cobre o *derating* por temperatura ambiente, cobre a tolerância
+do resistor e da fonte, e mantém o componente numa temperatura em que ele não
+envelhece rápido nem torra a placa embaixo dele.
+:::
+
+## O circuito térmico equivalente {#sec-011-termico}
+
+Calor se comporta como corrente. Essa não é uma analogia poética: as equações são
+literalmente as mesmas, e você pode resolver um problema térmico com as
+ferramentas de circuito que já tem.
+
+| Elétrico | Térmico | Unidade |
+|---|---|---|
+| corrente $I$ | fluxo de calor $P$ | W |
+| tensão $V$ | diferença de temperatura $\Delta T$ | °C |
+| resistência $R$ | resistência térmica $\theta$ | °C/W |
+| Lei de Ohm $V = RI$ | $\Delta T = \theta P$ | — |
+| capacitância $C$ | capacidade térmica | J/°C |
+
+: A analogia térmica. Resistências térmicas em série somam, exatamente como as
+elétricas. {#tbl-011-analogia}
+
+A resistência térmica $\theta$ mede quantos graus de diferença cada watt produz.
+Um encapsulamento com $\theta_{JA} = 62$ °C/W dissipando 1 W tem a junção 62 °C
+acima do ambiente. Os índices dizem entre quais pontos:
+
+- $\theta_{JC}$ — da **junção** à **cápsula** (propriedade do componente).
+- $\theta_{CS}$ — da cápsula ao **dissipador** (isolante, pasta térmica, aperto).
+- $\theta_{SA}$ — do dissipador ao **ambiente** (tamanho, aletas, ventilação).
+- $\theta_{JA}$ — da junção ao ambiente **sem dissipador**, o pior caso.
+
+::: {#fig-011-termico}
+
+```{.tikz}
+%%| filename: 011-termico
+%%| alt: Circuito térmico equivalente de um regulador em encapsulamento TO-220 sobre dissipador. Uma fonte de corrente representa três vírgula cinco watts dissipados e três resistências em série representam a resistência térmica junção-cápsula de cinco, cápsula-dissipador de um e dissipador-ambiente de oito graus Celsius por watt, resultando em setenta e quatro graus na junção com ambiente a vinte e cinco graus.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % fonte de "corrente" = potencia dissipada
+  \draw (0,0.6) to[I, l={$P = 3{,}5$ W}] (0,5.4);
+  \draw (0,5.4) -- (3,5.4);
+  \draw (0,0.6) -- (3,0.6);
+
+  % resistencias termicas em serie
+  \draw (3,5.4) to[R, l={$\theta_{JC} = 5$}] (3,3.8);
+  \draw (3,3.8) to[R, l={$\theta_{CS} = 1$}] (3,2.2);
+  \draw (3,2.2) to[R, l={$\theta_{SA} = 8$}] (3,0.6);
+
+  % referencia = ambiente
+  \draw (3,0.6) -- (4.4,0.6) -- (4.4,0.15);
+  \node[ground] at (4.4,0.15) {};
+
+  % nos e temperaturas
+  \foreach \yy/\rot/\tmp in {5.4/{junção}/{$T_j = 74\ ^\circ$C},
+                             3.8/{cápsula}/{$T_c = 56{,}5\ ^\circ$C},
+                             2.2/{dissipador}/{$T_s = 53\ ^\circ$C},
+                             0.6/{ambiente}/{$T_a = 25\ ^\circ$C}}{
+    \node[ponto] at (3,\yy) {};
+    \node[anchor=west, font=\scriptsize] at (5.1,\yy) {\rot: \tmp};
+  }
+
+  % legenda da analogia
+  \node[manualgray, font=\scriptsize, align=left, anchor=north west] at (-1.4,-0.9)
+       {a "corrente" é potência em watts; a "tensão" de cada nó é a sua
+        temperatura;\\a "resistência" é $^\circ$C por watt. O terra é o ambiente.};
+
+  % resultado
+  \node[manualred, font=\scriptsize, align=left, anchor=west, draw=manualred!45,
+        rounded corners=2pt, inner sep=4pt] at (9.9,3.0)
+       {$\theta_{JA} = 5 + 1 + 8 = 14\ ^\circ$C/W\\
+        $\Delta T = 14 \times 3{,}5 = 49\ ^\circ$C\\
+        $T_j = 25 + 49 = 74\ ^\circ$C};
+
+\end{circuitikz}
+```
+
+Um problema térmico resolvido como circuito de corrente contínua. As resistências
+térmicas em série somam, e a temperatura de cada nó é o ambiente somado à queda
+acumulada abaixo dele. Nenhuma ferramenta nova: é a mesma aritmética do
+@sec-cap-009 com unidades trocadas.
+
+:::
+
+**O exemplo completo, e por que ele importa.** Um regulador linear 7805 recebe
+12 V e entrega 5 V a 500 mA. A tensão que sobra vira calor:
+
+$$ P = (12 - 5) \times 0{,}5 = 3{,}5\ \text{W}. $$
+
+Em TO-220 **sem dissipador**, $\theta_{JA} \approx 62$ °C/W:
+
+$$ T_j = 25 + 62 \times 3{,}5 = 242\ ^{\circ}\text{C}. $$
+
+O limite de junção é 150 °C. O componente se desliga por proteção térmica em
+poucos segundos, e se a proteção falhar, morre. Com o dissipador da figura, o
+mesmo circuito opera a 74 °C de junção — confortável.
+
+Repare no que a conta revelou: **o problema não era elétrico**. O circuito estava
+correto, os 5 V estavam corretos, a corrente estava dentro da especificação. O
+que faltava era um pedaço de alumínio. Esse é o tipo de erro que só a conta
+térmica pega.
+
+## Fuga térmica {#sec-011-fuga}
+
+Existe um laço fechado escondido em tudo isso: a potência dissipada aquece o
+componente, e a temperatura do componente muda a sua resistência, o que muda a
+potência dissipada.
+
+Quando o coeficiente de temperatura é **positivo** — metais, filamentos,
+enrolamentos —, o laço é estabilizante: mais quente, mais resistivo, menos
+corrente, menos calor. O sistema encontra um equilíbrio sozinho.
+
+Quando é **negativo** — termistores NTC, junções de semicondutor, o próprio
+silício —, o laço é regenerativo: mais quente, menos resistivo, mais corrente,
+mais quente. Se o ganho do laço passa de um, a temperatura diverge e o componente
+se destrói em segundos. É a **fuga térmica**, e ela é a causa de morte de uma
+fração enorme dos transistores de potência.
+
+A condição de estabilidade, informalmente: a taxa com que a dissipação cresce com
+a temperatura tem de ser menor que a taxa com que o encapsulamento consegue
+expulsar calor. Um dissipador maior não serve só para baixar a temperatura de
+regime — ele **muda a estabilidade do laço**. Os Volumes 9 e 12 tratam disso com
+as fórmulas dos dispositivos concretos.
+
+## Potência média e potência de pico {#sec-011-pico}
+
+Componentes têm inércia térmica. Um resistor de 1/4 W não é destruído por 2,5 W
+aplicados durante 10 ms — o corpo simplesmente não tem tempo de esquentar. É
+destruído por 0,4 W aplicados durante uma hora.
+
+O que importa depende da escala de tempo:
+
+- **Muito mais curto que a constante térmica** (dezenas de segundos para um
+  resistor axial): o que conta é a **energia** do pulso, não a potência.
+- **Muito mais longo**: o que conta é a **potência média**.
+- **Comparável**: é preciso o modelo completo, com a capacidade térmica entrando
+  como um capacitor no circuito da @fig-011-termico. As folhas de dados trazem
+  curvas de pulso único para exatamente esse caso.
+
+Para uma carga pulsada com ciclo de trabalho $D$, a potência média é
+$P_\text{méd} = D \times P_\text{pico}$. Um resistor de emissor num circuito
+chaveado a 20 % de ciclo com 2 W de pico dissipa 0,4 W médios — cabe num 1 W, não
+cabe num 1/4 W.
+
+O erro simétrico também existe e é pior: **dimensionar pela média quando o pico é
+que destrói**. Um resistor de partida de motor vê o surto do @sec-cap-010 durante
+centenas de milissegundos, tempo suficiente para importar.
+
+## 🧪 Laboratório {#sec-011-lab}
+
+**Medir calor com um ohmímetro, e depois queimar um resistor de propósito.** O
+segundo experimento é o único deliberadamente destrutivo do manual, e ele existe
+porque ver um componente falhar em condições controladas é a melhor vacina contra
+vê-lo falhar dentro de um projeto.
+
+### Material
+
+::: {.lab-material}
+- 1 fonte de bancada ajustável de 0 a 12 V, **com limite de corrente**
+- 1 multímetro digital (de preferência com 4½ dígitos, para a Parte 2)
+- 2 resistores de 100 Ω, 1/4 W (um deles será sacrificado)
+- 1 resistor de 100 Ω, 1 W
+- 1 resistor de 470 Ω, 1/4 W
+- Fio e jumpers
+- Superfície não inflamável (chapa metálica, cerâmica, pedra) para a Parte 4
+- Óculos de proteção para a Parte 4
+- Ambiente ventilado — o cheiro do verniz queimando é forte e desagradável
+- Opcional: termômetro infravermelho de mão. Transforma as Partes 2 e 3 em
+  medição direta.
+:::
+
+::: {.callout-warning}
+## Antes da Parte 4
+
+O resistor da Parte 4 vai chegar a mais de 200 °C, escurecer, cheirar mal e pode
+rachar ou soltar fragmentos. Use óculos, não segure o componente, mantenha o
+rosto afastado, ventile o ambiente e ajuste o **limite de corrente da fonte**
+antes de ligar. Nunca faça essa parte com pilha ou bateria: sem limite de
+corrente, uma falha em curto vira algo bem pior que um resistor queimado.
+:::
+
+### Parte 1 — As três fórmulas dão o mesmo número
+
+1. Monte o resistor de 470 Ω na fonte ajustada em 9,0 V.
+2. Meça $V$ sobre o resistor e $I$ pelo circuito.
+3. Meça também o valor real do resistor com o ohmímetro, fora do circuito.
+4. Calcule a potência pelas três formas e preencha:
+
+| Fórmula | Cálculo | Resultado (W) |
+|---|---|---|
+| $P = VI$ | | |
+| $P = I^2 R$ | | |
+| $P = V^2/R$ | | |
+
+: Tabela da Parte 1. As três colunas de resultado devem coincidir dentro do erro
+de medição. {#tbl-011-lab1}
+
+Se uma das três destoar bastante, o culpado é quase sempre o valor de $R$: você
+usou o nominal em vez do medido, ou mediu com o resistor ainda no circuito. É um
+bom lembrete de que as três formas são equivalentes apenas quando os três números
+são consistentes.
+
+### Parte 2 — Medir a temperatura de um resistor com um ohmímetro
+
+Este experimento junta o coeficiente de temperatura do @sec-cap-010 com a
+resistência térmica deste capítulo, e o resultado é o $\theta_{JA}$ real do seu
+componente na sua bancada.
+
+1. Meça o resistor de 100 Ω, 1/4 W à temperatura ambiente, com todas as casas
+   decimais que o instrumento der. Anote como $R_0$ e a temperatura ambiente
+   como $T_0$.
+2. Ligue-o à fonte em 4,0 V, o que dissipa $16/100 = 0{,}16$ W. Espere três
+   minutos para o regime térmico se estabelecer.
+3. Desligue a fonte e meça a resistência **imediatamente** — o corpo esfria em
+   segundos. Anote como $R_1$.
+4. Extraia a variação de temperatura, usando o coeficiente do tipo de resistor
+   (para filme de carbono, cerca de $-300$ ppm/°C; para filme metálico, $+50$;
+   consulte a embalagem):
+   $$ \Delta T = \frac{R_1/R_0 - 1}{\alpha}. $$
+5. Calcule a resistência térmica do seu resistor ao ar livre:
+   $$ \theta_{JA} = \frac{\Delta T}{P} = \frac{\Delta T}{0{,}16}. $$
+
+Para um resistor axial de 1/4 W ao ar livre, espere algo entre 200 e 400 °C/W. Com
+esse número na mão, responda: qual a temperatura do corpo se ele dissipar os
+0,25 W nominais? E se dissipar 0,5 W?
+
+Se tiver termômetro infravermelho, meça direto e compare com o valor inferido. A
+concordância entre dois métodos independentes é o que dá confiança em qualquer
+medição.
+
+### Parte 3 — O mesmo valor, dois tamanhos
+
+1. Monte, lado a lado e bem separados, o resistor de 100 Ω 1/4 W e o de
+   100 Ω 1 W, cada um ligado a 4,0 V (0,16 W em cada).
+2. Espere três minutos.
+3. Aproxime o dedo de cada um, sem tocar, e compare. Se tiver termômetro
+   infravermelho, meça.
+
+Mesma resistência, mesma tensão, mesma corrente, mesma potência — e temperaturas
+bem diferentes. A única variável é a área de superfície, e é exatamente isso que
+a potência nominal está descrevendo.
+
+### Parte 4 — O limite, encontrado de propósito
+
+Com os cuidados do aviso acima:
+
+1. Monte o segundo resistor de 100 Ω 1/4 W sozinho, sobre a superfície não
+   inflamável, longe de tudo. Ajuste o limite de corrente da fonte para 150 mA.
+2. Comece em 5,0 V — exatamente 0,25 W, o nominal. Espere dois minutos. Aproxime
+   o dedo: quente, mas o componente sobrevive indefinidamente assim.
+3. Suba para 7,0 V (0,49 W, o dobro do nominal). Dois minutos. O verniz começa a
+   cheirar.
+4. Suba para 10,0 V (1,0 W, quatro vezes o nominal). Observe: escurecimento do
+   corpo, fumaça fina, cheiro forte. Meça a resistência depois de esfriar — ela
+   mudou permanentemente.
+5. Se quiser o fim: 15,0 V (2,25 W, nove vezes o nominal). Fica em circuito
+   aberto em algum ponto entre segundos e um minuto.
+
+O que este experimento ensina não é que resistores queimam. É a **escala**: entre
+"funciona para sempre" e "morre em trinta segundos" há um fator de quatro na
+potência, que é um fator de dois na tensão. Não há aviso, não há degradação
+graciosa, e nada disso aparece em nenhuma medida elétrica antes de acontecer.
+
+### Variante simulada (plano B)
+
+Simuladores de circuito calculam potência com exatidão perfeita e temperatura com
+exatidão nenhuma: o modelo padrão de um resistor no SPICE não tem corpo, não tem
+massa e não esquenta. Faça a Parte 1 no simulador para conferir a aritmética e
+para brincar com a dependência quadrática — dobre a corrente e veja a potência
+quadruplicar. As Partes 2 a 4 não têm equivalente, e essa ausência é ela mesma a
+lição: **o simulador nunca vai avisar que o seu circuito vai pegar fogo.**
+
+## 🔥 Onde Queima {#sec-011-queima}
+
+**Dimensionar exatamente no nominal.** 0,25 W num resistor de 1/4 W está
+"dentro da especificação" e é um projeto ruim. Some a tolerância do resistor, a
+tolerância da fonte, a temperatura interna da caixa e o *derating*, e o
+componente passa a operar acima do limite em condições perfeitamente normais.
+Metade do nominal, sempre.
+
+**Ignorar a curva de *derating*.** O número da folha de dados vale a 70 °C ao ar
+livre. Dentro de uma caixa fechada, ao lado de um regulador, com o ar parado, o
+ambiente local pode estar a 90 °C — e ali o resistor de 1/4 W vale 0,15 W.
+
+**Confundir mAh com Wh.** É o erro que faz um projeto portátil ter um terço da
+autonomia prevista. Capacidade em carga só se compara entre baterias da mesma
+tensão.
+
+**Calcular a dissipação no ponto de operação nominal e não no pior caso.** Um
+regulador linear dissipa mais com a **entrada máxima** e a **saída em curto**, não
+no ponto nominal. Um resistor de limitação dissipa mais quando o componente que
+ele protege falha em curto. O pior caso é onde mora o incêndio.
+
+**Regulador linear sem conta térmica.** A conta é sempre
+$P = (V_\text{ent} - V_\text{saí}) \times I$, e ela cresce com a diferença de
+tensão. Abaixar 12 V para 3,3 V a 1 A dissipa 8,7 W — mais que uma lâmpada de
+geladeira, num componente do tamanho de uma moeda.
+
+**Montar dissipador sem pasta térmica, ou com pasta demais.** Sem pasta, o
+$\theta_{CS}$ triplica por causa do ar preso nas irregularidades. Com pasta em
+excesso, o próprio excesso vira isolante. Camada fina e uniforme, aperto no torque
+recomendado.
+
+**Esquecer o isolador de mica no $\theta$ total.** Quando a aba metálica do
+componente é ligada eletricamente a um terminal, o isolador é obrigatório — e ele
+acrescenta de 0,5 a 2 °C/W ao caminho térmico. Não contá-lo é subdimensionar o
+dissipador.
+
+**Dimensionar pela média quando o pico destrói, ou pelo pico quando a média
+destrói.** As duas versões existem e as duas queimam coisas. Decida antes qual é a
+escala de tempo do problema, comparada à constante térmica do componente.
+
+**Fuga térmica em componentes de coeficiente negativo.** Sem limitação de corrente
+externa, o laço se fecha e não há nada que o pare. Todo circuito de potência com
+semicondutor precisa de alguma forma de limitação, e nenhum dissipador substitui
+essa limitação.
+
+**Testar temperatura com o dedo.** Um componente a 100 °C não parece dez vezes
+mais quente que um a 40 °C: parece uma queimadura de segundo grau. Aproxime a mão
+sem tocar, ou use um termômetro infravermelho. E lembre que reguladores e
+transistores de potência podem estar **eletricamente vivos** na aba metálica.
+
+**Trilha estreita como resistor não intencional.** Uma trilha de 0,25 mm com 2 A
+dissipa $I^2R$ ao longo de todo o seu comprimento, aquece o laminado e pode
+descolar do FR-4. A largura da trilha é uma decisão térmica tanto quanto elétrica.
+
+## O que fica deste capítulo {#sec-011-resumo}
+
+Potência é $P = VI$, e as formas $I^2R$ e $V^2/R$ são a mesma equação escolhida
+pela grandeza que você conhece. Em série o maior resistor dissipa mais; em
+paralelo, o menor. A dependência é quadrática, e por isso margens de projeto se
+medem em fatores.
+
+Energia é potência vezes tempo, em joules ou watt-hora. Capacidade de bateria em
+mAh é carga, não energia: só vira energia depois de multiplicada pela tensão.
+
+Todo resistor tem dois números — valor e potência nominal —, e o segundo é uma
+medida de área de superfície, especificada a 70 °C e sujeita a *derating* acima
+disso. Projete para metade do nominal.
+
+Problemas térmicos são problemas de circuito com unidades trocadas: potência faz
+o papel da corrente, diferença de temperatura o da tensão, e resistência térmica o
+da resistência. Em série elas somam, e $T_j = T_a + \theta_{JA} P$ resolve a maior
+parte dos casos práticos. Quando o coeficiente de temperatura é negativo, o laço
+se torna regenerativo e existe fuga térmica.
+
+Por fim, a escala de tempo importa: pulsos curtos são um problema de energia,
+regime permanente é um problema de potência, e o intervalo entre os dois exige a
+curva da folha de dados.
+
+Com potência resolvida, volta-se à topologia. O próximo capítulo trata de como
+resistores se combinam — e a primeira coisa que a combinação decide é qual deles
+está prestes a queimar.
