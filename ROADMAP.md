@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 19/104**
+**Progresso: 20/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -43,7 +43,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 - [x] 017 — Superposição e linearidade — `capitulos/017-superposicao-e-linearidade.qmd`
 - [x] 018 — Teoremas de Thévenin e Norton — `capitulos/018-teoremas-de-thevenin-e-norton.qmd`
 - [x] 019 — Máxima transferência de potência e casamento — `capitulos/019-maxima-transferencia-de-potencia-e-casamento.qmd`
-- [ ] 020 — Fontes reais, resistência interna e carregamento do circuito — `capitulos/020-fontes-reais-resistencia-interna-e-carregamento-do.qmd`
+- [x] 020 — Fontes reais, resistência interna e carregamento do circuito — `capitulos/020-fontes-reais-resistencia-interna-e-carregamento-do.qmd`
 
 
 ### Volume 4 — Capacitores, Indutores e Transitórios

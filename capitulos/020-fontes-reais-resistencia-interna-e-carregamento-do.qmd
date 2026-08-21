@@ -1,3 +1,596 @@
 # Fontes reais, resistência interna e carregamento do circuito {#sec-cap-020}
 
-*(em elaboração)*
+Todos os cálculos deste volume supuseram fontes ideais: uma fonte de 9 V que
+entrega 9 V a qualquer carga, uma fonte de 2 mA que entrega 2 mA contra qualquer
+tensão. Nenhuma das duas existe.
+
+O @sec-cap-018 já deu a linguagem para corrigir isso, e a correção é a mesma coisa
+que o teorema: **toda fonte real é uma fonte ideal em série com uma resistência**.
+A diferença é que agora essa resistência não é uma abstração de cálculo, e sim uma
+propriedade física medível — do eletrólito de uma pilha, da malha de realimentação
+de um regulador, do fio de um cabo.
+
+E o mesmo modelo, aplicado à ligação entre dois circuitos em vez de entre fonte e
+carga, produz o problema central de todo o resto do manual: o **carregamento**.
+Cada estágio é carga do anterior, cada junção é um divisor de tensão, e as
+atenuações se multiplicam.
+
+Este capítulo fecha o Volume 3 tornando honestos os modelos usados até aqui.
+
+## A fonte de tensão real {#sec-020-fonte-tensao}
+
+O modelo tem dois elementos e uma equação:
+
+$$ V_{\text{terminais}} = V_{oc} - I\,R_{\text{int}}. $$
+
+A tensão nos terminais **cai** conforme a corrente sobe, e a inclinação dessa queda
+é a resistência interna. É a mesma reta $V$–$I$ do @sec-cap-018, agora com
+significado físico: $V_{oc}$ é a força eletromotriz da fonte e $R_{\text{int}}$ é o
+que ela perde por dentro.
+
+::: {#fig-020-modelo}
+
+```{.tikz}
+%%| filename: 020-modelo
+%%| alt: À esquerda, o modelo de uma fonte real: uma fonte ideal em série com uma resistência interna, ambas dentro de uma caixa tracejada com dois terminais para fora. À direita, gráfico da tensão de terminais em função da corrente para quatro fontes: uma fonte de bancada regulada em cinco volts, que é praticamente horizontal; uma bateria de nove volts, que cai lentamente; uma pilha AA nova de um vírgula cinquenta e oito volt, quase horizontal; e uma célula de moeda CR2032 de três volts, que despenca até zero em duzentos miliampères.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- modelo ----------------
+  \begin{scope}[yshift=1.0cm]
+    \draw[thick] (0,0) to[battery1, invert, l_={$V_{oc}$}] (0,2.6);
+    \draw[thick] (0,2.6) to[R, l={$R_{\text{int}}$}] (2.4,2.6);
+    \draw[thick] (2.4,2.6) -- (3.4,2.6);
+    \draw[thick] (0,0) -- (3.4,0);
+    \node[ponto] at (3.4,2.6) {};
+    \node[ponto] at (3.4,0) {};
+    \draw[manualred, thick, dashed, rounded corners=6pt]
+         (-0.9,-0.6) rectangle (2.9,3.4);
+    \node[manualred, font=\scriptsize\bfseries, anchor=south] at (1.0,3.45)
+         {a fonte real};
+    \node[font=\scriptsize, anchor=west, align=left] at (3.6,1.3)
+         {só estes dois\\terminais existem\\do lado de fora};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-1.0,-1.1)
+         {$V_{\text{terminais}} = V_{oc} - I\,R_{\text{int}}$};
+  \end{scope}
+
+\begin{axis}[
+  at={(8.4cm,0cm)}, anchor=south west,
+  width=9.0cm, height=7.0cm,
+  xlabel={$I$ entregue (mA)}, ylabel={$V$ nos terminais (V)},
+  xmin=0, xmax=250, ymin=0, ymax=10.4,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  ytick={0,2,4,6,8,9.3,10},
+  yticklabels={{0},{2},{4},{6},{8},{9,3},{10}},
+]
+  \addplot[curva, domain=0:250, samples=2] {9.3 - 0.002*x};
+  \addplot[destaque, domain=0:200, samples=2] {3.0 - 0.015*x};
+  \addplot[manualgreen!55!black, thick, domain=0:250, samples=2]
+          {5.0 - 0.00002*x};
+  \addplot[manualgray, thick, domain=0:250, samples=2] {1.58 - 0.0002*x};
+
+  \node[manualblue, font=\scriptsize, anchor=north east] at (axis cs:246,9.0)
+       {bateria 9 V \ ($2\ \Omega$)};
+  \node[manualgreen!55!black, font=\scriptsize, anchor=north east]
+       at (axis cs:246,4.9)
+       {fonte de bancada \ ($0{,}02\ \Omega$)};
+  \node[manualred, font=\scriptsize, anchor=south west, align=left]
+       at (axis cs:5,3.15)
+       {CR2032 \ ($15\ \Omega$): morre em $200$ mA};
+  \node[manualgray, font=\scriptsize, anchor=south east] at (axis cs:246,1.7)
+       {pilha AA nova \ ($0{,}2\ \Omega$)};
+\end{axis}
+
+\end{tikzpicture}
+```
+
+O modelo e as suas consequências. A mesma reta do @sec-cap-018, agora medida em
+fontes de verdade: a inclinação é a resistência interna, e ela decide o que a fonte
+serve para alimentar.
+
+:::
+
+**A leitura da figura é toda a mensagem:** uma célula CR2032 de 3,0 V não é uma
+fonte de 3,0 V. Ela é uma fonte de 3,0 V com 15 Ω em série, o que significa que a
+partir de uns 10 mA a tensão já caiu visivelmente, e que a 200 mA ela entrega zero.
+Alimentar um transmissor de rádio que pulsa 150 mA com uma CR2032 é um clássico
+projeto que "funciona na bancada e não funciona na bateria" — e a bancada tem
+0,02 Ω.
+
+## Regulação de carga {#sec-020-regulacao}
+
+A especificação que quantifica a inclinação da reta. **Regulação de carga** é a
+variação percentual da tensão de saída entre vazio e plena carga:
+
+$$ \text{Reg} = \frac{V_{\text{vazio}} - V_{\text{plena carga}}}
+                     {V_{\text{plena carga}}} \times 100\ \%. $$
+
+| Fonte | $V_{oc}$ | $R_{\text{int}}$ típica | Queda em 100 mA |
+|---|---|---|---|
+| Fonte de bancada regulada | ajustável | 0,01 a 0,05 Ω | 1 a 5 mV |
+| Regulador linear (7805) | 5,0 V | 0,01 a 0,1 Ω | 1 a 10 mV |
+| Pilha AA alcalina nova | 1,58 V | 0,15 a 0,3 Ω | 15 a 30 mV |
+| Pilha AA alcalina gasta | 1,25 V | 1 a 5 Ω | 0,1 a 0,5 V |
+| Bateria 9 V alcalina | 9,3 V | 1,5 a 3 Ω | 0,15 a 0,3 V |
+| Célula de moeda CR2032 | 3,0 V | 10 a 40 Ω | 1 a 4 V |
+| Saída lógica CMOS 5 V | 5,0 V | 20 a 200 Ω | (não suporta) |
+
+: Resistência interna típica por tipo de fonte. Os valores variam com temperatura,
+estado de carga e fabricante — meça a sua. {#tbl-020-fontes}
+
+Repare na última linha. Uma saída de porta lógica **é** uma fonte, com sua própria
+resistência interna de dezenas a centenas de ohms — e é por isso que ela aciona
+outra porta lógica sem esforço e não aciona um LED sem resistor, nem um relé de
+jeito nenhum. O Volume 15 trata disso como *fan-out*; a física é esta.
+
+## De onde vem a resistência interna {#sec-020-origem}
+
+Em uma **pilha**, ela é a soma da resistência do eletrólito, da interface entre
+eletrodo e eletrólito, e dos contatos. Ela **cresce** conforme a pilha descarrega,
+porque os produtos da reação se acumulam nos eletrodos — e é por isso que a
+resistência interna é um indicador de estado de carga melhor que a tensão em
+aberto. Uma pilha "boa" no multímetro e péssima na lanterna é uma pilha com
+$V_{oc}$ ainda alta e $R_{\text{int}}$ já alta.
+
+Em um **regulador ou fonte de bancada**, ela não é resistência física: é o efeito
+residual de uma malha de realimentação que compara a saída com uma referência e
+corrige. Quanto maior o ganho da malha, menor a resistência de saída aparente. O
+Volume 12 constrói essa malha; por ora, guarde que "regulado" quer dizer
+"$R_{\text{int}}$ artificialmente baixa".
+
+E em **qualquer** montagem, há a resistência dos fios, dos conectores e dos
+contatos da protoboard, que se somam à da fonte. Um metro de jumper fino de
+protoboard tem uns 0,1 Ω, e dois contatos ruins têm mais que isso — o que pode
+dominar completamente os 0,02 Ω da fonte de bancada. É o assunto do @sec-cap-005
+com número.
+
+## A fonte de bancada tem duas personalidades {#sec-020-bancada}
+
+Uma fonte de laboratório não é apenas uma fonte de tensão com $R_{\text{int}}$
+baixa. Ela tem um **limite de corrente** ajustável, e ao atingi-lo ela deixa de ser
+fonte de tensão e passa a se comportar como **fonte de corrente**.
+
+::: {#fig-020-bancada}
+
+```{.tikz}
+%%| filename: 020-bancada
+%%| alt: Característica tensão-corrente de uma fonte de bancada ajustada em doze volts com limite de um ampère. A curva é horizontal em doze volts até um ampère, região de tensão constante, e depois desce verticalmente em um ampère, região de corrente constante. Duas retas de carga mostram os pontos de operação: com vinte e quatro ohms a fonte opera em tensão constante, com seis ohms ela opera no limite de corrente entregando apenas seis volts.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=14cm, height=7.6cm,
+  xlabel={$I$ (A)}, ylabel={$V$ nos terminais (V)},
+  xmin=0, xmax=1.9, ymin=0, ymax=14,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  xtick={0,0.25,0.5,0.75,1.0,1.25,1.5,1.75},
+  xticklabels={{0},{0,25},{0,50},{0,75},{1,00},{1,25},{1,50},{1,75}},
+]
+  % caracteristica CV / CC
+  \addplot[curva, very thick] coordinates {(0,12) (1.0,12)};
+  \addplot[curva, very thick] coordinates {(1.0,12) (1.0,0)};
+
+  % retas de carga
+  \addplot[destaque, domain=0:0.55, samples=2] {24*x};
+  \addplot[manualgreen!55!black, thick, domain=0:1.05, samples=2] {6*x};
+
+  \node[ponto] at (axis cs:0.5,12) {};
+  \node[ponto] at (axis cs:1.0,6) {};
+
+  \node[font=\scriptsize\bfseries, anchor=south] at (axis cs:0.45,12.3)
+       {tensão constante (CV)};
+  \node[font=\scriptsize\bfseries, anchor=north west] at (axis cs:1.05,11.6)
+       {corrente constante (CC)};
+
+  \node[manualred, font=\scriptsize, anchor=east] at (axis cs:0.30,9.2)
+       {$R_L = 24\ \Omega$};
+  \node[manualgreen!55!black, font=\scriptsize, anchor=north west, align=left]
+       at (axis cs:1.05,8.6)
+       {$R_L = 6\ \Omega$: a fonte \textbf{não}\\
+        entrega 12 V. Ela entrega\\
+        $1{,}0$ A, e a tensão cai a $6$ V.};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (axis cs:1.05,6.2)
+       {Ajustada em $12$ V,\\limite de $1{,}0$ A.\\[2pt]
+        A carga escolhe em que\\perna da curva a fonte opera.};
+\end{axis}
+\end{tikzpicture}
+```
+
+A característica de uma fonte de bancada: um "L" deitado. A carga decide de que
+lado do joelho o circuito opera, e o operador decide onde fica o joelho.
+
+:::
+
+Isso resolve o mistério mais comum da bancada: **"ajustei 12 V e o voltímetro
+mostra 6 V"**. A fonte não está com defeito; ela está em modo de corrente
+constante, porque a carga pediu mais corrente do que o limite ajustado. O
+indicador "C.C." ou "CC" aceso no painel é a fonte avisando exatamente isso.
+
+E o limite de corrente é a melhor proteção que existe para um protótipo. Ajustado
+um pouco acima da corrente esperada, ele transforma um curto-circuito acidental —
+que destruiria componentes — num evento inofensivo em que a tensão simplesmente
+desaba.
+
+## A fonte de corrente real {#sec-020-fonte-corrente}
+
+Pelo dual de Norton, uma fonte de corrente real é uma fonte ideal **em paralelo**
+com uma resistência $R_N$ finita. Quanto **maior** $R_N$, melhor a fonte — o
+oposto do critério para fontes de tensão.
+
+Há um segundo limite, que não aparece no modelo resistivo e que é o que
+efetivamente termina o assunto na prática: a **tensão de conformidade**
+(*compliance*). Uma fonte de corrente só mantém a corrente enquanto a tensão que
+ela precisa produzir couber dentro da sua própria alimentação. Uma fonte de 10 mA
+alimentada por 12 V não consegue empurrar 10 mA por uma carga de 10 kΩ, porque
+isso exigiria 100 V.
+
+O laboratório do @sec-cap-016 já construiu a versão pobre: uma fonte de tensão com
+um resistor grande em série. Ali $R_N$ é o resistor, a conformidade é a tensão da
+fonte, e a troca é explícita — quanto maior o resistor, melhor a fonte de corrente
+e menor a corrente máxima disponível.
+
+## Carregamento: a generalização que importa {#sec-020-cascata}
+
+Aqui o capítulo deixa de falar de fontes e passa a falar de **tudo**.
+
+Sempre que a saída de um circuito alimenta a entrada de outro, a junção é um
+divisor de tensão: a resistência de saída do primeiro em série com a resistência de
+entrada do segundo. O fator de transferência da junção é
+
+$$ \frac{V_{\text{recebido}}}{V_{\text{enviado}}}
+   = \frac{R_{\text{in}}}{R_{\text{out}} + R_{\text{in}}}. $$
+
+É a fórmula do @sec-cap-014, aplicada não a dois resistores mas a dois **circuitos
+inteiros**, cada um resumido pelo seu equivalente de Thévenin.
+
+E o ponto: numa cadeia de estágios, **as atenuações se multiplicam**.
+
+::: {#fig-020-cascata}
+
+```{.tikz}
+%%| filename: 020-cascata
+%%| alt: Cadeia de três estágios em blocos, cada um com resistência de saída de um kilo-ohm alimentando a resistência de entrada do próximo. Em cada junção há um divisor de tensão. Com resistências de entrada de dez kilo-ohms, cada junção transmite noventa e um por cento e a cadeia inteira transmite setenta e cinco por cento. Com resistências de entrada de cem kilo-ohms, a cadeia transmite noventa e sete por cento. Com resistências de entrada de um kilo-ohm, apenas doze vírgula cinco por cento.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \foreach \ii/\xx in {1/0, 2/4.6, 3/9.2}{
+    \draw[thick, fill=manualgray!10] (\xx,0) rectangle (\xx+2.4,2.0);
+    \node[font=\scriptsize\bfseries] at (\xx+1.2,1.45) {estágio \ii};
+    \node[font=\scriptsize] at (\xx+1.2,0.7)
+         {$R_{\text{out}} = 1$ k$\Omega$};
+  }
+  \draw[thick, fill=manualgreen!14] (13.8,0) rectangle (15.6,2.0);
+  \node[align=center, font=\scriptsize\bfseries] at (14.7,1.0) {carga\\final};
+
+  \foreach \xx in {2.4, 7.0, 11.6}{
+    \draw[thick] (\xx,1.0) -- (\xx+2.2,1.0);
+    \node[ponto] at (\xx,1.0) {};
+  }
+
+  \foreach \xx in {3.5, 8.1, 12.7}{
+    \draw[manualred, thick] (\xx,1.0) -- (\xx,-0.5);
+    \node[manualred, font=\scriptsize, anchor=north] at (\xx,-0.55)
+         {$R_{\text{in}}$};
+    \node[manualred, font=\scriptsize, anchor=south] at (\xx,1.1)
+         {junção};
+  }
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.3,-1.6)
+       {Cada junção é o divisor
+        $R_{\text{in}}/(R_{\text{out}} + R_{\text{in}})$, e os três se
+        \textbf{multiplicam}:\\[5pt]
+        \begin{tabular}{llll}
+        $R_{\text{in}}$ & por junção & três junções & sobra\\[2pt]
+        $100$ k$\Omega$ & $0{,}990$ & $0{,}990^3$ & \textcolor{manualgreen!45!black}{$\mathbf{97{,}1\ \%}$}\\
+        $10$ k$\Omega$ & $0{,}909$ & $0{,}909^3$ & $75{,}1\ \%$\\
+        $2{,}2$ k$\Omega$ & $0{,}688$ & $0{,}688^3$ & $32{,}5\ \%$\\
+        $1$ k$\Omega$ & $0{,}500$ & $0{,}500^3$ & \textcolor{manualred}{$\mathbf{12{,}5\ \%}$}\\
+        \end{tabular}};
+
+\end{tikzpicture}
+```
+
+A cadeia de estágios e o preço de cada junção. A regra dos 10:1 do @sec-cap-014
+custa 9 % por junção — o que é aceitável uma vez e caro três vezes. É por isso que
+etapas de instrumentação usam 100:1 ou mais.
+
+:::
+
+Três lições, e as três valem para o manual inteiro:
+
+- **Um estágio bem projetado tem $R_{\text{out}}$ baixa e $R_{\text{in}}$ alta.**
+  Isso é literalmente a definição de um bom amplificador de tensão, e é o critério
+  que vai medir cada topologia dos Volumes 9 a 11.
+- **A atenuação da cadeia é o produto, não a soma.** Três junções a 91 % dão 75 %,
+  não 73 %; e três a 50 % dão 12,5 %, não zero. Multiplicar cedo evita a surpresa
+  no fim.
+- **O sinal perdido não volta.** Uma vez atenuado, o sinal precisa ser amplificado
+  de novo, e amplificar acrescenta ruído (Volume 7). Perder sinal por carregamento
+  é caro duas vezes.
+
+## O instrumento como carga, revisitado {#sec-020-instrumento}
+
+O @sec-cap-014 mostrou o voltímetro carregando um divisor. Falta a metade
+esquecida, que é pior e menos conhecida: o **amperímetro**.
+
+Para medir corrente, o instrumento se põe em série e mede a queda sobre um resistor
+interno conhecido — o *shunt*. Essa queda tem nome, **tensão de sobrecarga**
+(*burden voltage*), e vale tipicamente de 0,1 a 0,5 V no fundo de escala. Em um
+circuito de 12 V isso é irrelevante. Em um circuito de 1,5 V, não é.
+
+::: {#fig-020-amperimetro}
+
+```{.tikz}
+%%| filename: 020-amperimetro
+%%| alt: À esquerda, uma pilha AA de um vírgula cinquenta e oito volt com zero vírgula dois ohm de resistência interna alimentando uma carga de quatro vírgula sete ohms, conduzindo trezentos e vinte e dois miliampères. À direita, o mesmo circuito com um amperímetro de dois ohms de resistência inserido em série: a corrente cai para duzentos e vinte e nove miliampères, e o instrumento mostra um valor vinte e nove por cento menor que o real.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ------------- sem amperimetro -------------
+  \begin{scope}
+    \draw (0,0) to[battery1, invert, l_={$1{,}58$ V}] (0,2.0);
+    \draw (0,2.0) to[R, l={$R_{\text{int}} = 0{,}2\,\Omega$}] (3.4,2.0);
+    \draw (3.4,2.0) to[R, l={$4{,}7\,\Omega$}] (3.4,0);
+    \draw (3.4,0) -- (0,0);
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.7,3.0)
+         {corrente verdadeira};
+    \node[manualgreen!55!black, font=\scriptsize\bfseries, anchor=north]
+         at (1.7,-0.5)
+         {$I = \dfrac{1{,}58}{0{,}2 + 4{,}7} = \mathbf{322}$ mA};
+  \end{scope}
+
+  % ------------- com amperimetro -------------
+  \begin{scope}[xshift=8.6cm]
+    \draw (0,0) to[battery1, invert, l_={$1{,}58$ V}] (0,2.0);
+    \draw (0,2.0) to[R, l={$R_{\text{int}} = 0{,}2\,\Omega$}] (3.4,2.0);
+    \draw (3.4,2.0) to[R, l={$4{,}7\,\Omega$}] (3.4,0);
+    \draw[manualred, thick] (3.4,0) to[rmeter, t=A, l_={$2\,\Omega$}] (0,0);
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.7,3.0)
+         {com o amperímetro em série};
+    \node[manualred, font=\scriptsize\bfseries, anchor=north] at (1.7,-0.9)
+         {$I = \dfrac{1{,}58}{0{,}2 + 4{,}7 + 2} = \mathbf{229}$ mA};
+  \end{scope}
+
+  \node[align=center, font=\scriptsize, anchor=north] at (6.0,-2.4)
+       {O instrumento leu $229$ mA, e a leitura está \textbf{certa}: essa é
+        mesmo a corrente enquanto ele está lá.\\
+        O que está errado é concluir que o circuito conduz $229$ mA quando o
+        amperímetro sai --- ele conduz $322$ mA, $29$ \% a mais.};
+
+\end{circuitikz}
+```
+
+A tensão de sobrecarga do amperímetro. Em circuitos de tensão baixa e corrente
+alta, o instrumento muda substancialmente o que ele está medindo — o mesmo problema
+do voltímetro do @sec-cap-014, com os papéis trocados.
+
+:::
+
+A defesa é a mesma de sempre, invertida: **um amperímetro deve ter resistência
+muito menor que a do circuito onde ele entra**. Se não tiver, use uma escala mais
+alta (o shunt é menor), meça a queda sobre um resistor conhecido do próprio
+circuito e calcule a corrente por Ohm, ou use um alicate amperímetro, que não entra
+no circuito.
+
+## 🧪 Laboratório {#sec-020-lab}
+
+**Medir a resistência interna de tudo o que houver na gaveta.** É o experimento que
+fecha o volume: uma técnica só — carga conhecida, duas tensões — aplicada a fontes
+que diferem por três ordens de grandeza.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada com limite de corrente ajustável
+- 1 multímetro digital (dois, se tiver)
+- 1 pilha AA nova, 1 usada, 1 bateria de 9 V, 1 célula CR2032 com suporte
+- 1 resistor de 4,7 Ω, **2 W**, e 1 de 10 Ω, **2 W**
+- 1 resistor de 100 Ω, 1 de 220 Ω, 1 de 1 kΩ, 1 de 10 kΩ, 1 de 100 kΩ, 1/4 W
+- 3 resistores de 1 kΩ e 3 de 10 kΩ, 1/4 W (para a Parte 4)
+- 1 LED vermelho
+:::
+
+::: {.callout-warning}
+## Cargas pesadas em pilhas: segundos, não minutos
+
+As Partes 1 e 2 puxam centenas de miliampères de pilhas. Faça cada medida em
+**poucos segundos** e deixe a pilha esfriar entre elas. Uma AA alcalina com 4,7 Ω
+dissipa cerca de 0,5 W no resistor e aquece a própria pilha; deixada ligada, ela
+esquenta, a resistência interna sobe e a medida deixa de significar o que você
+queria. E nada de curto-circuito direto, pelas razões do @sec-cap-002.
+:::
+
+### Parte 1 — A resistência interna de quatro fontes
+
+Para cada fonte, o mesmo procedimento do @sec-cap-018:
+
+1. Meça $V_{oc}$ (sem carga).
+2. Ligue uma carga $R_L$ adequada e meça $V_L$.
+3. Calcule $R_{\text{int}} = R_L\,(V_{oc}/V_L - 1)$.
+
+Escolha de carga por fonte — a regra é que a carga seja da ordem de algumas vezes
+a resistência interna esperada, para que a queda seja mensurável sem ser brutal:
+
+| Fonte | Carga sugerida | Corrente aproximada |
+|---|---|---|
+| Fonte de bancada em 5 V | 10 Ω, 2 W | 500 mA |
+| Pilha AA nova | 4,7 Ω, 2 W | 330 mA |
+| Pilha AA usada | 10 Ω, 2 W | 120 mA |
+| Bateria 9 V | 100 Ω | 90 mA |
+| CR2032 | 220 Ω | 13 mA |
+
+: Cargas para a Parte 1. As duas primeiras exigem resistores de 2 W e medições
+rápidas. {#tbl-020-cargas}
+
+4. Ordene as quatro fontes por resistência interna e compare com a
+   @tbl-020-fontes.
+
+Na fonte de bancada, provavelmente você não vai conseguir medir nada: a queda de
+alguns milivolts se perde no ruído do instrumento e na resistência dos próprios
+jumpers. **Esse é o resultado.** Meça então a queda nos jumpers em vez da queda na
+fonte, e descubra que o seu fio é pior que a sua fonte.
+
+### Parte 2 — Duas pilhas, uma lição
+
+1. Compare $V_{oc}$ da pilha nova e da usada. A diferença costuma ser pequena —
+   1,58 V contra 1,35 V, digamos.
+2. Compare $R_{\text{int}}$ das duas. A diferença costuma ser de uma ordem de
+   grandeza.
+3. Calcule, para cada uma, qual seria a tensão nos terminais alimentando uma
+   lâmpada de lanterna de 5 Ω.
+
+A pilha usada "parece boa" no multímetro e não acende a lanterna. Você acabou de
+medir por quê — e de descobrir que testar pilha com voltímetro em aberto não testa
+quase nada.
+
+### Parte 3 — O joelho da fonte de bancada
+
+1. Ajuste a fonte em 12,0 V e o limite de corrente em 100 mA.
+2. Ligue sucessivamente 1 kΩ, 220 Ω, 100 Ω. Anote tensão e corrente em cada caso.
+3. Identifique em qual carga a fonte passou de CV para CC. Previsto: com 100 Ω ela
+   quer 120 mA e não pode; ela entrega 100 mA e a tensão cai para 10 V.
+4. Observe o indicador de modo no painel.
+5. Agora ligue o LED **sem** resistor em série, com o limite ajustado em 20 mA.
+
+O passo 5 é a demonstração mais útil do capítulo: o limite de corrente transformou
+uma ligação que destruiria o LED (@sec-cap-010) numa operação segura, porque a
+fonte deixou de ser fonte de tensão e virou fonte de corrente. Meça a tensão sobre
+o LED — é a sua queda direta, e o Volume 8 explica de onde ela vem.
+
+### Parte 4 — A cadeia que atenua
+
+1. Monte três "estágios" passivos em cascata: cada um é um resistor de 1 kΩ em
+   série (o $R_{\text{out}}$) e o próximo entra com um resistor de 10 kΩ para o
+   terra (o $R_{\text{in}}$).
+2. Alimente com 9,0 V e meça a tensão em cada junção.
+3. Compare com a previsão: $0{,}909$, $0{,}909^2 = 0{,}826$ e
+   $0{,}909^3 = 0{,}751$ vezes a tensão de entrada.
+4. Troque os três resistores de 10 kΩ por 1 kΩ e repita. Previsto: 12,5 % no fim.
+
+::: {.callout-note}
+## Por que a previsão simples funciona aqui
+
+Cada junção só é um divisor limpo porque o estágio seguinte é puramente resistivo e
+não devolve corrente. Num circuito real com amplificadores, o $R_{\text{in}}$ do
+estágio seguinte pode depender do que está ligado na saída **dele** — e aí a cadeia
+tem de ser analisada do fim para o começo. É a mesma ordem do método da
+proporcionalidade do @sec-cap-017, e não é coincidência.
+:::
+
+### Parte 5 — A tensão de sobrecarga do seu amperímetro
+
+1. Monte a pilha AA nova com o resistor de 4,7 Ω.
+2. Meça a corrente com o amperímetro em série, na escala de 10 A e depois na escala
+   de mA (se ela suportar). Anote as duas leituras — elas serão diferentes.
+3. Meça a tensão **sobre o próprio amperímetro** enquanto ele está no circuito.
+   Essa é a tensão de sobrecarga.
+4. Calcule a resistência do shunt: $R_{\text{shunt}} = V_{\text{sobrecarga}}/I$.
+5. Preveja a corrente verdadeira, sem o instrumento, e confirme medindo a tensão
+   sobre o resistor de 4,7 Ω com o amperímetro fora do circuito.
+
+O passo 5 é o método correto para medir corrente num circuito sensível: **não meça
+corrente, meça a tensão sobre um resistor que já está lá** e divida.
+
+### Variante simulada (plano B)
+
+Simuladores modelam fontes ideais por padrão, e é justamente por isso que a Parte 1
+não existe ali. O que o simulador faz bem é o inverso: acrescente à mão o
+$R_{\text{int}}$ que você mediu e veja o modelo reproduzir o comportamento real.
+
+A Parte 4 sai imediatamente com uma varredura paramétrica do $R_{\text{in}}$, e o
+gráfico de "tensão final contra $R_{\text{in}}$" é a curva que resume o capítulo.
+A Parte 3 exige um modelo de fonte com limite de corrente — o ngspice faz com uma
+fonte controlada, e montá-lo ensina mais do que usá-lo.
+
+## 🔥 Onde Queima {#sec-020-queima}
+
+**Testar pilha com voltímetro em aberto.** A tensão em aberto quase não cai até o
+fim da vida útil; o que cresce é a resistência interna. Teste sempre com carga.
+
+**Alimentar carga pulsada com fonte de alta resistência interna.** Uma CR2032 de
+15 Ω não sustenta os 150 mA de um transmissor de rádio: a tensão desaba durante o
+pulso e o circuito reinicia. Sintoma clássico: funciona na fonte de bancada,
+reinicia sem parar na bateria. A solução é um capacitor de reservatório — o
+Volume 4 explica por quê.
+
+**Esquecer a resistência dos fios e da protoboard.** Ela se soma à da fonte e pode
+dominá-la. Em corrente alta, um contato ruim de protoboard tem mais resistência que
+a fonte inteira, e a queda aparece onde ninguém procura.
+
+**Confundir limite de corrente com defeito da fonte.** "Ajustei 12 V e mostra 6 V"
+quase sempre é a fonte em modo de corrente constante. Olhe o indicador de modo
+antes de suspeitar do instrumento.
+
+**Deixar o limite de corrente no máximo por comodidade.** Ele é a proteção mais
+barata que existe para um protótipo. Ajustado um pouco acima do consumo esperado,
+ele transforma um curto acidental num susto em vez de num prejuízo.
+
+**Ignorar a tensão de sobrecarga do amperímetro.** Em circuitos de baixa tensão e
+corrente alta, o instrumento reduz mesmo a corrente que ele mede. Use escala mais
+alta, ou meça a tensão sobre um resistor conhecido.
+
+**Somar as atenuações de uma cadeia em vez de multiplicá-las.** Três junções a 91 %
+não dão 73 %, dão 75 %; e três a 50 % dão 12,5 %. A conta é produto, e o erro cresce
+com o número de estágios.
+
+**Projetar cada estágio isoladamente e ligá-los no fim.** Cada estágio é carga do
+anterior. Um filtro que funciona sozinho pode não funcionar em cascata com outro
+igual, porque o segundo carrega o primeiro — o Volume 6 vive esse problema.
+
+**Curto-circuitar uma bateria para "ver se tem carga".** Uma AA em curto entrega
+vários ampères e esquenta; uma célula de lítio pode incendiar. O método da carga
+conhecida existe para isso, e o @sec-cap-002 detalha os riscos.
+
+**Modelar uma fonte de corrente real como ideal fora da sua conformidade.** Nenhuma
+fonte de corrente empurra 10 mA por 10 kΩ com 12 V de alimentação. Antes de confiar
+no modelo, verifique que a tensão exigida cabe.
+
+**Supor que $R_{\text{int}}$ é constante.** Ela varia com o estado de carga, com a
+temperatura e — em qualquer coisa mais complexa que um resistor — com a frequência.
+A partir do Volume 5, "resistência interna" vira **impedância** de saída, e passa a
+ter comportamento próprio em cada faixa de frequência.
+
+## O que fica deste capítulo {#sec-020-resumo}
+
+Toda fonte real é uma fonte ideal em série com uma resistência interna, e a tensão
+nos terminais cai como $V_{oc} - I R_{\text{int}}$. Essa resistência não é uma
+abstração: ela é química numa pilha, é malha de realimentação num regulador, e é
+fio e contato em qualquer montagem.
+
+Ela decide o que a fonte serve para alimentar. Uma célula de moeda de 15 Ω e uma
+fonte de bancada de 0,02 Ω são objetos diferentes, e a diferença aparece na carga,
+não no voltímetro em aberto. Em pilhas, a resistência interna é um indicador de
+estado de carga muito melhor que a tensão.
+
+A fonte de bancada tem duas personalidades: tensão constante até o limite de
+corrente, corrente constante depois dele. A carga escolhe o lado do joelho; o
+operador escolhe onde fica o joelho — e é a proteção mais barata de um protótipo.
+
+Fonte de corrente real é o dual: resistência em **paralelo**, quanto maior melhor,
+com o limite adicional da tensão de conformidade.
+
+E a generalização que sustenta o resto do manual: **cada junção entre dois
+circuitos é um divisor de tensão** entre a resistência de saída de um e a de entrada
+do outro. As atenuações se multiplicam ao longo da cadeia, e um bom estágio é o que
+tem $R_{\text{out}}$ baixa e $R_{\text{in}}$ alta. É o critério que vai medir cada
+topologia dos Volumes 9 a 11.
+
+---
+
+Com isso o **Volume 3** se fecha, e com ele a análise de circuitos resistivos. A
+análise nodal e a de malhas resolvem qualquer rede; a superposição separa
+responsabilidades; Thévenin e Norton resumem qualquer circuito em dois números; a
+máxima transferência de potência diz qual carga extrai mais potência, e por que
+quase nunca é isso o que se quer; e as fontes reais mostram onde os modelos ideais
+param.
+
+O que todos esses métodos têm em comum é uma hipótese silenciosa: **o circuito
+responde instantaneamente**. Ligue a fonte e a corrente está lá; mude a carga e a
+tensão muda junto. Isso vale enquanto o circuito for feito só de resistores.
+
+O @sec-cap-021 abre o Volume 4 introduzindo os dois elementos que quebram essa
+hipótese — o capacitor e o indutor —, que armazenam energia em vez de dissipá-la e
+que fazem o tempo entrar nas equações. A partir dali, todo circuito tem passado.
