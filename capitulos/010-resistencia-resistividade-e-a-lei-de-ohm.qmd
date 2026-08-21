@@ -1,3 +1,597 @@
 # Resistência, resistividade e a Lei de Ohm {#sec-cap-010}
 
-*(em elaboração)*
+Já temos as duas grandezas do par: corrente, que é carga em trânsito, e tensão,
+que é energia por unidade de carga. Falta a relação entre elas — e é ela que
+transforma eletricidade em engenharia, porque é ela que permite **prever** um
+número antes de medi-lo.
+
+A relação chama-se Lei de Ohm, cabe em quatro caracteres e é, provavelmente, a
+equação mais mal compreendida da eletrônica. Não porque seja difícil, mas porque
+quase ninguém repara que ela **não é uma lei da natureza**: é a descrição de um
+comportamento que alguns materiais têm e muitos outros não. Metade deste capítulo
+trata de quando ela vale; a outra metade, de quando não.
+
+## De onde vem a resistência {#sec-010-origem}
+
+O @sec-cap-008 deixou o modelo pronto: elétrons livres em agitação térmica
+violenta, sobre a qual o campo aplicado superpõe uma deriva lenta. A cada
+colisão com a rede de íons, o elétron perde a velocidade que tinha ganho do campo
+e recomeça. **Resistência é a contabilidade dessas colisões.**
+
+Daí saem, sem nenhuma matemática, as duas dependências geométricas:
+
+- **Condutor mais longo, mais resistência.** Mais caminho, mais colisões.
+- **Condutor mais grosso, menos resistência.** Mais seções em paralelo, cada
+  elétron com mais espaço.
+
+Somando a isso uma propriedade do material — quantos elétrons livres ele oferece e
+com que frequência eles colidem —, obtém-se a expressão completa:
+
+$$ R = \rho \frac{L}{A}, $$
+
+com $\rho$ em $\Omega\cdot$m, $L$ em metros e $A$ em metros quadrados. A unidade
+de resistência é o **ohm** ($\Omega$), e 1 Ω é a resistência que deixa passar 1 A
+sob 1 V.
+
+::: {#fig-010-geometria}
+
+```{.tikz}
+%%| filename: 010-geometria
+%%| alt: Três blocos condutores em perspectiva. O primeiro, de comprimento L e seção A, tem resistência R. O segundo, com o dobro do comprimento e a mesma seção, tem o dobro da resistência. O terceiro, com o mesmo comprimento e o dobro da seção, tem metade da resistência.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ============ bloco de referencia: L, A ============
+  \begin{scope}[yshift=4.6cm]
+    \fill[manualblue!15] (0,0) rectangle (3.0,0.9);
+    \fill[manualblue!25] (0,0.9) -- (0.35,1.18) -- (3.35,1.18) -- (3.0,0.9) -- cycle;
+    \fill[manualblue!8]  (3.0,0) -- (3.35,0.28) -- (3.35,1.18) -- (3.0,0.9) -- cycle;
+    \draw[manualblue!70!black, thick] (0,0) rectangle (3.0,0.9);
+    \draw[manualblue!70!black, thick] (0,0.9) -- (0.35,1.18) -- (3.35,1.18) -- (3.0,0.9);
+    \draw[manualblue!70!black, thick] (3.0,0) -- (3.35,0.28) -- (3.35,1.18);
+    \draw[|-|] (0,-0.35) -- (3.0,-0.35);
+    \node[anchor=north, font=\scriptsize] at (1.5,-0.4) {$L$};
+    \node[anchor=east, font=\scriptsize] at (-0.15,0.45) {$A$};
+    \draw[-{Stealth[length=2mm]}, thick] (-1.3,0.45) -- (-0.3,0.45);
+    \node[anchor=south, font=\scriptsize] at (-0.8,0.5) {$I$};
+    \node[anchor=west, align=left, font=\scriptsize] at (4.0,0.6)
+         {referência: $R = \rho\,\dfrac{L}{A}$};
+  \end{scope}
+
+  % ============ dobro do comprimento ============
+  \begin{scope}[yshift=2.3cm]
+    \fill[manualblue!15] (0,0) rectangle (6.0,0.9);
+    \fill[manualblue!25] (0,0.9) -- (0.35,1.18) -- (6.35,1.18) -- (6.0,0.9) -- cycle;
+    \fill[manualblue!8]  (6.0,0) -- (6.35,0.28) -- (6.35,1.18) -- (6.0,0.9) -- cycle;
+    \draw[manualblue!70!black, thick] (0,0) rectangle (6.0,0.9);
+    \draw[manualblue!70!black, thick] (0,0.9) -- (0.35,1.18) -- (6.35,1.18) -- (6.0,0.9);
+    \draw[manualblue!70!black, thick] (6.0,0) -- (6.35,0.28) -- (6.35,1.18);
+    \draw[|-|] (0,-0.35) -- (6.0,-0.35);
+    \node[anchor=north, font=\scriptsize] at (3.0,-0.4) {$2L$};
+    \node[anchor=west, align=left, font=\scriptsize, manualred] at (7.0,0.6)
+         {o dobro do caminho,\\o dobro das colisões: $\;2R$};
+  \end{scope}
+
+  % ============ dobro da secao ============
+  \begin{scope}[yshift=-0.9cm]
+    \fill[manualblue!15] (0,0) rectangle (3.0,1.8);
+    \fill[manualblue!25] (0,1.8) -- (0.35,2.08) -- (3.35,2.08) -- (3.0,1.8) -- cycle;
+    \fill[manualblue!8]  (3.0,0) -- (3.35,0.28) -- (3.35,2.08) -- (3.0,1.8) -- cycle;
+    \draw[manualblue!70!black, thick] (0,0) rectangle (3.0,1.8);
+    \draw[manualblue!70!black, thick] (0,1.8) -- (0.35,2.08) -- (3.35,2.08) -- (3.0,1.8);
+    \draw[manualblue!70!black, thick] (3.0,0) -- (3.35,0.28) -- (3.35,2.08);
+    \draw[|-|] (0,-0.35) -- (3.0,-0.35);
+    \node[anchor=north, font=\scriptsize] at (1.5,-0.4) {$L$};
+    \node[anchor=east, font=\scriptsize] at (-0.15,0.9) {$2A$};
+    \node[anchor=west, align=left, font=\scriptsize, manualgreen!55!black] at (4.0,1.0)
+         {o dobro das faixas de tráfego:\\$\;R/2$};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+A geometria da resistência. Nada aqui depende de eletricidade: é a mesma
+aritmética de um cano, de uma estrada ou de uma fila. O que a eletricidade
+acrescenta é o fator $\rho$, que mede quão hostil o material é à passagem — e que
+varia por trinta ordens de grandeza, como o @tbl-008-resistividade mostrou.
+
+:::
+
+**Exemplo de bancada.** Dez metros de fio de cobre AWG 24 (seção de 0,205 mm²,
+$0{,}205 \times 10^{-6}$ m²):
+
+$$ R = 1{,}7\times10^{-8} \times \frac{10}{0{,}205\times10^{-6}} \approx 0{,}83\ \Omega. $$
+
+Menos de um ohm — desprezível num circuito de kilo-ohms, e catastrófico num
+circuito de 5 V e 3 A, onde esses 0,83 Ω derrubam 2,5 V e dissipam 7,5 W no
+próprio fio. **A resistência de um condutor nunca é zero; ela é apenas pequena
+comparada a alguma outra coisa,** e cabe a você verificar comparada a quê.
+
+## A Lei de Ohm, e o que ela realmente afirma {#sec-010-lei}
+
+Georg Ohm publicou, em 1827, o resultado de medir corrente e tensão em fios
+metálicos: as duas eram proporcionais. Em forma moderna,
+
+$$ V = R\,I, \qquad I = \frac{V}{R}, \qquad R = \frac{V}{I}. $$
+
+Aqui está a distinção que quase nunca é feita, e que organiza o capítulo inteiro:
+
+::: {.callout-important}
+## Definição × lei
+
+$R = V/I$ é uma **definição**. Vale sempre, para qualquer componente, em qualquer
+ponto de operação — é apenas o nome que se dá ao quociente.
+
+$V = RI$ com **$R$ constante** é a **Lei de Ohm**. Só vale para materiais ôhmicos,
+e a maior parte dos componentes interessantes deste manual não é ôhmica.
+:::
+
+Um resistor de carbono é ôhmico numa faixa larguíssima: dobrar a tensão dobra a
+corrente, com quatro casas de precisão. Um LED não é: dobrar a tensão de 1,8 V
+para 3,6 V não dobra a corrente — destrói o componente. Um filamento de lâmpada
+não é: ele esquenta, e ao esquentar muda de resistência enquanto você mede.
+
+::: {#fig-010-curvas}
+
+```{.tikz}
+%%| filename: 010-curvas-iv
+%%| alt: Gráfico de corrente por tensão com três curvas. O resistor de cento e cinquenta ohms é uma reta pela origem. A lâmpada incandescente é uma curva côncava que conduz mais que a reta em tensões baixas e encontra a reta em três volts. O LED vermelho quase não conduz abaixo de um vírgula sete volt e dispara acima de dois volts.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=11.5cm, height=7.6cm,
+  xlabel={tensão sobre o componente (V)},
+  ylabel={corrente (mA)},
+  xmin=0, xmax=3.35, ymin=0, ymax=33,
+  axis lines=left,
+  grid=both,
+  grid style={manualgray!22},
+  legend pos=north west,
+  legend cell align=left,
+  legend style={font=\scriptsize, draw=manualgray!50},
+  font=\footnotesize,
+  xtick={0,0.5,...,3},
+  ytick={0,5,...,30},
+]
+
+  \addplot[curva, domain=0:3.0, samples=2] {6.667*x};
+  \addlegendentry{resistor de 150 $\Omega$ --- ôhmico}
+
+  \addplot[manualyellow, very thick, domain=0.03:3.0, samples=90] {10.07*x^0.625};
+  \addlegendentry{lâmpada incandescente}
+
+  \addplot[manualred, very thick, domain=1.25:2.05, samples=70] {20*exp((x-2.0)/0.10)};
+  \addlegendentry{LED vermelho}
+
+  % anotacoes
+  \draw[auxiliar] (axis cs:0.5,0) -- (axis cs:0.5,6.9);
+  \node[ponto] at (axis cs:0.5,6.53) {};
+  \node[ponto] at (axis cs:0.5,3.33) {};
+
+  \node[manualred, font=\scriptsize, align=left, anchor=north west]
+       at (axis cs:2.14,31.5) {do joelho em diante,\\0,1 V a mais\\multiplica a corrente};
+
+  \node[font=\scriptsize, align=left, anchor=south west]
+       at (axis cs:2.14,1.0) {a 0,5 V a lâmpada\\conduz o dobro do\\resistor: filamento\\frio, só 77 $\Omega$.\\A 3,0 V os dois\\conduzem 20 mA.};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+Três componentes, três comportamentos. O resistor é uma reta pela origem, e é isso
+que "ôhmico" significa. A lâmpada é uma curva porque a sua resistência sobe com a
+temperatura, que sobe com a corrente. O LED tem um joelho: abaixo dele, não
+conduz; acima, a corrente cresce exponencialmente e nada além de um resistor em
+série a limita.
+
+:::
+
+Repare no que a figura torna óbvio: no ponto em que a lâmpada e o resistor se
+cruzam, os dois têm **exatamente a mesma resistência**, 150 Ω. A diferença não
+está no valor: está em o valor mudar ou não quando você muda a tensão.
+
+## Componentes que não obedecem {#sec-010-naoohmicos}
+
+| Componente | Comportamento | Onde aparece |
+|---|---|---|
+| Resistor de filme | ôhmico com excelente precisão | por toda parte |
+| Diodo, LED | exponencial, com joelho | Volume 8 |
+| Lâmpada incandescente | resistência sobe com a corrente | aquecedores, lâmpadas |
+| Termistor NTC | resistência cai com a temperatura | limitação de surto, sensores |
+| Termistor PTC | resistência dispara acima de um limiar | fusível rearmável |
+| Varistor (MOV) | resistência despenca acima de uma tensão | proteção contra surto |
+| Transistor | resistência controlada por um terceiro terminal | Volumes 9 e 10 |
+
+: Componentes ôhmicos e não ôhmicos. Todos têm $R = V/I$ definido em cada ponto;
+só o primeiro tem esse quociente constante. {#tbl-010-naoohmicos}
+
+Para os não ôhmicos existe uma grandeza substituta, a **resistência dinâmica** —
+a inclinação local da curva, $r = \Delta V / \Delta I$, e não o quociente
+$V/I$. Num LED em 20 mA, a resistência estática vale $2{,}0/0{,}02 = 100\ \Omega$
+enquanto a dinâmica é da ordem de 5 Ω. São números diferentes que respondem a
+perguntas diferentes, e confundi-los é o erro que faz o cálculo de um amplificador
+sair por um fator de vinte. O assunto tem capítulo próprio no Volume 9.
+
+## O coeficiente de temperatura {#sec-010-tempco}
+
+Nenhuma resistência é constante em relação à temperatura. Para variações moderadas
+o comportamento é bem descrito por
+
+$$ R(T) = R_0\,\bigl[1 + \alpha\,(T - T_0)\bigr], $$
+
+com $\alpha$ em $^{\circ}$C$^{-1}$ ou, mais comumente em folhas de dados, em
+**ppm/°C** (partes por milhão por grau).
+
+| Material ou componente | $\alpha$ | Sinal |
+|---|---|---|
+| Cobre | $+3930$ ppm/°C | positivo |
+| Alumínio | $+3900$ ppm/°C | positivo |
+| Tungstênio (filamento) | $+4500$ ppm/°C | positivo |
+| Resistor de filme de carbono | $-200$ a $-500$ ppm/°C | negativo |
+| Resistor de filme metálico | $\pm 50$ a $\pm 100$ ppm/°C | pequeno |
+| Resistor de fio (precisão) | $\pm 5$ a $\pm 20$ ppm/°C | mínimo |
+| Termistor NTC | $-30\,000$ a $-50\,000$ ppm/°C | fortemente negativo |
+
+: Coeficientes de temperatura típicos. O contraste entre filme metálico e NTC é de
+quase três ordens de grandeza — um foi projetado para não variar, o outro para
+variar. {#tbl-010-tempco}
+
+**Exemplo que vale por si.** O enrolamento de cobre de um pequeno motor mede
+10,0 Ω a 20 °C. Depois de meia hora funcionando, mede 12,4 Ω. Qual a temperatura
+do enrolamento?
+
+$$ 12{,}4 = 10{,}0\,[1 + 0{,}00393\,(T - 20)]
+   \;\Rightarrow\; T - 20 = \frac{0{,}24}{0{,}00393} \approx 61
+   \;\Rightarrow\; T \approx 81\ ^{\circ}\text{C}. $$
+
+Sem sensor nenhum, apenas com um ohmímetro, você mediu a temperatura média do
+cobre no interior do motor — inclusive das espiras internas que nenhum termopar
+alcança. É o método padrão da indústria para ensaio de elevação de temperatura em
+máquinas elétricas, e é um bom lembrete de que uma dependência indesejada, medida
+de propósito, vira instrumento.
+
+**O outro lado da mesma moeda.** Se a resistência sobe com a temperatura e a
+temperatura sobe com a potência dissipada, existe realimentação. Quando ela é
+negativa (metais: mais quente → mais resistivo → menos corrente), o sistema é
+autoestabilizante. Quando é positiva (NTC, e certos semicondutores: mais quente →
+menos resistivo → mais corrente → mais quente), existe **fuga térmica**, e o
+componente se destrói em segundos. O @sec-cap-011 trata disso com números.
+
+## Condutância {#sec-010-condutancia}
+
+O inverso da resistência tem nome, símbolo e unidade próprios:
+
+$$ G = \frac{1}{R}, \qquad [G] = \text{siemens (S)}. $$
+
+Não é preciosismo. Resistências em série somam; **condutâncias em paralelo
+somam** — e é por isso que a fórmula do paralelo, que parece feia em ohms, fica
+trivial em siemens. O @sec-cap-012 usa as duas formas lado a lado. Em análise
+nodal, no Volume 3, escreve-se tudo em condutância porque a matriz do sistema sai
+pronta.
+
+Na bancada o siemens aparece pouco, com uma exceção honrosa: transcondutância,
+em siemens, é a grandeza que caracteriza um MOSFET no Volume 10.
+
+## Fios, trilhas e contatos: a resistência que ninguém desenhou {#sec-010-parasitas}
+
+Todo esquemático mente por omissão: nele, o fio tem resistência zero. Na placa,
+não tem.
+
+| Condutor | Resistência aproximada |
+|---|---|
+| Fio AWG 22 (0,33 mm²) | 53 mΩ/m |
+| Fio AWG 24 (0,21 mm²) | 84 mΩ/m |
+| Fio AWG 26 (0,13 mm²) | 134 mΩ/m |
+| Trilha de 0,25 mm, cobre de 35 µm | 20 mΩ/cm |
+| Trilha de 1 mm, cobre de 35 µm | 5 mΩ/cm |
+| Contato de protoboard (bom) | 10 a 50 mΩ |
+| Contato de protoboard (oxidado, frouxo) | 0,5 Ω ou mais |
+| Junta de solda boa | menos de 1 mΩ |
+
+: Resistências parasitas típicas. Num circuito de 10 kΩ nenhuma delas existe; num
+circuito de 1 A, todas existem. {#tbl-010-parasitas}
+
+A linha do contato de protoboard explica um dos fenômenos mais frustrantes da
+bancada: **circuitos que funcionam a 10 mA e falham a 1 A na mesma montagem**. Cada
+contato derruba dezenas de milivolts sob corrente alta, e há uma dúzia deles no
+caminho. Por isso o @sec-cap-005 recomenda protoboard para sinal, e fio soldado
+para potência.
+
+E é a mesma linha que justifica a existência da **medida a quatro fios**.
+
+::: {#fig-010-quatrofios}
+
+```{.tikz}
+%%| filename: 010-quatro-fios
+%%| alt: Comparação entre medição de resistência a dois fios e a quatro fios. Na medição a dois fios, a resistência dos cabos entra em série com a resistência sob teste e o ohmímetro lê a soma. Na medição a quatro fios, um par de cabos força a corrente e outro par mede a tensão sem conduzir corrente, de modo que a queda nos cabos não é contabilizada.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ================= dois fios =================
+  \begin{scope}
+    \node[draw, circle, minimum size=1.0cm, thick] (m) at (-1.2,1.5) {$\Omega$};
+    \draw (m.north) -- (-1.2,3.0) -- (0.6,3.0);
+    \draw (0.6,3.0) to[R, l={$r_\text{cabo}$}] (2.6,3.0);
+    \draw (2.6,3.0) -- (4.4,3.0) -- (4.4,2.2);
+    \draw (4.4,2.2) to[R, l={$R_x = 1{,}00\,\Omega$}] (4.4,0.8);
+    \draw (4.4,0.8) -- (4.4,0) -- (2.6,0);
+    \draw (2.6,0) to[R, l_={$r_\text{cabo}$}] (0.6,0);
+    \draw (0.6,0) -- (-1.2,0) -- (m.south);
+    \node[manualred, font=\scriptsize\bfseries, anchor=north] at (1.6,-0.7)
+         {lê $R_x + 2r_\text{cabo}$};
+    \node[font=\scriptsize, align=center, anchor=north] at (1.6,-1.2)
+         {com 0,2 $\Omega$ por cabo, o visor\\mostra 1,40 $\Omega$: 40 \% de erro};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.6,3.7) {dois fios};
+  \end{scope}
+
+  % ================= quatro fios =================
+  \begin{scope}[xshift=9.6cm]
+    \node[draw, circle, minimum size=1.0cm, thick] (f) at (-1.2,1.7) {$I$};
+    \node[draw, circle, minimum size=1.0cm, thick] (v) at (2.4,1.7) {$V$};
+
+    % laco de forca (preto)
+    \draw (f.north) -- (-1.2,3.4) -- (0.7,3.4);
+    \draw (0.7,3.4) to[R, l={$r_\text{cabo}$}] (2.7,3.4);
+    \draw (2.7,3.4) -- (5.0,3.4) -- (5.0,2.4);
+    \draw (5.0,1.0) -- (5.0,0) -- (2.7,0);
+    \draw (2.7,0) to[R, l_={$r_\text{cabo}$}] (0.7,0);
+    \draw (0.7,0) -- (-1.2,0) -- (f.south);
+
+    % resistencia sob teste
+    \draw (5.0,2.4) to[R, l={$R_x$}] (5.0,1.0);
+
+    % laco de leitura (verde): nao conduz corrente
+    \draw[manualgreen!55!black, thick] (v.north) -- (2.4,2.4) -- (5.0,2.4);
+    \draw[manualgreen!55!black, thick] (v.south) -- (2.4,1.0) -- (5.0,1.0);
+    \node[ponto] at (5.0,2.4) {};
+    \node[ponto] at (5.0,1.0) {};
+
+    \node[manualgreen!55!black, font=\scriptsize\bfseries, anchor=north] at (1.8,-0.7)
+         {lê $R_x$ exato};
+    \node[font=\scriptsize, align=center, anchor=north] at (1.8,-1.2)
+         {o par verde não conduz corrente,\\logo não tem queda nenhuma};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.8,4.1) {quatro fios (Kelvin)};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+Por que existe medição a quatro fios. À esquerda, os cabos que levam a corrente
+são os mesmos que trazem a tensão, e a queda neles é lida como se fosse do
+componente. À direita, um par força a corrente e outro par lê a tensão
+diretamente nos terminais de $R_x$; como o voltímetro praticamente não consome
+corrente, os cabos de leitura não derrubam nada.
+
+:::
+
+Existe ainda a **resistência de contato**, que não é de nenhum condutor mas da
+interface entre dois — e que depende da pressão, da área real de toque e,
+sobretudo, da camada de óxido. É o que faz um conector velho esquentar, um
+interruptor "queimar" e uma protoboard usada demais ficar intermitente. Ela não
+aparece em fórmula nenhuma e é responsável por uma fração enorme dos defeitos de
+campo.
+
+## O que o ohmímetro realmente faz {#sec-010-ohmimetro}
+
+O modo de resistência do multímetro não mede resistência: ele **injeta uma corrente
+conhecida** — tipicamente de 1 µA a 1 mA, dependendo da escala — e mede a tensão
+resultante, dividindo uma pela outra. Três consequências práticas:
+
+**O circuito tem de estar desenergizado.** Qualquer tensão externa se soma à do
+instrumento e a leitura vira ficção. Em circuito com capacitor carregado, além de
+ficção, há risco para o instrumento. Desligue e descarregue.
+
+**Todo caminho paralelo é medido junto.** Medir um resistor sem tirá-lo da placa
+mede o resistor *em paralelo com o resto do circuito*, e o resultado é sempre
+menor que o real. Uma leitura menor que o valor nominal quase nunca significa
+resistor defeituoso — significa que você mediu o circuito inteiro. Levante uma
+perna do componente.
+
+**Nas escalas baixas, o cabo importa.** Medindo 1 Ω com cabos de 0,2 Ω, 40 % da
+leitura é cabo. Encoste as pontas uma na outra, anote o valor de fundo e subtraia —
+ou use a função *relative*/*zero* do instrumento, que faz isso automaticamente.
+
+E um lembrete que parece piada até acontecer: **não segure as duas pontas metálicas
+com os dedos**. O @sec-cap-009 mostrou que o corpo conduz na faixa de megaohms;
+em medições acima de 100 kΩ, você entra em paralelo com o que está medindo.
+
+## 🧪 Laboratório {#sec-010-lab}
+
+**Levantar a curva de um componente e descobrir se ele é ôhmico.** É o
+experimento mais fundamental do manual, e o método se repete sem mudanças para
+diodos, transistores e MOSFETs pelos próximos setenta capítulos.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada ajustável de 0 a 12 V, com limite de corrente
+- 1 multímetro digital (dois, se possível: um em tensão, outro em corrente)
+- 1 resistor de 150 Ω, 1/4 W
+- 1 resistor de 470 Ω, 1/4 W
+- 1 resistor de 1 kΩ, 1/4 W
+- 1 resistor de 10 Ω, 1/4 W (ou 1 Ω, se tiver)
+- 1 LED vermelho de 5 mm
+- 1 lâmpada incandescente pequena de 12 V (lanterna, painel de automóvel) — o
+  componente mais didático do capítulo
+- Papel quadriculado para os gráficos
+:::
+
+### Parte 1 — Levantar a curva de um resistor
+
+1. Meça o resistor de 150 Ω com o ohmímetro, fora do circuito. Anote — este é o
+   valor de referência.
+2. Monte fonte, resistor e amperímetro em série. Ajuste o limite de corrente da
+   fonte para uns 100 mA.
+3. Varra a tensão de 1 V a 9 V, de 1 em 1 V. Em cada ponto, meça **a tensão sobre
+   o resistor** (não a da fonte: elas diferem pela queda do amperímetro) e a
+   corrente.
+4. Monte a tabela e plote $I$ em função de $V$ no papel quadriculado.
+
+Você deve obter uma reta passando pela origem. Trace a reta que melhor passa pelos
+pontos e extraia a inclinação: $R = \Delta V/\Delta I$. Compare com a leitura do
+ohmímetro e com o código de cores do @sec-cap-006. Os três devem concordar dentro
+da tolerância.
+
+**O que observar:** ninguém precisou medir em 9 V para saber o que aconteceria em
+9 V. Duas medições já bastavam. É essa capacidade de extrapolar que a Lei de Ohm
+compra, e é por isso que ela é útil.
+
+### Parte 2 — Um componente que não é ôhmico
+
+1. Repita o procedimento com a **lâmpada incandescente**, começando em 0,5 V e
+   subindo até a tensão nominal dela em passos pequenos (0,5 V).
+2. Em cada ponto, calcule $R = V/I$ e escreva na terceira coluna.
+3. Plote no mesmo papel.
+
+| $V$ (V) | $I$ (mA) | $R = V/I$ ($\Omega$) |
+|---|---|---|
+| 0,5 | | |
+| 1,0 | | |
+| 2,0 | | |
+| 4,0 | | |
+| 8,0 | | |
+| 12,0 | | |
+
+: Tabela da Parte 2. A terceira coluna é o resultado do experimento.
+{#tbl-010-lab-lampada}
+
+A terceira coluna não é constante — e é comum ela variar por um fator de dez entre
+o filamento frio e o filamento incandescente. Extrapole: qual seria a corrente em
+12 V, se você usasse a resistência medida em 0,5 V? O número absurdo que sai é
+exatamente o erro que se comete ao aplicar a Lei de Ohm onde ela não vale.
+
+::: {.callout-tip}
+## O surto de partida das lâmpadas
+
+Esse mesmo efeito explica por que lâmpadas incandescentes quase sempre queimam
+**no instante em que se acende a luz**, e não no meio do uso: no primeiro
+milissegundo o filamento está frio, a resistência está dez vezes menor, e a
+corrente é dez vezes maior que a nominal. É também por isso que circuitos de
+acionamento precisam suportar o surto, e não só o regime.
+:::
+
+### Parte 3 — O joelho do LED
+
+1. Monte o LED em série com o resistor de 470 Ω (o resistor é obrigatório: sem
+   ele, a Parte 3 termina com um LED destruído e nenhum dado).
+2. Varra a tensão da fonte de 1 V a 9 V. Em cada ponto meça a **tensão sobre o
+   LED** e a corrente.
+3. Plote $I$ contra $V_\text{LED}$.
+
+Repare em duas coisas. Primeira: a tensão sobre o LED mal se move — de 1,8 V a
+2,1 V — enquanto a corrente varia de quase zero a mais de 15 mA. Segunda: a curva
+não passa pela origem de forma nenhuma parecida com uma reta.
+
+Agora calcule as duas resistências no ponto de 15 mA: a estática, $V/I$, e a
+dinâmica, $\Delta V/\Delta I$ entre dois pontos vizinhos. Os valores diferem por
+mais de uma ordem de grandeza. Guarde os dois números — eles voltam no Volume 8.
+
+### Parte 4 — A resistência dos cabos
+
+1. Ohmímetro na menor escala. **Encoste as duas pontas uma na outra.** A leitura
+   não é zero: é a resistência dos cabos mais a dos contatos. Anote como
+   $r_\text{cabos}$.
+2. Meça o resistor de 10 Ω. Subtraia $r_\text{cabos}$. Compare com o nominal.
+3. Aperte as pontas de prova com mais força e repita; depois segure-as frouxas.
+   O valor muda — você está medindo resistência de contato.
+4. Se o multímetro tiver função *relative* (REL ou Δ), acione-a com as pontas
+   encostadas e repita a medição do resistor de 10 Ω. O instrumento agora subtrai
+   sozinho.
+
+### Parte 5 — Medir a temperatura de um resistor sem termômetro
+
+1. Meça o resistor de 150 Ω à temperatura ambiente e anote com todas as casas.
+2. Monte-o sozinho na fonte, ajustada para dissipar perto do limite: com 1/4 W,
+   isso são $V = \sqrt{0{,}25 \times 150} \approx 6{,}1$ V. Deixe ligado dois
+   minutos.
+3. Desligue a fonte e **imediatamente** meça a resistência de novo.
+
+Num resistor de filme de carbono o valor cai levemente (coeficiente negativo); num
+de fio, sobe. A variação é de fração de por cento — pequena, mas mensurável com
+quatro dígitos e meio, e é a mesma física que o exemplo do enrolamento do motor.
+Aproxime o dedo do corpo do resistor antes de tocá-lo: ele está bem mais quente que
+a mão, e o @sec-cap-011 explica exatamente quanto.
+
+### Variante simulada (plano B)
+
+O LTspice e o ngspice fazem a Parte 1 e a Parte 3 com uma única diretiva de
+varredura CC (`.dc V1 0 9 0.1`), e o resultado sai como gráfico pronto. Vale
+fazer: a curva do diodo do simulador é a mesma equação exponencial que o Volume 8
+vai deduzir. As Partes 2, 4 e 5 dependem de efeitos térmicos e de contato que os
+modelos padrão do simulador não incluem — e é justamente por isso que a bancada
+continua necessária.
+
+## 🔥 Onde Queima {#sec-010-queima}
+
+**Medir resistência num circuito energizado.** O ohmímetro injeta a própria
+corrente e supõe que não há outra. Com o circuito ligado, a leitura é ficção; com
+um capacitor carregado, é uma leitura errada seguida de um instrumento
+possivelmente danificado. Desligue, descarregue, depois meça.
+
+**Medir um componente sem tirá-lo do circuito.** Tudo o que estiver em paralelo é
+medido junto, e a leitura sai sempre menor. O resistor "fora de tolerância" que
+você acabou de encontrar quase certamente está em paralelo com outro caminho.
+Levante uma perna.
+
+**Ignorar a resistência dos cabos em escalas baixas.** Abaixo de uns 10 Ω, os
+cabos são uma parte significativa da leitura. Sem zerar, você mede o multímetro.
+
+**Segurar as duas pontas de prova com os dedos.** Em medições acima de 100 kΩ, o
+seu corpo entra em paralelo e derruba a leitura. Ninguém suspeita disso na hora, e
+o valor "errado" é perfeitamente reprodutível — o que torna o engano convincente.
+
+**Aplicar a Lei de Ohm a um LED.** "O LED é de 2 V, a fonte é de 5 V, logo sobram
+3 V" está certo. "Logo a resistência do LED é 100 Ω e posso ligá-lo direto na
+fonte de 2 V" está errado, e o componente morre. LED **sempre** com resistor em
+série, dimensionado pela corrente desejada e não pela resistência aparente.
+
+**Esquecer o surto de partida de cargas com coeficiente positivo.** Lâmpadas e
+motores puxam, no instante da partida, várias vezes a corrente de regime, porque
+frios têm resistência muito menor. Fusível, chave, trilha e transistor de
+acionamento precisam sobreviver ao pico.
+
+**Fuga térmica em componente de coeficiente negativo.** Um NTC, um diodo ou uma
+junção de transistor ficam *mais* condutores quando esquentam. Sem limitação
+externa de corrente, o ciclo se fecha e o componente se destrói em segundos. Todo
+circuito de potência do Volume 12 é projetado contra isso.
+
+**Confundir resistência estática com dinâmica.** $V/I$ e $\Delta V/\Delta I$ são
+números diferentes em qualquer componente não linear, e usar um no lugar do outro
+erra o resultado por uma ordem de grandeza. Estática para dissipação e polarização;
+dinâmica para pequenos sinais.
+
+**Tratar fio, trilha e contato como resistência zero.** Em corrente alta, esses
+miliohms derrubam décimos de volt e dissipam watts. É a causa clássica de
+"funciona na bancada, esquenta no protótipo" e de conector derretido.
+
+**Somar tolerância e coeficiente de temperatura como se fossem a mesma coisa.** Um
+resistor de 1 % com 200 ppm/°C tem 1 % de erro de fábrica **mais** 0,8 % de
+deriva ao longo de 40 °C de variação. Num divisor de precisão, os dois se somam no
+pior caso.
+
+## O que fica deste capítulo {#sec-010-resumo}
+
+Resistência vem das colisões dos portadores com a rede, e a geometria entra por
+$R = \rho L/A$: mais longo, mais resistência; mais grosso, menos. A unidade é o
+ohm, e o inverso — a condutância, em siemens — é a forma cômoda de tratar o
+paralelo.
+
+$R = V/I$ é definição e vale sempre. $V = RI$ com $R$ constante é a Lei de Ohm, e
+vale só para materiais ôhmicos. Diodos, LEDs, lâmpadas, termistores, varistores e
+transistores não são ôhmicos, e para eles a grandeza útil é a resistência
+dinâmica, a inclinação local da curva.
+
+Nenhuma resistência é independente da temperatura. Nos metais o coeficiente é
+positivo e a realimentação é estabilizante; em semicondutores e NTCs é negativo, e
+há risco de fuga térmica. O mesmo efeito, medido de propósito, permite descobrir a
+temperatura de um enrolamento com um ohmímetro.
+
+Por fim: o esquemático desenha fios sem resistência, e a placa não tem nenhum. Fio,
+trilha e principalmente contato entram no circuito com miliohms que somem em
+kilo-ohms e dominam em ampères — daí a medição a quatro fios, daí a protoboard
+falhar em potência.
+
+Com $V$, $I$ e $R$ na mão, o próximo passo é inevitável: para onde vai a energia
+que o resistor consome, e quanto calor o componente aguenta antes de deixar de
+existir.
