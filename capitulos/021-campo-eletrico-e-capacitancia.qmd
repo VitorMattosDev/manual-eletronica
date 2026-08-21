@@ -1,3 +1,631 @@
 # Campo elétrico e capacitância {#sec-cap-021}
 
-*(em elaboração)*
+Todo circuito dos três primeiros volumes respondia instantaneamente. Fechou a
+chave, a corrente está lá; mudou a carga, a tensão acompanhou. Essa hipótese
+silenciosa vale enquanto o circuito for feito só de resistores, porque um resistor
+não guarda nada: a energia que entra nele sai como calor no mesmo instante
+(@sec-cap-011).
+
+O capacitor quebra isso. Ele **armazena** energia num campo elétrico e a devolve
+depois, e o "depois" é justamente o que faz o tempo entrar nas equações. A partir
+deste capítulo, todo circuito tem passado: o que ele faz agora depende do que
+aconteceu antes.
+
+Este capítulo constrói o componente ideal — o que é capacitância, de onde ela vem,
+quanta energia cabe nela e qual é a equação que substitui a lei de Ohm. O
+@sec-cap-022 trata do componente que existe de verdade na gaveta, que é bem menos
+comportado.
+
+## Duas placas e um campo {#sec-021-campo}
+
+Pegue dois condutores separados por um isolante e ligue-os aos terminais de uma
+fonte. Elétrons saem de uma placa e se acumulam na outra: uma fica com carga $+Q$,
+a outra com $-Q$. Nenhuma carga atravessa o isolante — o que existe entre as placas
+é **campo elétrico**, não corrente.
+
+Esse campo é o mesmo objeto do @sec-cap-009: a diferença de potencial entre as
+placas é o trabalho necessário para levar uma carga de uma à outra contra o campo.
+A novidade é que agora a separação de cargas é o **objetivo** do componente, e não
+um efeito colateral.
+
+::: {#fig-021-campo}
+
+```{.tikz}
+%%| filename: 021-campo
+%%| alt: À esquerda, duas placas paralelas com cargas positivas em cima e negativas embaixo, e linhas de campo elétrico verticais e uniformes entre elas. À direita, as mesmas placas com um dielétrico entre elas: as moléculas do material se polarizam, alinhando as cargas opostas junto às placas, e o campo resultante dentro do material fica menor, indicado por menos linhas de campo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- placas no vacuo ----------------
+  \begin{scope}
+    \draw[very thick, manualred] (0,2.6) -- (4.0,2.6);
+    \draw[very thick, manualblue] (0,0) -- (4.0,0);
+
+    \foreach \xx in {0.4,1.0,...,3.7}{
+      \node[manualred, font=\scriptsize] at (\xx,2.85) {$+$};
+      \node[manualblue, font=\scriptsize] at (\xx,-0.28) {$-$};
+    }
+
+    \foreach \xx in {0.4,1.0,...,3.7}{
+      \draw[vetor, manualgray] (\xx,2.45) -- (\xx,0.15);
+    }
+
+    \draw[<->, >=stealth, thick] (4.35,0) -- (4.35,2.6)
+      node[midway, right, font=\scriptsize] {$d$};
+
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.0,3.25) {vácuo};
+    \node[align=center, font=\scriptsize, anchor=north] at (2.0,-0.7)
+         {campo uniforme $E = V/d$\\área de placa $A$};
+  \end{scope}
+
+  % ---------------- placas com dieletrico ----------------
+  \begin{scope}[xshift=8.6cm]
+    \draw[very thick, manualred] (0,2.6) -- (4.0,2.6);
+    \draw[very thick, manualblue] (0,0) -- (4.0,0);
+
+    \fill[manualyellow!14] (0,0.05) rectangle (4.0,2.55);
+
+    \foreach \xx in {0.4,1.0,...,3.7}{
+      \node[manualred, font=\scriptsize] at (\xx,2.85) {$+$};
+      \node[manualblue, font=\scriptsize] at (\xx,-0.28) {$-$};
+    }
+
+    % moleculas polarizadas
+    \foreach \xx in {0.55,1.45,2.35,3.25}{
+      \foreach \yc in {0.75,1.85}{
+        \draw[thick, manualgray] (\xx,\yc-0.16) -- (\xx,\yc+0.16);
+        \node[manualblue, font=\tiny] at (\xx,\yc+0.30) {$-$};
+        \node[manualred, font=\tiny] at (\xx,\yc-0.30) {$+$};
+      }
+    }
+
+    \foreach \xx in {1.05,1.95,2.85}{
+      \draw[vetor, manualgray] (\xx,2.45) -- (\xx,0.15);
+    }
+
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.0,3.25)
+         {com dielétrico};
+    \node[align=center, font=\scriptsize, anchor=north] at (2.0,-0.7)
+         {as moléculas polarizadas cancelam parte do campo:\\
+          mesma tensão, \textbf{mais} carga armazenada};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O capacitor elementar. À esquerda, o campo uniforme entre duas placas separadas por
+vácuo. À direita, o dielétrico se polariza e cancela parte do campo, o que permite
+acumular mais carga com a mesma tensão — é exatamente isso que o fator $\varepsilon_r$
+mede.
+
+:::
+
+## A definição de capacitância {#sec-021-definicao}
+
+A carga acumulada é proporcional à tensão aplicada, e a constante de
+proporcionalidade é a **capacitância**:
+
+$$ C = \frac{Q}{V}. $$
+
+A unidade é o **farad** (F): um farad é um coulomb por volt. É uma definição de
+razão, exatamente como a resistência é uma razão entre tensão e corrente — mas com
+uma diferença conceitual que vale fixar agora: $R$ relaciona tensão com **corrente**
+(taxa), e $C$ relaciona tensão com **carga** (quantidade).
+
+Duas leituras da mesma fórmula, e as duas são usadas o tempo todo:
+
+- $Q = CV$: quanta carga cabe num capacitor a uma dada tensão.
+- $V = Q/C$: quanta tensão aparece quando uma dada carga é depositada nele. É esta
+  a forma que explica por que um capacitor pequeno num circuito de alta impedância
+  se carrega até tensões perigosas com quase nenhuma carga.
+
+## A geometria: por que o farad é absurdo {#sec-021-geometria}
+
+Para o capacitor de placas paralelas, a capacitância sai da geometria:
+
+$$ C = \varepsilon_0\,\varepsilon_r\,\frac{A}{d}, $$
+
+com $\varepsilon_0 = 8{,}854 \times 10^{-12}$ F/m (permissividade do vácuo), $A$ a
+área de sobreposição das placas, $d$ a separação e $\varepsilon_r$ a permissividade
+relativa do dielétrico.
+
+Três leituras diretas, e nenhuma delas é decorativa — todas voltam no @sec-cap-022
+como limite físico:
+
+- **Mais área, mais capacitância.** Daí os capacitores enrolados: duas fitas
+  metálicas longas com um filme entre elas, enroladas num cilindro.
+- **Menos distância, mais capacitância.** Daí o eletrolítico: a camada de óxido que
+  serve de dielétrico tem menos de um micrometro. E daí também o limite: dielétrico
+  fino é dielétrico que fura.
+- **Melhor dielétrico, mais capacitância.** Daí a corrida por cerâmicas de
+  $\varepsilon_r$ enorme — que, como se verá, pagam essa vantagem com instabilidade.
+
+Ponha números. Duas folhas de 10 cm × 10 cm ($A = 0{,}01$ m²) separadas por 0,1 mm
+de ar:
+
+$$ C = 8{,}854 \times 10^{-12} \times \frac{0{,}01}{10^{-4}}
+     = 8{,}85 \times 10^{-10}\ \text{F} = 885\ \text{pF}. $$
+
+Cem centímetros quadrados de placa, e o resultado é **menos de um nanofarad**.
+Inverta a conta e pergunte que área daria 1 F com essa mesma separação:
+$A = Cd/\varepsilon_0 = 1{,}13 \times 10^{7}$ m², ou seja, **11 quilômetros
+quadrados**. O farad é uma unidade absurdamente grande para a geometria macroscópica
+— por isso o livro inteiro trabalha em pF, nF e µF, e por isso um supercapacitor de
+10 F é um objeto de engenharia notável, e não um capacitor comum um pouco maior.
+
+::: {#fig-021-escala}
+
+```{.tikz}
+%%| filename: 021-escala
+%%| alt: Escala logarítmica horizontal de capacitância, de um picofarad a cem farads, com marcações por aplicação: capacitância parasita entre trilhas de placa em torno de um picofarad, capacitor de sintonia C0G em cem picofarads, desacoplamento cerâmico em cem nanofarads, acoplamento de áudio em dez microfarads, reservatório de fonte em quatro mil e setecentos microfarads, e supercapacitor em dez farads.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \draw[thick, ->, >=stealth] (0,0) -- (15.6,0);
+
+  % de 1 pF (10^-12) a 100 F (10^2): 14 decadas em 15 cm -> 1,07 cm/decada
+  \foreach \pot/\rot in {%
+    -12/{pF}, -9/{nF}, -6/{$\mu$F}, -3/{mF}, 0/{F}}{
+      \pgfmathsetmacro{\xx}{(\pot+12)*1.07}
+      \draw[thick] (\xx,-0.14) -- (\xx,0.14);
+      \node[font=\scriptsize\bfseries, anchor=north] at (\xx,-0.2) {1 \rot};
+  }
+  \foreach \pot in {-11,-10,-8,-7,-5,-4,-2,-1,1,2}{
+      \pgfmathsetmacro{\xx}{(\pot+12)*1.07}
+      \draw[manualgray] (\xx,-0.08) -- (\xx,0.08);
+  }
+
+  % marcadores de aplicacao, alternando altura
+  \foreach \pot/\yc/\rot in {%
+    -12/1.0/{parasita entre trilhas},
+    -10/2.1/{sintonia (C0G)},
+    -7/1.0/{desacoplamento},
+    -5/2.1/{acoplamento de áudio},
+    -3.33/1.0/{reservatório de fonte},
+    1/2.1/{supercapacitor}}{
+      \pgfmathsetmacro{\xx}{(\pot+12)*1.07}
+      \draw[manualblue, thick] (\xx,0.16) -- (\xx,\yc-0.16);
+      \node[ponto, manualblue] at (\xx,0.16) {};
+      \node[manualblue, font=\scriptsize, anchor=south] at (\xx,\yc-0.14)
+           {\rot};
+  }
+
+  \node[font=\scriptsize, anchor=north, align=center] at (7.8,-0.95)
+       {Quatorze décadas separam a capacitância que atrapalha
+        da capacitância que se compra.};
+
+\end{tikzpicture}
+```
+
+A régua de capacitância, em décadas. As duas pontas são componentes diferentes:
+1 pF é o que aparece sozinho entre duas trilhas vizinhas de uma placa, e 10 F é um
+supercapacitor. Entre elas cabe todo o uso prático do componente.
+
+:::
+
+## O dielétrico {#sec-021-dieletrico}
+
+O material entre as placas faz duas coisas ao mesmo tempo, e as duas importam.
+
+**Ele aumenta a capacitância.** Sob campo, as moléculas do isolante se polarizam:
+as cargas se deslocam ligeiramente, produzindo uma camada de carga oposta junto a
+cada placa. Essa carga induzida cancela parte do campo. Como a tensão é o campo
+vezes a distância, cancelar campo significa que a mesma tensão agora comporta mais
+carga — e o fator de aumento é exatamente $\varepsilon_r$.
+
+**Ele estabelece a tensão máxima.** Todo isolante tem uma **rigidez dielétrica**,
+o campo acima do qual ele conduz — de forma abrupta e geralmente destrutiva. A
+tensão de trabalho de um capacitor é essa rigidez multiplicada pela espessura, com
+margem.
+
+| Material | $\varepsilon_r$ | Rigidez (kV/mm) | Onde aparece |
+|---|---|---|---|
+| Vácuo | 1 (exato) | — | referência |
+| Ar seco | 1,0006 | 3 | capacitor variável, parasitas |
+| Papel impregnado | 3 a 4 | 15 | capacitores antigos, motores |
+| Polipropileno | 2,2 | 200 a 400 | filme, áudio, alta tensão |
+| Poliéster (mylar) | 3,2 | 200 | filme de uso geral |
+| Mica | 5 a 7 | 100 a 200 | RF de precisão |
+| Vidro | 4 a 10 | 10 a 40 | isoladores |
+| Óxido de alumínio | 8 a 10 | 700 | eletrolítico de alumínio |
+| Cerâmica C0G/NP0 | 15 a 80 | 10 a 30 | RF, temporização |
+| Cerâmica X7R | 2000 a 4000 | 10 a 25 | desacoplamento |
+| Cerâmica Y5V | até 18 000 | 5 a 15 | volume barato, instável |
+| Água pura | 80 | — | (não é isolante prático) |
+
+: Permissividade relativa e rigidez dielétrica dos materiais usuais. Note a
+combinação que faz o eletrolítico: $\varepsilon_r$ modesta, mas camada
+finíssima. {#tbl-021-dieletricos}
+
+Repare na tensão que a tabela esconde no eletrolítico. Rigidez de 700 kV/mm parece
+extraordinária, mas a camada de óxido tem cerca de 1,4 nm por volt de formação — o
+que dá justamente a tensão de trabalho do componente, e explica por que um
+eletrolítico de 16 V e um de 400 V com a mesma capacitância têm tamanhos tão
+diferentes.
+
+## A equação que define o componente {#sec-021-idvdt}
+
+Derive $Q = CV$ no tempo. Como a corrente é a taxa de variação da carga
+(@sec-cap-008), $i = dQ/dt$, e com $C$ constante:
+
+$$ i = C\,\frac{dv}{dt}. $$
+
+Esta equação substitui a lei de Ohm para o capacitor, e ela diz coisas que a lei de
+Ohm não diz:
+
+- **A corrente depende da taxa de variação da tensão, não da tensão.** Um capacitor
+  com 100 V constantes nos terminais conduz **zero**. Um capacitor com 1 V variando
+  depressa conduz muito.
+- **A tensão num capacitor não pode saltar.** Um degrau de tensão tem $dv/dt$
+  infinito, o que exigiria corrente infinita. Nenhuma fonte real fornece isso, então
+  a tensão sempre sobe com uma rampa — e a inclinação dessa rampa é decidida pela
+  corrente disponível. É a hipótese que o resto do volume explora.
+- **O capacitor é um integrador de corrente.** Invertendo,
+  $v(t) = v(0) + \frac{1}{C}\int_0^t i\,dt$: a tensão é a corrente acumulada,
+  dividida pela capacitância.
+
+::: {#fig-021-idvdt}
+
+```{.tikz}
+%%| filename: 021-idvdt
+%%| alt: Dois gráficos empilhados com o mesmo eixo de tempo em milissegundos. Em cima, a tensão sobre um capacitor de cem nanofarads: sobe em rampa de zero a dois volts em dois milissegundos, fica constante em dois volts por dois milissegundos, desce em rampa mais íngreme até zero em um milissegundo e fica em zero. Embaixo, a corrente correspondente: cem microampères durante a rampa de subida, zero durante o patamar, menos duzentos microampères durante a descida, e zero depois. A corrente é retangular onde a tensão é uma rampa.
+
+\begin{tikzpicture}
+\begin{axis}[
+  name=ax1,
+  width=14.6cm, height=4.6cm,
+  ylabel={$v_C$ (V)},
+  xmin=0, xmax=7, ymin=-0.4, ymax=2.6,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  xticklabels={},
+  ytick={0,1,2},
+]
+  \addplot[curva] coordinates {(0,0) (2,2) (4,2) (5,0) (7,0)};
+  \node[font=\scriptsize, anchor=north west] at (axis cs:0.15,2.5)
+       {rampa: $2$ V em $2$ ms};
+  \node[font=\scriptsize, anchor=south] at (axis cs:3.0,2.05)
+       {constante};
+  \node[manualred, font=\scriptsize, anchor=west] at (axis cs:5.1,1.3)
+       {descida $2\times$ mais rápida};
+\end{axis}
+
+\begin{axis}[
+  at={(0cm,-0.9cm)}, anchor=north west,
+  width=14.6cm, height=4.6cm,
+  xlabel={$t$ (ms)}, ylabel={$i$ ($\mu$A)},
+  xmin=0, xmax=7, ymin=-260, ymax=160,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  ytick={-200,-100,0,100},
+]
+  \addplot[destaque, very thick] coordinates
+    {(0,100) (2,100) (2,0) (4,0) (4,-200) (5,-200) (5,0) (7,0)};
+  \node[font=\scriptsize, anchor=south] at (axis cs:1.0,105)
+       {$+100\ \mu$A};
+  \node[font=\scriptsize, anchor=north] at (axis cs:4.5,-205)
+       {$-200\ \mu$A};
+  \node[align=left, font=\scriptsize, anchor=north west]
+       at (axis cs:5.2,-40)
+       {$C = 100$ nF\\[2pt]
+        $i = C\,\dfrac{dv}{dt}$};
+\end{axis}
+\end{tikzpicture}
+```
+
+A equação do capacitor, desenhada. Onde a tensão sobe em rampa, a corrente é
+constante; onde a tensão é constante, a corrente é zero; onde a rampa é duas vezes
+mais íngreme e desce, a corrente é o dobro e negativa. A corrente não sabe nada
+sobre o **valor** da tensão, só sobre a sua **inclinação**.
+
+:::
+
+## Energia armazenada {#sec-021-energia}
+
+Integrando a potência $p = vi = Cv\,\frac{dv}{dt}$ do zero até $V$:
+
+$$ W = \tfrac{1}{2}\,C\,V^{2}. $$
+
+Duas consequências práticas.
+
+**A energia cresce com o quadrado da tensão.** Dobrar a tensão de trabalho vale
+quatro capacitores. É por isso que reservatórios de fonte chaveada operam em tensão
+alta e que o banco de flash de uma câmera carrega a 300 V em vez de 5 V.
+
+**Um capacitor guarda pouquíssima energia, e ainda assim o suficiente para
+machucar.** Compare:
+
+| Elemento | Energia | Referência |
+|---|---|---|
+| 100 nF em 10 V | 5 µJ | nada |
+| 4700 µF em 25 V | 1,5 J | faísca visível, ponta de chave de fenda marcada |
+| 470 µF em 400 V (fonte chaveada) | 38 J | **potencialmente letal** |
+| Supercapacitor 10 F em 2,7 V | 36 J | queima trilha, funde fio fino |
+| Pilha AA alcalina | ≈ 14 000 J | 400 vezes mais que o capacitor de 400 V |
+
+: Energia armazenada em capacitores típicos, com a pilha como escala de
+comparação. {#tbl-021-energia}
+
+A última linha é a que ordena o mundo: **capacitor não é bateria**. Uma pilha AA
+guarda centenas de vezes mais energia que qualquer capacitor que caiba na mesma
+gaveta. O que o capacitor faz e a pilha não faz é entregar essa energia
+**depressa** — e receber de volta depressa, milhões de vezes, sem se desgastar.
+Capacitor é potência; bateria é energia.
+
+E a terceira linha é a que justifica o @sec-cap-002: o capacitor de 400 V de uma
+fonte chaveada continua carregado depois de a tomada ser desligada, e 38 J
+descarregados através do peito é a definição de acidente grave.
+
+## Associação: o inverso do resistor {#sec-021-associacao}
+
+As regras são as do @sec-cap-012 **trocadas**:
+
+$$ C_{\text{paralelo}} = C_1 + C_2 + \cdots, \qquad
+   \frac{1}{C_{\text{série}}} = \frac{1}{C_1} + \frac{1}{C_2} + \cdots. $$
+
+E não são uma regra decorada: saem direto da geometria.
+
+::: {#fig-021-associacao}
+
+```{.tikz}
+%%| filename: 021-associacao
+%%| alt: À esquerda, dois capacitores de cem nanofarads em paralelo entre dois nós, resultando em duzentos nanofarads, com a anotação de que ligar em paralelo é somar área de placa. À direita, dois capacitores de cem nanofarads em série, resultando em cinquenta nanofarads, com a anotação de que ligar em série é somar distância entre placas e que a tensão suportada dobra.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---------------- paralelo ----------------
+  \begin{scope}
+    \draw (0,0) -- (0,2.6);
+    \draw (0,2.6) -- (3.2,2.6);
+    \draw (0,0) -- (3.2,0);
+    \draw (1.0,2.6) to[C, l_={$100$ nF}] (1.0,0);
+    \draw (3.2,2.6) to[C, l={$100$ nF}] (3.2,0);
+    \node[ponto] at (1.0,2.6) {};
+    \node[ponto] at (1.0,0) {};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.6,3.1) {paralelo};
+    \node[manualgreen!55!black, font=\scriptsize\bfseries, anchor=north]
+         at (1.6,-0.5) {$C = 200$ nF};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-0.6,-1.2)
+         {Somar capacitores em paralelo\\
+          é somar \textbf{área de placa}.\\[3pt]
+          A tensão de trabalho é a\\
+          do \textbf{menor} dos dois.};
+  \end{scope}
+
+  % ---------------- serie ----------------
+  \begin{scope}[xshift=8.4cm]
+    \draw (0,2.6) to[C, l={$100$ nF}] (0,1.3)
+                  to[C, l={$100$ nF}] (0,0);
+    \draw (0,2.6) -- (1.4,2.6);
+    \draw (0,0) -- (1.4,0);
+    \node[ponto] at (1.4,2.6) {};
+    \node[ponto] at (1.4,0) {};
+    \node[font=\scriptsize\bfseries, anchor=south] at (0.5,3.1) {série};
+    \node[manualgreen!55!black, font=\scriptsize\bfseries, anchor=north]
+         at (0.5,-0.5) {$C = 50$ nF};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-1.0,-1.2)
+         {Ligar em série é somar\\
+          \textbf{distância entre placas}.\\[3pt]
+          A tensão de trabalho \emph{soma} ---\\
+          mas só com resistores\\
+          de equalização.};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+As duas associações e a razão geométrica de cada uma. Paralelo soma área; série
+soma distância. Como $C \propto A/d$, o resultado é o espelho exato do que
+acontece com resistores.
+
+:::
+
+Dois avisos que vêm junto:
+
+- **Em paralelo, a tensão de trabalho é a do pior componente.** Somar um capacitor
+  de 400 V com um de 16 V dá um conjunto de 16 V.
+- **Em série, a tensão não se divide como você espera.** Idealmente ela se divide
+  na proporção inversa das capacitâncias, mas na prática quem manda é a corrente de
+  fuga, que é péssima e desigual em eletrolíticos. Sem resistores de equalização em
+  paralelo com cada capacitor, um deles assume quase toda a tensão e estoura. Este é
+  assunto do @sec-cap-022, mas a advertência vale desde já.
+
+## O capacitor em regime permanente CC {#sec-021-cc}
+
+Uma consequência de $i = C\,dv/dt$ que simplifica muita análise: se a tensão parou
+de mudar, $dv/dt = 0$, logo $i = 0$.
+
+**Em regime permanente CC, um capacitor é um circuito aberto.** Para calcular as
+tensões e correntes de repouso de qualquer circuito, apague todos os capacitores do
+desenho e resolva a rede resistiva restante com os métodos do Volume 3. É
+exatamente o que se faz para achar o ponto de polarização de um transistor
+(Volume 9), e é a razão de o Volume 3 não ter sido perdido.
+
+O que os capacitores fazem é decidir **como** o circuito chega a esse regime — e
+como ele reage a qualquer coisa que mude. O @sec-cap-025 põe número nisso.
+
+## 🧪 Laboratório {#sec-021-lab}
+
+**Fabricar um capacitor, medi-lo e confirmar $C = \varepsilon_0\varepsilon_r A/d$
+com as próprias mãos.** É um dos poucos experimentos do manual em que a fórmula
+teórica é verificada num componente construído na hora, com material de cozinha.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro com função de capacitância (escala de nF)
+- Papel-alumínio de cozinha e 1 tesoura
+- Folhas de papel sulfite (75 g/m², cerca de 0,1 mm cada) e sacos plásticos finos
+- 1 livro grosso ou 2 placas de vidro (para prensar)
+- 1 régua
+- 2 capacitores cerâmicos de 100 nF e 2 de 10 nF
+- 1 capacitor eletrolítico de 4700 µF, 25 V
+- 1 resistor de 470 Ω e 1 de 100 kΩ, 1/4 W
+- 1 LED vermelho
+- 1 fonte de bancada ou bateria de 9 V
+- Jumpers e protoboard
+:::
+
+::: {.callout-warning}
+## Descarregue antes de tocar
+
+O eletrolítico de 4700 µF carregado a 9 V guarda 0,19 J — não machuca, mas produz
+faísca e marca a ponta da chave de fenda. Descarregue-o **sempre** através do
+resistor de 470 Ω, nunca em curto direto, e confirme com o voltímetro antes de
+manusear. Se em algum momento você trabalhar com capacitores de fonte chaveada
+(centenas de volts), reveja o @sec-cap-002 inteiro antes de encostar em qualquer
+coisa.
+:::
+
+### Parte 1 — Construir o capacitor
+
+1. Corte duas folhas de alumínio de 20 cm × 20 cm e deixe uma aba de 2 cm em cada
+   uma para o contato do multímetro.
+2. Monte o sanduíche: alumínio, **uma** folha de sulfite, alumínio. As abas devem
+   sair por lados opostos, sem se tocar.
+3. Prense com o livro e meça a capacitância.
+4. Calcule a previsão. Com $A = 0{,}04$ m², $d \approx 10^{-4}$ m e
+   $\varepsilon_r \approx 3{,}5$ para o papel:
+   $C = 8{,}854\times10^{-12} \times 3{,}5 \times 0{,}04 / 10^{-4} \approx 12$ nF.
+
+A medida costuma ficar abaixo da previsão, e a razão é instrutiva: o contato entre
+alumínio e papel não é perfeito, então a distância efetiva é maior que a espessura
+nominal. Prense mais forte e veja a capacitância **subir**.
+
+### Parte 2 — Confirmar a fórmula, um fator de cada vez
+
+1. **Área:** dobre o sanduíche ao meio (metade da área sobreposta) e meça. Deve cair
+   pela metade.
+2. **Distância:** use duas folhas de sulfite em vez de uma. Deve cair pela metade.
+   Use quatro. Deve cair a um quarto.
+3. **Dielétrico:** troque a folha de papel por uma folha de saco plástico de
+   espessura parecida ($\varepsilon_r \approx 2{,}3$ para polietileno). A
+   capacitância deve **cair**, apesar de o plástico "parecer" melhor isolante.
+
+Anote os três pares (previsto, medido) numa tabela. O erro típico é de 20 % a 40 %,
+e ele é honesto: a espessura do papel varia, a prensagem não é uniforme e as bordas
+têm campo de dispersão que a fórmula ideal ignora.
+
+### Parte 3 — Associação série e paralelo
+
+1. Meça cada capacitor de 100 nF isolado. Anote os valores reais — cerâmicos de uso
+   geral têm tolerância de ±10 % ou pior.
+2. Meça os dois em paralelo. Compare com a soma dos valores **medidos**, não com
+   200 nF nominais.
+3. Meça os dois em série. Compare com $C_1C_2/(C_1+C_2)$.
+4. Repita com um 100 nF e um 10 nF em série. Previsto: 9,1 nF — praticamente o menor
+   dos dois. Isso é o espelho do que resistores fazem em paralelo, e a intuição
+   correspondente é: **em série, manda o menor**.
+
+### Parte 4 — Energia armazenada, vista a olho nu
+
+1. Monte o eletrolítico de 4700 µF em série com o resistor de 470 Ω e o LED.
+2. Carregue o capacitor a 9,0 V (sem o LED no caminho), desligue a fonte e então
+   feche o circuito de descarga.
+3. Cronometre quanto tempo o LED fica visivelmente aceso.
+4. Estime a energia entregue: $W = \frac{1}{2}CV^2 = \frac{1}{2}\times
+   4{,}7\times10^{-3}\times 81 \approx 0{,}19$ J.
+5. Repita carregando a 4,5 V. A energia cai a um quarto, e o tempo aceso cai muito
+   mais que pela metade — porque abaixo da tensão direta do LED nada mais acende.
+
+O passo 5 é o ponto: a energia vai com $V^2$, e a fração **utilizável** dela é ainda
+menor, porque quase toda carga tem uma tensão mínima de funcionamento. Essa é a
+diferença prática entre "energia armazenada" e "energia aproveitável", e ela volta
+no Volume 12.
+
+### Parte 5 — O capacitor que se recarrega sozinho
+
+1. Carregue o eletrolítico a 9,0 V e desconecte tudo.
+2. Meça a tensão a cada minuto por 5 minutos, com o voltímetro **encostado só no
+   instante da leitura**. Ela cai devagar: é a corrente de fuga.
+3. Agora descarregue o capacitor completamente com o resistor de 470 Ω, até o
+   voltímetro marcar zero. Retire o resistor.
+4. Espere 2 minutos sem tocar em nada e meça de novo.
+
+O voltímetro vai marcar algumas centenas de milivolts. O capacitor **não** estava
+descarregado: parte da polarização do dielétrico relaxa lentamente e devolve carga.
+Isso se chama **absorção dielétrica**, e é a razão de capacitores de alta tensão
+serem guardados com um fio curto-circuitando os terminais. É também um erro de
+medida clássico em circuitos de amostragem, e o @sec-cap-022 volta ao assunto.
+
+### Variante simulada (plano B)
+
+Sem multímetro com escala de capacitância, as Partes 1 a 3 não têm substituto real
+— e vale insistir para conseguir um, porque é a função mais barata que separa um
+multímetro útil de um inútil. O que dá para simular é a Parte 4: em qualquer
+simulador, um capacitor carregado descarregando por um resistor mostra a curva
+completa, e o Falstad ainda desenha o campo entre as placas.
+
+A Parte 5 não existe em simulador nenhum: absorção dielétrica não está no modelo
+ideal. É precisamente o tipo de fenômeno que só a bancada ensina.
+
+## 🔥 Onde Queima {#sec-021-queima}
+
+**Supor que um capacitor desligado está descarregado.** Ele guarda a carga por
+minutos, horas ou dias, e o dielétrico devolve mais um pouco depois de você
+descarregá-lo. Curto-circuite através de um resistor, meça, e só então encoste.
+Em fonte chaveada, isso é questão de vida (@sec-cap-002).
+
+**Inverter a polaridade de um eletrolítico.** O dielétrico é uma camada de óxido
+mantida por polarização correta; invertida, ela se dissolve, a corrente dispara e o
+componente aquece até romper o selo. Eletrolítico invertido não "funciona pior" —
+ele estoura, às vezes minutos depois de ligado.
+
+**Ultrapassar a tensão de trabalho.** Não há região de degradação suave: o
+dielétrico fura, e o furo é permanente mesmo que a tensão volte ao normal. E
+lembre-se de que a tensão nominal é para CC — ondulação e picos contam.
+
+**Somar capacitores em série achando que a tensão se divide igualmente.** Ela se
+divide pelas fugas, que são desiguais. Sem resistores de equalização, um capacitor
+assume quase toda a tensão e falha primeiro.
+
+**Tratar capacitância como constante.** Ela varia com a tensão aplicada, com a
+temperatura e com a frequência — em cerâmicas X7R e Y5V, brutalmente. O
+@sec-cap-022 mostra o tamanho do estrago.
+
+**Medir capacitância com o componente na placa.** O resto do circuito entra em
+paralelo e a leitura não significa nada. Desolde ao menos uma perna.
+
+**Esquecer a capacitância que você não pôs ali.** Duas trilhas paralelas, um cabo
+longo, a ponta de prova do osciloscópio — todos têm alguns picofarads, e a partir de
+certa frequência esses picofarads mandam no circuito. É por isso que o Volume 7
+dedica um capítulo inteiro a pontas de prova e artefatos de medição.
+
+**Confundir capacitor com bateria.** Um supercapacitor de 10 F a 2,7 V guarda 36 J;
+uma pilha AA guarda 14 000 J. Capacitor entrega potência, não autonomia.
+
+**Curto-circuitar um capacitor grande carregado "para descarregar rápido".** A
+corrente de pico é limitada apenas pela resistência do fio: dezenas ou centenas de
+ampères, faísca, metal vaporizado e terminais soldados. Use resistor.
+
+**Ligar um capacitor descarregado direto numa fonte de baixa impedância.** No
+instante inicial ele é um curto-circuito: $v = 0$ implica corrente limitada só pela
+resistência do caminho. É o que dispara a proteção da fonte de bancada, e é o que
+funde o fusível de entrada de fontes lineares sem limitador de partida (Volume 12).
+
+## O que fica deste capítulo {#sec-021-resumo}
+
+Capacitância é a razão entre carga armazenada e tensão aplicada, $C = Q/V$, medida
+em farads. A geometria decide o valor: $C = \varepsilon_0\varepsilon_r A/d$ — mais
+área, menos distância, melhor dielétrico. O farad é uma unidade absurdamente grande
+para essa geometria, e por isso o mundo real vive entre o picofarad e o milifarad.
+
+O dielétrico faz duas coisas ao mesmo tempo: aumenta a capacitância por um fator
+$\varepsilon_r$ e fixa a tensão máxima pela sua rigidez. As duas propriedades se
+opõem, e cada família de capacitor é uma escolha diferente dentro desse conflito.
+
+A equação que define o componente é $i = C\,dv/dt$. Dela decorre tudo: corrente só
+existe quando a tensão muda; a tensão não pode saltar; o capacitor integra corrente;
+e em regime permanente CC ele é um circuito aberto — o que permite reaproveitar
+todo o Volume 3 para achar o repouso de qualquer circuito.
+
+A energia armazenada é $\frac{1}{2}CV^2$ — cresce com o quadrado da tensão, e é
+sempre pequena comparada à de uma bateria, mas suficiente para produzir faíscas e,
+em alta tensão, para matar.
+
+As associações são o espelho das do resistor: paralelo soma, série soma inversos.
+Porque paralelo soma área e série soma distância.
+
+Tudo isso vale para o capacitor **ideal**. O @sec-cap-022 apresenta o que existe de
+verdade — com resistência em série, indutância própria, fuga, e uma capacitância que
+depende da tensão, da temperatura e da frequência.
