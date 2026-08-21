@@ -163,6 +163,46 @@ instalado só como dependência do `circuitikz` e **não é usado** no corpo do 
   \begin{axis}[at={(ax1.right of south east)}, anchor={left of south west}, ...]
   ```
 
+- **`\addplot` de preenchimento rouba a entrada da legenda.** Um
+  `\addplot[draw=none, fill=...] {f(x)} \closedcycle;` posto antes das curvas conta
+  como plot e desloca **todas** as `\addlegendentry` em um: a legenda passa a mostrar
+  a cor errada em cada rótulo. O sintoma é traiçoeiro porque o gráfico está certo e só
+  a legenda mente. Marcar sempre o preenchimento com `forget plot`. Pago no
+  capítulo 028 (`028-quadrado`).
+
+- **Acento em modo matemático estoura com `! Please use \mathaccent`.** `V_{\mathrm{méd}}`
+  não compila; `V_{|V|_{\text{méd}}}` sim, porque `\text` volta ao modo texto. Vale para
+  qualquer subscrito com "média", "máx", "mín", "núcleo". Pago no capítulo 028.
+
+- **`v^>=` e `l=` caem do MESMO lado no `circuitikz`.** O acento circunflexo em `v^`
+  não significa "do outro lado do rótulo": significa o lado padrão, que é o mesmo do
+  `l=`. Resultado: rótulo do componente em cima do rótulo da tensão. A combinação certa
+  é `l=` com `v_>=` (componente horizontal) ou `l=` com `v_>=` (vertical desenhado de
+  cima para baixo, que joga a tensão para oeste). Pago no capítulo 029 (`029-soma`).
+
+- **`xlabel` com `axis lines=middle` vai para a ponta do eixo**, não para baixo do
+  gráfico, e colide com a curva e com as anotações que estiverem à direita. Em painéis
+  empilhados a solução é tirar o `xlabel` do `axis` e pôr um `\node` avulso abaixo do
+  último painel. Pago nos capítulos 030 e 031.
+
+- **Não desenhar dados "à mão" em cm dentro de uma `tikzpicture` que contém `axis`.**
+  A área útil de um `axis` é menor que o `width=` declarado (rótulos e ticks comem a
+  diferença), então qualquer coordenada em centímetros calculada por regra de três
+  **não** alinha com os dados. Sintoma: pulsos que deveriam cair no pico da senoide
+  ficam alguns graus adiantados, e os trechos entre eles aparecem com falhas. A saída é
+  descrever a forma como função e deixá-la no próprio `\addplot`.
+
+- **Pulso estreito sem singularidade.** Para desenhar corrente pulsada (entrada de
+  fonte chaveada), a tentação é `cos(x)*abs(cos(x))^30` — que estoura em $x=90°$,
+  porque `^` no `pgfmath` é `exp(n*ln(...))` e `ln(0)` não existe. A forma segura é
+  `cos(x)*exp(-26*(1-abs(cos(x))))`: mesmo perfil, sem log de zero, e o argumento da
+  exponencial fica em $[-26, 0]$. Pago no capítulo 032 (`032-distorcao`).
+
+- **Barra de anotação horizontal atravessa o diagrama.** Marcar "trechos" com linhas
+  grossas semitransparentes por cima de um unifilar cobre fiação e símbolos. Levá-las
+  para **abaixo** de todo o desenho e rotular cada uma na ponta. Pago no capítulo 032
+  (`032-instalacao`).
+
 - **Circuito e gráfico na mesma figura:** `\begin{tikzpicture}` (não
   `circuitikz`) contendo um `\begin{scope}` com o circuito e, ao lado, um
   `\begin{axis}[at={(8.4cm,0cm)}, anchor=south west, ...]`. Dentro do `scope` do
@@ -233,5 +273,8 @@ desenho ruim em TikZ para conteúdo fotográfico.
 | 004 | Multímetro com as escalas em destaque | pendente |
 | 005 | Protoboard: trilhas internas e montagem limpa × montagem confusa | pendente |
 | 006 | Cartela de resistores, capacitores e indutores reais por encapsulamento | pendente |
+| 031 | Medidor de consumo de tomada mostrando W, VA e FP da mesma carga | pendente |
+| 032 | Capacitor de motor (*motor run*) com a plaqueta legível e o resistor de descarga | pendente |
+| 032 | Banco de capacitores automático aberto, com os degraus e os contatores | pendente |
 | 083 | Junta de solda boa × fria × com excesso | pendente |
 | 085 | Componentes SMD nos encapsulamentos comuns (0805, SOT-23, QFN) | pendente |
