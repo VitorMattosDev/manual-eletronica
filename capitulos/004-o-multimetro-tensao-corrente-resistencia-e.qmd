@@ -1,3 +1,523 @@
 # O multímetro: tensão, corrente, resistência e continuidade {#sec-cap-004}
 
-*(em elaboração)*
+O multímetro é o único instrumento que acompanha o eletrônico da primeira hora à
+aposentadoria. É também o instrumento que mais mente — não por defeito, mas
+porque quase ninguém aprende o que ele realmente faz.
+
+A frase que organiza este capítulo inteiro é esta: **o multímetro não observa o
+circuito, ele participa dele**. Todo instrumento de medida elétrica precisa
+extrair alguma corrente ou impor alguma tensão para produzir um número, e essa
+extração altera o que estava lá antes. Na maior parte dos casos a alteração é
+desprezível e ninguém precisa pensar nisso. Nos casos em que não é, o instrumento
+mostra um número perfeitamente legível e completamente errado — sem aviso, sem
+símbolo piscando, sem nada.
+
+## Um instrumento, três circuitos diferentes {#sec-004-tres}
+
+Girar a chave do multímetro não muda o modo de exibição: muda **o circuito
+interno** ligado às pontas de prova. Volts, ampères e ohms são três instrumentos
+distintos que dividem o mesmo visor.
+
+::: {#fig-modelo-interno}
+
+```{.tikz}
+%%| filename: 004-modelo-interno
+%%| alt: Circuito com pilha, amperímetro em série e voltímetro em paralelo com o resistor; abaixo, dois quadros tracejados mostram o modelo interno de cada instrumento, um shunt de 1 ohm e uma resistência de 10 megaohms.
+
+\begin{circuitikz}[american, font=\small]
+  % circuito principal
+  \draw (0,0) to[battery1, l_=$9\,\mathrm{V}$] (0,3);
+  \draw (0,3) -- (1.0,3)
+        to[rmeter, t=A, color=manualred] (2.6,3)
+        to[R, l=$470\,\Omega$] (5.6,3);
+  \draw (5.6,3) to[leD] (5.6,0) -- (0,0);
+
+  % voltimetro em paralelo com o resistor
+  \draw (2.6,3) -- (2.6,4.8)
+        to[rmeter, t=V, color=manualblue] (5.6,4.8) -- (5.6,3);
+
+  \node[manualred,  font=\scriptsize, anchor=north] at (1.8,2.35) {em série};
+  \node[manualblue, font=\scriptsize, anchor=south] at (4.1,5.35) {em paralelo};
+
+  % inset: amperimetro
+  \draw[dashed, manualred, thick, rounded corners=2pt] (-0.5,-2.75) rectangle (3.3,-1.1);
+  \draw (0.0,-1.9) to[R, l=$1\,\Omega$] (2.8,-1.9);
+  \node[manualred, font=\scriptsize, anchor=north] at (1.4,-2.85)
+       {dentro do amperímetro};
+
+  % inset: voltimetro
+  \draw[dashed, manualblue, thick, rounded corners=2pt] (4.3,-2.75) rectangle (8.1,-1.1);
+  \draw (4.8,-1.9) to[R, l=$10\,\mathrm{M}\Omega$] (7.6,-1.9);
+  \node[manualblue, font=\scriptsize, anchor=north] at (6.2,-2.85)
+       {dentro do voltímetro};
+
+  \draw[manualred, thin, -{Stealth[length=2mm]}] (1.8,2.8) .. controls (1.0,0.8) .. (1.4,-1.05);
+  \draw[manualblue, thin, -{Stealth[length=2mm]}] (5.6,4.6) .. controls (8.4,2.0) .. (6.2,-1.05);
+\end{circuitikz}
+```
+
+O que existe atrás das pontas de prova. O amperímetro é quase um curto — precisa
+ser, para não atrapalhar a corrente que mede. O voltímetro é quase um circuito
+aberto — precisa ser, para não desviar a corrente do circuito. Trocar a posição
+de um pelo outro é o acidente mais comum da bancada.
+
+:::
+
+**O voltímetro** liga-se **em paralelo** com o que se quer medir e tem
+resistência interna alta: 10 MΩ é o valor padrão da indústria em qualquer
+multímetro digital, do mais barato ao de laboratório. Ele desvia uma corrente
+minúscula do circuito para produzir a leitura.
+
+**O amperímetro** liga-se **em série**, abrindo o circuito para se colocar no
+caminho, e tem resistência interna baixa — de alguns ohms nas escalas de
+miliampère a poucos miliohms na escala de 10 A. Internamente ele não mede
+corrente: mede a tensão sobre um resistor de precisão conhecido (o **shunt**) e
+divide.
+
+**O ohmímetro** não mede coisa nenhuma passivamente: ele **injeta** uma corrente
+conhecida no componente e mede a tensão resultante. Nas escalas baixas essa
+corrente é da ordem de 1 mA; nas altas, de nanoampères. É por isso que ohmímetro
+só funciona em circuito desenergizado — qualquer tensão externa se soma à do
+instrumento e o número perde o sentido.
+
+## O voltímetro atrapalha quando a impedância é alta {#sec-004-carga}
+
+Os 10 MΩ de entrada do voltímetro entram **em paralelo** com o trecho do circuito
+que está sendo medido. Se o circuito ali é de baixa impedância, 10 MΩ em paralelo
+não mudam nada. Se é de alta impedância, mudam tudo.
+
+Um divisor de tensão com dois resistores iguais alimentado por 9 V deveria
+entregar 4,50 V no ponto do meio. Com dois resistores de 10 kΩ, o voltímetro lê
+4,50 V — o erro é de 0,05 %, invisível. Com dois resistores de **1 MΩ**, os
+10 MΩ do instrumento ficam em paralelo com o resistor inferior:
+
+$$
+R_\text{eq} = \frac{1\ \text{M}\Omega \times 10\ \text{M}\Omega}{1\ \text{M}\Omega + 10\ \text{M}\Omega}
+= 909\ \text{k}\Omega ,
+$$
+
+e a leitura desaba para
+
+$$
+V_\text{lido} = 9{,}0 \times \frac{909}{1000 + 909} = 4{,}29\ \text{V}.
+$$
+
+Um erro de −4,8 %. O circuito não mudou; o instrumento é que criou um caminho
+paralelo que antes não existia. Desligue o multímetro e a tensão volta
+instantaneamente a 4,50 V — o que torna esse erro impossível de detectar
+medindo mais uma vez.
+
+::: {#fig-erro-carga}
+
+```{.tikz}
+%%| filename: 004-erro-carga
+%%| alt: Curva do erro percentual de leitura de um voltímetro de 10 megaohms em função da resistência dos braços de um divisor, de 1 kilo-ohm a 10 megaohms.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=12cm, height=6.6cm,
+  xmode=log, xmin=1000, xmax=10000000,
+  ymin=0, ymax=36,
+  xlabel={resistência de cada braço do divisor},
+  ylabel={erro de leitura (\%)},
+  xtick={1000,10000,100000,1000000,10000000},
+  xticklabels={$1\,\mathrm{k}\Omega$,$10\,\mathrm{k}\Omega$,$100\,\mathrm{k}\Omega$,
+               $1\,\mathrm{M}\Omega$,$10\,\mathrm{M}\Omega$},
+  ytick={0,10,20,30},
+  axis lines=left,
+  grid=major, grid style={manualgray!25},
+  label style={font=\footnotesize}, tick label style={font=\footnotesize},
+]
+  \addplot[curva, domain=3:7, samples=250]
+    ({10^x}, {100*(10^x/2)/(10^x/2 + 10000000)});
+
+  \addplot[auxiliar, forget plot] coordinates {(1000,1) (10000000,1)};
+  \node[manualgray, font=\scriptsize, anchor=south west] at (axis cs:1200,1.4)
+       {erro de 1 \%};
+
+  \addplot[only marks, mark=*, manualred, mark size=1.8pt, forget plot]
+    coordinates {(202000,1) (1000000,4.76) (10000000,33.3)};
+
+  \node[manualred, font=\scriptsize, anchor=south] at (axis cs:202000,1.7)
+       {$202\,\mathrm{k}\Omega$};
+  \node[manualred, font=\scriptsize, anchor=south east] at (axis cs:900000,5.6)
+       {$1\,\mathrm{M}\Omega \to 4{,}8\,\%$};
+  \node[manualred, font=\scriptsize, anchor=north east] at (axis cs:9500000,32)
+       {$10\,\mathrm{M}\Omega \to 33\,\%$};
+\end{axis}
+\end{tikzpicture}
+```
+
+Erro cometido por um voltímetro de 10 MΩ ao medir o ponto médio de um divisor de
+braços iguais. Até cerca de 200 kΩ por braço o erro fica abaixo de 1 % e pode ser
+ignorado; de 1 MΩ para cima, a leitura deixa de descrever o circuito.
+
+:::
+
+A regra prática que sai daí: **o voltímetro é confiável enquanto a impedância do
+ponto medido for pelo menos cem vezes menor que a impedância de entrada dele**.
+Com 10 MΩ de entrada, isso significa até uns 100 kΩ. Acima disso, ou se corrige a
+leitura pela conta acima, ou se usa um instrumento de entrada mais alta.
+
+E há um detalhe que pega gente experiente: **a escala mais baixa costuma ter
+impedância menor**. Muitos multímetros que anunciam 10 MΩ mantêm esse valor em
+todas as escalas de tensão, mas alguns modelos baratos caem para 1 MΩ na escala
+de 200 mV. Vale conferir no manual do seu — e o laboratório deste capítulo mostra
+como medir esse número sem manual nenhum.
+
+## O amperímetro rouba tensão do circuito {#sec-004-burden}
+
+O erro simétrico acontece na medição de corrente. O shunt interno tem resistência
+não nula, e a tensão que aparece sobre ele — a **tensão de inserção**, ou *burden
+voltage* — é subtraída do circuito.
+
+::: {#fig-burden}
+
+```{.tikz}
+%%| filename: 004-burden
+%%| alt: Circuito com pilha AA de 1,5 volt e resistor de 22 ohms; o amperímetro inserido em série acrescenta 1 ohm de shunt, reduzindo a corrente de 68 para 65 miliampères.
+
+\begin{circuitikz}[american, font=\small]
+  \draw (0,0) to[battery1, l_=$1{,}5\,\mathrm{V}$] (0,2.8);
+  \draw (0,2.8) -- (1.2,2.8) to[R, l=$22\,\Omega$] (4.2,2.8);
+  \draw (4.2,2.8) -- (5.4,2.8);
+
+  % amperimetro com o shunt explicito
+  \draw[dashed, manualred, thick, rounded corners=2pt] (4.9,-0.6) rectangle (7.4,2.5);
+  \draw (5.4,2.8) -- (5.4,2.1) to[R, l={$R_\mathrm{shunt} = 1\,\Omega$}] (5.4,0.2)
+        -- (5.4,0) -- (0,0);
+  \node[manualred, font=\scriptsize, align=center, anchor=north] at (6.15,-0.7)
+       {amperímetro\\na escala de 200 mA};
+
+  \node[manualgray, font=\scriptsize, align=left, anchor=north west] at (0,-1.4)
+       {sem o instrumento: $I = 1{,}5/22 = 68{,}2\ \mathrm{mA}$};
+  \node[manualred, font=\scriptsize, align=left, anchor=north west] at (0,-1.95)
+       {com o instrumento: $I = 1{,}5/23 = 65{,}2\ \mathrm{mA}$ \quad
+        (erro de $-4{,}4\,\%$)};
+\end{circuitikz}
+```
+
+O amperímetro mede a corrente **depois** de tê-la reduzido. Um ohm de shunt num
+laço de 22 Ω derruba a corrente em 4,4 % — e o número que o instrumento exibe é
+o da corrente reduzida, não o da corrente que existia antes.
+
+:::
+
+Na maioria das medições de bancada isso é irrelevante: 1 Ω num circuito de
+470 Ω dá um erro de 0,2 %. O problema aparece em dois lugares específicos:
+
+**Circuitos de baixa tensão e alta corrente.** Alimentar uma carga de 3,3 V
+através do amperímetro na escala de 10 A, cujo shunt é da ordem de 10 mΩ, custa
+30 mV a 3 A: aceitável. A mesma carga medida na escala de 200 mA por engano
+encontra 1 Ω — e simplesmente não liga.
+
+**Medição de corrente de repouso.** O caso clássico é medir o consumo de um
+microcontrolador dormindo. A escala de microampères de um multímetro comum tem
+shunt de 1 kΩ; a 500 µA isso são **0,5 V** de queda. Um circuito de 3,3 V passa a
+receber 2,8 V, o microcontrolador entra em reset, o consumo muda, e o número
+medido descreve um circuito que só existe enquanto o instrumento está lá.
+
+A defesa é a mesma nos dois casos: **use a escala de corrente mais alta que ainda
+dê resolução suficiente**, ou meça a corrente indiretamente — pela tensão sobre
+um resistor conhecido já presente no circuito, com o voltímetro, que não
+atrapalha nada.
+
+## Ohmímetro e continuidade: dois instrumentos parecidos e diferentes {#sec-004-ohm}
+
+O ohmímetro injeta corrente e lê tensão. Isso traz três consequências que
+explicam quase todas as leituras estranhas de resistência:
+
+**Circuito energizado não se mede.** A tensão externa se soma à tensão gerada
+pelo instrumento e o resultado é aleatório — às vezes negativo, às vezes zero. Em
+tensões maiores, o instrumento se danifica. Primeiro desligar, depois medir.
+Sempre.
+
+**Componente na placa é medido junto com tudo o que está em paralelo com ele.**
+Um resistor de 10 kΩ soldado em paralelo com um caminho de 2,2 kΩ mede 1,8 kΩ, e
+não há nada de errado com o instrumento nem com o resistor. Medir componente em
+placa exige levantar uma perna dele — ou aceitar que a leitura é do conjunto.
+
+**Semicondutor conduz.** Um transistor ou um circuito integrado no caminho
+responde ao ohmímetro com um valor que depende da polaridade das pontas.
+Inverter as pontas e obter dois valores diferentes é a assinatura de que existe
+uma junção no caminho, não um resistor.
+
+O **teste de continuidade** é um ohmímetro com um comparador na saída: abaixo de
+um limiar, o instrumento apita. E aqui mora uma armadilha silenciosa: **o limiar
+não é zero**. Multímetros comuns apitam para qualquer coisa abaixo de 30 Ω a
+50 Ω. Uma trilha parcialmente rompida, uma solda fria de 20 Ω, um enrolamento de
+relé de 40 Ω — tudo isso apita, e o apito soa exatamente igual ao de um fio
+perfeito. Continuidade responde "há caminho?", nunca "há bom caminho?".
+
+O **teste de diodo** é o mesmo circuito com corrente injetada padronizada (cerca
+de 1 mA) e leitura direta em volts. Ele mostra a tensão direta da junção: por
+volta de 0,6 V para silício, 0,3 V para Schottky, 1,8 V a 2,2 V para um LED
+vermelho e 2,6 V a 3,2 V para um LED azul ou branco — que muitos multímetros nem
+conseguem acender, exibindo `OL`. Esse número não é uma propriedade fixa do
+componente: é a tensão direta **naquela corrente**, assunto que o Volume 8
+desdobra.
+
+## O que a especificação do instrumento promete {#sec-004-precisao}
+
+A folha de dados de um multímetro traz a precisão numa forma que confunde à
+primeira leitura:
+
+$$
+\pm(0{,}5\ \%\ \text{da leitura} + 2\ \text{dígitos}).
+$$
+
+São dois erros somados. O primeiro é proporcional ao que está sendo lido. O
+segundo é fixo, expresso em unidades do **último dígito do visor** naquela
+escala.
+
+Exemplo concreto. Um multímetro de 2000 contagens (o clássico "3½ dígitos", que
+mostra de 0 a 1999) na escala de 20 V tem resolução de 10 mV. Lendo 5,00 V:
+
+- erro proporcional: $0{,}5\ \% \times 5{,}00 = 25$ mV;
+- erro fixo: $2 \times 10\ \text{mV} = 20$ mV;
+- total: **±45 mV**, ou seja, o valor verdadeiro está entre 4,955 V e 5,045 V.
+
+Duas leituras importantes disso. Primeira: **a resolução do visor não é a
+precisão do instrumento**. O visor mostra 5,00 V com três dígitos, mas o terceiro
+é decorativo. Segunda: **medir na escala mais baixa possível melhora o
+resultado**, porque o termo de dígitos encolhe. Os mesmos 5,00 V lidos numa
+escala de 6 V com resolução de 1 mV carregam apenas 2 mV de erro fixo, e o total
+cai para ±27 mV.
+
+Isso também explica por que o *autorange*, tão conveniente, custa alguma coisa:
+ele escolhe a escala imediatamente acima do valor lido, e às vezes hesita entre
+duas quando o sinal está perto da fronteira. Para medições comparativas — várias
+peças em sequência, ou o mesmo ponto ao longo do tempo — vale travar a escala
+manualmente.
+
+::: {.callout-note}
+## Duas siglas que aparecem no visor
+
+`OL` (*overload*) ou um `1` solitário à esquerda significam que o valor excede a
+escala. Em resistência, é o normal para circuito aberto. Em tensão, é aviso para
+subir de escala — ou de instrumento.
+
+`True RMS` na carcaça indica que o instrumento mede corretamente sinais
+alternados de forma qualquer. Sem essa marcação, o multímetro assume que o sinal
+é senoidal puro e erra em tudo o mais — o que se torna importante a partir do
+Volume 5, onde o assunto tem tratamento próprio.
+:::
+
+## Fusível, categoria e as duas proteções que existem {#sec-004-seguranca}
+
+Todo multímetro decente tem **fusível na entrada de corrente**, e ele é o
+componente que separa "queimei o fusível" de "explodiu na minha mão". Um
+amperímetro é quase um curto: encostá-lo por engano em 220 V transforma o
+instrumento no elo de menor resistência entre fase e neutro. O fusível abre em
+milissegundos e absorve o arco.
+
+Por isso, **fusível de multímetro não se substitui por um fusível qualquer**. O
+correto é do tipo HRC (alta capacidade de ruptura), preenchido com areia, com
+tensão nominal igual ou maior que a original. Um fusível de vidro comum com a
+mesma corrente parece idêntico e não é: em curto de alta energia, ele vira um
+arco dentro do tubo em vez de interrompê-lo.
+
+A marcação **CAT II / CAT III / CAT IV** na carcaça diz onde o instrumento pode
+ser usado. Não descreve a tensão que ele lê — descreve o transiente que ele
+sobrevive:
+
+- **CAT II**: tomadas e equipamentos ligados a elas. Bancada.
+- **CAT III**: quadros de distribuição, instalação fixa.
+- **CAT IV**: entrada de energia, medidor, ramal da rua.
+
+Um multímetro sem marcação de categoria é um instrumento para pilha e
+protoboard. Levar essa peça ao quadro de distribuição é apostar em não haver
+transiente naquele instante.
+
+## 🧪 Laboratório {#sec-004-lab}
+
+**Descobrir os números do seu multímetro.** Três experimentos que medem o
+instrumento em vez de medir com ele: a impedância de entrada do voltímetro, a
+tensão de inserção do amperímetro e o limiar do teste de continuidade. Nenhum
+deles vem escrito na embalagem, e todos os três mudam as decisões de bancada
+daqui em diante.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital
+- 2 resistores de 1 MΩ, 1/4 W, 5 %
+- 2 resistores de 10 kΩ, 1/4 W, 5 %
+- 1 resistor de 22 Ω, 1/4 W
+- Resistores de 10 Ω, 47 Ω, 100 Ω e 220 Ω (1/4 W) para a Parte 3
+- 1 pilha de 9 V com clipe
+- 1 pilha AA nova com suporte
+- 1 LED vermelho e 1 LED azul ou branco de 5 mm
+- 1 diodo 1N4148 (ou 1N4007)
+- 1 protoboard e fios jumper
+:::
+
+### Parte 1 — Medir a impedância de entrada do próprio voltímetro
+
+1. Monte um divisor com os **dois resistores de 10 kΩ** entre os terminais da
+   pilha de 9 V. Meça a tensão da pilha ($V_\text{fonte}$) e depois a tensão no
+   ponto médio. Elas devem estar na razão de 2 para 1, dentro da tolerância dos
+   resistores.
+2. Troque os dois resistores pelos de **1 MΩ**. Meça de novo a tensão do ponto
+   médio. Ela vai cair visivelmente — algo perto de 4,3 V para uma pilha de
+   9,0 V.
+3. Agora extraia a impedância de entrada do instrumento. Com braços iguais de
+   valor $R$ e razão medida $k = V_\text{medido} / V_\text{fonte}$:
+   $$ R_\text{in} = R\,\frac{k}{1 - 2k} . $$
+4. Confira: com $R = 1$ MΩ e $k = 4{,}29/9{,}00 = 0{,}4767$, a fórmula devolve
+   $$ R_\text{in} = 1\ \text{M}\Omega \times \frac{0{,}4767}{1 - 0{,}9534}
+   = 10{,}2\ \text{M}\Omega . $$
+
+O resultado deve cair entre 9 MΩ e 11 MΩ. Se der 1 MΩ, o seu instrumento é dos
+que têm entrada baixa, e isso é uma informação valiosa — anote no manual dele.
+Repita o passo 2 na escala de 200 mV com um divisor menor, se quiser verificar se
+a impedância muda com a escala.
+
+Note o que acabou de acontecer: **você mediu uma característica interna do
+instrumento usando o próprio instrumento**, apenas escolhendo um circuito em que
+o erro dele deixa de ser desprezível. Esse é um método geral, e ele volta muitas
+vezes neste livro.
+
+### Parte 2 — Medir a tensão de inserção do amperímetro
+
+1. Monte a pilha AA em série com o resistor de 22 Ω. Meça a tensão da pilha em
+   vazio e a tensão sobre o resistor com o circuito fechado.
+2. **Corrente indireta:** calcule $I = V_R / 22$. Este é o valor de referência —
+   obtido com o voltímetro, que não atrapalha.
+3. **Corrente direta:** abra o circuito, insira o multímetro em série na escala de
+   200 mA e leia. O valor será **menor** que o do passo 2.
+4. Repita na escala de 10 A (com o cabo vermelho no borne apropriado). A leitura
+   sobe, ficando mais perto do valor indireto, porque o shunt dessa escala é cem
+   vezes menor.
+5. Da diferença entre as duas leituras diretas, estime o shunt da escala de
+   miliampères:
+   $$ R_\text{shunt} \approx \frac{V_\text{fonte}}{I_\text{mA}} - \frac{V_\text{fonte}}{I_{10\text{A}}} . $$
+
+Três leituras de corrente do mesmo circuito, todas honestas, todas diferentes. A
+única que descreve o circuito **sem** o instrumento é a indireta, do passo 2.
+
+::: {.callout-note}
+## Se a escala de mA ler zero
+
+Circuito visivelmente funcionando e amperímetro marcando 0,00 significa fusível
+interno aberto. Essa é a forma mais comum de o multímetro mentir sem sintoma: a
+escala de tensão continua perfeita, e só a de corrente está morta. Vale testar
+antes de acusar o circuito.
+:::
+
+### Parte 3 — Achar o limiar do apito
+
+1. Multímetro na função de continuidade. Encoste as pontas: apita.
+2. Meça, um a um, os resistores de 10 Ω, 22 Ω, 47 Ω, 100 Ω e 220 Ω, anotando
+   quais fazem o instrumento apitar.
+3. Anote o **maior valor que ainda apita**. Esse é o limiar do seu instrumento, e
+   costuma ficar entre 30 Ω e 50 Ω.
+
+Guarde esse número. Ele significa que, para o seu multímetro, uma solda fria de
+25 Ω e um fio de cobre perfeito emitem exatamente o mesmo som. Sempre que a
+qualidade do caminho importar — e não apenas a existência dele —, use a escala de
+resistência e leia o valor.
+
+### Parte 4 — O teste de diodo em quatro peças
+
+Na função de teste de diodo (símbolo ▷|), meça, com a ponta vermelha no anodo:
+
+| Componente | Leitura esperada |
+|---|---|
+| 1N4148 (silício) | 0,55 V a 0,70 V |
+| LED vermelho | 1,7 V a 2,2 V |
+| LED azul ou branco | 2,6 V a 3,2 V, ou `OL` |
+| Qualquer um deles invertido | `OL` |
+
+: Tensão direta lida no teste de diodo, a uma corrente de injeção da ordem de
+1 mA. {#tbl-004-diodo}
+
+O LED azul frequentemente marca `OL` porque a tensão de circuito aberto do
+instrumento (uns 3 V) não basta para acendê-lo. `OL` no teste de diodo, portanto,
+significa "não conduz **nesta** tensão" — e não "componente aberto".
+
+Aproveite e confirme a polaridade do LED pelo instrumento: a leitura só aparece
+com a ponta vermelha no anodo, que é a perna mais longa. É a forma mais rápida de
+identificar um LED cujas pernas já foram cortadas.
+
+### Variante simulada (plano B)
+
+O Falstad permite inserir voltímetros e amperímetros ideais, e é exatamente por
+isso que ele **não** serve para este capítulo: o instrumento ideal não carrega
+nada, não tem shunt, não tem limiar de apito. É possível reproduzir a Parte 1
+manualmente — coloque um resistor de 10 MΩ em paralelo com o braço inferior do
+divisor de 1 MΩ e observe a tensão cair para 4,29 V. O exercício vale como
+confirmação da conta; a lição de que o instrumento real faz isso sozinho, sem
+avisar, só a bancada ensina.
+
+## 🔥 Onde Queima {#sec-004-queima}
+
+**Amperímetro em paralelo com uma fonte.** O erro mais destrutivo possível com um
+multímetro. Na escala de corrente o instrumento é quase um curto: ligá-lo entre
+os terminais de uma fonte entrega toda a corrente disponível ao shunt. Numa pilha
+de 9 V isso abre o fusível; numa fonte de bancada de 3 A, funde a ponta de prova;
+na rede elétrica, produz arco. **Rotina permanente:** terminada a medição de
+corrente, o cabo vermelho volta imediatamente para o borne de tensão.
+
+**Cabo esquecido no borne de corrente.** É a versão passiva do erro acima, e
+acontece com todo mundo. A chave está em volts, o visor parece normal — e os
+bornes não. A primeira medição de tensão feita nesse estado é um curto pelo
+shunt. Olhar para os bornes antes de encostar as pontas custa meio segundo.
+
+**Ohmímetro em circuito energizado.** A tensão externa se soma à do instrumento e
+a leitura vira ficção; acima de algumas dezenas de volts, o circuito de medição
+se danifica. E há o caso pior, silencioso: medir a resistência de um enrolamento
+ligado a um capacitor carregado descarrega o capacitor pelo instrumento.
+
+**Medir resistor em placa e acreditar no número.** Tudo o que está em paralelo
+entra na conta. Um resistor de 10 kΩ pode medir 1,8 kΩ e estar perfeito. Levante
+uma perna, ou compare com o esquemático antes de condenar a peça.
+
+**Tratar o apito da continuidade como prova de curto ou de bom contato.** O
+limiar fica entre 30 Ω e 50 Ω. Solda fria, trilha corroída e enrolamento de relé
+apitam igual a um fio. Quando a qualidade do caminho importa, leia o valor em
+ohms.
+
+**Ignorar a impedância de entrada em circuito de alta impedância.** Um divisor de
+1 MΩ lido com voltímetro de 10 MΩ erra 4,8 %; de 10 MΩ, erra 33 %. Nenhum símbolo
+aparece no visor. A defesa é conhecer a impedância do ponto medido antes de
+confiar na leitura — e desconfiar sempre que a tensão medida for
+sistematicamente menor que a calculada.
+
+**Ignorar a tensão de inserção ao medir corrente pequena.** A escala de
+microampères tem shunt de quilo-ohms. Medir 500 µA de um circuito de 3,3 V derruba
+meio volt e muda o circuito que se queria caracterizar. Meça na escala mais alta
+que resolva, ou meça indiretamente pela tensão num resistor conhecido.
+
+**Substituir o fusível por um de vidro comum.** Fusível de multímetro é HRC, com
+areia e tensão nominal alta, e existe para interromper um arco de alta energia.
+O de vidro com a mesma corrente parece idêntico, custa um décimo e não interrompe
+arco nenhum — ele vira o arco.
+
+**Levar instrumento sem categoria ao quadro de distribuição.** CAT II é bancada;
+quadro exige CAT III. A marcação descreve a resistência a transientes, não a
+tensão lida, e é a diferença entre um fusível aberto e uma explosão a alguns
+centímetros do rosto.
+
+**Bateria fraca do próprio multímetro.** Sintoma clássico e traiçoeiro: leituras
+de tensão levemente baixas e consistentes, sem nenhum aviso além do símbolo de
+bateria que quase ninguém olha. Antes de investigar um circuito que "está com
+tensão errada em todos os pontos", troque a bateria do instrumento.
+
+## O que fica deste capítulo {#sec-004-resumo}
+
+O multímetro participa do circuito. O voltímetro entra em paralelo com 10 MΩ e
+derruba a leitura em pontos de alta impedância; o amperímetro entra em série com
+um shunt e reduz a corrente que pretende medir; o ohmímetro injeta corrente e por
+isso exige circuito morto e componente isolado.
+
+A especificação $\pm(\%\ \text{da leitura} + \text{dígitos})$ mostra que
+resolução de visor não é precisão, e que escolher a escala mais baixa possível
+melhora o resultado. A continuidade apita até uns 40 Ω, o que a torna um teste de
+existência, não de qualidade.
+
+E o método por trás das três partes do laboratório vale além do multímetro:
+**para conhecer um instrumento, construa um circuito em que o erro dele deixe de
+ser desprezível.** O próximo capítulo sai do instrumento e vai para a estrutura
+sobre a qual tudo será montado — a protoboard, a fonte de bancada e a disciplina
+de montagem que evita metade dos defeitos.

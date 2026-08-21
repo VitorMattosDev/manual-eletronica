@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 3/104**
+**Progresso: 4/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -19,7 +19,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 - [x] 001 — O que é eletrônica e o que este manual cobre — `capitulos/001-o-que-e-eletronica-e-o-que-este-manual-cobre.qmd`
 - [x] 002 — Segurança elétrica: choque, arco, capacitores carregados e a rede — `capitulos/002-seguranca-eletrica-choque-arco-capacitores.qmd`
 - [x] 003 — Grandezas, unidades e ordens de grandeza — `capitulos/003-grandezas-unidades-e-ordens-de-grandeza.qmd`
-- [ ] 004 — O multímetro: tensão, corrente, resistência e continuidade — `capitulos/004-o-multimetro-tensao-corrente-resistencia-e.qmd`
+- [x] 004 — O multímetro: tensão, corrente, resistência e continuidade — `capitulos/004-o-multimetro-tensao-corrente-resistencia-e.qmd`
 - [ ] 005 — A protoboard, a fonte de bancada e a montagem limpa — `capitulos/005-a-protoboard-a-fonte-de-bancada-e-a-montagem-limpa.qmd`
 - [ ] 006 — Componentes passivos: identificação, código de cores e tolerância — `capitulos/006-componentes-passivos-identificacao-codigo-de-cores.qmd`
 - [ ] 007 — Esquemáticos: como ler, como desenhar, como não se perder — `capitulos/007-esquematicos-como-ler-como-desenhar-como-nao-se.qmd`
