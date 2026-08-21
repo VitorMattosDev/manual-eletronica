@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 11/104**
+**Progresso: 12/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -31,7 +31,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 - [x] 009 — Tensão, potencial e referência (terra) — `capitulos/009-tensao-potencial-e-referencia-terra.qmd`
 - [x] 010 — Resistência, resistividade e a Lei de Ohm — `capitulos/010-resistencia-resistividade-e-a-lei-de-ohm.qmd`
 - [x] 011 — Potência, energia e dissipação térmica — `capitulos/011-potencia-energia-e-dissipacao-termica.qmd`
-- [ ] 012 — Associação série e paralelo — `capitulos/012-associacao-serie-e-paralelo.qmd`
+- [x] 012 — Associação série e paralelo — `capitulos/012-associacao-serie-e-paralelo.qmd`
 - [ ] 013 — As Leis de Kirchhoff — `capitulos/013-as-leis-de-kirchhoff.qmd`
 - [ ] 014 — Divisores de tensão e de corrente — `capitulos/014-divisores-de-tensao-e-de-corrente.qmd`
 

@@ -1,3 +1,583 @@
 # Associação série e paralelo {#sec-cap-012}
 
-*(em elaboração)*
+Até aqui, um resistor de cada vez. Circuitos reais têm dezenas, e a primeira
+habilidade de análise é reconhecer que um punhado deles se comporta,
+do ponto de vista do resto do circuito, exatamente como **um só**.
+
+Essa substituição — trocar uma sub-rede pelo seu equivalente — é a operação
+central de toda a análise de circuitos. O que o Volume 3 vai fazer com teoremas e
+sistemas de equações é a versão geral do que este capítulo faz com duas fórmulas.
+
+E há um segundo motivo, menos elegante e mais urgente: **a associação decide qual
+resistor vai queimar**. Dois resistores idênticos ligados aos mesmos 12 V dissipam
+potências radicalmente diferentes conforme estejam em série ou em paralelo, e é
+comum acertar a conta elétrica e errar a térmica por não pensar nisso.
+
+## Série: a corrente é a grandeza comum {#sec-012-serie}
+
+Dois elementos estão **em série** quando compartilham um nó ao qual **mais nada**
+está ligado. A consequência é imediata pelo @sec-cap-008: como a carga não se
+acumula no nó, tudo o que entra por um elemento sai pelo outro.
+
+$$ I_1 = I_2 = \cdots = I_n = I. $$
+
+Percorrendo o conjunto, as quedas se somam (é a aditividade de tensão do
+@sec-cap-009):
+
+$$ V = V_1 + V_2 + \cdots + V_n = I R_1 + I R_2 + \cdots + I R_n
+     = I \underbrace{(R_1 + R_2 + \cdots + R_n)}_{R_\text{eq}}. $$
+
+$$ \boxed{\,R_\text{série} = R_1 + R_2 + \cdots + R_n\,} $$
+
+**A resistência série é sempre maior que a maior parcela.** É a verificação de
+sanidade número um: se a sua conta deu menos, a conta está errada.
+
+## Paralelo: a tensão é a grandeza comum {#sec-012-paralelo}
+
+Dois elementos estão **em paralelo** quando compartilham **ambos** os nós. Estando
+entre o mesmo par de pontos, têm por definição a mesma diferença de potencial:
+
+$$ V_1 = V_2 = \cdots = V_n = V. $$
+
+As correntes é que se repartem, e a soma delas é a corrente total:
+
+$$ I = \frac{V}{R_1} + \frac{V}{R_2} + \cdots + \frac{V}{R_n}
+     = V \left( \frac{1}{R_1} + \cdots + \frac{1}{R_n} \right). $$
+
+$$ \boxed{\,\frac{1}{R_\text{paral}} = \frac{1}{R_1} + \frac{1}{R_2} + \cdots + \frac{1}{R_n}\,} $$
+
+Em **condutância** (@sec-010-condutancia), a expressão fica tão simples quanto a
+da série — e é por isso que a grandeza existe:
+
+$$ G_\text{paral} = G_1 + G_2 + \cdots + G_n. $$
+
+Dois casos particulares que valem a pena decorar:
+
+$$ \text{dois resistores:}\quad R_\text{paral} = \frac{R_1 R_2}{R_1 + R_2},
+\qquad
+\text{$n$ iguais:}\quad R_\text{paral} = \frac{R}{n}. $$
+
+A primeira é a fórmula do "produto sobre a soma", e **só vale para dois**.
+Aplicá-la a três é um erro comum e silencioso.
+
+**A resistência paralela é sempre menor que a menor parcela.** Verificação de
+sanidade número dois. Acrescentar um caminho nunca dificulta a passagem.
+
+A notação de atalho, usada no manual inteiro daqui em diante, é a barra dupla:
+$R_1 \parallel R_2$ lê-se "$R_1$ em paralelo com $R_2$".
+
+::: {#fig-012-serie-paralelo}
+
+```{.tikz}
+%%| filename: 012-serie-paralelo
+%%| alt: À esquerda, três resistores de um, dois vírgula dois e quatro vírgula sete kilo-ohms em série com uma fonte de doze volts, com a mesma corrente de um vírgula cinco dois miliampère atravessando os três e as tensões somando doze volts. À direita, os mesmos três resistores em paralelo, com a mesma tensão de doze volts sobre os três e as correntes somando vinte miliampères.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ================= SERIE =================
+  \begin{scope}
+    \draw (0,0) to[battery1, l_={$12$ V}] (0,6.0) -- (2.6,6.0);
+    \draw (2.6,6.0) to[R, l={$R_1 = 1\,\mathrm{k}\Omega$}, a_={$1{,}52$ V}] (2.6,4.0);
+    \draw (2.6,4.0) to[R, l={$R_2 = 2{,}2\,\mathrm{k}\Omega$}, a_={$3{,}34$ V}] (2.6,2.0);
+    \draw (2.6,2.0) to[R, l={$R_3 = 4{,}7\,\mathrm{k}\Omega$}, a_={$7{,}14$ V}] (2.6,0);
+    \draw (2.6,0) -- (0,0);
+    \draw (1.3,0) -- (1.3,-0.5);
+    \node[ground] at (1.3,-0.5) {};
+
+    \draw[manualred, thick, -{Stealth[length=2.5mm]}] (0.55,6.3) -- (2.3,6.3);
+    \node[manualred, font=\scriptsize, anchor=south] at (1.4,6.4) {$I = 1{,}52$ mA};
+
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.3,7.1) {série};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-1.3,-1.2)
+         {a \textbf{corrente} é a mesma nos três;\\
+          as \textbf{tensões} somam 12 V\\[2pt]
+          $R_\text{eq} = 1 + 2{,}2 + 4{,}7 = 7{,}9\ \mathrm{k}\Omega$};
+  \end{scope}
+
+  % ================= PARALELO =================
+  \begin{scope}[xshift=8.0cm]
+    \draw (0,0) to[battery1, l_={$12$ V}] (0,6.0) -- (5.6,6.0);
+    \draw (0,0) -- (5.6,0);
+    \draw (1.6,6.0) to[R, l={$1\,\mathrm{k}\Omega$}] (1.6,0);
+    \draw (3.6,6.0) to[R, l={$2{,}2\,\mathrm{k}\Omega$}] (3.6,0);
+    \draw (5.6,6.0) to[R, l={$4{,}7\,\mathrm{k}\Omega$}] (5.6,0);
+    \foreach \xx in {1.6,3.6}{ \node[ponto] at (\xx,6.0) {}; \node[ponto] at (\xx,0) {}; }
+    \draw (0.8,0) -- (0.8,-0.5);
+    \node[ground] at (0.8,-0.5) {};
+
+    \foreach \xx/\ii in {1.6/{12{,}0}, 3.6/{5{,}45}, 5.6/{2{,}55}}{
+      \draw[manualred, thick, -{Stealth[length=2mm]}] (\xx-0.5,5.3) -- (\xx-0.5,4.5);
+      \node[manualred, font=\scriptsize, anchor=east] at (\xx-0.62,4.9) {\ii\,mA};
+    }
+
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.8,7.1) {paralelo};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-1.3,-1.2)
+         {a \textbf{tensão} é a mesma nos três;\\
+          as \textbf{correntes} somam 20,0 mA\\[2pt]
+          $R_\text{eq} = 12{,}0/0{,}0200 = 600\ \Omega$};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+Os mesmos três resistores, as mesmas fontes, dois resultados que diferem por um
+fator de treze. À esquerda o equivalente é maior que qualquer parcela; à direita,
+menor que todas. As setas vermelhas marcam a grandeza que se reparte em cada
+caso — e é sempre a outra que é comum.
+
+:::
+
+## Regras de sanidade, antes da calculadora {#sec-012-sanidade}
+
+Boa parte dos erros de associação some se você **estimar antes de calcular**.
+Quatro regras que dispensam conta:
+
+**Série é sempre maior que a maior parcela; paralelo é sempre menor que a menor.**
+Um resultado fora dessa faixa é erro, ponto final.
+
+**Em paralelo, um resistor dez vezes maior quase não conta.** $1\ \text{k}\Omega
+\parallel 10\ \text{k}\Omega = 909\ \Omega$ — apenas 9 % abaixo de 1 kΩ. Cem vezes
+maior: 990 Ω, menos de 1 % de efeito. Esta é a regra que justifica o "carregue
+com pelo menos dez vezes" do @sec-cap-014 e o "10 MΩ do voltímetro não atrapalham
+em kilo-ohms" do @sec-cap-009.
+
+**Em série, um resistor dez vezes menor quase não conta.** É a mesma regra
+espelhada, e é a que permite ignorar a resistência dos fios num circuito de
+kilo-ohms — e a que proíbe ignorá-la num circuito de ohms.
+
+**Iguais em paralelo: divida pelo número.** Quatro resistores de 1 kΩ em paralelo
+dão 250 Ω. É o cálculo mental mais frequente da bancada.
+
+## Reduzir uma rede escada {#sec-012-reduzir}
+
+A técnica é sempre a mesma: **encontre um par que seja indiscutivelmente série ou
+paralelo, substitua-o, e redesenhe**. Repita até sobrar um resistor.
+
+O único cuidado é o de reconhecer corretamente as ligações — e o critério é o do
+@sec-cap-007: conta a topologia, nunca a posição no desenho. Dois resistores
+desenhados lado a lado podem não estar em paralelo; dois desenhados em cantos
+opostos podem estar.
+
+::: {#fig-012-escada}
+
+```{.tikz}
+%%| filename: 012-escada
+%%| alt: Redução de uma rede escada em quatro etapas. Na primeira, um resistor de um kilo-ohm em série com o paralelo entre dois vírgula dois kilo-ohms e a série de um vírgula cinco com três vírgula três kilo-ohms. Na segunda, a série interna vira quatro vírgula oito kilo-ohms. Na terceira, o paralelo vira um vírgula cinco zero nove kilo-ohms. Na quarta, resta o equivalente de dois vírgula cinco zero nove kilo-ohms.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---------- etapa 1 ----------
+  \begin{scope}
+    \draw (0,0) -- (0,3.4) to[R, l={$1\,\mathrm{k}$}] (2.0,3.4);
+    \draw (2.0,3.4) to[R, l_={$2{,}2\,\mathrm{k}$}] (2.0,0);
+    \draw (2.0,3.4) -- (3.8,3.4)
+          to[R, l={$1{,}5\,\mathrm{k}$}] (3.8,1.9)
+          to[R, l={$3{,}3\,\mathrm{k}$}] (3.8,0);
+    \draw (3.8,0) -- (0,0);
+    \node[ponto] at (2.0,3.4) {}; \node[ponto] at (2.0,0) {};
+    \node[anchor=east, font=\scriptsize] at (-0.1,3.4) {A};
+    \node[anchor=east, font=\scriptsize] at (-0.1,0) {B};
+    \node[font=\scriptsize\bfseries, anchor=north] at (1.9,-0.6) {1. a rede original};
+  \end{scope}
+
+  % ---------- etapa 2 ----------
+  \begin{scope}[xshift=6.2cm]
+    \draw (0,0) -- (0,3.4) to[R, l={$1\,\mathrm{k}$}] (2.0,3.4);
+    \draw (2.0,3.4) to[R, l_={$2{,}2\,\mathrm{k}$}] (2.0,0);
+    \draw (2.0,3.4) -- (3.8,3.4)
+          to[R, l={$4{,}8\,\mathrm{k}$}, /tikz/circuitikz/bipoles/length=1.4cm] (3.8,0);
+    \draw (3.8,0) -- (0,0);
+    \node[ponto] at (2.0,3.4) {}; \node[ponto] at (2.0,0) {};
+    \node[font=\scriptsize\bfseries, align=center, anchor=north] at (1.9,-0.6)
+         {2. série interna:\\$1{,}5 + 3{,}3 = 4{,}8\,\mathrm{k}$};
+  \end{scope}
+
+  % ---------- etapa 3 ----------
+  \begin{scope}[yshift=-6.0cm]
+    \draw (0,0) -- (0,3.4) to[R, l={$1\,\mathrm{k}$}] (2.0,3.4);
+    \draw (2.0,3.4) to[R, l_={$1{,}509\,\mathrm{k}$},
+                       /tikz/circuitikz/bipoles/length=1.4cm] (2.0,0);
+    \draw (2.0,0) -- (0,0);
+    \node[anchor=east, font=\scriptsize] at (-0.1,3.4) {A};
+    \node[anchor=east, font=\scriptsize] at (-0.1,0) {B};
+    \node[font=\scriptsize\bfseries, align=center, anchor=north] at (1.9,-0.6)
+         {3. paralelo:\\$2{,}2 \parallel 4{,}8 = 1{,}509\,\mathrm{k}$};
+  \end{scope}
+
+  % ---------- etapa 4 ----------
+  \begin{scope}[xshift=6.2cm, yshift=-6.0cm]
+    \draw (0,0) -- (0,3.4)
+          to[R, l={$2{,}509\,\mathrm{k}$}, /tikz/circuitikz/bipoles/length=1.4cm] (2.6,3.4);
+    \draw (2.6,3.4) -- (2.6,0) -- (0,0);
+    \node[anchor=east, font=\scriptsize] at (-0.1,3.4) {A};
+    \node[anchor=east, font=\scriptsize] at (-0.1,0) {B};
+    \node[font=\scriptsize\bfseries, align=center, anchor=north] at (1.9,-0.6)
+         {4. série final:\\$1 + 1{,}509 = 2{,}509\,\mathrm{k}$};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+Redução passo a passo, com um par por etapa. O erro clássico é tentar dois passos
+de uma vez — declarar que 2,2 kΩ está em paralelo com 1,5 kΩ, o que é falso: entre
+os dois há o nó intermediário do ramo direito, e mais nada compartilhado.
+
+:::
+
+Com $R_\text{eq} = 2{,}509$ kΩ e uma fonte de 12 V, a corrente total é
+$12/2509 = 4{,}78$ mA. Voltando aos passos ao contrário, todas as grandezas
+internas saem:
+
+- $V_{R_1} = 4{,}78\ \text{mA} \times 1\ \text{k}\Omega = 4{,}78$ V.
+- Sobre o bloco paralelo: $12 - 4{,}78 = 7{,}22$ V.
+- $I_{2,2\text{k}} = 7{,}22/2200 = 3{,}28$ mA.
+- $I_{1,5\text{k}+3,3\text{k}} = 7{,}22/4800 = 1{,}50$ mA.
+- Conferência: $3{,}28 + 1{,}50 = 4{,}78$ mA. Fecha.
+
+Essa ida-e-volta — reduzir para achar a corrente total, expandir para achar as
+correntes internas — resolve qualquer rede série-paralelo, por maior que seja.
+
+## Potência na associação: quem esquenta {#sec-012-potencia}
+
+Agora a parte que o @sec-cap-011 preparou. Tome dois resistores, 100 Ω e 1 kΩ, e
+ligue-os a 12 V de duas maneiras.
+
+**Em série.** $R_\text{eq} = 1100\ \Omega$, $I = 10{,}9$ mA, comum aos dois:
+
+$$ P_{100} = I^2 R = (0{,}0109)^2 \times 100 = 11{,}9\ \text{mW}, \qquad
+   P_{1\text{k}} = (0{,}0109)^2 \times 1000 = 119\ \text{mW}. $$
+
+**Em paralelo.** $V = 12$ V, comum aos dois:
+
+$$ P_{100} = \frac{V^2}{R} = \frac{144}{100} = 1{,}44\ \text{W}, \qquad
+   P_{1\text{k}} = \frac{144}{1000} = 144\ \text{mW}. $$
+
+| Ligação | $P$ no de 100 Ω | $P$ no de 1 kΩ | Quem esquenta |
+|---|---|---|---|
+| Série | 11,9 mW | 119 mW | o **maior** |
+| Paralelo | 1,44 W | 144 mW | o **menor** |
+
+: A mesma dupla, as mesmas fontes, dissipações que diferem por mais de cem vezes.
+{#tbl-012-potencia}
+
+O resistor de 100 Ω passa de 11,9 mW a 1,44 W — um fator de 121 — apenas por
+mudar de ligação. Em série ele cabe folgadamente num 1/8 W; em paralelo, um
+resistor de 2 W está no limite.
+
+E note que **o equivalente também tem uma potência**: no caso paralelo,
+$P_\text{total} = 144^2/90{,}9 \ldots$ — mais simples pela soma:
+$1{,}44 + 0{,}144 = 1{,}58$ W. A potência do equivalente é sempre a soma das
+potências das partes, e essa é outra verificação de sanidade grátis.
+
+**Aplicação prática: aumentar a capacidade de dissipação.** Dois resistores de
+1 kΩ 1/4 W em série formam 2 kΩ capaz de 1/2 W. Dois de 1 kΩ 1/4 W em paralelo
+formam 500 Ω capaz de 1/2 W. Nos dois casos a potência total dobra porque há o
+dobro de superfície — o que muda é o valor resultante.
+
+::: {.callout-warning}
+## Paralelo para repartir corrente é mais delicado do que parece
+
+Dois resistores nominalmente iguais em paralelo **não** repartem a corrente ao
+meio: repartem na proporção inversa das resistências reais. Com tolerância de 5 %,
+um pode levar 10 % mais corrente que o outro — e 10 % mais corrente são 21 % mais
+potência, no componente que já era o mais solicitado.
+
+Em resistores isso é administrável com margem. Em **semicondutores**, é fatal: um
+diodo ou transistor mais condutor esquenta mais, e como o coeficiente é negativo,
+fica ainda mais condutor. Sem resistores de equalização em série com cada um, o
+mais "forte" acaba levando toda a corrente. É por isso que os Volumes 8 e 12
+insistem em resistores de balanceamento.
+:::
+
+## Tolerância na associação {#sec-012-tolerancia}
+
+A pergunta natural é se os erros se cancelam. A resposta curta: **não conte com
+isso**.
+
+**Em série**, os erros absolutos somam. Três resistores de 1 kΩ ± 5 % dão
+3 kΩ ± 150 Ω — que continua sendo ± 5 %. A tolerância relativa do conjunto é a
+média ponderada das tolerâncias das partes, e se todas são de 5 %, o resultado é
+de 5 %.
+
+**Em paralelo**, vale o mesmo raciocínio em condutância, com a mesma conclusão.
+
+O que *pode* acontecer é uma redução estatística quando os erros são
+**independentes**: com $n$ resistores de tolerância $t$ e desvios independentes, o
+erro do conjunto tende a $t/\sqrt{n}$. Só que resistores comprados juntos vêm do
+mesmo lote e da mesma fita, e os seus desvios são **fortemente correlacionados** —
+todos altos ou todos baixos. A independência que a estatística exige simplesmente
+não existe.
+
+A boa notícia é o outro lado dessa correlação: componentes do mesmo lote têm
+**razão** muito melhor que o valor absoluto. Dois resistores de 5 % da mesma fita
+podem ambos estar 3 % acima, mas o quociente entre eles fica dentro de fração de
+por cento. É por isso que divisores e amplificadores de instrumentação são
+especificados por **casamento**, e não por precisão absoluta — assunto do
+Volume 11.
+
+## Obter um valor que não existe {#sec-012-valores}
+
+As séries E12 e E24 do @sec-cap-006 não têm todos os números. Quando o cálculo
+pede 2,50 kΩ, existem três saídas:
+
+1. **Somar em série.** $2{,}2\ \text{k} + 300 = 2{,}50$ kΩ exatos, e 300 Ω é
+   valor E24. Solução limpa, dois componentes.
+2. **Paralelo.** $4{,}7\ \text{k} \parallel 5{,}1\ \text{k} = 2{,}44$ kΩ — 2,4 %
+   abaixo. Aceitável ou não, conforme a aplicação.
+3. **Arredondar e recalcular o efeito.** Use 2,2 kΩ e responda: o que muda? Se o
+   circuito é um limitador de corrente de LED, muda o brilho em 12 % e ninguém
+   percebe. Se é o ramo de um divisor de precisão, é inaceitável.
+
+A opção 3 é quase sempre a certa, e a disciplina que ela exige é a que o
+@sec-cap-006 já pedia: **arredonde, mas recalcule o efeito do arredondamento**. Um
+valor comercial escolhido com o efeito verificado é engenharia; um valor exato
+impossível de comprar é aritmética.
+
+## O que não é série nem paralelo {#sec-012-ponte}
+
+Nem toda rede se reduz. A configuração mínima que resiste é a **ponte**:
+
+::: {#fig-012-ponte}
+
+```{.tikz}
+%%| filename: 012-ponte
+%%| alt: Ponte de Wheatstone com quatro resistores em losango entre os nós A e D, e um quinto resistor de um vírgula cinco kilo-ohm ligando os nós B e C no meio. Nenhum par de resistores está puramente em série nem puramente em paralelo, e a rede não pode ser reduzida por associação.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \coordinate (A) at (3,4.2);
+  \coordinate (B) at (0,2.1);
+  \coordinate (C) at (6,2.1);
+  \coordinate (D) at (3,0);
+
+  \draw (A) to[R, l_={$1\,\mathrm{k}$}] (B);
+  \draw (A) to[R, l={$2{,}2\,\mathrm{k}$}] (C);
+  \draw (B) to[R, l_={$3{,}3\,\mathrm{k}$}] (D);
+  \draw (C) to[R, l={$4{,}7\,\mathrm{k}$}] (D);
+  \draw (B) to[R, l={$1{,}5\,\mathrm{k}$}] (C);
+
+  \foreach \n/\pos in {A/{north}, B/{west}, C/{east}, D/{south}}{
+    \node[ponto] at (\n) {};
+    \node[anchor=\pos, font=\scriptsize\bfseries] at (\n) {\n};
+  }
+
+  \draw[manualgray, thin, dashed] (A) -- (7.6,4.2);
+  \draw[manualgray, thin, dashed] (D) -- (7.6,0);
+  \draw[manualred, thick, {Stealth[length=2.5mm]}-{Stealth[length=2.5mm]}]
+       (7.6,0) -- (7.6,4.2);
+  \node[manualred, font=\scriptsize, align=left, anchor=west] at (7.8,2.1)
+       {quanto vale $R_{AD}$?};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.9,-1.0)
+       {Cada nó tem \textbf{três} elementos: nenhum par compartilha um nó
+        exclusivo (não há série)\\
+        e nenhum par compartilha os \textbf{dois} nós (não há paralelo).
+        A associação não resolve.};
+
+\end{circuitikz}
+```
+
+A rede que quebra o método. A ponte de cinco resistores não admite nenhuma
+substituição série-paralelo, e é a razão de existirem a análise nodal, a análise
+de malhas e a transformação estrela-triângulo — todo o Volume 3.
+
+:::
+
+Há um caso especial que **se** reduz, e ele é o mais útil de todos: quando a ponte
+está **equilibrada**, isto é,
+
+$$ \frac{R_{AB}}{R_{BD}} = \frac{R_{AC}}{R_{CD}}, $$
+
+os nós B e C ficam no mesmo potencial, o resistor central não conduz corrente
+nenhuma, e a rede vira dois ramos série em paralelo. Na figura,
+$1/3{,}3 = 0{,}303$ e $2{,}2/4{,}7 = 0{,}468$ — desequilibrada. Trocando o de
+4,7 kΩ por 7,26 kΩ, ficaria equilibrada.
+
+Esse equilíbrio é a base de um instrumento inteiro: a ponte de Wheatstone mede
+resistência **por comparação**, ajustando um braço até a corrente central zerar. O
+método não depende da precisão da fonte nem do detector, apenas da razão entre
+resistores casados — e por isso continua sendo, quase dois séculos depois, a
+topologia padrão de células de carga e extensômetros. O Volume 13 volta a ela.
+
+## 🧪 Laboratório {#sec-012-lab}
+
+**Prever, montar, medir, conferir.** O laboratório deste capítulo tem uma regra
+que não muda: **nenhum valor é medido antes de ser previsto por escrito**. Ler o
+valor certo no visor não ensina nada; descobrir por que a sua previsão errou,
+sim.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada em 12,0 V (ou 2 pilhas de 9 V — ajuste as contas)
+- 1 multímetro digital
+- 2 resistores de 1 kΩ, 1/4 W
+- 1 resistor de 2,2 kΩ, 1/4 W
+- 1 resistor de 4,7 kΩ, 1/4 W
+- 1 resistor de 1,5 kΩ, 1/4 W
+- 1 resistor de 3,3 kΩ, 1/4 W
+- 1 resistor de 100 Ω, **1 W** (vai dissipar 1,44 W por poucos segundos na
+  Parte 4 — não use 1/4 W)
+- 1 resistor de 100 Ω, 1/4 W
+- Calculadora e papel
+:::
+
+### Parte 1 — Medir antes de associar
+
+1. Meça, um por um, **fora do circuito**, o valor real de cada resistor da lista.
+   Anote com todas as casas.
+2. Compare com o nominal e com a tolerância impressa.
+
+Use esses valores medidos — e não os nominais — em todas as previsões seguintes.
+É a diferença entre um experimento que fecha e um que "deu quase certo".
+
+### Parte 2 — Série e paralelo
+
+1. **Preveja** por escrito: $R$ da série de 1 kΩ + 2,2 kΩ + 4,7 kΩ, e $R$ do
+   paralelo dos mesmos três.
+2. Monte a série na protoboard e meça com o ohmímetro. Compare.
+3. Monte o paralelo e meça. Compare.
+4. Confira as duas regras de sanidade: série maior que 4,7 kΩ, paralelo menor que
+   1 kΩ.
+
+Agora ligue cada montagem aos 12 V e meça as grandezas internas:
+
+- Na série: as três tensões. Devem somar 12 V (é a Lei de Kirchhoff das Tensões
+  do @sec-cap-013, aparecendo antes da hora).
+- No paralelo: as três correntes. Devem somar a corrente total (Lei de Kirchhoff
+  das Correntes, idem).
+
+### Parte 3 — Reduzir a rede escada
+
+1. Monte a rede da @fig-012-escada com os cinco resistores.
+2. **Antes de medir**, faça a redução no papel usando os valores *medidos* na
+   Parte 1, escrevendo as quatro etapas.
+3. Meça $R_{AB}$ com o ohmímetro, com a fonte desligada e desconectada.
+4. Ligue os 12 V e meça: a corrente total, a tensão sobre o resistor de 1 kΩ, e
+   as duas correntes dos ramos paralelos.
+5. Verifique que as duas correntes de ramo somam a total.
+
+Se algum número discordar em mais que a tolerância, o suspeito número um é a
+topologia: um jumper na coluna errada faz dois resistores que deveriam estar em
+série ficarem em paralelo, e o circuito continua "parecendo" certo. Use o método
+de verificação nó a nó do @sec-cap-007.
+
+### Parte 4 — Quem esquenta
+
+::: {.callout-warning}
+## Atenção nesta parte
+
+O resistor de 100 Ω em paralelo com 12 V dissipa 1,44 W. Use o de **1 W**, deixe
+ligado no máximo trinta segundos, não toque no corpo e mantenha-o afastado da
+protoboard — 1,44 W derretem plástico. Se só tiver resistores de 1/4 W, faça esta
+parte com 5 V em vez de 12 V (0,25 W, no limite) ou apenas acompanhe o cálculo.
+:::
+
+1. Monte 100 Ω **em série** com 1 kΩ nos 12 V. Deixe um minuto. Aproxime o dedo
+   dos dois, sem tocar. Qual está quente?
+2. Calcule as duas potências e confirme que o de 1 kΩ dissipa dez vezes mais.
+3. Desmonte. Agora monte os mesmos dois **em paralelo** nos 12 V, com o de 100 Ω
+   sendo o de 1 W. Ligue por trinta segundos.
+4. Aproxime o dedo. A situação se inverteu completamente.
+
+Os mesmos dois componentes, a mesma fonte, e o que estava frio agora é o que está
+quente. É a demonstração mais direta possível de que **potência é uma propriedade
+da ligação, não do componente**.
+
+### Parte 5 — A ponte que não se reduz
+
+1. Monte a ponte da @fig-012-ponte com os cinco resistores.
+2. Tente reduzi-la por associação. Escreva as tentativas e por que cada uma
+   falha.
+3. Meça $R_{AD}$ com o ohmímetro. Anote o valor: nenhuma combinação
+   série-paralelo dos cinco valores o produz.
+4. Agora **remova** o resistor central de 1,5 kΩ. Preveja $R_{AD}$ (agora é
+   $(1 + 3{,}3) \parallel (2{,}2 + 4{,}7) = 4{,}3 \parallel 6{,}9$) e meça.
+   Fecha.
+5. Recoloque o de 1,5 kΩ e meça a tensão entre B e C com a fonte de 12 V ligada
+   em A–D. Ela não é zero: é o desequilíbrio da ponte.
+6. Troque o de 4,7 kΩ pelo de 6,8 kΩ, se tiver, ou por 3,3 kΩ + 3,3 kΩ em série
+   (6,6 kΩ). A tensão B–C cai muito — você está se aproximando do equilíbrio.
+
+Guarde o valor medido no passo 3. No Volume 3, quando a análise nodal for
+apresentada, calcule-o e compare. Poucas coisas dão mais confiança num método novo
+do que ele reproduzir um número que você mediu meses antes sem conseguir explicar.
+
+### Variante simulada (plano B)
+
+Qualquer simulador faz as Partes 2, 3 e 5 em segundos, e a Parte 5 é
+especialmente instrutiva ali: o programa resolve a ponte sem hesitar, porque ele
+não usa associação — usa análise nodal, que é geral. A Parte 4 exige que você
+olhe para os números de potência em vez de sentir o calor, o que funciona para
+conferir a aritmética e não transmite nada sobre a escala. Se tiver de escolher
+uma parte para fazer na bancada de verdade, faça a 4.
+
+## 🔥 Onde Queima {#sec-012-queima}
+
+**Escolher a potência nominal pelo equivalente, não pelas partes.** O equivalente
+não existe fisicamente: quem dissipa são os resistores reais, cada um com a sua
+conta. Um bloco de 600 Ω dissipando 240 mW pode conter um resistor individual em
+1,4 W.
+
+**Esquecer que em paralelo o menor esquenta mais.** É contraintuitivo — o
+resistor "pequeno" parece o menos exigido — e é o erro que torra o componente de
+menor valor de um banco paralelo.
+
+**Somar resistências em paralelo.** Continua acontecendo, e o sintoma é um
+resultado maior que as parcelas. A regra de sanidade pega isso em um segundo.
+
+**Usar produto-sobre-soma para três resistores.** A fórmula só vale para dois.
+Para três, ou use a soma de inversos, ou aplique produto-sobre-soma duas vezes,
+em pares.
+
+**Repartir corrente entre componentes em paralelo sem equalização.** Resistores
+toleram; diodos, transistores e MOSFETs em condução direta não. O mais condutor
+esquenta, fica mais condutor, e assume a corrente inteira.
+
+**Confiar que a tolerância se cancela.** Componentes do mesmo lote erram para o
+mesmo lado. A média estatística exige independência que a fita de componentes não
+oferece.
+
+**Medir uma associação sem desconectar a fonte.** O ohmímetro do @sec-cap-010
+injeta a própria corrente e mede tudo o que estiver em paralelo — inclusive a
+fonte, inclusive o resto do circuito. Desligue e isole.
+
+**Ignorar a resistência de fios e contatos em bancos de baixo valor.** Quatro
+resistores de 1 Ω em paralelo dão 250 mΩ no papel. Na protoboard, com 30 mΩ por
+contato e dois contatos por resistor, o valor real fica quase 25 % acima — e a
+repartição de corrente entre eles fica desigual, porque cada contato é diferente.
+
+**Tentar reduzir uma rede que não é série-paralelo.** Se você precisou "assumir"
+alguma coisa para enxergar um paralelo, provavelmente ele não existe. Conte
+elementos por nó: nó com três elementos não permite série.
+
+**Trocar o valor por um comercial sem recalcular.** Arredondar é normal e
+necessário. Arredondar sem verificar o efeito é como escolher um resistor pela cor
+que sobrou na gaveta.
+
+## O que fica deste capítulo {#sec-012-resumo}
+
+Em série a corrente é comum e as resistências somam; o equivalente é sempre maior
+que a maior parcela. Em paralelo a tensão é comum e as **condutâncias** somam; o
+equivalente é sempre menor que a menor parcela. Para dois resistores vale o
+produto sobre a soma; para $n$ iguais, $R/n$.
+
+Reduzir uma rede é substituir um par por vez, sempre pela topologia e nunca pelo
+desenho, até sobrar um elemento — e depois voltar pelos passos para achar as
+grandezas internas.
+
+A associação decide a dissipação: em série o maior resistor esquenta mais, em
+paralelo o menor. Um mesmo par pode dissipar cem vezes mais numa ligação que na
+outra, e a potência nominal se escolhe pelas partes, nunca pelo equivalente.
+
+Tolerâncias não se cancelam de forma confiável, porque os desvios de um mesmo lote
+são correlacionados — mas essa mesma correlação faz as **razões** serem muito
+melhores que os valores absolutos.
+
+E há redes, a começar pela ponte de cinco resistores, que nenhuma associação
+resolve. Elas são a razão de existir do Volume 3.
+
+Antes disso, porém, falta enunciar formalmente as duas leis que este capítulo usou
+sem nomear: a soma das correntes num nó e a soma das tensões numa malha. São elas
+que sustentam tudo — inclusive a associação — e são o assunto do próximo capítulo.
