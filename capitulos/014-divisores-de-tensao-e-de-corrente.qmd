@@ -1,3 +1,655 @@
 # Divisores de tensão e de corrente {#sec-cap-014}
 
-*(em elaboração)*
+Dois resistores em série. É o circuito mais simples que ainda faz alguma coisa, é
+o arranjo mais frequente da eletrônica inteira — aparece na polarização de todo
+transistor, na realimentação de todo regulador, na entrada de todo conversor A/D e
+na ponta de prova de todo osciloscópio — e é responsável por uma quantidade
+desproporcional de projetos que não funcionam.
+
+A fórmula tem uma linha e ninguém erra. O que se erra é tudo o que a fórmula
+**não** diz: que ela só vale sem carga, que o divisor não é uma fonte, e que o
+próprio instrumento de medição é uma carga.
+
+Este capítulo fecha o Volume 2 aplicando tudo o que veio antes — Ohm, associação,
+Kirchhoff, potência — ao caso concreto que mais aparece.
+
+## O divisor de tensão {#sec-014-divisor}
+
+Dois resistores em série entre uma tensão $V_\text{in}$ e o terra, com a saída
+tomada no ponto do meio. Pelo @sec-cap-012, a corrente que os atravessa é
+
+$$ I = \frac{V_\text{in}}{R_1 + R_2}, $$
+
+e a tensão sobre $R_2$ — que é a saída — vale $V_\text{out} = I R_2$:
+
+$$ \boxed{\,V_\text{out} = V_\text{in}\,\frac{R_2}{R_1 + R_2}\,} $$
+
+A leitura da fórmula é mais útil que a fórmula: **a saída é a mesma fração da
+entrada que $R_2$ é da resistência total**. Metade da resistência, metade da
+tensão.
+
+Três consequências:
+
+- **A saída está sempre entre 0 e $V_\text{in}$.** Um divisor passivo não amplifica
+  e não inverte. Se a sua conta deu mais que a entrada, ela está errada.
+- **Só a razão importa.** 10 kΩ/10 kΩ e 100 Ω/100 Ω entregam a mesma tensão. O que
+  muda entre eles é a corrente, a potência e — o assunto da próxima seção — a
+  resistência de saída.
+- **A tolerância do par é o que conta.** Dois resistores de 5 % do mesmo lote têm
+  razão muito melhor que 5 %, como o @sec-cap-012 explicou. É por isso que
+  divisores funcionam melhor do que as tolerâncias individuais sugerem.
+
+::: {#fig-014-divisor}
+
+```{.tikz}
+%%| filename: 014-divisor
+%%| alt: À esquerda, um divisor de dois resistores de dez kilo-ohms alimentado por nove volts entregando quatro vírgula cinco volts na saída em aberto. À direita, o mesmo divisor com uma carga de dez kilo-ohms ligada à saída: o resistor de baixo passa a valer cinco kilo-ohms equivalentes e a saída cai para três volts, um erro de trinta e três por cento.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ================= sem carga =================
+  \begin{scope}
+    \draw (0,0) to[battery1, l_={$9{,}0$ V}] (0,5.0) -- (2.6,5.0);
+    \draw (2.6,5.0) to[R, l={$R_1 = 10\,\mathrm{k}$}] (2.6,2.8);
+    \draw (2.6,2.8) to[R, l={$R_2 = 10\,\mathrm{k}$}] (2.6,0.6);
+    \draw (2.6,0.6) -- (2.6,0) -- (0,0);
+    \draw (1.3,0) -- (1.3,-0.55);
+    \node[ground] at (1.3,-0.55) {};
+    \node[ponto] at (2.6,2.8) {};
+    \draw[manualgray, dashed] (2.6,2.8) -- (4.4,2.8);
+    \node[manualgray, anchor=west, font=\scriptsize] at (4.5,2.8) {saída em aberto};
+    \node[manualgreen!55!black, font=\scriptsize\bfseries, anchor=south west]
+         at (2.75,2.95) {$4{,}50$ V};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.9,5.6) {sem carga};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-1.0,-1.3)
+         {$V_\text{out} = 9{,}0 \times \dfrac{10}{10+10} = 4{,}50$ V};
+  \end{scope}
+
+  % ================= com carga =================
+  \begin{scope}[xshift=8.6cm]
+    \draw (0,0) to[battery1, l_={$9{,}0$ V}] (0,5.0) -- (2.6,5.0);
+    \draw (2.6,5.0) to[R, l={$R_1 = 10\,\mathrm{k}$}] (2.6,2.8);
+    \draw (2.6,2.8) to[R, l={$R_2 = 10\,\mathrm{k}$}] (2.6,0.6);
+    \draw (2.6,0.6) -- (2.6,0) -- (0,0);
+    \draw (1.3,0) -- (1.3,-0.55);
+    \node[ground] at (1.3,-0.55) {};
+    \node[ponto] at (2.6,2.8) {};
+
+    % carga
+    \draw[manualred, thick] (2.6,2.8) -- (4.6,2.8);
+    \draw[manualred, thick] (4.6,2.8) to[R, l={$R_L = 10\,\mathrm{k}$}] (4.6,0);
+    \draw[manualred, thick] (4.6,0) -- (2.6,0);
+    \node[ponto] at (2.6,0) {};
+
+    \node[manualred, font=\scriptsize\bfseries, anchor=south east]
+         at (2.45,2.95) {$3{,}00$ V};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.9,5.6) {com carga};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-1.0,-1.3)
+         {$R_2 \parallel R_L = 5\,\mathrm{k}$\\[2pt]
+          $V_\text{out} = 9{,}0 \times \dfrac{5}{10+5} = 3{,}00$ V\\[2pt]
+          \textcolor{manualred}{\textbf{erro de 33 \%}}};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+O mesmo divisor, com e sem carga. Nada foi alterado no divisor: os dois resistores
+continuam sendo de 10 kΩ. O que mudou é que o resistor de baixo agora tem
+companhia, e $R_2 \parallel R_L$ não é $R_2$.
+
+:::
+
+## O efeito de carga {#sec-014-carga}
+
+Este é o conteúdo central do capítulo. Qualquer coisa ligada à saída de um divisor
+entra em **paralelo com $R_2$** — e, pelo @sec-cap-012, um paralelo é sempre menor
+que a menor parcela. A saída cai.
+
+$$ V_\text{out} = V_\text{in}\,\frac{R_2 \parallel R_L}{R_1 + (R_2 \parallel R_L)}. $$
+
+Com o divisor de 10 kΩ/10 kΩ em 9,0 V:
+
+| $R_L$ | $R_2 \parallel R_L$ | $V_\text{out}$ | Erro |
+|---|---|---|---|
+| ∞ (aberto) | 10,00 kΩ | 4,500 V | — |
+| 1 MΩ | 9,901 kΩ | 4,478 V | 0,5 % |
+| 100 kΩ | 9,091 kΩ | 4,286 V | 4,8 % |
+| 10 kΩ | 5,000 kΩ | 3,000 V | 33 % |
+| 1 kΩ | 0,909 kΩ | 0,750 V | 83 % |
+
+: O efeito de carga num divisor 10 k/10 k. A carga não precisa ser "pesada" para
+arruinar o resultado — basta ser comparável a $R_2$. {#tbl-014-carga}
+
+::: {#fig-014-carga}
+
+```{.tikz}
+%%| filename: 014-carga
+%%| alt: Curva da tensão de saída de um divisor de dez por dez kilo-ohms alimentado por nove volts em função da razão entre a resistência de carga e o resistor inferior, em escala logarítmica. A saída tende a quatro vírgula cinco volts para cargas muito maiores que o resistor, atinge quatro vírgula vinte e nove volts na razão dez para um e três volts na razão um para um.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=12cm, height=7.4cm,
+  xmode=log,
+  xlabel={$R_L / R_2$ \ (razão entre a carga e o resistor inferior)},
+  ylabel={$V_\text{out}$ (V)},
+  xmin=0.1, xmax=1000, ymin=0, ymax=5.2,
+  axis lines=left,
+  grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  ytick={0,1,2,3,4,4.5},
+  yticklabels={{0},{1},{2},{3},{4},{4,5}},
+]
+
+  \addplot[auxiliar, domain=-1:3, samples=2] ({10^x}, {4.5});
+  \addplot[curva, domain=-1:3, samples=240] ({10^x}, {9*(10^x)/(1+2*(10^x))});
+
+  \node[ponto] at (axis cs:1,3.0) {};
+  \node[ponto] at (axis cs:10,4.286) {};
+  \node[ponto] at (axis cs:100,4.478) {};
+
+  \node[manualgray, font=\scriptsize, anchor=south west]
+       at (axis cs:0.12,4.55) {saída sem carga: 4,50 V};
+
+  \draw[manualred, thin, -{Stealth[length=2mm]}]
+       (axis cs:3.6,1.35) -- (axis cs:1.12,2.84);
+  \node[manualred, font=\scriptsize, align=left, anchor=south west]
+       at (axis cs:3.8,0.75) {$R_L = R_2$: 3,00 V --- erro de 33 \%};
+
+  \node[manualgreen!45!black, font=\scriptsize, align=left, anchor=north west]
+       at (axis cs:11,4.15) {regra dos 10:1\\4,29 V --- erro de 4,8 \%};
+
+  \node[font=\scriptsize, align=left, anchor=north west]
+       at (axis cs:110,3.55) {100:1\\erro de 0,5 \%};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A mesma informação como curva. O eixo é logarítmico porque a grandeza que importa
+é a **razão** $R_L/R_2$, e ela costuma variar por ordens de grandeza. A regra
+prática nasce daqui: carga dez vezes maior que $R_2$ custa cerca de 5 % de erro;
+cem vezes maior, meio por cento.
+
+:::
+
+::: {.callout-tip}
+## A regra dos 10:1
+
+Para que o efeito de carga fique abaixo de uns 5 %, exija
+$R_L \geq 10\,R_2$. Para ficar abaixo de 0,5 %, exija $R_L \geq 100\,R_2$.
+
+Isso é o mesmo critério do @sec-cap-009 sobre a impedância de entrada do
+voltímetro, do @sec-cap-012 sobre o resistor dez vezes maior em paralelo, e do
+Volume 7 sobre a ponta de prova. É uma única regra usada em quatro contextos.
+:::
+
+E há a recíproca, que quase ninguém considera: **se você não pode aumentar $R_L$,
+diminua $R_2$**. Um divisor de 1 kΩ/1 kΩ alimentando a mesma carga de 10 kΩ perde
+apenas 4,8 %, contra 33 % do divisor de 10 kΩ/10 kΩ. Mesma razão, mesma tensão de
+saída em aberto, comportamento completamente diferente sob carga.
+
+## Escolher a corrente do divisor {#sec-014-corrente-repouso}
+
+O que se ganha ao baixar as resistências se paga em corrente. O compromisso:
+
+| Divisor de resistência **alta** | Divisor de resistência **baixa** |
+|---|---|
+| consome pouca corrente | desperdiça corrente continuamente |
+| muito sensível à carga | pouco sensível à carga |
+| capta ruído e interferência | imune a ruído |
+| sofre com correntes de fuga | fuga irrelevante |
+| resistores de 1/8 W bastam | pode exigir potência |
+
+: O compromisso do divisor. Não existe escolha universalmente certa; existe a
+escolha certa para cada aplicação. {#tbl-014-compromisso}
+
+A regra de projeto usual: **faça a corrente do divisor ser umas dez vezes a
+corrente que a carga vai puxar.** Essa "corrente de repouso" é o que mantém a
+saída estável quando a carga varia.
+
+**Exemplo.** Um microcontrolador precisa medir a tensão de uma bateria de 12 V com
+uma entrada A/D que aceita no máximo 3,3 V. A entrada A/D é praticamente um
+circuito aberto — algumas dezenas de nanoampères — mas o conversor precisa carregar
+um pequeno capacitor interno, o que exige uma fonte de no máximo uns 10 kΩ de
+resistência.
+
+Razão necessária: $3{,}3/12 = 0{,}275$. Com $R_2 = 10$ kΩ, $R_1 = 26{,}4$ kΩ. O
+valor E24 mais próximo é 27 kΩ, o que dá $V_\text{out} = 12 \times 10/37 = 3{,}24$
+V — dentro do limite, com folga de 2 %. A corrente de repouso é
+$12/37\,000 = 0{,}32$ mA, ou 3,9 mW: aceitável num sistema alimentado por bateria
+de carro, e desperdício grosseiro num sistema alimentado por pilha que precisa
+durar um ano. Nesse segundo caso, sobe-se a resistência para 270 kΩ/100 kΩ e
+acrescenta-se um capacitor de 100 nF na saída, para dar ao conversor a carga
+instantânea de que ele precisa.
+
+Repare que o problema foi resolvido **e** o arredondamento foi verificado, como o
+@sec-cap-012 exige.
+
+## O divisor não é uma fonte de alimentação {#sec-014-naofonte}
+
+::: {.callout-warning}
+## Nunca alimente um circuito com um divisor de tensão
+
+É o erro mais comum de quem está começando, e ele parece razoável: "preciso de
+5 V a partir de 9 V, e um divisor faz 5 V". Faz — em aberto.
+
+Suponha que a carga consuma 50 mA. Para que os 5 V se mantenham dentro de 10 %,
+o divisor teria de conduzir uns 500 mA de corrente de repouso: $R_2 = 10\ \Omega$
+e $R_1 = 8\ \Omega$, dissipando $9 \times 0{,}5 = 4{,}5$ W **permanentemente**,
+para entregar 0,25 W à carga. Eficiência de 5 %, dois resistores de 5 W, e a
+tensão ainda oscila a cada variação da carga.
+
+Para produzir uma tensão de alimentação existem reguladores lineares (Volume 12) e
+fontes chaveadas (Volume 12). O divisor serve para produzir uma **referência** ou
+um **sinal** — algo que será lido por uma entrada de alta impedância, e nunca
+algo que precisa fornecer corrente.
+:::
+
+A raiz formal do problema é que todo divisor, visto pela saída, se comporta como
+uma fonte de tensão de valor $V_\text{in}\,R_2/(R_1+R_2)$ **em série com uma
+resistência** de valor $R_1 \parallel R_2$. Essa resistência é o que derruba a
+saída sob carga, e ela é chamada de resistência de Thévenin — o teorema que
+formaliza isso é o assunto do Volume 3, e é o que transforma a regra empírica dos
+10:1 num critério exato.
+
+No divisor de 10 kΩ/10 kΩ, essa resistência vale 5 kΩ. É por isso que uma carga de
+10 kΩ o derruba tanto: ela é apenas duas vezes maior que a resistência interna do
+"gerador".
+
+## O potenciômetro: divisor ajustável {#sec-014-potenciometro}
+
+Um potenciômetro é um resistor com um contato deslizante — o **cursor** — que
+divide o corpo resistivo em duas partes. Usá-lo com os três terminais é fazer um
+divisor de razão variável; usá-lo com dois é fazer um resistor variável, chamado
+**reostato**.
+
+::: {#fig-014-potenciometro}
+
+```{.tikz}
+%%| filename: 014-potenciometro
+%%| alt: À esquerda, potenciômetro de dez kilo-ohms ligado pelos três terminais entre nove volts e o terra, com o cursor fornecendo uma tensão ajustável de zero a nove volts. À direita, o mesmo componente ligado como reostato, com apenas dois terminais em série com um LED e um resistor, controlando a corrente.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ================= como divisor =================
+  \begin{scope}
+    \draw (0,0) to[battery1, l_={$9{,}0$ V}] (0,4.4) -- (2.4,4.4);
+    \draw (2.4,4.4) to[pR, mirror, l_={$10\,\mathrm{k}$}, name=P] (2.4,0.8);
+    \draw (2.4,0.8) -- (2.4,0) -- (0,0);
+    \draw (1.2,0) -- (1.2,-0.55);
+    \node[ground] at (1.2,-0.55) {};
+    \draw[manualblue, thick] (P.wiper) -- ++(1.5,0);
+    \node[manualblue, anchor=west, font=\scriptsize, align=left] at (4.1,2.6)
+         {$V_\text{out}$ ajustável\\de 0 a 9,0 V};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.8,5.0)
+         {três terminais: divisor};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-1.0,-1.3)
+         {a resistência total entre os extremos\\
+          não muda; o cursor só escolhe onde\\
+          o corpo é dividido};
+  \end{scope}
+
+  % ================= como reostato =================
+  \begin{scope}[xshift=10.4cm]
+    \draw (0,0) to[battery1, l_={$9{,}0$ V}] (0,4.4) -- (2.4,4.4);
+    \draw (2.4,4.4) to[vR, l={$10\,\mathrm{k}$}] (2.4,2.6);
+    \draw (2.4,2.6) to[R, l={$470\,\Omega$}] (2.4,1.4);
+    \draw (2.4,1.4) to[leD, l={LED}] (2.4,0);
+    \draw (2.4,0) -- (0,0);
+    \draw (1.2,0) -- (1.2,-0.55);
+    \node[ground] at (1.2,-0.55) {};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.8,5.0)
+         {dois terminais: reostato};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-1.0,-1.3)
+         {a resistência em série varia,\\
+          e com ela a corrente. O resistor\\
+          de 470 $\Omega$ garante o limite mesmo\\
+          com o cursor no fim do curso};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+As duas maneiras de usar o mesmo componente. Como divisor, a tensão de saída é
+proporcional à posição do cursor e não depende do valor total do potenciômetro —
+o que o torna previsível. Como reostato, o que varia é a corrente, e aí o valor
+total importa muito.
+
+:::
+
+Dois detalhes que aparecem na bancada:
+
+**Curva linear × logarítmica.** Um potenciômetro linear (marcado B) divide o corpo
+proporcionalmente ao ângulo. Um logarítmico (marcado A) concentra a variação num
+extremo, e existe porque a audição humana é logarítmica — usado em controle de
+volume. Usar um logarítmico onde se esperava linear produz um ajuste que
+"não faz nada" em metade do curso.
+
+**Carregar um potenciômetro distorce a curva.** Se a saída do cursor alimenta uma
+carga $R_L$, a relação entre posição e tensão deixa de ser linear: o efeito é
+máximo no meio do curso e nulo nos extremos. Com $R_L$ dez vezes maior que o
+potenciômetro, a distorção fica em poucos por cento; com $R_L$ igual ao
+potenciômetro, o meio do curso cai de 50 % para 33 %. É exatamente o mesmo
+fenômeno da @fig-014-carga.
+
+## Onde o divisor aparece de verdade {#sec-014-aplicacoes}
+
+| Aplicação | O que ele faz | Onde no manual |
+|---|---|---|
+| Polarização de base de transistor | fixa o ponto de operação | Volume 9 |
+| Realimentação de regulador | amostra a saída para comparar com a referência | Volume 12 |
+| Atenuador de entrada | reduz o sinal ao que a etapa seguinte aceita | Volume 11 |
+| Leitura de tensão de bateria | adequa a tensão à faixa do conversor A/D | Volume 13 |
+| Ponta de prova ×10 | atenua 10 vezes e aumenta a impedância de entrada | Volume 7 |
+| Divisor com sensor resistivo | converte resistência variável em tensão | Volume 13 |
+| Adaptação de nível 5 V → 3,3 V | encaixa um sinal lógico na faixa aceita | Volume 15 |
+
+: O divisor em serviço. Em todos esses casos a saída alimenta uma entrada de alta
+impedância — nunca uma carga que consome corrente. {#tbl-014-aplicacoes}
+
+O caso do **sensor resistivo** merece destaque, porque inverte a lógica: ali um dos
+dois resistores é o sensor (LDR, termistor, extensômetro) e o outro é fixo, e a
+saída varia com a grandeza física. É a maneira mais barata de transformar uma
+resistência num sinal, e a escolha do resistor fixo determina onde a sensibilidade
+é máxima — problema tratado no Volume 13.
+
+O caso da **adaptação de nível** merece um aviso: um divisor resistivo funciona
+para transformar 5 V em 3,3 V, mas forma um filtro passa-baixas com a capacitância
+de entrada do destino. Com um divisor de 10 kΩ e 15 pF de capacitância de entrada,
+a constante de tempo é da ordem de 100 ns — irrelevante para um botão, fatal para
+um barramento a 10 MHz. O Volume 6 quantifica isso; por ora, guarde que
+**divisores de alta resistência são lentos**.
+
+## O divisor de corrente {#sec-014-divisor-corrente}
+
+O dual do divisor de tensão. Uma corrente que chega a um par de resistores em
+paralelo se reparte entre eles, e a fração que cada um leva é proporcional à sua
+**condutância**:
+
+$$ I_k = I_\text{total}\,\frac{G_k}{G_1 + G_2 + \cdots}. $$
+
+Para exatamente dois resistores, isso se escreve em resistências, e o resultado
+surpreende quem espera simetria com o divisor de tensão:
+
+$$ \boxed{\,I_1 = I_\text{total}\,\frac{R_2}{R_1 + R_2}, \qquad
+          I_2 = I_\text{total}\,\frac{R_1}{R_1 + R_2}\,} $$
+
+::: {.callout-important}
+## O numerador é a resistência do *outro* ramo
+
+No divisor de tensão, $V_2$ leva $R_2$ no numerador. No divisor de corrente, $I_1$
+leva $R_2$ no numerador. **Está trocado de propósito**, e é a fonte de erro número
+um do assunto.
+
+A verificação mental que resolve: o resistor **menor** conduz **mais** corrente.
+Se a sua conta deu o contrário, você usou a fórmula do divisor de tensão.
+
+E note que a fórmula em resistências só vale para **dois** ramos — exatamente como
+o produto sobre a soma do @sec-cap-012. Para três ou mais, use condutâncias.
+:::
+
+::: {#fig-014-corrente}
+
+```{.tikz}
+%%| filename: 014-corrente
+%%| alt: Divisor de corrente com uma fonte de três vírgula dois miliampères alimentando dois resistores em paralelo de um e dois vírgula dois kilo-ohms. O resistor de um kilo-ohm conduz dois vírgula dois miliampères e o de dois vírgula dois kilo-ohms conduz um miliampère, com dois vírgula dois volts sobre os dois.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[I, l={$I = 3{,}2$ mA}] (0,4.0);
+  \draw (0,4.0) -- (4.0,4.0);
+  \draw (0,0) -- (4.0,0);
+  \draw (2.0,4.0) to[R, l_={$R_1 = 1\,\mathrm{k}$}] (2.0,0);
+  \draw (4.0,4.0) to[R, l={$R_2 = 2{,}2\,\mathrm{k}$}] (4.0,0);
+  \node[ponto] at (2.0,4.0) {};
+  \node[ponto] at (2.0,0) {};
+  \draw (1.0,0) -- (1.0,-0.55);
+  \node[ground] at (1.0,-0.55) {};
+
+  \draw[manualgreen!55!black, thick, -{Stealth[length=2.5mm]}] (2.45,3.6) -- (2.45,3.0);
+  \node[manualgreen!55!black, font=\scriptsize, anchor=east] at (2.35,3.3)
+       {$I_1 = 2{,}2$ mA};
+  \draw[manualblue, thick, -{Stealth[length=2.5mm]}] (4.45,3.6) -- (4.45,3.0);
+  \node[manualblue, font=\scriptsize, anchor=east] at (4.35,3.3)
+       {$I_2 = 1{,}0$ mA};
+
+  \node[manualgray, font=\scriptsize, anchor=south] at (2.0,4.25)
+       {$V = 2{,}2$ V sobre os dois};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-1.4,-1.3)
+       {$I_1 = 3{,}2 \times \dfrac{2{,}2}{1 + 2{,}2} = 2{,}2$ mA
+        \qquad
+        $I_2 = 3{,}2 \times \dfrac{1}{1 + 2{,}2} = 1{,}0$ mA\\[4pt]
+        o resistor \textbf{menor} leva a \textbf{maior} corrente ---
+        e a razão é $2{,}2 : 1$, o inverso das resistências};
+
+\end{circuitikz}
+```
+
+O divisor de corrente com números. A conferência é dupla: as duas correntes somam
+a total (LKC, @sec-cap-013) e a razão entre elas é o inverso da razão entre as
+resistências.
+
+:::
+
+Onde ele aparece: em **derivadores de corrente** (*shunts*) para medição, na
+repartição entre trilhas paralelas de uma placa, no cálculo de quanto da corrente
+de um sinal vai para a carga e quanto volta pelo terra — e, principalmente, na
+análise de qualquer circuito com ramos paralelos, que é quase todos.
+
+## 🧪 Laboratório {#sec-014-lab}
+
+**Ver o divisor cair sob carga, e medir a impedância do próprio multímetro.** O
+segundo é o experimento que fecha o Volume 2: ele usa Ohm, associação, divisor e
+efeito de carga ao mesmo tempo, para descobrir um número que não está escrito em
+lugar nenhum do seu instrumento.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada em 9,0 V (ou 1 pilha de 9 V)
+- 1 multímetro digital
+- 2 resistores de 10 kΩ, 1/4 W
+- 2 resistores de 100 Ω, 1/4 W
+- 1 resistor de 1 kΩ, 1/4 W
+- 1 resistor de 100 kΩ, 1/4 W
+- 2 resistores de 1 MΩ, 1/4 W
+- 1 resistor de 2,2 kΩ, 1/4 W
+- 1 potenciômetro linear de 10 kΩ
+- 1 LED vermelho e 1 resistor de 470 Ω (para a Parte 4)
+:::
+
+### Parte 1 — O divisor em aberto
+
+1. Monte o divisor de 10 kΩ/10 kΩ em 9,0 V.
+2. **Preveja** a saída usando os valores *medidos* dos dois resistores.
+3. Meça. Compare.
+4. Meça também a corrente do divisor e confirme $I = 9{,}0/20\,000 = 0{,}45$ mA.
+
+Se a medida ficar sistematicamente abaixo da previsão, guarde a diferença: você
+acabou de observar o efeito de carga do próprio voltímetro, e a Parte 3 vai
+transformá-lo em número.
+
+### Parte 2 — O efeito de carga, tabelado
+
+1. Com o mesmo divisor, ligue sucessivamente à saída (entre a saída e o terra) as
+   cargas 1 MΩ, 100 kΩ, 10 kΩ e 1 kΩ.
+2. **Antes de cada medição**, preveja o valor.
+3. Preencha:
+
+| $R_L$ | $R_2 \parallel R_L$ previsto | $V_\text{out}$ previsto | $V_\text{out}$ medido |
+|---|---|---|---|
+| aberto | 10 kΩ | 4,50 V | |
+| 1 MΩ | | | |
+| 100 kΩ | | | |
+| 10 kΩ | | | |
+| 1 kΩ | | | |
+
+: Tabela da Parte 2. {#tbl-014-lab}
+
+4. Agora **repita a tabela inteira** com um divisor de 100 Ω/100 Ω. Mesma razão,
+   mesma saída em aberto, cem vezes menos resistência.
+
+O contraste é o resultado do experimento. Com o divisor de 100 Ω, a carga de
+10 kΩ é invisível e até a de 1 kΩ custa menos de 10 %. Nada mudou na razão; mudou
+a resistência de saída do divisor.
+
+::: {.callout-note}
+## Confira a potência antes de montar o divisor de 100 Ω
+
+$P = V^2/R$ em cada resistor: $4{,}5^2/100 = 0{,}20$ W. Está dentro de um 1/4 W,
+mas em cima do limite — é o "dimensionar no nominal" que o @sec-cap-011 desaconselha.
+Faça a medição rápida, ou use 220 Ω/220 Ω, que dissipam 92 mW e servem igualmente
+bem para o experimento.
+:::
+
+### Parte 3 — Medir a impedância de entrada do seu multímetro
+
+1. Monte um divisor de **1 MΩ/1 MΩ** em 9,0 V. Sem carga, ele deveria dar 4,50 V.
+2. Meça. O valor vem visivelmente menor, porque o voltímetro está em paralelo com
+   o resistor de baixo.
+3. Do valor medido, extraia a resistência de entrada. Com $R_1 = R_2 = R$ e
+   entrada $R_m$:
+   $$ V_\text{med} = 9{,}0\,\frac{R \parallel R_m}{R + (R \parallel R_m)}. $$
+   Chamando $k = V_\text{med}/9{,}0$, sai
+   $$ R \parallel R_m = R\,\frac{k}{1-k}
+      \qquad\Longrightarrow\qquad
+      R_m = \frac{1}{\dfrac{1}{R\,k/(1-k)} - \dfrac{1}{R}}. $$
+4. Calcule. O resultado típico é 10 MΩ; instrumentos baratos costumam ter 1 MΩ, e
+   nesse caso a leitura terá dado em torno de 3,0 V.
+
+**Conferência independente:** meça agora o mesmo divisor de 1 MΩ/1 MΩ com o
+voltímetro ligado no resistor de **cima** em vez do de baixo. A soma das duas
+leituras não dá 9,0 V — e a diferença é exatamente o que o instrumento roubou.
+Poucos experimentos mostram tão bem que instrumento e circuito são um sistema só.
+
+### Parte 4 — O potenciômetro nas duas ligações
+
+1. Ligue o potenciômetro de 10 kΩ pelos **três** terminais entre 9,0 V e o terra.
+   Meça a tensão do cursor em cinco posições ao longo do curso e anote.
+2. Plote tensão contra posição. Deve dar uma reta.
+3. Agora ligue um resistor de 10 kΩ do cursor para o terra e repita as cinco
+   medições. Plote no mesmo gráfico.
+
+A segunda curva não é reta: ela cai mais no meio do curso e coincide com a
+primeira apenas nos extremos. No meio, a tensão passa de 4,50 V para 3,00 V — o
+mesmo 33 % da @fig-014-divisor, porque no meio do curso o potenciômetro *é* um
+divisor de 5 kΩ/5 kΩ carregado por 10 kΩ.
+
+4. Desligue tudo e remonte o potenciômetro como **reostato**: apenas o cursor e um
+   extremo, em série com o resistor de 470 Ω e o LED, nos 9,0 V.
+5. Gire o cursor de um extremo ao outro e observe o brilho.
+6. Meça a corrente nos dois extremos do curso e no meio.
+
+Repare no papel do resistor de 470 Ω: ele é a proteção que impede a corrente de
+disparar quando o potenciômetro chega a zero. Sem ele, o LED vê 9,0 V diretamente
+e morre — é o erro do @sec-cap-010 aplicado a um circuito ajustável.
+
+### Parte 5 — O divisor de corrente
+
+1. Monte o circuito da @fig-014-corrente com 1 kΩ e 2,2 kΩ em paralelo. Como não
+   temos uma fonte de corrente, use a fonte de tensão em 9,0 V com um resistor de
+   2,2 kΩ em série — isso aproxima uma fonte de corrente para cargas bem menores
+   que 2,2 kΩ.
+2. Meça a corrente total e as duas correntes de ramo.
+3. Verifique: elas somam a total, e a razão entre elas é o inverso da razão das
+   resistências (2,2 para 1).
+4. Confira também a tensão sobre o paralelo e recalcule as duas correntes por Ohm.
+   Os dois caminhos têm de dar o mesmo resultado.
+
+### Variante simulada (plano B)
+
+O simulador faz as Partes 1, 2, 4 e 5 sem esforço, e a Parte 2 fica especialmente
+clara com uma varredura paramétrica de $R_L$ — o gráfico da @fig-014-carga sai
+pronto. A Parte 3 é a exceção instrutiva: no simulador, o voltímetro é ideal e tem
+impedância infinita, de modo que o divisor de 1 MΩ/1 MΩ dá exatamente 4,50 V e o
+experimento simplesmente não existe. Se quiser reproduzi-lo, acrescente à mão um
+resistor de 10 MΩ representando o instrumento — e note que você precisou **saber**
+a resposta para simulá-la, enquanto na bancada você a **descobriu**.
+
+## 🔥 Onde Queima {#sec-014-queima}
+
+**Usar um divisor como fonte de alimentação.** O erro estrutural do capítulo.
+Divisor produz referência e sinal, nunca alimentação. Sintoma clássico: o circuito
+funciona no vazio e a tensão desaba assim que a carga é ligada.
+
+**Esquecer a carga na hora de projetar.** A fórmula do divisor descreve a saída em
+aberto, e a saída em aberto é o único caso que nunca ocorre num circuito real.
+Calcule sempre com $R_2 \parallel R_L$.
+
+**Não contar o instrumento como carga.** Os 10 MΩ do voltímetro são carga, e em
+divisores de megaohms eles dominam. A medida "errada" é a medida correta de um
+circuito que você modificou ao medir.
+
+**Divisor de alta resistência num sinal rápido.** A capacitância de entrada do
+destino, mais a capacitância parasita da trilha, formam um passa-baixas com a
+resistência do divisor. Um divisor de 100 kΩ pode ter constante de tempo de
+microssegundos — inaceitável em qualquer coisa digital acima de dezenas de
+kilohertz. Baixe as resistências ou compense com um capacitor, como faz a ponta
+de prova do Volume 7.
+
+**Divisor ligado à rede elétrica.** Fazer um divisor resistivo a partir de 230 V
+para "medir a rede" cria um circuito **sem isolação**: todo o seu circuito de baixa
+tensão passa a estar em potencial de rede em relação ao terra. É o cenário de
+choque descrito no @sec-cap-002, e é como se destroem osciloscópios e pessoas.
+Medição de rede exige transformador, divisor capacitivo isolado ou ponta
+diferencial.
+
+**Somar as tolerâncias erradas.** Num divisor 10 k/10 k com resistores de 5 %
+independentes, a razão pode variar de 47,5 % a 52,5 % da entrada — quase 10 % de
+faixa. Se a aplicação precisa de precisão, use resistores de 1 % ou, melhor, um par
+casado.
+
+**Cursor de potenciômetro em circuito aberto.** Potenciômetros envelhecem e o
+contato do cursor falha intermitentemente. Se o cursor for a entrada de um
+amplificador de alta impedância, a saída flutua e capta ruído quando o contato
+abre. A defesa é um resistor de alguns kilo-ohms do cursor para um dos extremos,
+garantindo um caminho definido.
+
+**Potenciômetro como reostato sem resistor de proteção.** Ao chegar ao fim do
+curso, a resistência vai a zero e a corrente é limitada apenas pelo resto do
+circuito. Sempre um resistor fixo em série.
+
+**Ignorar a potência nos resistores do divisor.** Um divisor de 100 Ω/100 Ω em
+230 V dissipa mais de 130 W por resistor. Mesmo em tensões modestas, divisores de
+baixa resistência esquentam: calcule $V^2/R$ em cada um, com a regra da metade do
+nominal do @sec-cap-011.
+
+**Trocar as fórmulas do divisor de tensão e do de corrente.** No de corrente, o
+numerador é a resistência do *outro* ramo. Confira sempre pelo bom senso: o
+resistor menor conduz mais corrente e sofre menos tensão.
+
+**Aplicar a fórmula de dois ramos a três.** Tanto no divisor de corrente quanto no
+paralelo, a forma compacta só vale para dois. Com três ou mais, condutâncias.
+
+## O que fica deste capítulo {#sec-014-resumo}
+
+O divisor de tensão entrega $V_\text{in}\,R_2/(R_1+R_2)$ — a mesma fração da
+entrada que $R_2$ é do total. A fórmula descreve a **saída em aberto**, e qualquer
+carga entra em paralelo com $R_2$, derrubando o resultado.
+
+A regra dos 10:1 resume o efeito: carga dez vezes maior que $R_2$ custa uns 5 %,
+cem vezes maior custa meio por cento. Se a carga não pode aumentar, baixe as
+resistências — a razão é a mesma, e a sensibilidade despenca. O preço é corrente e
+potência desperdiçadas, e o compromisso entre os dois é a decisão de projeto do
+divisor.
+
+Um divisor não é uma fonte. Visto pela saída, ele é uma tensão em série com
+$R_1 \parallel R_2$, e é essa resistência interna que o impede de alimentar
+qualquer coisa. Referência e sinal, sim; alimentação, nunca.
+
+O potenciômetro é um divisor ajustável quando ligado pelos três terminais e um
+resistor variável quando ligado por dois. Carregar o cursor distorce a curva
+exatamente como carregar qualquer divisor.
+
+O divisor de corrente é o dual, com uma armadilha própria: o numerador é a
+resistência do **outro** ramo, porque o menor resistor leva a maior corrente.
+
+Com isso o **Volume 2** se fecha. Carga, corrente, tensão, resistência, potência,
+associação, as leis de Kirchhoff e o divisor: é o conjunto mínimo com que qualquer
+circuito resistivo pode ser previsto no papel antes de ser montado na bancada. O
+Volume 3 pega esse mesmo conjunto e o organiza em métodos — nodal, malhas,
+superposição, Thévenin —, capazes de resolver com duas equações o que hoje exige
+seis, e de responder à pergunta que ficou pendente no @sec-cap-012: quanto vale a
+resistência daquela ponte.

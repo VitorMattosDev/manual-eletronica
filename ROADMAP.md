@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 13/104**
+**Progresso: 14/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -33,7 +33,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 - [x] 011 — Potência, energia e dissipação térmica — `capitulos/011-potencia-energia-e-dissipacao-termica.qmd`
 - [x] 012 — Associação série e paralelo — `capitulos/012-associacao-serie-e-paralelo.qmd`
 - [x] 013 — As Leis de Kirchhoff — `capitulos/013-as-leis-de-kirchhoff.qmd`
-- [ ] 014 — Divisores de tensão e de corrente — `capitulos/014-divisores-de-tensao-e-de-corrente.qmd`
+- [x] 014 — Divisores de tensão e de corrente — `capitulos/014-divisores-de-tensao-e-de-corrente.qmd`
 
 
 ### Volume 3 — Análise de Circuitos
