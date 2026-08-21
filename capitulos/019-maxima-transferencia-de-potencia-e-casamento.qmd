@@ -1,3 +1,557 @@
 # Máxima transferência de potência e casamento {#sec-cap-019}
 
-*(em elaboração)*
+O @sec-cap-018 reduziu qualquer circuito linear a dois números. Com o equivalente
+em mãos, uma pergunta de projeto fica bem posta: dada uma fonte de $V_{Th}$ e
+$R_{Th}$ fixos, **qual carga extrai dela a maior potência?**
+
+A resposta é curta e elegante — $R_L = R_{Th}$ — e é responsável por uma das
+confusões mais persistentes da eletrônica. Ela é usada onde não deve, citada como
+se fosse um objetivo universal de projeto, e quase sempre lembrada sem a sua
+consequência mais importante: **no ponto de máxima potência, metade da energia é
+queimada dentro da fonte**.
+
+Este capítulo deriva o resultado, mostra por que ele é quase sempre a coisa errada
+a se querer, e separa os três regimes de projeto que a razão $R_L/R_{Th}$ define.
+
+## O problema, e a sua resposta {#sec-019-problema}
+
+Com a fonte de Thévenin alimentando $R_L$, a corrente é
+$I = V_{Th}/(R_{Th} + R_L)$, e a potência na carga vale
+
+$$ P_L = I^2 R_L = \frac{V_{Th}^2\,R_L}{(R_{Th} + R_L)^2}. $$
+
+Os dois extremos dão zero, e por motivos opostos:
+
+- **$R_L \to 0$** (curto): corrente máxima, mas tensão nula na carga. Toda a
+  potência vai para $R_{Th}$.
+- **$R_L \to \infty$** (aberto): tensão máxima, mas corrente nula. Nenhuma potência
+  vai a lugar nenhum.
+
+Entre os dois há um máximo. Derivando em relação a $R_L$ e igualando a zero:
+
+$$ \frac{dP_L}{dR_L}
+   = V_{Th}^2\,\frac{(R_{Th} + R_L)^2 - R_L \cdot 2(R_{Th} + R_L)}{(R_{Th}+R_L)^4}
+   = V_{Th}^2\,\frac{R_{Th} - R_L}{(R_{Th}+R_L)^3} = 0, $$
+
+$$ \boxed{\,R_L = R_{Th}\,} \qquad\text{e}\qquad
+   P_{L,\max} = \frac{V_{Th}^2}{4R_{Th}}. $$
+
+Note que $P_{L,\max}$ é exatamente **um quarto** da potência que a mesma tensão
+entregaria a uma carga igual a $R_{Th}$ sem resistência interna nenhuma. Metade se
+perde por a tensão na carga cair pela metade; da metade que sobra, metade queima
+dentro da fonte.
+
+## A eficiência de 50 % {#sec-019-eficiencia}
+
+A parte esquecida do teorema. No ponto de casamento, $R_{Th}$ e $R_L$ conduzem a
+mesma corrente e têm o mesmo valor, logo dissipam **a mesma potência**. A
+eficiência é
+
+$$ \eta = \frac{P_L}{P_{\text{total}}} = \frac{R_L}{R_{Th} + R_L}, $$
+
+que no casamento vale exatamente $1/2$.
+
+Isso quer dizer que um sistema de distribuição de energia projetado para "máxima
+transferência de potência" queimaria metade de toda a geração dentro das linhas de
+transmissão. Nenhuma concessionária faz isso, e nenhuma fonte de alimentação
+tampouco. O objetivo lá é o oposto: $R_{Th}$ o menor possível, $\eta$ o mais perto
+de 1 possível.
+
+::: {#fig-019-curva}
+
+```{.tikz}
+%%| filename: 019-curva
+%%| alt: Dois gráficos com a razão entre a resistência de carga e a de Thévenin em escala logarítmica no eixo horizontal. À esquerda, a potência entregue à carga em porcentagem do máximo: ela atinge cem por cento quando a razão é um e cai suavemente para os dois lados, ficando acima de noventa por cento entre metade e o dobro. À direita, a eficiência: cinquenta por cento no ponto de casamento, noventa e um por cento na razão dez e noventa e nove por cento na razão cem.
+
+\begin{tikzpicture}
+
+\begin{axis}[
+  name=ax1,
+  width=8.6cm, height=7.0cm,
+  xmode=log,
+  xlabel={$R_L/R_{Th}$}, ylabel={$P_L$ (\% do máximo)},
+  xmin=0.01, xmax=100, ymin=0, ymax=112,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  ytick={0,25,50,75,89,100},
+  yticklabels={{0},{25},{50},{75},{89},{100}},
+]
+  \addplot[curva, domain=-2:2, samples=300] ({10^x}, {400*(10^x)/(1+10^x)^2});
+  \addplot[auxiliar, domain=-2:2, samples=2] ({10^x}, {100});
+
+  \draw[manualgreen!55!black, thin, dashed]
+       (axis cs:0.5,0) -- (axis cs:0.5,88.9);
+  \draw[manualgreen!55!black, thin, dashed]
+       (axis cs:2,0) -- (axis cs:2,88.9);
+  \node[ponto] at (axis cs:1,100) {};
+
+  \node[manualred, font=\scriptsize, anchor=south] at (axis cs:1,101)
+       {$R_L = R_{Th}$};
+  \node[manualgreen!55!black, font=\scriptsize, align=left, anchor=north west]
+       at (axis cs:0.012,74)
+       {entre $0{,}5$ e $2$\\(faixa tracejada):\\mais de \textbf{89 \%}};
+  \node[font=\scriptsize, anchor=north west] at (axis cs:0.012,32)
+       {carga pesada demais};
+  \node[font=\scriptsize, anchor=north east] at (axis cs:90,32)
+       {carga leve demais};
+\end{axis}
+
+\begin{axis}[
+  at={(ax1.right of south east)}, anchor={left of south west},
+  width=8.6cm, height=7.0cm,
+  xmode=log,
+  xlabel={$R_L/R_{Th}$}, ylabel={$\eta$ (\%)},
+  xmin=0.01, xmax=100, ymin=0, ymax=112,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  ytick={0,25,50,75,91,99},
+  yticklabels={{0},{25},{50},{75},{91},{99}},
+]
+  \addplot[destaque, domain=-2:2, samples=300] ({10^x}, {100*(10^x)/(1+10^x)});
+  \node[ponto] at (axis cs:1,50) {};
+  \node[ponto] at (axis cs:10,90.9) {};
+  \node[ponto] at (axis cs:100,99.0) {};
+
+  \node[manualred, font=\scriptsize, anchor=north west, align=left]
+       at (axis cs:1.3,47)
+       {casamento: $\eta = 50$ \%\\metade queima dentro};
+  \node[manualgreen!55!black, font=\scriptsize, anchor=north east]
+       at (axis cs:90,88)
+       {regra dos 10:1};
+  \node[font=\scriptsize, anchor=north west] at (axis cs:0.012,105)
+       {alimentação e sinal querem \textbf{isto}};
+\end{axis}
+
+\end{tikzpicture}
+```
+
+Os dois gráficos que decidem o projeto. À esquerda, a potência na carga, que tem um
+máximo largo em $R_L = R_{Th}$. À direita, a eficiência, que é monótona e vale
+apenas 50 % justamente no ponto de máxima potência.
+
+:::
+
+## A curva é chata, e isso importa {#sec-019-chata}
+
+Escrevendo $u = R_L/R_{Th}$, a potência normalizada é
+
+$$ \frac{P_L}{P_{L,\max}} = \frac{4u}{(1+u)^2}, $$
+
+que é simétrica em torno de $u = 1$ na escala logarítmica: $u$ e $1/u$ dão o mesmo
+resultado.
+
+| $R_L/R_{Th}$ | $P_L$ (% do máximo) | $\eta$ |
+|---|---|---|
+| 0,1 ou 10 | 33 % | 9 % ou 91 % |
+| 0,33 ou 3 | 75 % | 25 % ou 75 % |
+| 0,5 ou 2 | 89 % | 33 % ou 67 % |
+| 1 | 100 % | 50 % |
+
+: Potência e eficiência em função da razão. Repare na assimetria útil: $u = 2$ e
+$u = 0{,}5$ entregam a mesma potência, mas com eficiências de 67 % e 33 %. **Errar
+para o lado da carga leve é sempre melhor.** {#tbl-019-razao}
+
+Duas consequências práticas:
+
+- **Casamento não precisa ser preciso.** Um erro de fator 2 custa 11 % da potência.
+  Perseguir 5 % de exatidão em $R_{Th}$ raramente se justifica.
+- **Se tiver de errar, erre para cima.** Com $R_L$ maior que $R_{Th}$ você perde a
+  mesma potência e ganha eficiência; com $R_L$ menor, perde a mesma potência e
+  ainda queima mais dentro da fonte.
+
+**Voltando à ponte** do @sec-cap-018, com $V_{Th} = 1{,}035$ V e
+$R_{Th} = 2{,}266$ kΩ:
+
+$$ P_{L,\max} = \frac{1{,}035^2}{4 \times 2{,}266} = 0{,}118\ \text{mW}
+   \quad \text{em } R_L = 2{,}266\ \text{k}\Omega. $$
+
+Com o resistor de 1,5 kΩ que estava lá, $u = 0{,}662$ e a potência é 0,113 mW —
+96 % do máximo, com um resistor que não foi escolhido com esse critério nenhum. É
+a curva chata em ação.
+
+## Quando casar e quando não casar {#sec-019-quando}
+
+A pergunta que o teorema responde é: **dado $R_{Th}$ fixo, qual $R_L$?** Ela só é
+a pergunta certa quando $R_{Th}$ está realmente fora do seu controle.
+
+Quando você **projeta** a fonte, a pergunta certa é outra — e a resposta é sempre
+"faça $R_{Th}$ pequeno".
+
+::: {#fig-019-regimes}
+
+```{.tikz}
+%%| filename: 019-regimes
+%%| alt: Régua em escala logarítmica da razão entre resistência de carga e resistência de Thévenin, de zero vírgula zero um a cem, dividida em três faixas. À esquerda, carga pesada, regime de falha em que a fonte é sobrecarregada. No meio, em torno de um, o casamento de impedância, usado em antenas, radiofrequência e sensores fracos. À direita, acima de dez, a ponte de impedância, usada em áudio, lógica digital, amplificadores operacionais e alimentação.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % eixo
+  \draw[thick, -{Stealth[length=3mm]}] (-0.4,0) -- (13.0,0);
+  \foreach \xx/\rot in {0/{$0{,}01$}, 3/{$0{,}1$}, 6/{$1$}, 9/{$10$}, 12/{$100$}}{
+    \draw[thick] (\xx,-0.16) -- (\xx,0.16);
+    \node[font=\scriptsize, anchor=north] at (\xx,-0.24) {\rot};
+  }
+  \node[font=\scriptsize, anchor=west] at (13.1,0) {$R_L/R_{Th}$};
+
+  % faixas
+  \fill[manualred!18] (-0.4,0.35) rectangle (4.5,1.25);
+  \fill[manualyellow!30] (4.5,0.35) rectangle (7.5,1.25);
+  \fill[manualgreen!22] (7.5,0.35) rectangle (13.0,1.25);
+
+  \node[manualred!70!black, font=\scriptsize\bfseries] at (2.05,0.8)
+       {carga pesada demais};
+  \node[font=\scriptsize\bfseries] at (6.0,0.8) {casamento};
+  \node[manualgreen!45!black, font=\scriptsize\bfseries] at (10.25,0.8)
+       {ponte de impedância};
+
+  % descricoes
+  \node[align=center, font=\scriptsize, anchor=north] at (2.05,-1.0)
+       {a fonte não sustenta\\a tensão; quase tudo\\queima em $R_{Th}$\\[3pt]
+        \textbf{regime de falha}};
+  \node[align=center, font=\scriptsize, anchor=north] at (6.0,-1.0)
+       {máxima potência,\\eficiência de 50 \%\\[3pt]
+        antena, RF,\\sensor fraco,\\painel solar (MPPT)};
+  \node[align=center, font=\scriptsize, anchor=north] at (10.25,-1.0)
+       {máxima tensão,\\eficiência alta\\[3pt]
+        áudio, lógica digital,\\amp-op, alimentação,\\instrumentação};
+
+  \draw[manualgray, thin, dashed] (6,1.25) -- (6,2.0);
+  \node[manualgray, font=\scriptsize, anchor=south] at (6,2.05)
+       {o teorema deste capítulo vive \textbf{aqui} --- e quase nada de eletrônica
+        vive aqui};
+
+\end{tikzpicture}
+```
+
+Os três regimes. O teorema da máxima potência descreve a faixa do meio, que é a
+menos frequente das três em eletrônica de bancada. A faixa da direita — a regra dos
+10:1 do @sec-cap-014 — é onde quase tudo o que você vai projetar deve ficar.
+
+:::
+
+**O caso em que casar é certo:** a fonte é fraca, fixa e não negociável. Uma antena
+recebendo microwatts, um cristal piezoelétrico, uma termopilha, um painel solar num
+dado nível de iluminação. Ali cada microwatt importa mais que a eficiência, porque
+a energia desperdiçada não tem para onde ir de qualquer jeito.
+
+**O caso em que casar é errado:** você controla a fonte. Um amplificador, um
+regulador, uma fonte de bancada, uma saída lógica. Ali $R_{Th}$ é uma escolha de
+projeto, e escolhê-la pequena entrega **mais** potência à carga do que qualquer
+casamento.
+
+## O amplificador e o alto-falante {#sec-019-alto-falante}
+
+O exemplo que desfaz o mal-entendido de uma vez.
+
+::: {#fig-019-alto-falante}
+
+```{.tikz}
+%%| filename: 019-alto-falante
+%%| alt: Dois circuitos com uma fonte de vinte volts alimentando um alto-falante de oito ohms. À esquerda, um amplificador com resistência de saída casada de oito ohms entrega doze vírgula cinco watts ao alto-falante e queima outros doze vírgula cinco watts internamente. À direita, um amplificador real com cinco centésimos de ohm de resistência de saída entrega quarenta e nove vírgula quatro watts e queima apenas zero vírgula trinta e um watt.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---------- casado ----------
+  \begin{scope}
+    \draw (0,0) to[battery1, invert, l_={$20$ V}] (0,3.4);
+    \draw (0,3.4) to[R, l={$R_{\text{out}} = 8\,\Omega$}] (3.6,3.4);
+    \draw[manualred, thick] (3.6,3.4) to[R, l_={$8\,\Omega$}] (3.6,0);
+    \draw (3.6,0) -- (0,0);
+    \node[manualred, font=\scriptsize, anchor=west] at (4.0,1.7)
+         {alto-falante};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.8,4.3)
+         {"casado": $R_{\text{out}} = R_L$};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-0.6,-0.7)
+         {$P_L = \dfrac{20^2 \times 8}{16^2} = \mathbf{12{,}5}$ W\\[3pt]
+          dentro do amplificador: $12{,}5$ W\\[3pt]
+          \textcolor{manualred}{$\eta = 50$ \%}};
+  \end{scope}
+
+  % ---------- real ----------
+  \begin{scope}[xshift=9.4cm]
+    \draw (0,0) to[battery1, invert, l_={$20$ V}] (0,3.4);
+    \draw (0,3.4) to[R, l={$R_{\text{out}} = 0{,}05\,\Omega$}] (3.6,3.4);
+    \draw[manualgreen!55!black, thick] (3.6,3.4) to[R, l_={$8\,\Omega$}] (3.6,0);
+    \draw (3.6,0) -- (0,0);
+    \node[manualgreen!55!black, font=\scriptsize, anchor=west] at (4.0,1.7)
+         {alto-falante};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.8,4.3)
+         {amplificador real};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-0.6,-0.7)
+         {$P_L = \dfrac{20^2 \times 8}{8{,}05^2} = \mathbf{49{,}4}$ W\\[3pt]
+          dentro do amplificador: $0{,}31$ W\\[3pt]
+          \textcolor{manualgreen!55!black}{$\eta = 99{,}4$ \%}};
+  \end{scope}
+
+  \node[align=center, font=\scriptsize\bfseries, anchor=north] at (6.5,-3.4)
+       {O amplificador "casado" entrega \textbf{quatro vezes menos} potência ao
+        alto-falante --- e ainda esquenta quarenta vezes mais.\\
+        Casar só faz sentido quando $R_{Th}$ não é sua escolha.};
+
+\end{circuitikz}
+```
+
+O mesmo alto-falante, o mesmo sinal, duas resistências de saída. O casamento não é
+um objetivo: é uma restrição, e quando ela pode ser removida, deve ser.
+
+:::
+
+É por isso que amplificadores de áudio anunciam **fator de amortecimento** — a
+razão entre a impedância do alto-falante e a impedância de saída do amplificador.
+Um fator de 160 quer dizer $R_{\text{out}} = 8/160 = 0{,}05\ \Omega$: o oposto
+exato do casamento, e de propósito. Além da potência, a impedância de saída baixa
+é o que impede o alto-falante de "tocar sozinho" pela sua própria inércia — assunto
+do Volume 13.
+
+::: {.callout-important}
+## Duas perguntas que parecem a mesma
+
+**"Qual $R_L$ extrai mais potência de uma fonte dada?"** — Resposta: $R_L = R_{Th}$.
+É o teorema deste capítulo, e ele supõe $R_{Th}$ fixo.
+
+**"Qual $R_{Th}$ entrega mais potência a uma carga dada?"** — Resposta:
+$R_{Th} = 0$. Não há máximo interno; quanto menor, melhor, sempre.
+
+Confundir as duas é o erro que faz alguém acrescentar resistência em série a uma
+saída "para casar com a carga". Isso só piora tudo.
+:::
+
+## Casar sem perder metade {#sec-019-casamento-sem-perda}
+
+Se o casamento é necessário mas a eficiência de 50 % é inaceitável, a saída não é
+escolher entre os dois: é usar um elemento que **transforma impedância sem
+dissipar**.
+
+::: {#fig-019-casamento}
+
+```{.tikz}
+%%| filename: 019-casamento
+%%| alt: Diagrama de blocos. Uma fonte com resistência de Thévenin de mil ohms alimenta uma rede de casamento sem perdas, que por sua vez alimenta uma carga de dez ohms. A rede faz a carga de dez ohms parecer mil ohms para a fonte, casando as duas sem dissipar energia.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % fonte
+  \draw[thick] (0,0) rectangle (2.8,2.4);
+  \node[align=center, font=\scriptsize] at (1.4,1.2)
+       {fonte\\$R_{Th} = 1$ k$\Omega$};
+
+  % rede
+  \draw[thick, fill=manualyellow!25] (4.6,0) rectangle (8.6,2.4);
+  \node[align=center, font=\scriptsize] at (6.6,1.2)
+       {rede de casamento\\\textbf{sem perdas}\\[2pt]
+        transformador (Vol. 12)\\ou conversor chaveado};
+
+  % carga
+  \draw[thick, fill=manualgreen!16] (10.4,0) rectangle (13.0,2.4);
+  \node[align=center, font=\scriptsize] at (11.7,1.2)
+       {carga\\$R_L = 10\ \Omega$};
+
+  \draw[thick] (2.8,1.6) -- (4.6,1.6);
+  \draw[thick] (2.8,0.8) -- (4.6,0.8);
+  \draw[thick] (8.6,1.6) -- (10.4,1.6);
+  \draw[thick] (8.6,0.8) -- (10.4,0.8);
+
+  \draw[manualred, thick, -{Stealth[length=2.5mm]}] (4.5,2.9) -- (3.3,2.9);
+  \node[manualred, font=\scriptsize, anchor=west, align=left] at (4.6,2.9)
+       {a fonte enxerga $10 \times n^2 = 1$ k$\Omega$ \ (com $n = 10$)};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.2,-0.5)
+       {O casamento acontece, a máxima potência é extraída --- e a rede não
+        dissipa nada, porque um transformador\\
+        ideal (ou um conversor chaveado) converte tensão e corrente em vez de
+        queimar a diferença.\\[3pt]
+        Um resistor em série \textbf{também} "casaria" a impedância, e queimaria
+        tudo o que a conta economizou. Não é a mesma coisa.};
+
+\end{tikzpicture}
+```
+
+Casamento com transformação de impedância. É assim que um transmissor de rádio
+casa 50 Ω de linha com uma antena de outro valor, e é a razão de existirem redes de
+casamento na entrada de todo estágio de RF.
+
+:::
+
+O mesmo raciocínio, com outro nome, aparece no rastreamento de máxima potência de
+painéis solares: o conversor chaveado apresenta ao painel a carga que maximiza a
+potência colhida, entregando essa potência à bateria numa tensão completamente
+diferente. O Volume 12 constrói esses conversores.
+
+::: {.callout-note}
+## Casamento de linha de transmissão é outro problema
+
+Em cabos coaxiais, trilhas rápidas e RF, fala-se em "casar 50 Ω" por um motivo
+**diferente**: uma terminação diferente da impedância característica da linha
+provoca **reflexão** do sinal, e a reflexão distorce a forma de onda.
+
+Ali o objetivo não é potência máxima, é ausência de eco. A conta é a mesma, a
+motivação não. O Volume 14 trata do assunto sob integridade de sinal.
+:::
+
+## 🧪 Laboratório {#sec-019-lab}
+
+**Achar o máximo com um potenciômetro.** O experimento é direto e o resultado é
+visualmente convincente: a potência sobe, atinge um pico e desce, e o pico está
+exatamente onde a tensão na carga é metade da tensão em aberto.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada em 9,0 V
+- 1 multímetro digital (dois, se tiver)
+- 1 potenciômetro de 10 kΩ, linear
+- 1 resistor de 2,2 kΩ, 1/4 W (será o $R_{Th}$)
+- 1 resistor de 100 Ω, **1 W**, e 1 de 10 Ω, **1 W** (para a Parte 3)
+- 1 lâmpada incandescente de lanterna, 6 V, ou 1 LED com resistor de 470 Ω
+- 1 pilha AA usada (para a Parte 3)
+:::
+
+### Parte 1 — A curva de potência
+
+1. Monte uma fonte de Thévenin artificial: 9,0 V em série com 2,2 kΩ. Esses são
+   $V_{Th}$ e $R_{Th}$, e você os conhece exatamente.
+2. Ligue o potenciômetro como reostato na saída. Meça a tensão sobre ele e a
+   corrente, para pelo menos dez posições ao longo do curso.
+3. Para cada ponto, calcule $R_L = V/I$ e $P_L = VI$.
+4. Plote $P_L$ contra $R_L$ em escala logarítmica.
+
+Previsto: pico de $9{,}0^2/(4 \times 2200) = 9{,}2$ mW em $R_L = 2{,}2$ kΩ.
+
+::: {.callout-note}
+## Confira a potência no potenciômetro antes
+
+9,2 mW é confortável para qualquer potenciômetro. Mas se você refizer o
+experimento com $R_{Th}$ de 100 Ω, o pico vira 200 mW — e um potenciômetro comum
+de 1/4 W com o cursor perto de uma ponta concentra tudo isso num trecho pequeno da
+pista. A regra do @sec-cap-011 vale para potenciômetros com uma agravante: a
+potência não se distribui uniformemente.
+:::
+
+### Parte 2 — O ponto de meia-tensão
+
+1. Ajuste o potenciômetro até a tensão sobre ele ser exatamente metade dos 9,0 V,
+   isto é, 4,50 V.
+2. Confirme que a potência ali é a máxima da sua tabela.
+3. Desligue o potenciômetro e meça-o. Previsto: 2,2 kΩ.
+
+É o mesmo procedimento da Parte 3 do laboratório do @sec-cap-018, agora com outra
+interpretação: **o ponto de meia-tensão é simultaneamente o ponto de casamento e o
+ponto de máxima potência**. Um ajuste, dois resultados.
+
+### Parte 3 — Uma fonte que não é sua escolha
+
+1. Meça a tensão em aberto de uma pilha AA usada.
+2. Determine sua resistência interna pelo método da carga conhecida
+   (@sec-cap-018), usando o resistor de 10 Ω de 1 W por poucos segundos. Numa
+   pilha bem usada, espere algo entre 0,5 e 3 Ω.
+3. Calcule qual carga extrairia a máxima potência dessa pilha, e quanta potência
+   seria.
+4. Ligue o resistor de 100 Ω e depois o de 10 Ω, medindo tensão e corrente nos
+   dois casos, e calcule a potência entregue.
+
+Esta é a situação em que o teorema **se aplica de verdade**: você não pode mudar a
+química da pilha. E ela mostra por que uma pilha velha acende mal a lanterna sem
+que a tensão em aberto tenha caído muito — a lâmpada, com seus poucos ohms, está no
+regime de carga pesada, e a maior parte da energia esquenta a pilha.
+
+### Parte 4 — A carga leve é melhor que a carga pesada
+
+1. Volte ao circuito da Parte 1 e escolha dois pontos com a **mesma** potência na
+   carga: $R_L = 1{,}1$ kΩ e $R_L = 4{,}4$ kΩ (ambos dão 89 % do máximo).
+2. Em cada um, meça também a corrente e calcule a potência dissipada em $R_{Th}$.
+3. Compare as duas eficiências. Previsto: 33 % e 67 %.
+
+Mesma potência entregue, o dobro de eficiência. É o argumento inteiro da
+@tbl-019-razao, verificado com duas medidas.
+
+### Variante simulada (plano B)
+
+O simulador faz a Parte 1 com uma varredura paramétrica em segundos e desenha a
+curva completa, inclusive nas regiões que o potenciômetro de 10 kΩ não alcança.
+Plote no mesmo gráfico $P_L$, $P_{R_{Th}}$ e $\eta$ contra $R_L$ em escala
+logarítmica: as três curvas juntas contam a história do capítulo.
+
+A Parte 3 é a que o simulador não dá de graça, porque a resistência interna da
+pilha só existe se você a modelar — e você precisa tê-la medido antes para saber
+que valor usar.
+
+## 🔥 Onde Queima {#sec-019-queima}
+
+**Acrescentar resistência em série "para casar com a carga".** O erro conceitual
+central. Se você controla $R_{Th}$, o melhor valor é o menor possível. Aumentar
+$R_{Th}$ para igualar $R_L$ reduz a potência entregue e queima o resto dentro da
+sua própria fonte.
+
+**Projetar uma fonte de alimentação para máxima transferência de potência.**
+Eficiência de 50 % numa fonte de 100 W significa 100 W de calor no dissipador.
+Fontes querem $R_{Th}$ baixo e $\eta$ alto, e é isso que reguladores e conversores
+do Volume 12 fazem.
+
+**Esquecer a potência dissipada em $R_{Th}$ ao dimensionar.** No casamento, o
+elemento que faz o papel de $R_{Th}$ dissipa tanto quanto a carga. Se ele for um
+resistor real, precisa ser dimensionado para isso — com a regra da metade do
+nominal do @sec-cap-011.
+
+**Calcular a dissipação da fonte pelo $R_{Th}$ do equivalente de Thévenin.** Como o
+@sec-cap-018 avisou, $R_{Th}$ é a inclinação de uma reta, não um componente. A
+potência que a *fonte original* dissipa é outra conta, feita no circuito original.
+
+**Casar uma carga de baixa impedância a uma fonte de alta impedância com um
+divisor.** O divisor "casa" a impedância e joga fora quase todo o sinal. Para
+transformar impedância sem perder, use transformador, conversor ou — o caminho da
+eletrônica ativa — um amplificador com alta impedância de entrada e baixa de saída,
+que é todo o Volume 11.
+
+**Perseguir exatidão desnecessária no casamento.** A curva é chata: fator 2 de erro
+custa 11 %. Gastar componentes de 1 % para casar impedâncias raramente compensa,
+exceto em RF, onde o problema real é reflexão e não potência.
+
+**Sobrecarregar uma fonte real ao procurar o máximo.** Ao varrer $R_L$ para baixo
+numa fonte de bancada, você caminha em direção ao curto. Ligue o limite de corrente
+antes de começar. Numa pilha, não vá abaixo de alguns ohms, e não deixe a carga
+pesada ligada por mais que alguns segundos.
+
+**Medir potência com um multímetro só, em circuito que varia.** $P = VI$ exige as
+duas grandezas **ao mesmo tempo**. Se o circuito deriva enquanto você troca as
+pontas — porque a pilha cansa, ou o resistor esquenta — as duas leituras não são do
+mesmo estado. Use dois instrumentos, ou meça a tensão e calcule a corrente pelo
+$R_L$ medido depois.
+
+**Confundir casamento de potência com casamento de linha.** Em RF e em trilhas
+rápidas, casar 50 Ω serve para evitar reflexão, não para maximizar potência. A
+fórmula coincide; o critério de projeto, não.
+
+## O que fica deste capítulo {#sec-019-resumo}
+
+Dada uma fonte de $V_{Th}$ e $R_{Th}$ fixos, a carga que extrai a máxima potência é
+$R_L = R_{Th}$, e essa potência vale $V_{Th}^2/4R_{Th}$. É o teorema da máxima
+transferência de potência.
+
+No ponto de casamento, a eficiência é exatamente **50 %**: $R_{Th}$ dissipa tanto
+quanto a carga. Essa é a metade do teorema que quase nunca é lembrada e que decide
+se ele deve ser usado.
+
+A curva é **chata**: entre $0{,}5\,R_{Th}$ e $2\,R_{Th}$ a potência fica acima de
+89 % do máximo. Casamento não precisa ser preciso — e, quando for para errar, erre
+para o lado da carga **leve**, que dá a mesma potência com o dobro da eficiência.
+
+A razão $R_L/R_{Th}$ define três regimes: carga pesada (falha), casamento (máxima
+potência, 50 % de eficiência) e ponte de impedância (máxima tensão, alta
+eficiência). Quase toda a eletrônica deste manual vive no terceiro, e a regra dos
+10:1 do @sec-cap-014 é a sua expressão prática.
+
+Casar só é o objetivo certo quando $R_{Th}$ não é sua escolha — antena, sensor
+fraco, painel solar, pilha velha. Quando você projeta a fonte, $R_{Th}$ pequeno
+sempre entrega mais: o amplificador de áudio real entrega quatro vezes mais
+potência ao alto-falante do que entregaria "casado".
+
+E quando o casamento é necessário sem o preço da eficiência, a saída é transformar
+impedância sem dissipar — transformador ou conversor chaveado —, nunca acrescentar
+resistência.
+
+Tudo isso pressupõe uma fonte com $R_{Th}$ conhecido e constante. O @sec-cap-020
+fecha o volume examinando as fontes reais: de onde vem a resistência interna, como
+ela varia, o que ela faz com a tensão quando a carga muda, e como o mesmo raciocínio
+se aplica ao encadeamento de estágios — que é o problema central de todo o resto do
+manual.
