@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 25/104**
+**Progresso: 26/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -62,7 +62,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 ### Volume 5 — Fundamentos de Corrente Alternada
 
 - [x] 027 — Do CC ao CA: a senoide e seus parâmetros — `capitulos/027-do-cc-ao-ca-a-senoide-e-seus-parametros.qmd`
-- [ ] 028 — Valor médio, valor eficaz (RMS) e o que o multímetro realmente mede — `capitulos/028-valor-medio-valor-eficaz-rms-e-o-que-o-multimetro.qmd`
+- [x] 028 — Valor médio, valor eficaz (RMS) e o que o multímetro realmente mede — `capitulos/028-valor-medio-valor-eficaz-rms-e-o-que-o-multimetro.qmd`
 - [ ] 029 — Fasores e números complexos aplicados — `capitulos/029-fasores-e-numeros-complexos-aplicados.qmd`
 - [ ] 030 — Reatância e impedância — `capitulos/030-reatancia-e-impedancia.qmd`
 - [ ] 031 — Potência ativa, reativa e aparente — `capitulos/031-potencia-ativa-reativa-e-aparente.qmd`
