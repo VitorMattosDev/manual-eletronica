@@ -1,3 +1,689 @@
 # Teoremas de Thévenin e Norton {#sec-cap-018}
 
-*(em elaboração)*
+O @sec-cap-014 terminou com uma promessa: um divisor de tensão, visto pela saída,
+comporta-se como uma fonte em série com $R_1 \parallel R_2$, e é essa resistência
+que o impede de alimentar qualquer coisa. A regra dos 10:1 saiu daí como
+aproximação.
+
+Este capítulo generaliza aquilo até o limite. **Qualquer** circuito linear, por
+maior que seja, visto de dois terminais, é indistinguível de uma única fonte em
+série com um único resistor. Não aproximadamente: exatamente, para qualquer carga.
+
+É o resultado mais útil de toda a análise de circuitos. Ele permite trocar a
+metade de um projeto por dois números, calcular o efeito de uma carga sem
+recalcular o circuito inteiro, e medir na bancada a "força" de uma saída sem saber
+o que há dentro dela. E é a base de tudo o que vem depois: impedância de entrada,
+impedância de saída, casamento, carregamento entre estágios.
+
+## O enunciado {#sec-018-enunciado}
+
+> **Teorema de Thévenin.** Todo circuito linear, visto de dois terminais, é
+> equivalente a uma fonte de tensão $V_{Th}$ em série com uma resistência
+> $R_{Th}$.
+
+> **Teorema de Norton.** O mesmo circuito é equivalente a uma fonte de corrente
+> $I_N$ em paralelo com uma resistência $R_N$.
+
+E os dois equivalentes são o mesmo equivalente, escrito de duas maneiras:
+
+$$ R_N = R_{Th}, \qquad I_N = \frac{V_{Th}}{R_{Th}}, \qquad
+   V_{Th} = I_N R_N. $$
+
+"Equivalente" aqui tem sentido forte: ligue qualquer carga — resistor, LED, motor,
+outro circuito inteiro — e a tensão e a corrente nos terminais serão idênticas às
+do circuito original. Nenhuma medição feita **pelos terminais** consegue
+distinguir os dois.
+
+::: {#fig-018-equivalentes}
+
+```{.tikz}
+%%| filename: 018-equivalentes
+%%| alt: Três desenhos lado a lado. À esquerda, uma caixa preta com dois terminais representando um circuito linear qualquer. No meio, o equivalente de Thévenin: uma fonte de tensão em série com uma resistência. À direita, o equivalente de Norton: uma fonte de corrente em paralelo com a mesma resistência. Os três são indistinguíveis por qualquer medição feita nos dois terminais.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---------------- caixa preta ----------------
+  \begin{scope}
+    \draw[thick, fill=manualgray!12] (0,0.8) rectangle (2.6,4.0);
+    \node[align=center, font=\scriptsize] at (1.3,2.4)
+         {circuito\\linear\\qualquer};
+    \draw (2.6,3.4) -- (3.6,3.4);
+    \draw (2.6,1.4) -- (3.6,1.4);
+    \node[ponto] at (3.6,3.4) {};
+    \node[ponto] at (3.6,1.4) {};
+    \node[font=\scriptsize\bfseries, anchor=west] at (3.75,3.4) {a};
+    \node[font=\scriptsize\bfseries, anchor=west] at (3.75,1.4) {b};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.8,4.3) {o original};
+  \end{scope}
+
+  % ---------------- Thevenin ----------------
+  \begin{scope}[xshift=6.0cm]
+    \draw (0,0.8) to[battery1, invert, l_={$V_{Th}$}] (0,3.0);
+    \draw (0,3.0) to[R, l_={$R_{Th}$}] (0,4.4);
+    \draw (0,4.4) -- (1.6,4.4) -- (1.6,3.4) -- (2.4,3.4);
+    \draw (0,0.8) -- (1.6,0.8) -- (1.6,1.4) -- (2.4,1.4);
+    \node[ponto] at (2.4,3.4) {};
+    \node[ponto] at (2.4,1.4) {};
+    \node[font=\scriptsize\bfseries, anchor=west] at (2.55,3.4) {a};
+    \node[font=\scriptsize\bfseries, anchor=west] at (2.55,1.4) {b};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.2,4.9) {Thévenin};
+  \end{scope}
+
+  % ---------------- Norton ----------------
+  \begin{scope}[xshift=11.6cm]
+    \draw (0,0.8) to[I, l_={$I_N$}] (0,4.4);
+    \draw (1.6,0.8) to[R, l_={$R_N$}] (1.6,4.4);
+    \draw (0,4.4) -- (2.4,4.4) -- (2.4,3.4) -- (3.2,3.4);
+    \draw (0,0.8) -- (2.4,0.8) -- (2.4,1.4) -- (3.2,1.4);
+    \node[ponto] at (1.6,4.4) {};
+    \node[ponto] at (1.6,0.8) {};
+    \node[ponto] at (3.2,3.4) {};
+    \node[ponto] at (3.2,1.4) {};
+    \node[font=\scriptsize\bfseries, anchor=west] at (3.35,3.4) {a};
+    \node[font=\scriptsize\bfseries, anchor=west] at (3.35,1.4) {b};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.6,4.9) {Norton};
+  \end{scope}
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.4,-0.2)
+       {$R_N = R_{Th}$ \qquad $I_N = V_{Th}/R_{Th}$ \qquad $V_{Th} = I_N R_N$
+        \qquad --- e nenhuma medição feita em \textbf{a--b} distingue os três.};
+
+\end{circuitikz}
+```
+
+Os três circuitos são o mesmo circuito. A caixa preta pode ter cem resistores e
+seis fontes; do lado de fora, ela tem dois números.
+
+:::
+
+## Por que dois números bastam: a reta V–I {#sec-018-reta}
+
+A demonstração formal usa superposição, mas há uma maneira de ver o teorema que
+explica *por que* ele tem de ser verdade, e que vale mais que a demonstração.
+
+Ligue uma fonte de corrente $I$ nos terminais de um circuito linear e meça a tensão
+$V$ que aparece. Varie $I$ e refaça a medida. Como o circuito é linear
+(@sec-cap-017), a relação entre $V$ e $I$ é necessariamente uma **reta**. E uma
+reta no plano $V$–$I$ é definida por exatamente dois números: onde ela corta um
+eixo e qual é a sua inclinação.
+
+Esses dois números têm nome:
+
+- **$V_{Th}$ é a tensão de circuito aberto** ($I = 0$): onde a reta corta o eixo
+  das tensões.
+- **$I_N$ é a corrente de curto-circuito** ($V = 0$): onde a reta corta o eixo das
+  correntes.
+- **$R_{Th}$ é o negativo da inclinação**, e vale $V_{Th}/I_N$.
+
+Não há mais nada a saber. Um circuito com cem elementos tem a mesma reta que um
+circuito com dois, e é por isso que os dois são intercambiáveis.
+
+::: {#fig-018-reta}
+
+```{.tikz}
+%%| filename: 018-reta
+%%| alt: Gráfico da característica corrente por tensão nos terminais B e C da ponte do capítulo doze. A reta corta o eixo das tensões em um vírgula trinta e cinco milivolts, que é a tensão de Thévenin, e o eixo das correntes em zero vírgula quatrocentos e cinquenta e sete miliampères, que é a corrente de Norton. Duas retas de carga, para mil e quinhentos ohms e para dez kilo-ohms, cruzam a característica nos pontos de operação.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=14cm, height=8cm,
+  xlabel={$V$ nos terminais (V)}, ylabel={$I$ entregue (mA)},
+  xmin=0, xmax=1.42, ymin=0, ymax=0.52,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  xtick={0,0.2,0.4,0.6,0.8,1.0,1.2,1.4},
+  xticklabels={{0},{0,2},{0,4},{0,6},{0,8},{1,0},{1,2},{1,4}},
+  ytick={0,0.1,0.2,0.3,0.4,0.5},
+  yticklabels={{0},{0,1},{0,2},{0,3},{0,4},{0,5}},
+]
+  % caracteristica do circuito (reta de Thevenin)
+  \addplot[curva, domain=0:1.0354, samples=2] {(1.0354-x)/2.266};
+
+  % retas de carga
+  \addplot[destaque, domain=0:0.62, samples=2] {x/1.5};
+  \addplot[manualgreen!55!black, thick, domain=0:1.0, samples=2] {x/10};
+
+  \node[ponto] at (axis cs:0,0.4569) {};
+  \node[ponto] at (axis cs:1.0354,0) {};
+  \node[ponto] at (axis cs:0.4124,0.2749) {};
+  \node[ponto] at (axis cs:0.8441,0.0844) {};
+
+  \draw[manualgray, dashed, thin] (axis cs:0,0.2749) -- (axis cs:0.4124,0.2749)
+        -- (axis cs:0.4124,0);
+  \draw[manualgray, dashed, thin] (axis cs:0,0.0844) -- (axis cs:0.8441,0.0844)
+        -- (axis cs:0.8441,0);
+
+  \node[manualblue, font=\scriptsize, anchor=west] at (axis cs:0.03,0.487)
+       {$I_N = 0{,}457$ mA \ (curto)};
+  \node[manualblue, font=\scriptsize, anchor=west] at (axis cs:1.06,0.035)
+       {$V_{Th} = 1{,}035$ V \ (aberto)};
+  \node[manualblue, font=\scriptsize, anchor=west, align=left]
+       at (axis cs:0.62,0.33)
+       {inclinação $= -1/R_{Th}$\\$R_{Th} = 1{,}035/0{,}457 = 2{,}266$ k$\Omega$};
+
+  \node[manualred, font=\scriptsize, anchor=south east] at (axis cs:0.58,0.42)
+       {reta de carga: $R_L = 1{,}5$ k};
+  \node[manualgreen!55!black, font=\scriptsize, anchor=north]
+       at (axis cs:0.55,0.045)
+       {$R_L = 10$ k};
+
+  \node[manualred, font=\scriptsize, anchor=north east, align=left]
+       at (axis cs:1.40,0.26)
+       {ponto de operação\\com $1{,}5$ k$\Omega$:\\$0{,}412$ V e $0{,}275$ mA};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A característica $V$–$I$ de um circuito linear é uma reta, e uma reta cabe em dois
+números. A carga também tem a sua reta — a **reta de carga**, que passa pela origem
+com inclinação $1/R_L$ — e o ponto de operação é a interseção das duas.
+
+:::
+
+A reta de carga vai reaparecer com força nos Volumes 8 e 9, onde a característica
+do circuito continua reta e a do componente — diodo, transistor — deixa de ser. O
+ponto de operação continua sendo a interseção; só o método de achá-la muda.
+
+## Como achar $R_{Th}$: três caminhos {#sec-018-rth}
+
+**Caminho 1 — zerar as fontes e reduzir.** Substitua toda fonte de tensão
+independente por um curto e toda fonte de corrente independente por um aberto
+(@sec-cap-017), e calcule a resistência entre os dois terminais por associação
+série-paralelo. É o método mais rápido quando o circuito é redutível, e o mais
+usado no papel.
+
+**Caminho 2 — $V_{oc}$ e $I_{sc}$.** Calcule (ou meça) a tensão de circuito aberto
+e a corrente de curto-circuito, e faça
+
+$$ R_{Th} = \frac{V_{oc}}{I_{sc}}. $$
+
+Funciona sempre, inclusive em circuitos que o Caminho 1 não alcança. É o método
+obrigatório quando há fontes **dependentes** — as controladas por outra grandeza do
+circuito, que aparecem no modelo de todo transistor a partir do Volume 9 e que não
+podem ser zeradas, porque não são independentes.
+
+**Caminho 3 — fonte de teste.** Zere as fontes independentes, aplique uma fonte de
+teste de 1 V nos terminais, calcule a corrente que ela fornece, e $R_{Th} = 1/I$.
+É o Caminho 1 escrito para circuitos que não se reduzem, e o único que funciona
+quando há fontes dependentes **e** a tensão de circuito aberto é zero.
+
+Por ora, o Caminho 1 resolve tudo. Guarde o 2 para a bancada e o 3 para o
+Volume 9.
+
+## A ponte, resolvida de outro jeito {#sec-018-exemplo}
+
+O @sec-cap-015 resolveu a ponte com duas equações nodais. Thévenin resolve o mesmo
+problema com dois divisores e dois paralelos — **e** entrega de brinde a resposta
+para qualquer valor do resistor central, o que o sistema nodal não faz.
+
+A pergunta: quanto vale a corrente no resistor de 1,5 kΩ ligado entre B e C?
+
+**Passo 1 — remova a carga.** Tire o resistor de 1,5 kΩ. O que sobra são dois
+divisores independentes, cada um pendurado entre A e D:
+
+$$ V_B = 12 \times \frac{3{,}3}{1 + 3{,}3} = 9{,}209\ \text{V}, \qquad
+   V_C = 12 \times \frac{4{,}7}{2{,}2 + 4{,}7} = 8{,}174\ \text{V}, $$
+
+$$ V_{Th} = V_B - V_C = 1{,}035\ \text{V}. $$
+
+**Passo 2 — zere a fonte.** Com os 12 V em curto, os nós A e D passam a ser o mesmo
+nó. Visto de B, os resistores de 1 kΩ e 3,3 kΩ ficam **em paralelo**; visto de C,
+os de 2,2 kΩ e 4,7 kΩ também. E os dois paralelos ficam em série entre B e C:
+
+$$ R_{Th} = (1 \parallel 3{,}3) + (2{,}2 \parallel 4{,}7)
+   = 0{,}767 + 1{,}499 = 2{,}266\ \text{k}\Omega. $$
+
+**Passo 3 — religue a carga** ao equivalente, que agora é um circuito de dois
+elementos em série:
+
+$$ I = \frac{V_{Th}}{R_{Th} + R_L} = \frac{1{,}035}{2{,}266 + 1{,}5}
+     = 0{,}2749\ \text{mA}, \qquad
+   V_{BC} = 0{,}2749 \times 1{,}5 = 0{,}412\ \text{V}. $$
+
+Exatamente os 0,275 mA e os 412 mV que a análise nodal do @sec-cap-015 produziu.
+
+::: {#fig-018-ponte}
+
+```{.tikz}
+%%| filename: 018-ponte
+%%| alt: Três painéis. No primeiro, a ponte com o resistor central removido, mostrando os dois divisores independentes que dão nove vírgula duzentos e nove e oito vírgula cento e setenta e quatro volts, cuja diferença é a tensão de Thévenin de um vírgula trinta e cinco volts. No segundo, a fonte foi curto-circuitada e os pares de resistores ficam em paralelo, somando dois vírgula duzentos e sessenta e seis kilo-ohms de resistência de Thévenin. No terceiro, o equivalente com a carga de mil e quinhentos ohms, entregando zero vírgula duzentos e setenta e cinco miliampères.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ============ 1: V_Th ============
+  \begin{scope}
+    \coordinate (A) at (2.1,3.4);
+    \coordinate (B) at (0,1.7);
+    \coordinate (C) at (4.2,1.7);
+    \coordinate (D) at (2.1,0);
+    \draw (A) to[R, l_={$1\,$k}] (B);
+    \draw (A) to[R, l={$2{,}2\,$k}] (C);
+    \draw (B) to[R, l_={$3{,}3\,$k}] (D);
+    \draw (C) to[R, l={$4{,}7\,$k}] (D);
+    \draw[manualred, thick, dashed] (B) -- (C);
+    \node[manualred, font=\scriptsize, anchor=south] at (2.1,1.78) {removido};
+    \foreach \n in {A,B,C,D}{\node[ponto] at (\n) {};}
+    \draw (A) -- (2.1,4.2);
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.1,4.3) {A: $+12$ V};
+    \draw (D) -- (2.1,-0.7);
+    \node[ground] at (2.1,-0.7) {};
+    \node[font=\scriptsize\bfseries, anchor=north east] at (1.95,-0.1) {D};
+    \node[manualblue, font=\scriptsize\bfseries, anchor=east] at (-0.15,1.7)
+         {B: $9{,}209$ V};
+    \node[manualblue, font=\scriptsize\bfseries, anchor=west] at (4.35,1.7)
+         {C: $8{,}174$ V};
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.1,4.9)
+         {1. tensão em aberto};
+    \node[align=center, font=\scriptsize, anchor=north] at (2.1,-1.5)
+         {$V_{Th} = 9{,}209 - 8{,}174 = \mathbf{1{,}035}$ V};
+  \end{scope}
+
+  % ============ 2: R_Th ============
+  \begin{scope}[xshift=8.8cm]
+    \coordinate (A) at (2.1,3.4);
+    \coordinate (B) at (0,1.7);
+    \coordinate (C) at (4.2,1.7);
+    \coordinate (D) at (2.1,0);
+    \draw (A) to[R, l_={$1\,$k}] (B);
+    \draw (A) to[R, l={$2{,}2\,$k}] (C);
+    \draw (B) to[R, l_={$3{,}3\,$k}] (D);
+    \draw (C) to[R, l={$4{,}7\,$k}] (D);
+    \foreach \n in {A,B,C,D}{\node[ponto] at (\n) {};}
+    \draw[manualred, very thick]
+         (A) -- (2.1,4.2) -- (6.0,4.2) -- (6.0,-0.7) -- (2.1,-0.7);
+    \draw (D) -- (2.1,-0.7);
+    \node[ground] at (2.1,-0.7) {};
+    \node[manualred, font=\scriptsize\bfseries, anchor=south] at (4.0,4.3)
+         {fonte zerada: A ligado a D};
+    \node[manualblue, font=\scriptsize\bfseries, anchor=east] at (-0.15,1.7)
+         {B};
+    \node[manualblue, font=\scriptsize\bfseries, anchor=west] at (4.35,1.7)
+         {C};
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.1,4.9)
+         {2. resistência vista de B--C};
+    \node[align=center, font=\scriptsize, anchor=north] at (2.1,-1.5)
+         {$R_{Th} = (1 \parallel 3{,}3) + (2{,}2 \parallel 4{,}7)$\\
+          $= 0{,}767 + 1{,}499 = \mathbf{2{,}266}$ k$\Omega$};
+  \end{scope}
+
+  % ============ 3: equivalente (segunda linha) ============
+  \begin{scope}[xshift=4.4cm, yshift=-7.0cm]
+    \draw (0,0) to[battery1, invert, l_={$V_{Th} = 1{,}035$ V}] (0,2.2);
+    \draw (0,2.2) to[R, l={$R_{Th} = 2{,}266\,$k}] (3.0,2.2);
+    \draw[manualred, thick] (3.0,2.2) to[R, l={$R_L = 1{,}5\,$k}] (3.0,0);
+    \draw (3.0,0) -- (0,0);
+    \node[ponto] at (3.0,2.2) {};
+    \node[ponto] at (3.0,0) {};
+    \node[manualblue, font=\scriptsize\bfseries, anchor=west] at (3.15,2.2) {B};
+    \node[manualblue, font=\scriptsize\bfseries, anchor=west] at (3.15,0) {C};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.5,3.0)
+         {3. carga religada ao equivalente};
+    \node[align=center, font=\scriptsize, anchor=north] at (1.5,-0.8)
+         {$I = \dfrac{1{,}035}{2{,}266 + 1{,}5} = \mathbf{0{,}275}$ mA
+          \qquad $V_{BC} = \mathbf{412}$ mV};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+A ponte em três passos, sem sistema de equações. E o passo 3 pode ser refeito com
+qualquer $R_L$ — 100 Ω, 10 kΩ, um galvanômetro — sem tocar nos passos 1 e 2.
+
+:::
+
+Esse é o ganho estrutural: **os passos 1 e 2 não dependem da carga**. Trocar o
+resistor central por outro valor, ou por um instrumento, ou por um LED, não obriga
+a recalcular nada do circuito de trás. É a diferença entre resolver um problema e
+resolver uma família de problemas.
+
+## Transformação de fontes {#sec-018-transformacao}
+
+O caso particular mais útil dos dois teoremas: **uma fonte de tensão $V$ em série
+com $R$ é indistinguível de uma fonte de corrente $V/R$ em paralelo com $R$** — e
+vice-versa. Aplicada repetidamente, essa troca reduz circuitos inteiros sem
+escrever equação nenhuma.
+
+::: {#fig-018-transformacao}
+
+```{.tikz}
+%%| filename: 018-transformacao
+%%| alt: Sequência de quatro circuitos. O primeiro tem uma fonte de doze volts em série com um kilo-ohm, um resistor de dois vírgula dois kilo-ohms em derivação e um de um vírgula cinco kilo-ohm em série até a saída. No segundo, a fonte virou uma fonte de corrente de doze miliampères em paralelo com um kilo-ohm. No terceiro, os dois resistores em paralelo viraram zero vírgula seiscentos e oitenta e sete kilo-ohms. No quarto, a fonte voltou a ser de tensão, com oito vírgula vinte e cinco volts em série com dois vírgula cento e oitenta e sete kilo-ohms.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---- 1 ----
+  \begin{scope}
+    \draw (0,0) to[battery1, invert, l_={$12$ V}] (0,2.6);
+    \draw (0,2.6) to[R, l={$1\,$k}] (2.2,2.6);
+    \draw (2.2,2.6) to[R, l={$2{,}2\,$k}] (2.2,0);
+    \draw (2.2,2.6) to[R, l={$1{,}5\,$k}] (4.6,2.6);
+    \draw (0,0) -- (4.6,0);
+    \node[ponto] at (2.2,2.6) {};
+    \node[ponto] at (2.2,0) {};
+    \node[ponto] at (4.6,2.6) {};
+    \node[ponto] at (4.6,0) {};
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.3,3.5)
+         {1. original};
+  \end{scope}
+
+  % ---- 2 ----
+  \begin{scope}[xshift=7.4cm]
+    \draw (0,0) to[I, l_={$12$ mA}] (0,2.6);
+    \draw (1.8,2.6) to[R, l={$1\,$k}] (1.8,0);
+    \draw (3.6,2.6) to[R, l={$2{,}2\,$k}] (3.6,0);
+    \draw (0,2.6) -- (3.6,2.6);
+    \draw (0,0) -- (6.0,0);
+    \draw (3.6,2.6) to[R, l={$1{,}5\,$k}] (6.0,2.6);
+    \foreach \xx in {1.8, 3.6}{
+      \node[ponto] at (\xx,2.6) {};
+      \node[ponto] at (\xx,0) {};
+    }
+    \node[ponto] at (6.0,2.6) {};
+    \node[ponto] at (6.0,0) {};
+    \node[font=\scriptsize\bfseries, anchor=south] at (3.0,3.5)
+         {2. fonte de tensão vira fonte de corrente};
+  \end{scope}
+
+  % ---- 3 ----
+  \begin{scope}[yshift=-5.6cm]
+    \draw (0,0) to[I, l_={$12$ mA}] (0,2.6);
+    \draw (2.0,2.6) to[R, l={$0{,}687\,$k}] (2.0,0);
+    \draw (0,2.6) -- (2.0,2.6);
+    \draw (0,0) -- (4.4,0);
+    \draw (2.0,2.6) to[R, l={$1{,}5\,$k}] (4.4,2.6);
+    \node[ponto] at (2.0,2.6) {};
+    \node[ponto] at (2.0,0) {};
+    \node[ponto] at (4.4,2.6) {};
+    \node[ponto] at (4.4,0) {};
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.2,3.5)
+         {3. paralelo reduzido: $1 \parallel 2{,}2 = 0{,}687$ k};
+  \end{scope}
+
+  % ---- 4 ----
+  \begin{scope}[xshift=7.4cm, yshift=-5.6cm]
+    \draw (0,0) to[battery1, invert, l_={$8{,}25$ V}] (0,2.6);
+    \draw (0,2.6) to[R, l={$2{,}187\,$k}] (3.4,2.6);
+    \draw (0,0) -- (3.4,0);
+    \node[ponto] at (3.4,2.6) {};
+    \node[ponto] at (3.4,0) {};
+    \node[font=\scriptsize\bfseries, anchor=south] at (1.7,3.5)
+         {4. Thévenin final};
+  \end{scope}
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.5,-6.6)
+       {$12$ V com $1$ k $\to$ $12$ mA com $1$ k \quad$\to$\quad
+        $1 \parallel 2{,}2 = 0{,}687$ k \quad$\to$\quad
+        $12 \times 0{,}687 = 8{,}25$ V com $0{,}687$ k \quad$\to$\quad
+        $+\,1{,}5$ k em série $= 2{,}187$ k$\Omega$\\[3pt]
+        Conferência independente: em aberto, a saída é
+        $12 \times \dfrac{2{,}2}{1 + 2{,}2} = 8{,}25$ V, e
+        $R_{Th} = (1 \parallel 2{,}2) + 1{,}5 = 2{,}187$ k$\Omega$. Fecha.};
+
+\end{circuitikz}
+```
+
+Quatro passos mecânicos, nenhuma equação. A transformação de fontes é a forma mais
+rápida de "empurrar" a fonte para dentro do circuito até que tudo colapse em dois
+elementos.
+
+:::
+
+Duas regras de uso que evitam frustração:
+
+- **A transformação só vale para o par fonte + resistor em série (ou em
+  paralelo).** Um resistor que não esteja em série com a fonte não participa.
+- **A transformação apaga o que há dentro.** No circuito transformado, a corrente
+  "pelo resistor de 1 kΩ" não é mais a corrente real do resistor de 1 kΩ original.
+  Se você precisa daquela corrente, calcule-a **antes** de transformar, ou volte ao
+  circuito original no fim.
+
+## O que o equivalente conserva e o que ele apaga {#sec-018-limites}
+
+Esta é a seção que separa quem usa Thévenin de quem usa Thévenin errado.
+
+**O que ele conserva, exatamente:** a tensão e a corrente nos terminais, para
+qualquer carga. Tudo o que a carga "vê" é idêntico.
+
+**O que ele apaga:** tudo o que acontece **dentro**. Em particular, a potência.
+
+Volte à ponte. No equivalente, $R_{Th} = 2{,}266$ kΩ conduzindo 0,275 mA dissipa
+
+$$ P = (0{,}275\ \text{mA})^2 \times 2{,}266\ \text{k}\Omega = 0{,}171\ \text{mW}. $$
+
+No circuito real, a fonte de 12 V entrega 4,554 mA (@sec-cap-015), isto é,
+**54,6 mW** — mais de trezentas vezes mais. Os dois circuitos são indistinguíveis
+pelos terminais e completamente diferentes por dentro. O equivalente de Thévenin
+nem sequer sabe que existe uma fonte de 12 V.
+
+::: {.callout-important}
+## Nunca calcule dissipação interna pelo equivalente
+
+$R_{Th}$ não é um resistor. É a inclinação de uma reta. Ele não esquenta, não tem
+encapsulamento e não tem limite de potência.
+
+Para dimensionar resistores — o assunto do @sec-cap-011 — volte ao circuito
+original e calcule $I^2R$ em cada um. O equivalente serve para prever o
+comportamento nos terminais e para nada mais.
+:::
+
+## Medir Thévenin na bancada {#sec-018-bancada}
+
+Os dois números são medíveis, e medi-los é a maneira honesta de caracterizar
+qualquer saída — de um divisor, de uma fonte, de um sensor, de um estágio de
+amplificador.
+
+**$V_{Th}$ é fácil:** meça a tensão em aberto com um voltímetro de alta impedância.
+A ressalva do @sec-cap-014 vale integralmente: se $R_{Th}$ for comparável aos
+10 MΩ do instrumento, a leitura já vem carregada.
+
+**$I_{sc}$ é perigoso.** Curto-circuitar a saída para medir a corrente é legítimo
+num divisor de kilo-ohms e destrutivo numa fonte de alimentação, numa bateria ou em
+qualquer saída de baixa impedância. Não faça isso por reflexo.
+
+**O método seguro é a carga conhecida.** Meça $V_{oc}$; ligue um resistor $R_L$
+conhecido e meça $V_L$. Então
+
+$$ V_L = V_{oc}\,\frac{R_L}{R_{Th} + R_L}
+   \quad\Longrightarrow\quad
+   R_{Th} = R_L\left(\frac{V_{oc}}{V_L} - 1\right). $$
+
+**O caso mais elegante é o da meia-tensão:** ajuste um potenciômetro como carga até
+que a tensão caia exatamente à **metade** de $V_{oc}$. Nesse ponto,
+$R_L = R_{Th}$ — basta desligar o potenciômetro e medi-lo com o ohmímetro. Um único
+ajuste, nenhuma conta, e nenhum curto.
+
+::: {.callout-tip}
+## Escolher bem o $R_L$ de teste
+
+Se $R_L \gg R_{Th}$, a tensão quase não cai e a conta divide números quase iguais:
+o erro explode. Se $R_L \ll R_{Th}$, a tensão desaba e você pode estar
+sobrecarregando a fonte.
+
+O melhor $R_L$ é da ordem de $R_{Th}$, que é justamente o que o método da
+meia-tensão encontra. Se você não faz ideia da ordem de grandeza, comece com 10 kΩ
+e caminhe.
+:::
+
+## 🧪 Laboratório {#sec-018-lab}
+
+**Provar que a caixa preta tem dois números.** O experimento decisivo é o da
+substituição: monte a ponte, meça o que ela faz com três cargas diferentes; monte
+o equivalente de Thévenin com dois componentes; repita as três medidas. Os números
+têm de coincidir.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada em 12,0 V
+- 1 multímetro digital
+- 1 resistor de 1 kΩ, 1 de 2,2 kΩ, 1 de 3,3 kΩ, 1 de 4,7 kΩ, 1/4 W
+- 1 resistor de 1,5 kΩ, 1 de 10 kΩ, 1 de 470 Ω, 1/4 W
+- 1 resistor de 2,2 kΩ **de 1 %**, se tiver, ou 2 de 4,7 kΩ para associar em
+  paralelo (2,35 kΩ) — para montar o $R_{Th}$
+- 1 potenciômetro de 10 kΩ
+- 1 pilha AA usada e 1 nova (para a Parte 4)
+:::
+
+### Parte 1 — Os dois números da ponte
+
+1. Monte a ponte com os quatro resistores e 12,0 V entre A e D, **sem** o resistor
+   central.
+2. Meça $V_B$, $V_C$ e $V_{BC}$. Previsto: 9,209 V, 8,174 V e 1,035 V. O último é
+   $V_{Th}$.
+3. Desligue a fonte, **remova-a** e ponha um jumper no lugar dela (A ligado a D).
+4. Meça a resistência entre B e C com o ohmímetro. Previsto: 2,266 kΩ.
+
+O passo 4 é o Caminho 1 executado com as mãos: você acabou de medir uma resistência
+que o circuito original não tem em lugar nenhum.
+
+### Parte 2 — A substituição
+
+1. Recoloque a fonte e ligue entre B e C, sucessivamente, 470 Ω, 1,5 kΩ e 10 kΩ.
+   Meça a tensão sobre cada carga. Previsto: 0,180 V, 0,412 V e 0,844 V.
+2. Desmonte a ponte inteira.
+3. Monte o equivalente: uma fonte ajustada em **1,035 V** em série com **2,266 kΩ**
+   (use 2,2 kΩ mais um trecho do potenciômetro ajustado em 66 Ω, ou 4,7 ∥ 4,7 =
+   2,35 kΩ e refaça as contas).
+4. Ligue as mesmas três cargas e meça de novo.
+
+As duas tabelas têm de coincidir dentro da tolerância. Poucos experimentos são tão
+convincentes: dois circuitos com número diferente de componentes, comportamentos
+idênticos.
+
+::: {.callout-note}
+## Se a sua fonte não desce a 1,035 V
+
+Muitas fontes de bancada são imprecisas ou instáveis abaixo de 1 V. Alternativa:
+alimente um divisor de 10 kΩ/1 kΩ com 11,4 V, que entrega 1,036 V em aberto — mas
+lembre que esse divisor **acrescenta** 0,909 kΩ de resistência de Thévenin, e o
+resistor série a montar passa a ser $2{,}266 - 0{,}909 = 1{,}357$ kΩ.
+
+Ter de fazer essa correção é o próprio conteúdo do capítulo aplicado a um problema
+prático de bancada.
+:::
+
+### Parte 3 — A meia-tensão
+
+1. Volte à ponte completa, sem carga entre B e C. Meça $V_{oc}$.
+2. Ligue o potenciômetro de 10 kΩ como **reostato** entre B e C.
+3. Ajuste-o até que a tensão entre B e C seja exatamente $V_{oc}/2$, isto é,
+   0,518 V.
+4. Desligue o potenciômetro do circuito e meça sua resistência. Previsto: 2,266 kΩ.
+
+Três medidas de tensão e uma de resistência, sem curto e sem conta. É assim que se
+caracteriza uma saída desconhecida.
+
+### Parte 4 — A resistência interna de uma pilha
+
+1. Meça a tensão em aberto de uma pilha AA nova. Tipicamente 1,58 a 1,62 V.
+2. Ligue um resistor de 10 Ω... **não**. Faça a conta antes: com $R_{Th}$ de uns
+   0,2 Ω, um resistor de 10 Ω puxaria 160 mA e a queda seria de 3 mV — invisível.
+   Um de 1 Ω puxaria 1,3 A e dissiparia 1,7 W. Escolha 4,7 Ω de 2 W, que puxa uns
+   330 mA e dissipa 0,5 W.
+3. Meça a tensão com a carga ligada, **rapidamente** (poucos segundos), e calcule
+   $R_{Th} = R_L(V_{oc}/V_L - 1)$.
+4. Repita com a pilha usada. A resistência interna é várias vezes maior.
+
+Este é o experimento que dá sentido físico a $R_{Th}$: numa pilha, ele é uma
+propriedade química real que cresce com o envelhecimento, e é ele que faz a lanterna
+enfraquecer antes de a tensão em aberto cair. O @sec-cap-020 desenvolve o assunto.
+
+::: {.callout-warning}
+## Não curto-circuite a pilha para medir $I_{sc}$
+
+Uma AA alcalina em curto entrega vários ampères, aquece rapidamente e pode vazar.
+Uma célula de lítio recarregável em curto é um risco de incêndio. O método da carga
+conhecida existe exatamente para não precisar disso, e o @sec-cap-002 já tratava do
+assunto.
+:::
+
+### Variante simulada (plano B)
+
+O simulador faz a Parte 2 de forma elegante: monte os dois circuitos lado a lado
+na mesma folha, com a mesma carga variável, e faça uma varredura paramétrica de
+$R_L$ plotando as duas tensões de saída. As curvas ficam **exatamente**
+sobrepostas, o que é a demonstração gráfica do teorema.
+
+Faça também o que a bancada não deixa: peça a potência dissipada em cada resistor
+nos dois circuitos e compare. As saídas são idênticas; as potências internas, não.
+É a @sec-018-limites em números.
+
+## 🔥 Onde Queima {#sec-018-queima}
+
+**Calcular dissipação pelo equivalente.** $R_{Th}$ não é um componente e não
+dissipa nada de real. Dimensionar resistores exige voltar ao circuito original.
+Sintoma: um projeto que "dissipa 0,17 mW" e derrete um resistor de 1/4 W.
+
+**Esquecer de remover a carga antes de calcular $V_{Th}$.** $V_{Th}$ é a tensão
+com os terminais em **aberto**. Calcular com a carga ligada dá o resultado final,
+não o parâmetro do equivalente — e a partir daí tudo desanda.
+
+**Zerar fontes dependentes.** Uma fonte controlada por uma tensão ou corrente do
+próprio circuito não é independente e **não pode** ser zerada. Em circuito com
+transistor — Volume 9 — use $V_{oc}/I_{sc}$ ou a fonte de teste.
+
+**Curto-circuitar a saída para medir $I_{sc}$.** Legítimo num divisor de
+kilo-ohms; destrutivo numa fonte, numa bateria ou numa saída de baixa impedância.
+Use o método da carga conhecida.
+
+**Medir $V_{oc}$ com voltímetro insuficiente.** Se $R_{Th}$ for de megaohms, os
+10 MΩ do multímetro carregam a saída e a leitura já é o resultado carregado, não
+$V_{Th}$. É o @sec-cap-014 outra vez, agora afetando a medição de um parâmetro.
+
+**Escolher $R_L$ de teste muito grande.** Com $R_L \gg R_{Th}$, a fórmula
+$R_{Th} = R_L(V_{oc}/V_L - 1)$ subtrai dois números quase iguais e amplifica todo
+o erro de leitura. Um erro de 0,5 % nas tensões pode virar 50 % em $R_{Th}$. Use
+$R_L$ da ordem de $R_{Th}$.
+
+**Transformar fonte e depois querer a corrente interna original.** Depois da
+transformação, as correntes dos elementos internos não são mais as reais. Calcule o
+que precisa antes de transformar.
+
+**Aplicar Thévenin a circuito não linear.** O teorema é uma consequência da
+linearidade. Um circuito com diodo não tem característica reta e não tem
+equivalente de Thévenin — tem, no máximo, um equivalente **válido em torno de um
+ponto de operação**, que é o modelo de pequenos sinais do @sec-cap-017 levado
+adiante no Volume 9.
+
+**Confundir $R_{Th}$ com a resistência medida no ohmímetro do circuito ligado.**
+Ohmímetro injeta corrente própria e só funciona em circuito **desenergizado**. Para
+medir $R_{Th}$ com o ohmímetro é preciso remover as fontes e substituí-las por
+curtos — que é a Parte 1 do laboratório, e é um circuito diferente do que estava
+funcionando.
+
+**Somar $R_{Th}$ de dois estágios como se fossem independentes.** Ligar a saída de
+um circuito à entrada de outro muda os dois: o segundo é carga do primeiro. A
+cadeia se analisa estágio a estágio, com o equivalente do anterior alimentando o
+seguinte — assunto do @sec-cap-020.
+
+## O que fica deste capítulo {#sec-018-resumo}
+
+Todo circuito linear, visto de dois terminais, é uma fonte de tensão $V_{Th}$ em
+série com $R_{Th}$ (Thévenin) ou uma fonte de corrente $I_N = V_{Th}/R_{Th}$ em
+paralelo com a mesma resistência (Norton). São duas escritas do mesmo equivalente.
+
+A razão profunda: a característica $V$–$I$ de um circuito linear é uma **reta**, e
+uma reta cabe em dois números — a tensão de circuito aberto e a corrente de
+curto-circuito, cuja razão é $R_{Th}$. A carga tem a sua própria reta, e o ponto de
+operação é a interseção.
+
+$R_{Th}$ se acha por três caminhos: zerar as fontes independentes e reduzir (o mais
+rápido no papel), $V_{oc}/I_{sc}$ (o único geral, e o da bancada), ou fonte de
+teste (para circuitos com fontes dependentes).
+
+O equivalente reproduz **exatamente** o que acontece nos terminais e **apaga
+completamente** o que acontece dentro. Dissipação interna, corrente da fonte
+original e potência de cada resistor não sobrevivem à substituição.
+
+Na bancada, $V_{Th}$ é a tensão em aberto e $R_{Th}$ sai do método da carga
+conhecida ou, mais elegantemente, do ponto em que a carga derruba a tensão à
+metade. Curto-circuitar a saída para medir $I_{sc}$ é desnecessário e, em fontes
+reais, perigoso.
+
+O teorema transforma "resolver este circuito" em "resolver esta família de
+circuitos": os dois números não dependem da carga, e trocar a carga não custa nada.
+É o que torna possível a próxima pergunta, que é a do @sec-cap-019 — qual carga
+extrai a maior potência de uma fonte dada, e por que a resposta quase nunca é a
+que se quer.
