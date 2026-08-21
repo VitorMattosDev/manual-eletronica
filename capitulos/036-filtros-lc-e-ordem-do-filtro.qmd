@@ -1,3 +1,603 @@
 # Filtros LC e ordem do filtro {#sec-cap-036}
 
-*(em elaboração)*
+Um RC cai 20 dB por década. Isso resolve muita coisa e não resolve outras tantas: uma
+fonte chaveada de 100 kHz que precisa entregar 1 mV de ondulação a partir de 1 V de
+sinal chaveado exige 60 dB de atenuação numa faixa estreita; um filtro antialiasing de
+um conversor A/D que amostra a 48 kHz precisa estar em −40 dB em 24 kHz sem tocar em
+20 kHz.
+
+A resposta a esses casos tem um nome: **ordem**. Um filtro de segunda ordem cai
+40 dB/década, um de quarta cai 80, e o preço é mais componentes e mais coisas que podem
+dar errado. Este capítulo mostra como subir de ordem, por que o caminho ingênuo — empilhar
+RCs — funciona pior do que se espera, e por que a solução clássica troca um dos
+resistores por um indutor.
+
+## Ordem, polos e inclinação {#sec-036-ordem}
+
+A **ordem** de um filtro é o número de elementos armazenadores de energia independentes:
+capacitores e indutores. Ela é também o grau do denominador da função de transferência e
+o número de polos do @sec-cap-035. As três definições coincidem, e a consequência é
+direta:
+
+$$ \boxed{\;\text{inclinação assintótica} = -20n \text{ dB/década}\;} $$
+
+para um passa-baixas de ordem $n$ — e $+20n$ dB/década para o passa-altas correspondente.
+
+| Ordem | Elementos reativos | Inclinação | A $2f_c$ | A $10f_c$ |
+|---|---|---|---|---|
+| 1 | 1 | −20 dB/déc | −7,0 dB | −20 dB |
+| 2 | 2 | −40 dB/déc | −12,3 dB | −40 dB |
+| 3 | 3 | −60 dB/déc | −18,1 dB | −60 dB |
+| 4 | 4 | −80 dB/déc | −24,1 dB | −80 dB |
+| 8 | 8 | −160 dB/déc | −48,2 dB | −160 dB |
+
+: Ordem contra atenuação, para a resposta plana (Butterworth) do @sec-036-formatos. A
+coluna de $2f_c$ é a que decide projeto real: é ali, perto do corte, que a ordem paga.
+{#tbl-036-ordem}
+
+Olhe a coluna de $2f_c$. Uma oitava acima do corte, o filtro de primeira ordem atenua
+7 dB e o de oitava ordem, 48 dB. É essa diferença — e não a inclinação distante — que
+determina se dá para separar 20 kHz de 24 kHz.
+
+::: {#fig-036-ordem}
+
+```{.tikz}
+%%| filename: 036-ordem
+%%| alt: Gráfico de Bode do módulo, com eixo horizontal logarítmico da décima parte da frequência de corte até cem vezes a frequência de corte, e eixo vertical de menos cem a mais dez decibéis. Quatro curvas de filtros passa-baixas de ordens um, dois, quatro e oito partem todas do mesmo patamar em zero decibel e todas passam por menos três decibéis na frequência de corte, mas divergem depois: a de ordem um cai vinte decibéis por década, a de ordem dois quarenta, a de ordem quatro oitenta e a de ordem oito cento e sessenta. Uma linha vertical tracejada no dobro da frequência de corte mostra a distância entre elas já uma oitava acima do corte.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log,
+  width=15.2cm, height=9.6cm,
+  xmin=0.1, xmax=100, ymin=-102, ymax=10,
+  xlabel={$f/f_c$}, ylabel={$|H|$ (dB)},
+  xtick={0.1,0.2,0.5,1,2,5,10,100},
+  xticklabels={{$0{,}1$},{$0{,}2$},{$0{,}5$},{$1$},{$2$},{$5$},{$10$},{$100$}},
+  ytick={0,-20,-40,-60,-80,-100},
+  yticklabels={{0},{$-20$},{$-40$},{$-60$},{$-80$},{$-100$}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.02,0.03)}, anchor=south west, font=\scriptsize,
+                draw=manualgray!50, legend columns=2},
+  declare function={
+    but(\x,\n)=-10*(max(2*\n*\x,0)+log10(1+10^(-abs(2*\n*\x))));},
+]
+  \addplot[auxiliar, forget plot] coordinates {(2,-102) (2,10)};
+
+  \addplot[manualblue, very thick, domain=-1:2, samples=240]
+          ({10^x}, {but(x,1)});
+  \addlegendentry{ordem 1 \quad $-20$ dB/déc}
+
+  \addplot[manualred, very thick, domain=-1:2, samples=240]
+          ({10^x}, {but(x,2)});
+  \addlegendentry{ordem 2 \quad $-40$ dB/déc}
+
+  \addplot[manualgreen, very thick, domain=-1:2, samples=240]
+          ({10^x}, {but(x,4)});
+  \addlegendentry{ordem 4 \quad $-80$ dB/déc}
+
+  \addplot[manualyellow, very thick, domain=-1:2, samples=240]
+          ({10^x}, {but(x,8)});
+  \addlegendentry{ordem 8 \quad $-160$ dB/déc}
+
+  \node[manualgray, anchor=north west, font=\scriptsize, align=left]
+       at (axis cs:2.3,8.5) {uma oitava acima do corte,\\a diferença já é de 41 dB};
+\end{axis}
+\end{tikzpicture}
+```
+
+Quatro passa-baixas de resposta plana, com a mesma $f_c$ e ordens diferentes. Todos
+passam por −3 dB no corte; o que muda é a velocidade da queda logo depois.
+
+:::
+
+## Por que empilhar RCs não é a resposta {#sec-036-cascata}
+
+A ideia óbvia é ligar dois RC em série. Ela funciona no sentido de dobrar a inclinação
+distante, e falha em duas frentes.
+
+**Primeira falha: os dois estágios se carregam.** Quando o segundo RC é ligado
+diretamente à saída do primeiro, o segundo resistor entra em paralelo com o primeiro
+capacitor. Nenhuma das duas frequências de corte é a que se calculou. Para dois RC
+iguais, a função de transferência real é
+
+$$ \mathbf{H} = \frac{1}{1 + 3\,j\omega RC + (j\omega RC)^2}, $$
+
+com um **3** onde a cascata isolada teria um 2. Esse 3 fatora em dois polos reais bem
+separados — em $0{,}38/RC$ e $2{,}62/RC$ — em vez dos dois polos coincidentes que se
+esperava. O joelho fica ainda mais arrastado, e a atenuação perto do corte, pior.
+
+**Segunda falha, e é a mais importante: dois polos na mesma frequência produzem um joelho
+pior, não melhor.** Mesmo com os estágios perfeitamente isolados por um seguidor de
+tensão, cada RC contribui −3 dB em $f_c$, e os dois somam −6 dB. A frequência de −3 dB
+do conjunto desce para $0{,}64\,f_c$, e a região de transição fica mais suave do que a de
+um filtro de primeira ordem à mesma distância relativa do corte.
+
+::: {#fig-036-cascata}
+
+```{.tikz}
+%%| filename: 036-cascata
+%%| alt: Gráfico de Bode do módulo comparando três filtros passa-baixas, com eixo horizontal logarítmico de um centésimo a dez vezes a frequência de corte. A curva azul é um único RC, caindo vinte decibéis por década. A curva vermelha são dois RC idênticos isolados por um seguidor, que cai quarenta decibéis por década mas passa por menos seis decibéis na frequência de corte, com o joelho mais arrastado. A curva verde são os mesmos dois RC ligados diretamente um no outro, que cai igualmente quarenta decibéis por década mas com o joelho ainda mais arrastado e menos nove vírgula cinco decibéis na frequência de corte. Uma curva laranja tracejada mostra o filtro LC de segunda ordem com fator de qualidade de zero vírgula sete, que mantém menos três decibéis na frequência de corte e mesmo assim cai quarenta decibéis por década.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log,
+  width=15.2cm, height=9.4cm,
+  xmin=0.05, xmax=10, ymin=-58, ymax=8,
+  xlabel={$f/f_c$}, ylabel={$|H|$ (dB)},
+  xtick={0.05,0.1,0.2,0.5,1,2,5,10},
+  xticklabels={{$0{,}05$},{$0{,}1$},{$0{,}2$},{$0{,}5$},{$1$},{$2$},{$5$},{$10$}},
+  ytick={0,-3,-6,-9.54,-20,-40},
+  yticklabels={{0},{$-3$},{$-6$},{$-9{,}5$},{$-20$},{$-40$}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.02,0.03)}, anchor=south west, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    pol(\x,\c)=-10*(max(2*(\x-\c),0)+log10(1+10^(-abs(2*(\x-\c)))));},
+]
+  \addplot[manualblue, very thick, domain=-1.3:1, samples=260]
+          ({10^x}, {pol(x,0)});
+  \addlegendentry{um RC (ordem 1)}
+
+  \addplot[manualred, very thick, domain=-1.3:1, samples=260]
+          ({10^x}, {2*pol(x,0)});
+  \addlegendentry{dois RC isolados por seguidor}
+
+  \addplot[manualgreen, very thick, domain=-1.3:1, samples=260]
+          ({10^x}, {pol(x,-0.4179)+pol(x,0.4179)});
+  \addlegendentry{dois RC em cascata direta}
+
+  \addplot[manualyellow, very thick, dashed, domain=-1.3:1, samples=260]
+          ({10^x}, {-10*log10((1-10^(2*x))^2+10^(2*x)/0.5)});
+  \addlegendentry{LC de segunda ordem, $Q = 0{,}707$}
+
+  \addplot[manualgray, only marks, mark=*, mark size=1.6pt, forget plot]
+          coordinates {(1,-3.01) (1,-6.02) (1,-9.54)};
+\end{axis}
+\end{tikzpicture}
+```
+
+Quatro maneiras de atenuar. As três curvas cheias têm a mesma $RC$; a laranja tracejada é
+o LC do @sec-036-lc, com a mesma $f_0$. Todas as de segunda ordem caem 40 dB/década ao
+longe — o que as separa é o que acontece **perto do corte**.
+
+:::
+
+A leitura da @fig-036-cascata é o resumo do capítulo. Em $10\,f_c$, as três curvas de
+segunda ordem estão praticamente juntas. Em $f_c$, elas valem −6 dB, −9,5 dB e −3 dB. O
+filtro LC é o único que consegue **as duas coisas ao mesmo tempo**: o joelho apertado de
+um filtro de primeira ordem e a queda distante de um de segunda.
+
+O que ele tem e os outros não é um par de polos **complexos conjugados**. Uma cascata de
+RCs, isolada ou não, só produz polos reais, e polos reais não conseguem manter o patamar
+até a quebra. Para polos complexos é preciso um elemento que devolva energia em vez de
+dissipá-la — isto é, um indutor. Ou, no Volume 11, uma realimentação que imite um.
+
+## O filtro LC {#sec-036-lc}
+
+::: {#fig-036-lc}
+
+```{.tikz}
+%%| filename: 036-lc
+%%| alt: Quatro esquemáticos dispostos em duas linhas de dois. No primeiro, passa-baixas LC: fonte, indutor em série, capacitor para o terra e resistor de carga em paralelo com o capacitor. No segundo, passa-altas LC: fonte, capacitor em série, indutor para o terra e resistor de carga em paralelo com o indutor. No terceiro, filtro em pi: fonte, capacitor para o terra, indutor em série, segundo capacitor para o terra e a carga. No quarto, filtro em T: fonte, indutor em série, capacitor para o terra, segundo indutor em série e a carga.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- passa-baixas LC ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,0) to[sV, l={$v_{\mathrm{in}}$}] (0,3.0);
+    \draw (0,3.0) to[L, l={$L$}] (2.8,3.0);
+    \draw (2.8,3.0) to[C, l_={$C$}] (2.8,0);
+    \draw (2.8,3.0) -- (4.4,3.0);
+    \draw (4.4,3.0) to[R, l={$R_L$}] (4.4,0);
+    \draw (0,0) -- (4.4,0);
+    \node[anchor=north, font=\scriptsize] at (2.2,-0.55) {\textbf{passa-baixas LC}};
+  \end{scope}
+
+  % ---------------- passa-altas LC ----------------
+  \begin{scope}[shift={(9.0,0)}]
+    \draw (0,0) to[sV, l={$v_{\mathrm{in}}$}] (0,3.0);
+    \draw (0,3.0) to[C, l={$C$}] (2.8,3.0);
+    \draw (2.8,3.0) to[L, l_={$L$}] (2.8,0);
+    \draw (2.8,3.0) -- (4.4,3.0);
+    \draw (4.4,3.0) to[R, l={$R_L$}] (4.4,0);
+    \draw (0,0) -- (4.4,0);
+    \node[anchor=north, font=\scriptsize] at (2.2,-0.55) {\textbf{passa-altas LC}};
+  \end{scope}
+
+  % ---------------- filtro em pi ----------------
+  \begin{scope}[shift={(0,-5.4)}]
+    \draw (0,0) to[sV, l={$v_{\mathrm{in}}$}] (0,3.0);
+    \draw (0,3.0) -- (1.8,3.0);
+    \draw (1.8,3.0) to[C, l_={$C_1$}] (1.8,0);
+    \draw (1.8,3.0) to[L, l={$L$}] (4.6,3.0);
+    \draw (4.6,3.0) to[C, l_={$C_2$}] (4.6,0);
+    \draw (4.6,3.0) -- (6.0,3.0);
+    \draw (6.0,3.0) to[R, l={$R_L$}] (6.0,0);
+    \draw (0,0) -- (6.0,0);
+    \node[anchor=north, font=\scriptsize] at (3.0,-0.55)
+         {\textbf{filtro em $\pi$} \quad (terceira ordem)};
+  \end{scope}
+
+  % ---------------- filtro em T ----------------
+  \begin{scope}[shift={(9.0,-5.4)}]
+    \draw (0,0) to[sV, l={$v_{\mathrm{in}}$}] (0,3.0);
+    \draw (0,3.0) to[L, l={$L_1$}] (2.4,3.0);
+    \draw (2.4,3.0) to[C, l_={$C$}] (2.4,0);
+    \draw (2.4,3.0) to[L, l={$L_2$}] (4.8,3.0);
+    \draw (4.8,3.0) -- (5.8,3.0);
+    \draw (5.8,3.0) to[R, l={$R_L$}] (5.8,0);
+    \draw (0,0) -- (5.8,0);
+    \node[anchor=north, font=\scriptsize] at (2.9,-0.55)
+         {\textbf{filtro em T} \quad (terceira ordem)};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+As quatro topologias LC básicas. A regra é única: **o elemento em série tem de barrar o
+que se quer barrar; o elemento em paralelo tem de curto-circuitar o que se quer barrar.**
+No passa-baixas, o indutor barra a alta e o capacitor a curto-circuita — os dois puxam
+para o mesmo lado, e é daí que vem a segunda ordem.
+
+:::
+
+Analisando o passa-baixas da figura com o divisor de impedâncias, sendo $Z_p$ o paralelo
+de $C$ com $R_L$:
+
+$$ \mathbf{H} = \frac{Z_p}{j\omega L + Z_p}
+   = \frac{1}{1 - \omega^2 LC + j\omega L / R_L}. $$
+
+Definindo a **frequência natural** e o **fator de qualidade**
+
+$$ \boxed{\;f_0 = \frac{1}{2\pi\sqrt{LC}}\;}
+   \qquad
+   \boxed{\;Q = R_L\sqrt{\frac{C}{L}} = \frac{R_L}{Z_0}\;}
+   \qquad\text{com}\qquad
+   Z_0 = \sqrt{\frac{L}{C}}, $$
+
+e escrevendo $u = f/f_0$, a expressão fica na forma canônica de segunda ordem:
+
+$$ \mathbf{H} = \frac{1}{1 - u^2 + j\,u/Q},
+   \qquad
+   |H| = \frac{1}{\sqrt{(1-u^2)^2 + (u/Q)^2}}. $$
+
+$Z_0 = \sqrt{L/C}$ é a **impedância característica** do filtro, e ela tem dimensão de
+ohm. Ela é a peça que falta na maioria das explicações: $Q$ não é uma propriedade do LC
+sozinho, é a razão entre a carga e essa impedância. **O mesmo par $L$–$C$ dá filtros
+completamente diferentes conforme o que estiver ligado na saída.**
+
+Para $L = 10$ mH e $C = 100$ nF:
+
+$$ f_0 = \frac{1}{2\pi\sqrt{10^{-2}\times 10^{-7}}} = 5{,}03 \text{ kHz},
+   \qquad
+   Z_0 = \sqrt{\frac{10^{-2}}{10^{-7}}} = 316\ \Omega. $$
+
+Com $R_L = 220\ \Omega$ (valor E24), $Q = 0{,}70$ — a resposta plana. Com
+$R_L = 1$ kΩ, $Q = 3{,}16$ e aparece um pico de 10 dB. Com $R_L = 100\ \Omega$,
+$Q = 0{,}32$ e o filtro fica lento e arredondado. Três filtros diferentes, o mesmo
+indutor e o mesmo capacitor.
+
+### O que $Q$ faz com a curva {#sec-036-formatos}
+
+::: {#fig-036-q}
+
+```{.tikz}
+%%| filename: 036-q
+%%| alt: Gráfico de Bode do módulo de um filtro passa-baixas de segunda ordem, com eixo horizontal logarítmico de um décimo a dez vezes a frequência natural. Cinco curvas correspondem a fatores de qualidade de zero vírgula três, zero vírgula cinco, zero vírgula setecentos e sete, dois e cinco. Todas convergem para a mesma reta descendente de quarenta decibéis por década nas frequências altas, mas divergem perto da frequência natural: as de fator de qualidade baixo já caíram muito antes do corte, a de zero vírgula setecentos e sete passa exatamente por menos três decibéis sem nenhum pico, e as de fator de qualidade dois e cinco produzem picos de mais seis e mais quatorze decibéis logo antes de despencar.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log,
+  width=15.2cm, height=9.6cm,
+  xmin=0.1, xmax=10, ymin=-46, ymax=20,
+  xlabel={$f/f_0$}, ylabel={$|H|$ (dB)},
+  xtick={0.1,0.2,0.5,1,2,5,10},
+  xticklabels={{$0{,}1$},{$0{,}2$},{$0{,}5$},{$1$},{$2$},{$5$},{$10$}},
+  ytick={14,6,0,-3,-20,-40},
+  yticklabels={{$+14$},{$+6$},{0},{$-3$},{$-20$},{$-40$}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.02,0.03)}, anchor=south west, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    seg(\x,\q)=-10*log10((1-10^(2*\x))^2+10^(2*\x)/(\q*\q));},
+]
+  \addplot[manualgray, very thick, domain=-1:1, samples=300]
+          ({10^x}, {seg(x,0.3)});
+  \addlegendentry{$Q = 0{,}3$ \quad muito amortecido}
+
+  \addplot[manualgreen, very thick, domain=-1:1, samples=300]
+          ({10^x}, {seg(x,0.5)});
+  \addlegendentry{$Q = 0{,}5$ \quad amortecimento crítico}
+
+  \addplot[manualblue, very thick, domain=-1:1, samples=300]
+          ({10^x}, {seg(x,0.7071)});
+  \addlegendentry{$Q = 0{,}707$ \quad Butterworth (plano)}
+
+  \addplot[manualyellow, very thick, domain=-1:1, samples=300]
+          ({10^x}, {seg(x,2)});
+  \addlegendentry{$Q = 2$}
+
+  \addplot[manualred, very thick, domain=-1:1, samples=300]
+          ({10^x}, {seg(x,5)});
+  \addlegendentry{$Q = 5$}
+
+  \addplot[auxiliar, forget plot, domain=-1:1, samples=2] ({10^x}, {-3.01});
+\end{axis}
+\end{tikzpicture}
+```
+
+O mesmo $L$ e o mesmo $C$, cinco cargas diferentes. $Q$ decide se o filtro é plano, lento
+ou ressonante — e $Q$ depende do que está ligado na saída.
+
+:::
+
+Três valores de $Q$ têm nome e merecem ser memorizados.
+
+- **$Q = 0{,}5$** — amortecimento crítico. Os dois polos são reais e coincidentes; a
+  resposta ao degrau sobe sem nenhum sobressinal, o mais rápido possível sem ultrapassar.
+- **$Q = 0{,}707$** — **Butterworth**, ou resposta maximamente plana. É o maior $Q$ que
+  ainda não produz pico nenhum na curva de módulo, e é o padrão quando não há razão para
+  outra coisa. Passa exatamente por −3 dB em $f_0$, e é a única escolha em que $f_0$ e
+  $f_c$ coincidem.
+- **$Q = 0{,}577$** — **Bessel**, ou fase maximamente linear. Atrasa todas as
+  frequências igualmente, o que preserva a forma de pulsos. O preço é um joelho mais
+  arrastado.
+
+Acima de 0,707 o filtro **ressoa**: aparece um pico de
+
+$$ |H|_{\max} = \frac{Q}{\sqrt{1 - 1/(4Q^2)}} \qquad (Q > 0{,}707), $$
+
+que vale +1,25 dB para $Q = 1$, +6,3 dB para $Q = 2$ e +14,0 dB para $Q = 5$. Filtros que
+aceitam esse pico em troca de um joelho mais apertado formam a família **Chebyshev**, em
+que o pico se chama *ripple* de banda passante e é especificado de propósito (0,1 dB,
+0,5 dB, 1 dB). Quando o pico não é de propósito, ele é um defeito — e a causa mais comum
+é a próxima seção.
+
+::: {.callout-warning}
+## Um filtro LC sem carga é um oscilador esperando acontecer
+
+Se $R_L \to \infty$, então $Q \to \infty$: em $f_0$, a saída tenderia ao infinito. Na
+prática, sobram a DCR do indutor e a ESR do capacitor para limitar, e o pico costuma
+ficar entre 20 e 40 dB.
+
+Isso tem duas consequências práticas graves.
+
+**Um filtro LC medido em aberto não é o filtro que você projetou.** Levar a ponta de
+prova de 1 MΩ na saída de um LC de 316 Ω de impedância característica é medi-lo sem
+carga. A curva mostra um pico enorme que some assim que a carga real é ligada.
+
+**Um filtro LC de entrada de fonte chaveada pode oscilar.** A carga de um conversor
+chaveado se comporta como resistência **negativa** — ele puxa mais corrente quando a
+tensão cai. Se o pico do filtro de entrada coincidir com a banda da malha de controle, o
+conjunto oscila. O amortecimento deliberado desse filtro é assunto do Volume 12, e o
+critério de Middlebrook é o nome que se procura.
+:::
+
+## Filtros em π e em T {#sec-036-piT}
+
+Acrescentando mais um elemento reativo, sobe-se para terceira ordem: 60 dB/década. As
+duas topologias da segunda linha da @fig-036-lc são as usuais.
+
+O **filtro em π** — capacitor, indutor, capacitor — é o que se vê na entrada e na saída
+de quase toda fonte chaveada, e nos filtros de linha de equipamentos com selo de
+compatibilidade eletromagnética. Ele começa e termina com um capacitor, o que é adequado
+quando as impedâncias dos dois lados são **altas**.
+
+O **filtro em T** — indutor, capacitor, indutor — é o dual, adequado quando as
+impedâncias dos dois lados são **baixas**.
+
+A escolha entre os dois não é estética: um filtro em π alimentado por uma fonte de baixa
+impedância tem o primeiro capacitor curto-circuitado pela própria fonte, e o elemento
+deixa de fazer efeito. **O elemento de entrada tem de "ver" uma impedância diferente da
+sua**, ou ele é decorativo.
+
+Em filtragem de interferência, a peça mais comum no lugar do indutor não é um indutor: é
+um **núcleo de ferrite**, cuja impedância é deliberadamente resistiva em alta frequência.
+Ele dissipa a energia da interferência em vez de refleti-la de volta — o que evita
+exatamente o pico ressonante da seção anterior. O assunto completo é do Volume 14.
+
+## Componentes reais {#sec-036-reais}
+
+Tudo acima supõe $L$ e $C$ ideais. O @sec-cap-024 e o @sec-cap-022 já mostraram que não
+são, e num filtro LC os desvios aparecem de forma especialmente clara.
+
+**A DCR do indutor limita o $Q$ e adiciona perda.** Um indutor de 10 mH com 25 Ω de DCR,
+num filtro de $Z_0 = 316\ \Omega$, sozinho já limita o $Q$ a cerca de 12. Além disso,
+essa resistência está em série com o sinal e produz queda contínua — relevante em filtro
+de saída de fonte.
+
+**A auto-ressonância corta a festa.** Acima da SRF, o indutor é capacitor e o capacitor é
+indutor (@sec-cap-030). Um filtro LC projetado para 100 kHz com um indutor cuja SRF é
+2 MHz simplesmente para de atenuar acima de 2 MHz — e o gráfico do fabricante mostra
+isso, se alguém olhar. É por essa razão que filtros de EMI usam vários estágios com
+componentes de faixas diferentes em vez de um só estágio grande.
+
+**Saturação do núcleo.** Indutor com núcleo de ferrite ou de ferro saturado perde
+indutância abruptamente, e o filtro deixa de existir justamente no pico de corrente. A
+corrente de saturação é um parâmetro de folha de dados tão importante quanto a
+indutância.
+
+**Tolerância.** Indutores comerciais têm tolerância de 10 % a 20 %; capacitores de filme,
+5 % a 10 %. Como $f_0$ vai com $1/\sqrt{LC}$, o erro de $f_0$ é aproximadamente metade da
+soma dos erros: 7 % a 15 %. Já $Q$ vai com $\sqrt{C/L}$ e sofre igual. Filtro de banda
+estreita com componentes comuns exige ajuste.
+
+## 🧪 Laboratório {#sec-036-lab}
+
+**Montar um passa-baixas LC, ver o pico aparecer e sumir só trocando o resistor de carga,
+e comparar a atenuação com a de um RC de mesma frequência de corte.**
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala CA
+- 1 gerador de sinal: celular ou computador com aplicativo gerador de tom
+- 1 indutor de 10 mH (o de maior indutância da gaveta serve, com os cálculos refeitos)
+- 1 capacitor de 100 nF, poliéster
+- Resistores de 100 Ω, 220 Ω, 1 kΩ e 10 kΩ, 1/4 W
+- 1 resistor de 330 Ω, 1/4 W (comparação com RC)
+- 1 capacitor de 100 nF adicional (comparação com RC)
+- Protoboard, jumpers, papel monolog
+:::
+
+### Parte 1 — Calcular antes
+
+1. Meça a DCR do indutor com o ohmímetro. Anote.
+2. Calcule $f_0 = 1/(2\pi\sqrt{LC})$. Para 10 mH e 100 nF, 5,03 kHz.
+3. Calcule $Z_0 = \sqrt{L/C} = 316\ \Omega$.
+4. Calcule $Q = R_L/Z_0$ para cada um dos quatro resistores: 0,32, 0,70, 3,16 e 31,6.
+5. Preveja o pico para cada um, com a fórmula de $|H|_{\max}$: sem pico, sem pico,
+   +10,1 dB e +30 dB (este último limitado pela DCR na prática).
+
+### Parte 2 — A resposta plana
+
+1. Monte o LC com $R_L = 220\ \Omega$: indutor em série do gerador ao nó de saída,
+   capacitor do nó de saída ao terra, resistor em paralelo com o capacitor.
+2. Meça $v_{\mathrm{in}}$ e $v_{\mathrm{out}}$ em 500 Hz, 1, 2, 3, 5, 7, 10, 15 e 20 kHz.
+3. Converta para dB e marque no papel monolog.
+
+| $f$ | razão | dB previsto |
+|---|---|---|
+| 500 Hz | | −0,0 |
+| 1 kHz | | −0,0 |
+| 2 kHz | | −0,1 |
+| 3 kHz | | −0,5 |
+| 5 kHz | | −3,0 |
+| 7 kHz | | −6,8 |
+| 10 kHz | | −12,2 |
+| 20 kHz | | −24,0 |
+
+: Tabela da Parte 2, para $Q = 0{,}70$. Entre 10 e 20 kHz a queda deve ser de cerca de
+10 dB, isto é, 40 dB por década — a segunda ordem, medida. {#tbl-036-lab}
+
+4. Confirme a inclinação: a queda entre 10 e 20 kHz é de uma oitava, e deve valer
+   aproximadamente 12 dB (40 dB/déc $\times$ 0,301 déc). O valor acima já inclui a
+   correção do joelho.
+
+### Parte 3 — O pico aparecendo
+
+1. Troque $R_L$ por 1 kΩ. Varra a frequência de 3 a 8 kHz procurando o **máximo** de
+   $v_{\mathrm{out}}$.
+2. Compare a tensão de pico com a tensão em 500 Hz. A razão deve ficar perto de 3,2
+   (10 dB).
+3. Troque por 10 kΩ e repita. O pico fica ainda maior, e agora quem o limita é a DCR do
+   indutor — meça e compare com a previsão da Parte 1. O resultado será **menor** que os
+   30 dB previstos, e esse desvio é a resistência do fio, não erro de medição.
+4. Volte para 100 Ω. O pico desaparece por completo e o joelho fica arredondado.
+
+Três curvas, o mesmo indutor, o mesmo capacitor. É a @fig-036-q na bancada.
+
+### Parte 4 — LC contra RC, na mesma frequência de corte
+
+1. Monte um RC com $R = 330\ \Omega$ e $C = 100$ nF: $f_c = 4{,}82$ kHz, praticamente a
+   mesma $f_0$ do LC.
+2. Meça a razão nos dois circuitos em 5, 10, 20 e 40 kHz.
+3. Compare.
+
+| $f$ | RC (dB) | LC $Q=0{,}7$ (dB) | diferença |
+|---|---|---|---|
+| 5 kHz | −3,2 | −3,0 | 0,2 dB |
+| 10 kHz | −7,2 | −12,2 | 5,0 dB |
+| 20 kHz | −12,6 | −24,0 | 11,4 dB |
+| 40 kHz | −18,4 | −36,0 | 17,6 dB |
+
+: Tabela da Parte 4. A diferença cresce 6 dB por oitava, que é a diferença entre 20 e
+40 dB por década. {#tbl-036-lab2}
+
+Esse é o argumento inteiro do capítulo, em quatro medidas: perto do corte os dois filtros
+são iguais; uma década acima, o LC atenua dez vezes mais.
+
+### Parte 5 — Medir em aberto e ver a mentira
+
+1. Com $R_L = 220\ \Omega$ montado, meça a resposta em 5 kHz.
+2. **Remova o resistor de carga** e meça de novo na mesma frequência.
+
+A tensão sobe muito — o filtro sem carga tem $Q$ limitado apenas pelas perdas. O ponto
+não é o número: é que **um filtro LC medido sem a carga real não é o filtro projetado**.
+Guarde isso para quando um filtro simulado perfeito não funcionar na placa.
+
+**Variante simulada (plano B).** No ngspice, uma varredura `.ac dec 40 100 1e6` com um
+`.step` no resistor de carga produz a @fig-036-q inteira em um comando. No Falstad, o
+efeito da Parte 5 é imediato: arraste o valor do resistor e veja o pico crescer.
+
+## 🔥 Onde Queima {#sec-036-queima}
+
+**Empilhar dois RC diretamente e esperar dois polos na mesma frequência.** O segundo
+resistor carrega o primeiro capacitor; os polos vão para $0{,}38/RC$ e $2{,}62/RC$, e o
+joelho fica pior que o previsto.
+
+**Achar que dobrar a ordem aperta o joelho.** Dois polos reais na mesma frequência dão
+−6 dB no corte, não −3. Joelho apertado exige polos complexos, isto é, indutor ou
+realimentação.
+
+**Projetar um LC sem definir a carga.** $Q = R_L/\sqrt{L/C}$. Sem $R_L$ definido, o
+filtro não está definido — o mesmo par LC serve de Butterworth, de Chebyshev ou de
+oscilador.
+
+**Medir um LC com a ponta de prova de 1 MΩ e sem carga.** O pico que aparece na tela não
+existe no circuito carregado, e a curva plana que se esperava também não aparece.
+
+**Esquecer a DCR do indutor.** Ela limita o $Q$ máximo, adiciona queda contínua e aquece.
+Num filtro de saída de fonte, é ela que define o rendimento.
+
+**Ignorar a corrente de saturação do indutor.** Núcleo saturado perde indutância no pico
+de corrente, e o filtro some exatamente quando é mais necessário.
+
+**Usar o filtro acima da SRF do indutor.** Acima da auto-ressonância o indutor é
+capacitor e o filtro para de atenuar. Filtros de EMI de banda larga são feitos de vários
+estágios por causa disso.
+
+**Montar filtro em π atrás de uma fonte de baixa impedância.** O primeiro capacitor fica
+curto-circuitado pela fonte e não faz nada. O elemento de entrada precisa ver uma
+impedância diferente da sua.
+
+**Esperar de um passa-faixa RC em cascata o desempenho de um LC.** Passa-altas mais
+passa-baixas com $f_c$ próximas dão um pico raso de −6 dB, não uma banda passante.
+Seletividade é o @sec-cap-038.
+
+**Confundir $f_0$ com $f_c$.** Só coincidem em $Q = 0{,}707$. Com $Q = 2$, o ponto de
+−3 dB fica bem acima de $f_0$; com $Q = 0{,}3$, bem abaixo.
+
+**Deixar um filtro LC de entrada de fonte chaveada sem amortecimento.** O pico do filtro
+mais a resistência negativa do conversor produzem oscilação. Amortecer é obrigatório, não
+opcional.
+
+**Aceitar a tolerância sem conferir.** Indutores de 20 % e capacitores de 10 % põem $f_0$
+a 15 % do previsto. Em filtro de banda estreita, isso é o projeto inteiro.
+
+## O que fica deste capítulo {#sec-036-resumo}
+
+A **ordem** de um filtro é o número de elementos reativos independentes, e ela fixa a
+inclinação assintótica em $-20n$ dB/década. O que decide projeto real, porém, é a
+atenuação perto do corte: a uma oitava acima, ordem 1 atenua 7 dB e ordem 8 atenua 48 dB.
+
+Empilhar RCs sobe a ordem e **piora** o joelho: dois polos reais na mesma frequência dão
+−6 dB no corte. Em cascata direta, ainda pior, porque os estágios se carregam e os polos
+se separam para $0{,}38/RC$ e $2{,}62/RC$.
+
+O filtro LC resolve porque tem polos **complexos conjugados**: mantém o patamar até a
+quebra e cai 40 dB/década depois. Na forma canônica,
+
+$$ \mathbf{H} = \frac{1}{1 - u^2 + j\,u/Q},
+   \qquad
+   f_0 = \frac{1}{2\pi\sqrt{LC}},
+   \qquad
+   Q = \frac{R_L}{\sqrt{L/C}}. $$
+
+$Q$ **não é** propriedade do par LC: é a razão entre a carga e a impedância característica
+$Z_0 = \sqrt{L/C}$. O mesmo $L$ e o mesmo $C$ dão respostas completamente diferentes com
+cargas diferentes. Sem carga, $Q \to \infty$ e o filtro ressoa.
+
+Três $Q$ com nome: 0,5 crítico, **0,707 Butterworth** (plano, e o único em que
+$f_0 = f_c$), 0,577 Bessel (fase linear). Acima de 0,707 aparece pico; quando ele é
+deliberado, chama-se Chebyshev.
+
+Terceira ordem sai com π ou T, conforme as impedâncias dos dois lados sejam altas ou
+baixas. E os componentes reais impõem seus limites: DCR, ESR, auto-ressonância e
+saturação.
+
+Ficou pendente uma pergunta grande. A @fig-036-q mostra que, com $Q$ alto, o filtro
+deixa de ser um filtro e vira outra coisa: um circuito que responde muito a uma
+frequência e quase nada às vizinhas. Isso não é um defeito a ser evitado — é o mecanismo
+de todo rádio, de todo oscilador e de todo circuito sintonizado. É a **ressonância**, e
+ela é o @sec-cap-037.
