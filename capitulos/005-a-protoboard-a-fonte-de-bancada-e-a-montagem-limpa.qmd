@@ -1,3 +1,598 @@
 # A protoboard, a fonte de bancada e a montagem limpa {#sec-cap-005}
 
-*(em elaboração)*
+Existe uma categoria de defeito que não está no circuito: está na montagem. O
+esquemático é impecável, os cálculos conferem, os componentes são os certos — e
+nada funciona, ou funciona de forma intermitente, ou funciona só quando você
+encosta o dedo naquele fio. Esse tipo de defeito consome mais horas de bancada do
+que qualquer erro de projeto, e quase todo ele nasce em três lugares: a
+protoboard, a fonte de alimentação e a arrumação dos fios.
+
+Este capítulo é sobre a infraestrutura. Nada aqui aparece no esquemático, e tudo
+aqui decide se o esquemático vai virar circuito.
+
+## O que existe dentro da protoboard {#sec-005-anatomia}
+
+A protoboard é um bloco de plástico com molas de bronze fosforoso encaixadas por
+baixo. Cada mola liga cinco furos, e o passo entre furos é de 2,54 mm — a décima
+parte de uma polegada, medida que sobreviveu à conversão do mundo inteiro ao
+sistema métrico porque toda a indústria de circuitos integrados nasceu com ela.
+
+::: {#fig-protoboard}
+
+```{.tikz}
+%%| filename: 005-protoboard
+%%| alt: Vista de cima de uma protoboard mostrando os barramentos laterais de alimentação, os grupos de cinco furos interligados, o canal central e um circuito integrado montado a cavalo sobre o canal.
+
+\begin{tikzpicture}[font=\footnotesize, x=0.35cm, y=0.35cm]
+
+  % corpo da placa
+  \draw[thick, rounded corners=3pt, fill=manualgray!7]
+       (-1.2,-1.6) rectangle (22.2,18.6);
+
+  % ---------- destaques de ligacao interna (atras dos furos) ----------
+  % coluna de 5 furos
+  \fill[manualblue!25, rounded corners=2pt] (0.55,2.6) rectangle (1.45,7.4);
+  \fill[manualblue!25, rounded corners=2pt] (0.55,10.6) rectangle (1.45,15.4);
+  % barramento superior +
+  \fill[manualred!22, rounded corners=2pt] (0.6,16.6) rectangle (20.4,17.4);
+  % barramento inferior - com interrupcao no meio
+  \fill[manualblue!22, rounded corners=2pt] (0.6,-0.4) rectangle (10.0,0.4);
+  \fill[manualblue!22, rounded corners=2pt] (11.6,-0.4) rectangle (20.4,0.4);
+
+  % ---------- furos ----------
+  % barramentos inferiores (y=0 e y=1) e superiores (y=17 e y=18)
+  \foreach \y in {0,1,17,18} {
+    \foreach \c in {1,...,20} { \draw[manualgray] (\c,\y) circle (0.16); }
+  }
+  % campo inferior J I H G F: y = 3..7 ; campo superior E D C B A: y = 11..15
+  \foreach \y in {3,4,5,6,7,11,12,13,14,15} {
+    \foreach \c in {1,...,20} { \draw[manualgray] (\c,\y) circle (0.16); }
+  }
+
+  % linhas de sinalizacao dos barramentos
+  \draw[manualblue, thick]  (0.2,0)  -- (0.55,0);
+  \draw[manualred,  thick]  (0.2,1)  -- (0.55,1);
+  \draw[manualred,  thick]  (0.2,17) -- (0.55,17);
+  \draw[manualblue, thick]  (0.2,18) -- (0.55,18);
+  \node[manualblue, left, font=\scriptsize] at (0.2,0)  {$-$};
+  \node[manualred,  left, font=\scriptsize] at (0.2,1)  {$+$};
+  \node[manualred,  left, font=\scriptsize] at (0.2,17) {$+$};
+  \node[manualblue, left, font=\scriptsize] at (0.2,18) {$-$};
+
+  % ---------- canal central ----------
+  \draw[manualgray!60, thick] (0.4,8.35) -- (20.6,8.35);
+  \draw[manualgray!60, thick] (0.4,9.65) -- (20.6,9.65);
+
+  % ---------- CI a cavalo no canal ----------
+  \fill[black!78, rounded corners=1pt] (13.6,8.3) rectangle (17.4,9.7);
+  \foreach \c in {14,15,16,17} {
+    \draw[black!78, line width=1.1pt] (\c,8.3) -- (\c,7.0);
+    \draw[black!78, line width=1.1pt] (\c,9.7) -- (\c,11.0);
+  }
+  \draw[white, thick] (13.6,9.0) circle (0.28);
+
+  % ---------- anotacoes ----------
+  \draw[manualblue, thin, -{Stealth[length=2mm]}] (-3.6,13.0) -- (0.45,13.0);
+  \node[manualblue, font=\scriptsize, align=right, anchor=east] at (-3.7,13.0)
+       {cada grupo de 5 furos\\é um único nó};
+
+  \draw[manualred, thin, -{Stealth[length=2mm]}] (23.8,17.0) -- (20.6,17.0);
+  \node[manualred, font=\scriptsize, align=left, anchor=west] at (23.9,17.0)
+       {barramento: 20 furos\\no mesmo nó};
+
+  \draw[manualred, very thick] (10.4,-0.9) -- (11.2,0.5);
+  \draw[manualred, thin, -{Stealth[length=2mm]}] (10.8,-3.0) -- (10.8,-1.0);
+  \node[manualred, font=\scriptsize, align=center, anchor=north] at (10.8,-3.1)
+       {atenção: em muitos modelos o barramento\\é interrompido no meio da placa};
+
+  \draw[manualgray, thin, -{Stealth[length=2mm]}] (23.8,9.0) -- (18.0,9.0);
+  \node[manualgray, font=\scriptsize, align=left, anchor=west] at (23.9,9.0)
+       {o canal separa os dois lados:\\o CI monta a cavalo sobre ele};
+
+  \node[manualgray, font=\scriptsize, anchor=east] at (0.2,7)  {F};
+  \node[manualgray, font=\scriptsize, anchor=east] at (0.2,3)  {J};
+  \node[manualgray, font=\scriptsize, anchor=east] at (0.2,15) {A};
+  \node[manualgray, font=\scriptsize, anchor=east] at (0.2,11) {E};
+\end{tikzpicture}
+```
+
+Vista de cima com as ligações internas destacadas. As colunas de cinco furos
+correm perpendiculares ao canal; os barramentos laterais correm paralelos a ele.
+Confundir as duas orientações é o erro de montagem número um de quem está
+começando.
+
+:::
+
+Três regiões, três comportamentos:
+
+- **O campo principal** tem colunas de cinco furos, todas perpendiculares ao
+  canal central. Cinco furos, um nó elétrico. Precisa de mais de cinco conexões
+  no mesmo ponto? Um jumper leva o nó para a coluna vizinha.
+- **O canal central** tem exatamente a largura de um encapsulamento DIP (0,3
+  polegada) e é isolante. Ele existe para que um circuito integrado monte **a
+  cavalo**, com cada fileira de pinos em colunas independentes. Um CI montado
+  fora do canal curto-circuita cada pino ao seu oposto — e o dano costuma ser
+  imediato.
+- **Os barramentos laterais** correm ao longo da placa e servem para alimentação
+  e terra. E aqui vive a armadilha mais sacana da protoboard: **em muitos
+  modelos, o barramento é interrompido no meio**. Uma metade da placa recebe
+  alimentação e a outra não, e como o corte às vezes não tem marcação visível, o
+  sintoma é um circuito parcialmente morto, sem nenhuma explicação no
+  esquemático. O laboratório deste capítulo começa exatamente por descobrir se a
+  sua placa é dessas.
+
+## O que a protoboard acrescenta sem avisar {#sec-005-parasitas}
+
+Nenhum esquemático mostra os componentes que a protoboard adiciona ao circuito.
+Eles estão sempre lá:
+
+| Parasita | Valor típico | Quando incomoda |
+|---|---|---|
+| Resistência de cada contato | 10 mΩ a 100 mΩ (nova); ohms (cansada) | correntes acima de centenas de mA |
+| Capacitância entre colunas vizinhas | 2 pF a 5 pF | sinais rápidos, alta impedância, osciladores |
+| Indutância de um jumper de 5 cm | 50 nH a 100 nH | comutação rápida, fontes chaveadas |
+| Corrente máxima por mola | cerca de 1 A | qualquer coisa de potência |
+
+: O circuito invisível que vem junto com a placa. Nenhum desses números aparece no
+esquemático, e todos os quatro participam do resultado. {#tbl-005-parasitas}
+
+Traduzindo para decisões práticas: a protoboard é excelente até uns 10 MHz e até
+umas poucas centenas de miliampères. Fora dessa caixa, ela deixa de ser neutra.
+Um oscilador de 50 MHz montado nela ou não oscila, ou oscila numa frequência que
+não é a projetada; um circuito com sinais de alta impedância acopla ruído entre
+colunas vizinhas através daqueles poucos picofarads; um estágio de potência
+aquece as molas até o contato oxidar e virar intermitente permanente.
+
+E há o defeito clássico, que merece nome: **o furo cansado**. Uma mola que
+recebeu um terminal grosso demais — perna de resistor de 2 W, fio rígido de
+1 mm², terminal de conector — abre permanentemente e nunca mais faz bom contato.
+Ela continua parecendo idêntica às outras. O sintoma é um circuito que funciona
+até alguém encostar na placa. Furo suspeito se marca com caneta e não se usa mais.
+
+## A fonte de bancada e o limite de corrente {#sec-005-fonte}
+
+Uma fonte de bancada ajustável tem dois controles, e o segundo é o que separa
+uma bancada segura de um cemitério de componentes.
+
+O primeiro é a **tensão**. O segundo é o **limite de corrente**, e ele não é um
+ajuste fino: é um fusível eletrônico e reajustável. Enquanto a carga pede menos
+que o limite, a fonte entrega a tensão programada e ignora o resto — é o **modo
+CV**, tensão constante. Quando a carga pede mais, a fonte **abandona a tensão
+programada** e passa a entregar exatamente a corrente limite, deixando a tensão
+cair até onde for preciso — é o **modo CC**, corrente constante.
+
+::: {#fig-cv-cc}
+
+```{.tikz}
+%%| filename: 005-cv-cc
+%%| alt: Curva característica de uma fonte de bancada ajustada para 5 volts com limite de 0,5 ampère, mostrando a região de tensão constante e a região de corrente constante, com duas retas de carga cruzando cada região.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=11.5cm, height=6.8cm,
+  xmin=0, xmax=0.72, ymin=0, ymax=6.3,
+  xlabel={corrente entregue (A)}, ylabel={tensão na saída (V)},
+  axis lines=left,
+  xtick={0,0.1,0.2,0.3,0.4,0.5,0.6,0.7},
+  xticklabels={$0$,$0{,}1$,$0{,}2$,$0{,}3$,$0{,}4$,$0{,}5$,$0{,}6$,$0{,}7$},
+  ytick={0,1,2,3,4,5,6},
+  yticklabels={$0$,$1$,$2$,$3$,$4$,$5$,$6$},
+  label style={font=\footnotesize}, tick label style={font=\footnotesize},
+  grid=major, grid style={manualgray!22},
+  clip=false,
+]
+  % retas de carga
+  \addplot[auxiliar, forget plot] coordinates {(0,0) (0.315,6.3)};
+  \addplot[auxiliar, forget plot] coordinates {(0,0) (0.72,1.44)};
+  \node[manualgray, font=\scriptsize, anchor=west, rotate=62] at (axis cs:0.245,5.0)
+       {carga de $20\,\Omega$};
+  \node[manualgray, font=\scriptsize, anchor=west, rotate=11] at (axis cs:0.55,1.12)
+       {carga de $2\,\Omega$};
+
+  % caracteristica da fonte
+  \addplot[curva] coordinates {(0,5) (0.5,5) (0.5,0)};
+
+  % pontos de operacao
+  \addplot[only marks, mark=*, manualred, mark size=2pt, forget plot]
+    coordinates {(0.25,5) (0.5,1)};
+  \node[manualred, font=\scriptsize, anchor=south east] at (axis cs:0.235,5.1)
+       {$0{,}25\ \mathrm{A}$ a $5\ \mathrm{V}$};
+  \node[manualred, font=\scriptsize, anchor=north west] at (axis cs:0.515,0.92)
+       {$0{,}5\ \mathrm{A}$ a $1\ \mathrm{V}$};
+
+  \node[manualblue!75!black, font=\small\bfseries, anchor=north west]
+       at (axis cs:0.04,4.7) {modo CV};
+  \node[manualblue!75!black, font=\scriptsize, anchor=north west]
+       at (axis cs:0.04,4.25) {a fonte manda na tensão};
+  \node[manualblue!75!black, font=\small\bfseries, anchor=north west]
+       at (axis cs:0.525,4.0) {modo CC};
+  \node[manualblue!75!black, font=\scriptsize, align=left, anchor=north west]
+       at (axis cs:0.525,3.55) {a fonte manda\\na corrente};
+\end{axis}
+\end{tikzpicture}
+```
+
+Característica de saída de uma fonte ajustada para 5 V com limite de 0,5 A. Uma
+carga de 20 Ω pede 0,25 A e é atendida em tensão plena. Uma carga de 2 Ω pediria
+2,5 A: a fonte recusa, entra em modo CC e entrega 0,5 A a 1 V. O ponto de
+operação é sempre o cruzamento da reta de carga com a característica da fonte.
+
+:::
+
+Essa figura contém um conceito que o livro inteiro reutiliza: o **ponto de
+operação** é onde a curva do que a fonte pode entregar cruza a reta do que a
+carga quer consumir. A ideia reaparece com diodos no Volume 8 e com transistores
+no Volume 10, e é a mesma ideia.
+
+### Pré-armar o limite antes de ligar o circuito
+
+O procedimento que evita o maior número de componentes queimados na bancada leva
+vinte segundos:
+
+1. Com a saída **desligada** e nada conectado, ajuste a tensão desejada.
+2. Curto-circuite a saída com um fio (sim, de propósito — a fonte foi feita para
+   isso).
+3. Ligue a saída. A fonte entra imediatamente em CC, e o mostrador de corrente
+   passa a exibir o limite.
+4. Ajuste o limite para o valor que o seu circuito deveria consumir, mais uma
+   folga de 20 % a 50 %.
+5. Desligue a saída, retire o curto, conecte o circuito.
+
+A partir daí, o limite funciona como um fusível que não queima: um curto na
+montagem faz a fonte cair para CC e a tensão despencar, e o LED de "CC" acende
+avisando. Nada esquenta, nada estoura, e você tem um diagnóstico imediato — **CC
+aceso quando não deveria estar é curto na montagem, sempre**.
+
+Vale registrar a consequência lógica desse comportamento, porque ela contraria o
+que se aprendeu no @sec-cap-001: com o limite ajustado para 15 mA, um LED ligado
+**direto** na fonte, sem resistor nenhum, não queima. A fonte em modo CC virou
+uma fonte de corrente, e o resistor limitador passou a ser dispensável. É o
+laboratório deste capítulo — e é uma demonstração, não uma prática recomendada,
+pela razão óbvia: basta alguém girar o botão errado.
+
+## Montagem limpa não é estética {#sec-005-montagem}
+
+Fio comprido não é feio: é **antena, indutor e ponto de falha**. As regras
+abaixo existem porque cada uma delas já custou muitas horas de depuração a
+alguém.
+
+**Código de cores, sem exceção.** Vermelho é alimentação positiva, preto é terra.
+Essa disciplina é o que permite ver um erro de polaridade sem ler o esquemático.
+Se houver tensão negativa, azul; sinais, qualquer outra cor.
+
+**Fios curtos e rentes à placa.** Jumper rígido cortado no comprimento certo,
+deitado sobre o plástico. A montagem fica legível, os fios não se soltam quando
+alguém esbarra na bancada, e o laço de corrente — a área fechada entre o fio de
+ida e o de volta — fica pequeno, o que reduz ruído captado e emitido. Fios
+flexíveis longos, dos coloridos com pontas rígidas, servem para levar sinais
+para fora da placa, não para ligar dois pontos vizinhos.
+
+**Nada passa por cima de circuito integrado.** Um dia você vai precisar tirar
+aquele CI, e não vai querer desmontar meia placa para chegar nele.
+
+**Alimentação primeiro.** Antes de qualquer componente, os jumpers que ligam os
+barramentos aos trilhos da fonte, e os jumpers que unem os barramentos dos dois
+lados da placa, se for o caso. Depois os capacitores de desacoplamento. Depois os
+circuitos integrados. Depois o resto. Essa ordem faz com que "esqueci de ligar o
+terra" seja um erro impossível.
+
+**Desacoplamento colado no componente.** Todo circuito integrado leva um
+capacitor cerâmico de 100 nF entre seus próprios pinos de alimentação e terra,
+**no furo mais próximo possível**. A razão é a linha da @tbl-005-parasitas: o
+jumper que traz alimentação da fonte tem dezenas de nanohenries de indutância, e
+indutância se opõe a variações rápidas de corrente. Quando o CI comuta e exige
+corrente em nanossegundos, a fonte está eletricamente longe demais para atender;
+quem atende é o capacitor local.
+
+::: {#fig-desacoplamento}
+
+```{.tikz}
+%%| filename: 005-desacoplamento
+%%| alt: Dois arranjos comparados: à esquerda o capacitor de desacoplamento fica junto à fonte e o laço de corrente rápida é grande; à direita ele fica junto ao circuito integrado e o laço é pequeno.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+% ---------------- painel ruim ----------------
+\begin{scope}
+  \node[manualred, font=\small\bfseries, anchor=south west] at (-0.4,3.5) {ruim};
+  \draw[thick] (0,0) -- (0,2.6);
+  \node[font=\scriptsize, anchor=east, align=right] at (-0.1,1.3) {fonte};
+  \draw[thick] (0,2.6) -- (0.9,2.6);
+  \draw[thick] (0,0)   -- (0.9,0);
+
+  % capacitor junto a fonte
+  \draw[thick] (0.9,2.6) -- (0.9,1.55);
+  \draw[thick] (0.65,1.55) -- (1.15,1.55);
+  \draw[thick] (0.65,1.25) -- (1.15,1.25);
+  \draw[thick] (0.9,1.25) -- (0.9,0);
+  \node[font=\scriptsize, anchor=west] at (1.25,1.4) {$100\,\mathrm{n}$};
+
+  % fio longo ate o CI
+  \draw[thick, decorate, decoration={coil, aspect=0.6, segment length=2.2mm, amplitude=1.1mm}]
+       (0.9,2.6) -- (3.4,2.6);
+  \draw[thick, decorate, decoration={coil, aspect=0.6, segment length=2.2mm, amplitude=1.1mm}]
+       (0.9,0) -- (3.4,0);
+  \node[manualgray, font=\scriptsize, anchor=north] at (2.15,2.42) {$L_\mathrm{fio}$};
+
+  % CI
+  \draw[thick, fill=manualgray!18, rounded corners=2pt] (3.4,0.6) rectangle (4.6,2.0);
+  \node[font=\scriptsize] at (4.0,1.3) {CI};
+  \draw[thick] (3.4,2.6) -- (4.0,2.6) -- (4.0,2.0);
+  \draw[thick] (3.4,0)   -- (4.0,0)   -- (4.0,0.6);
+
+  % laco de corrente rapida
+  \draw[manualred, very thick, dashed, rounded corners=3pt]
+       (0.5,-0.25) rectangle (4.25,2.85);
+  \node[manualred, font=\scriptsize, align=center, anchor=north] at (2.5,-0.45)
+       {laço de corrente rápida:\\grande, indutivo, ruidoso};
+\end{scope}
+
+% divisor
+\draw[manualgray!50, dashed] (5.6,-1.4) -- (5.6,3.9);
+
+% ---------------- painel bom ----------------
+\begin{scope}[xshift=6.6cm]
+  \node[manualgreen!60!black, font=\small\bfseries, anchor=south west] at (-0.4,3.5) {bom};
+  \draw[thick] (0,0) -- (0,2.6);
+  \node[font=\scriptsize, anchor=east, align=right] at (-0.1,1.3) {fonte};
+
+  % fio longo ate o CI
+  \draw[thick, decorate, decoration={coil, aspect=0.6, segment length=2.2mm, amplitude=1.1mm}]
+       (0,2.6) -- (2.5,2.6);
+  \draw[thick, decorate, decoration={coil, aspect=0.6, segment length=2.2mm, amplitude=1.1mm}]
+       (0,0) -- (2.5,0);
+  \node[manualgray, font=\scriptsize, anchor=north] at (1.25,2.42) {$L_\mathrm{fio}$};
+
+  % capacitor junto ao CI
+  \draw[thick] (2.9,2.6) -- (2.9,1.55);
+  \draw[thick] (2.65,1.55) -- (3.15,1.55);
+  \draw[thick] (2.65,1.25) -- (3.15,1.25);
+  \draw[thick] (2.9,1.25) -- (2.9,0);
+  \draw[thick] (2.5,2.6) -- (2.9,2.6);
+  \draw[thick] (2.5,0) -- (2.9,0);
+  \node[font=\scriptsize, anchor=east] at (2.6,1.4) {$100\,\mathrm{n}$};
+
+  % CI
+  \draw[thick, fill=manualgray!18, rounded corners=2pt] (3.4,0.6) rectangle (4.6,2.0);
+  \node[font=\scriptsize] at (4.0,1.3) {CI};
+  \draw[thick] (2.9,2.6) -- (4.0,2.6) -- (4.0,2.0);
+  \draw[thick] (2.9,0)   -- (4.0,0)   -- (4.0,0.6);
+
+  \draw[manualgreen!60!black, very thick, dashed, rounded corners=3pt]
+       (2.5,0.3) rectangle (4.25,2.85);
+  \node[manualgreen!60!black, font=\scriptsize, align=center, anchor=north] at (3.5,-0.45)
+       {laço pequeno: o capacitor\\atende o pico sozinho};
+\end{scope}
+
+\end{tikzpicture}
+```
+
+O mesmo capacitor de 100 nF, em dois lugares. À esquerda, o pico de corrente do
+CI precisa atravessar a indutância do fio duas vezes; à direita, ele nem chega
+perto dela. A regra é sempre a mesma: **o capacitor de desacoplamento pertence ao
+componente, não à fonte.**
+
+:::
+
+**Checklist antes de energizar.** Cinco verificações, na ordem, toda vez:
+
+1. Multímetro em continuidade entre o barramento **+** e o barramento **−**:
+   tem de dar `OL`. Se apitar, há um curto — encontre antes de ligar.
+2. Polaridade de todos os eletrolíticos e de todos os CIs (pino 1 no chanfro).
+3. Tensão da fonte ajustada e conferida **no visor**, antes de conectar.
+4. Limite de corrente pré-armado.
+5. Só então ligar, com a mão no botão e o olho no mostrador de corrente. Consumo
+   muito acima do previsto significa desligar imediatamente.
+
+## Quando a protoboard deixa de servir {#sec-005-limites}
+
+A protoboard é para experimentar, não para conservar. Um circuito que precisa
+sobreviver a ser transportado, ligado por meses, ou operar acima de 10 MHz ou de
+1 A, pede outra construção: placa padrão ilhada soldada, placa perfurada com
+fios, ou placa de circuito impresso de verdade. A transição do esquemático para a
+placa é assunto do Volume 14, e a soldagem que a viabiliza é do capítulo 83.
+
+Até lá, a regra prática é confortável: se o circuito couber em algumas dezenas de
+componentes, ficar abaixo de alguns megahertz e consumir menos de meio ampère, a
+protoboard não vai atrapalhar.
+
+## 🧪 Laboratório {#sec-005-lab}
+
+**Conhecer a sua placa e a sua fonte.** Quatro partes: mapear as ligações
+internas da protoboard, medir a resistência de contato, ver o limite de corrente
+proteger um componente que deveria queimar, e executar o checklist de
+energização num circuito real.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard
+- 1 multímetro digital
+- 1 fonte de bancada ajustável com limite de corrente
+  *(sem ela, as Partes 1, 2 e 4 funcionam com pilha de 9 V; a Parte 3 não tem
+  substituto)*
+- 10 jumpers rígidos curtos
+- 1 LED vermelho de 5 mm
+- 1 resistor de 470 Ω, 1/4 W
+- 1 resistor de 22 Ω, 1/4 W
+- 1 capacitor cerâmico de 100 nF
+- Caneta permanente de ponta fina (para marcar furos ruins)
+:::
+
+### Parte 1 — Mapear a protoboard antes de usá-la
+
+Multímetro na função de continuidade, uma ponta fixa e a outra explorando:
+
+1. **Confirme a coluna de cinco.** Ponta fixa num furo do campo principal, outra
+   nos quatro furos acima e abaixo dele na mesma coluna: apita nos quatro.
+2. **Confirme a separação lateral.** Mesma ponta fixa, agora na coluna vizinha:
+   não apita. Nenhuma coluna conversa com outra.
+3. **Confirme o canal.** Ponta fixa num furo logo acima do canal, outra no furo
+   diretamente abaixo, do outro lado: **não apita**. Se apitar, a placa está com
+   defeito e nenhum CI vai funcionar nela.
+4. **Descubra se o barramento é cortado.** Ponta fixa na extremidade esquerda do
+   barramento **+**, outra percorrendo a linha até a extremidade direita.
+   Encontrou um ponto a partir do qual parou de apitar? A sua placa tem o
+   barramento interrompido — **anote isso com caneta na própria placa**, e
+   lembre-se de instalar um jumper de continuidade sempre que precisar da linha
+   inteira.
+5. Repita o item 4 para os outros três barramentos. Não é raro que uns sejam
+   cortados e outros não na mesma placa.
+
+Essa checagem leva três minutos e se faz **uma vez na vida** de cada protoboard.
+
+### Parte 2 — Medir a resistência de contato
+
+Um contato sozinho está abaixo da resolução do multímetro, como visto no
+@sec-cap-003. A saída é medir muitos de uma vez.
+
+1. Encoste as pontas de prova uma na outra na escala de 200 Ω e anote a leitura
+   $R_\text{pontas}$.
+2. Monte uma cadeia em ziguezague: jumper da coluna 1 para a 2, da 2 para a 3, e
+   assim por diante, até usar os dez jumpers. São **20 contatos** de mola em
+   série, mais os dez fios.
+3. Meça a resistência entre as duas extremidades da cadeia: $R_\text{total}$.
+4. Estime cada contato:
+   $$ R_\text{contato} \approx \frac{R_\text{total} - R_\text{pontas}}{20}. $$
+
+Uma placa nova costuma dar entre 10 mΩ e 50 mΩ por contato. Se der muito mais,
+ou se o valor **mudar** ao pressionar os jumpers com o dedo, você acabou de
+encontrar a razão pela qual seus circuitos são intermitentes.
+
+Repita a medição pressionando cada jumper. Todo furo cujo valor muda com pressão
+recebe uma marca de caneta e sai de serviço.
+
+### Parte 3 — O limite de corrente salvando um LED
+
+Aqui a fonte de bancada faz algo que a pilha do @sec-cap-001 não conseguiria.
+
+1. Pré-arme a fonte pelo procedimento da @sec-005-fonte: tensão em **5 V**,
+   limite em **15 mA**, com a saída em curto. Confirme no visor.
+2. Desligue a saída, retire o curto e conecte **o LED sozinho**, sem resistor
+   nenhum, respeitando a polaridade.
+3. Ligue. O LED acende normalmente, a fonte indica **modo CC** e o visor de
+   tensão mostra por volta de 2 V — a tensão direta do LED, não os 5 V
+   programados.
+
+O que aconteceu: a fonte em CC deixou de ser fonte de tensão e virou fonte de
+corrente. O LED impõe a própria tensão, e a fonte obedece. É a demonstração
+inversa do "LED nunca vai direto na fonte" do @sec-cap-001 — a proibição valia
+para fonte de **tensão**, e uma fonte em CC não é uma delas.
+
+4. Agora aumente o limite lentamente para 25 mA, depois 40 mA. O brilho aumenta
+   pouco e a tensão direta sobe devagar. **Pare em 40 mA** — a maioria dos LEDs
+   de 5 mm suporta 20 mA contínuos e morre por volta de 50 mA a 80 mA.
+5. Volte para 15 mA, desligue, coloque o resistor de 470 Ω em série e religue.
+   Agora a fonte volta ao modo CV e a corrente cai para
+   $(5{,}0 - 2{,}0)/470 = 6{,}4$ mA, abaixo do limite. Os dois modos, no mesmo
+   circuito, separados por um resistor.
+
+### Parte 4 — O checklist, num circuito de verdade
+
+Monte, com disciplina de montagem limpa, o circuito da Parte 3 acrescido do
+resistor de 22 Ω em paralelo com o LED e de um capacitor de 100 nF entre os
+barramentos de alimentação, junto ao ponto de entrada:
+
+1. Jumpers de alimentação primeiro, vermelho e preto, curtos e rentes.
+2. Capacitor de 100 nF entre **+** e **−**.
+3. Continuidade entre os barramentos: tem de dar `OL`.
+4. Componentes, com o LED na polaridade correta.
+5. Fonte pré-armada em 5 V e 100 mA.
+6. Ligar, olhando o mostrador de corrente.
+
+Corrente esperada: $5{,}0/22 = 227$ mA pelo resistor de 22 Ω, mais 6,4 mA pelo
+ramo do LED. Só que 227 mA em 22 Ω dissipam
+$P = 5{,}0 \times 0{,}227 = 1{,}14$ W num resistor de 1/4 W — **quatro vezes
+acima do que ele aguenta**. Não ligue: essa última linha é o próprio exercício.
+Recalcule antes de energizar, troque o resistor de 22 Ω por um de 220 Ω
+(23 mA, 114 mW, confortável) e só então execute o checklist.
+
+O ponto do exercício é que o passo que salvou o resistor não foi nenhuma das
+cinco verificações do checklist: foi a conta de dissipação feita antes delas.
+Checklist não substitui cálculo.
+
+### Variante simulada (plano B)
+
+A Parte 3 tem equivalente no Falstad: uma fonte de corrente de 15 mA ligada
+diretamente a um LED reproduz o comportamento do modo CC e mostra a tensão se
+acomodando na tensão direta do componente. As Partes 1, 2 e 4 não têm
+equivalente — resistência de contato, barramento cortado e furo cansado não
+existem em simulador nenhum, e são justamente os defeitos que mais consomem tempo
+de bancada.
+
+## 🔥 Onde Queima {#sec-005-queima}
+
+**Circuito integrado montado fora do canal central.** Cada pino fica
+curto-circuitado ao seu oposto pela mesma coluna de cinco furos. Alimentação e
+terra se encontram, e a peça morre na primeira energização. Antes de ligar,
+confira visualmente: o canal tem de passar por baixo do meio do encapsulamento.
+
+**O barramento cortado no meio.** Metade da placa alimentada, metade não. O
+sintoma é um circuito que funciona em partes, com tensões que "somem" sem
+explicação no esquemático. Mapeie a placa uma vez, marque com caneta, instale o
+jumper de continuidade.
+
+**Passar mais de 1 A por uma mola.** A mola aquece, o bronze perde tempera, o
+contato oxida e a placa ganha um furo permanentemente ruim. Pior: o defeito
+aparece depois, em outro circuito, sem nenhuma relação aparente com o que o
+causou. Potência não vai à protoboard.
+
+**Enfiar fio grosso ou terminal grosso.** Perna de resistor de 2 W, fio rígido de
+1 mm², terminal de conector ou de potenciômetro alargam a mola de forma
+irreversível. Use fio de 0,4 mm a 0,6 mm — o mesmo diâmetro da perna de um
+resistor de 1/4 W.
+
+**Descascar fio demais.** Dois centímetros de cobre nu deitados sobre a placa
+tocam a coluna vizinha e criam um curto que ninguém vê. Descasque 6 mm a 8 mm, o
+suficiente para o furo.
+
+**Fonte sem limite de corrente pré-armado.** Sem ele a fonte entrega tudo o que
+tem, e o primeiro curto vira fumaça. Pré-armar leva vinte segundos e é a única
+proteção que existe entre um erro de montagem e um componente destruído.
+
+**Confundir modo CC com defeito na fonte.** LED de CC aceso quando o circuito
+deveria estar em CV significa: curto na montagem, componente invertido, ou
+consumo maior do que o previsto. É diagnóstico, não avaria. Desligue e procure.
+
+**Alimentar um CI de 3,3 V com a fonte em 5 V.** O limite de corrente não protege
+contra sobretensão: ele age sobre a corrente, e o componente morre por tensão bem
+antes de puxar corrente suficiente para o limite atuar. Conferir a tensão no
+visor **antes** de conectar é um passo separado, e obrigatório.
+
+**Protoboard em alta frequência.** Acima de uns 10 MHz, os poucos picofarads
+entre colunas vizinhas e as dezenas de nanohenries dos jumpers deixam de ser
+desprezíveis. O circuito montado não é mais o circuito do esquemático — e o
+sintoma típico é um oscilador que oscila na frequência errada, ou um amplificador
+que oscila sem que ninguém tenha pedido.
+
+**"Funcionou ontem."** Contato intermitente é o defeito número um da protoboard, e
+tem uma assinatura inconfundível: o comportamento muda quando alguém toca na
+placa, encosta num fio ou move a bancada. Antes de suspeitar do projeto,
+pressione cada jumper com o circuito ligado e observe. Se algo mudar, o problema
+é mecânico.
+
+**Puxar o CI com os dedos.** Os pinos entortam, e um pino entortado por baixo do
+encapsulamento parece encaixado e não está. Use extrator, ou faça alavanca
+alternada nas duas pontas com uma chave de fenda pequena.
+
+## O que fica deste capítulo {#sec-005-resumo}
+
+A protoboard tem três regiões com comportamentos diferentes — colunas de cinco,
+canal isolante e barramentos laterais que às vezes vêm cortados no meio — e
+acrescenta ao circuito quatro parasitas que nenhum esquemático mostra:
+resistência de contato, capacitância entre colunas, indutância de jumper e um
+teto de cerca de 1 A.
+
+A fonte de bancada tem dois modos, e o limite de corrente é um fusível
+reajustável que deve ser pré-armado antes de qualquer montagem nova. O ponto de
+operação é o cruzamento da característica da fonte com a reta de carga — ideia
+que volta com diodos e transistores.
+
+E a montagem limpa não é capricho: fio curto significa menos indutância, menos
+ruído, menos falha mecânica; desacoplamento junto ao componente significa laço de
+corrente pequeno; ordem de montagem e checklist significam erro encontrado antes
+de energizar.
+
+O próximo capítulo pega os componentes que vão preencher essa placa e ensina a
+lê-los: código de cores, marcação codificada, séries de valores comerciais e o
+que a tolerância realmente significa quando dois resistores se somam.
