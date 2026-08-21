@@ -1,3 +1,604 @@
 # Campo magnético e indutância {#sec-cap-023}
 
-*(em elaboração)*
+O capacitor armazena energia separando cargas: campo elétrico, tensão, e uma
+tensão que não pode saltar. O indutor faz o simétrico. Ele armazena energia num
+campo **magnético** produzido pela própria corrente que o atravessa — e a
+consequência é que a **corrente** não pode saltar.
+
+Essa simetria não é uma analogia solta. Ela é uma dualidade exata: cada equação do
+@sec-cap-021 tem uma gêmea aqui, com tensão e corrente trocadas de lugar. Aprender
+uma é aprender as duas, e este capítulo é escrito para tornar isso explícito.
+
+A diferença prática é de temperamento. O capacitor é um componente educado: ligado
+errado, ele reclama; esquecido no circuito, ele não faz nada. O indutor é violento.
+Interromper a corrente de um indutor produz uma tensão que pode ser cem vezes a de
+alimentação, e essa tensão destrói exatamente o componente que a causou. É o modo de
+falha mais comum de quem aciona relé, solenoide ou motor pela primeira vez.
+
+## A corrente cria campo magnético {#sec-023-campo}
+
+Toda corrente elétrica produz um campo magnético ao seu redor. Num fio reto, as
+linhas de campo são círculos concêntricos, e o sentido delas segue a **regra da mão
+direita**: polegar no sentido convencional da corrente, dedos no sentido do campo.
+
+A intensidade cai com a distância:
+
+$$ B = \frac{\mu_0 I}{2\pi r}, $$
+
+com $\mu_0 = 4\pi \times 10^{-7}$ H/m, a permeabilidade do vácuo. Um fio conduzindo
+1 A produz, a 1 cm de distância, $B = 2 \times 10^{-5}$ T — cerca de metade do campo
+magnético da Terra. Um único fio é um ímã fraquíssimo.
+
+Enrole esse fio, porém, e os campos de cada espira se somam dentro da bobina. Num
+solenoide longo, o campo interno é praticamente uniforme:
+
+$$ B = \mu_0\,\mu_r\,\frac{N I}{\ell}. $$
+
+Duas alavancas aparecem aqui, e são elas que fazem o componente existir: **o número
+de espiras** e a **permeabilidade relativa** $\mu_r$ do material que preenche a
+bobina. Cem espiras num núcleo de ferrite de $\mu_r = 1000$ multiplicam o campo do
+fio único por cem mil.
+
+::: {#fig-023-campo}
+
+```{.tikz}
+%%| filename: 023-campo
+%%| alt: À esquerda, um fio reto vertical conduzindo corrente para cima, com três círculos concêntricos em perspectiva representando as linhas de campo magnético ao redor, e a anotação da regra da mão direita. À direita, um solenoide desenhado como um cilindro com espiras: dentro dele o campo é uniforme e aponta da esquerda para a direita, fora dele as linhas se fecham em laços amplos, formando um polo sul na extremidade esquerda e um polo norte na direita. Estão marcados o número de espiras N, a área da seção A e o comprimento l.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- fio reto ----------------
+  \begin{scope}
+    \draw[manualred, very thick, ->, >=stealth] (0,-1.6) -- (0,2.4);
+    \node[manualred, font=\scriptsize, anchor=west] at (0.12,2.3) {$I$};
+
+    \foreach \yc/\esp in {-0.9/0.55, 0.2/0.95, 1.3/1.45}{
+      \draw[manualblue, thick] (0,\yc) ellipse ({\esp} and {0.28*\esp});
+      \draw[manualblue, thick, ->, >=stealth]
+           (\esp,\yc) arc (0:-22:{\esp} and {0.28*\esp});
+    }
+
+    \node[align=center, font=\scriptsize, anchor=north] at (0,-2.0)
+         {\textbf{regra da mão direita}\\
+          polegar na corrente,\\dedos no campo};
+    \node[manualblue, font=\scriptsize, anchor=west] at (1.6,1.3)
+         {$B = \dfrac{\mu_0 I}{2\pi r}$};
+  \end{scope}
+
+  % ---------------- solenoide ----------------
+  \begin{scope}[xshift=6.4cm]
+    % corpo
+    \draw[manualgray, thick] (0,0.85) -- (5.2,0.85);
+    \draw[manualgray, thick] (0,-0.85) -- (5.2,-0.85);
+    \draw[manualgray, thick] (0,0) ellipse (0.3 and 0.85);
+    \draw[manualgray, thick, dashed] (5.2,0) ellipse (0.3 and 0.85);
+
+    % espiras
+    \foreach \xx in {0.4,0.8,...,4.9}{
+      \draw[manualred, thick] (\xx,0.85) arc (90:270:0.3 and 0.85);
+    }
+
+    % campo interno
+    \draw[manualblue, very thick, ->, >=stealth] (0.9,0) -- (4.6,0);
+    \draw[manualblue, thick, ->, >=stealth] (0.9,0.45) -- (4.6,0.45);
+    \draw[manualblue, thick, ->, >=stealth] (0.9,-0.45) -- (4.6,-0.45);
+
+    % campo externo
+    \draw[manualblue, thick, ->, >=stealth]
+         (5.3,0.6) .. controls (6.5,2.1) and (-1.2,2.1) .. (0.05,0.6);
+    \draw[manualblue, thick, ->, >=stealth]
+         (5.3,-0.6) .. controls (6.5,-2.1) and (-1.2,-2.1) .. (0.05,-0.6);
+
+    \node[font=\scriptsize\bfseries, anchor=east] at (-0.5,0) {S};
+    \node[font=\scriptsize\bfseries, anchor=west] at (5.7,0) {N};
+
+    \draw[<->, >=stealth, thick] (0,-1.15) -- (5.2,-1.15)
+      node[midway, fill=white, font=\scriptsize] {$\ell$};
+    \draw[<->, >=stealth, thick] (-1.35,-0.85) -- (-1.35,0.85)
+      node[midway, fill=white, font=\scriptsize] {$A$};
+
+    \node[align=left, font=\scriptsize, anchor=north west] at (-1.4,-2.3)
+         {$N$ espiras, seção $A$, comprimento $\ell$\\[3pt]
+          $B = \mu_0\,\mu_r\,\dfrac{N I}{\ell}$
+          \qquad
+          $L = \mu_0\,\mu_r\,\dfrac{N^{2} A}{\ell}$};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O campo de um fio e o de uma bobina. Enrolar concentra num volume pequeno o campo
+que estava espalhado, e é isso — mais o núcleo — que transforma um fio inútil como
+ímã num componente com indutância utilizável.
+
+:::
+
+## Fluxo, Faraday e Lenz {#sec-023-faraday}
+
+O que interessa ao circuito não é o campo em si, mas o **fluxo magnético** que
+atravessa a área da bobina, $\Phi = B\,A$, medido em webers (Wb).
+
+A lei de Faraday diz que um fluxo **variável** através de uma espira induz nela uma
+tensão:
+
+$$ v = -N\,\frac{d\Phi}{dt}. $$
+
+O sinal negativo é a lei de **Lenz**, e ela é a chave conceitual do capítulo: a
+tensão induzida tem sempre a polaridade que se **opõe à variação** que a produziu.
+
+Aplicada ao próprio condutor que gerou o campo, a lei de Lenz produz a
+**auto-indução**: se a corrente na bobina tenta aumentar, o fluxo aumenta, e o fluxo
+crescente induz uma tensão que se opõe ao aumento. A bobina resiste a mudar a
+corrente que passa por ela — nos dois sentidos.
+
+Isso, e só isso, é o indutor.
+
+## A definição de indutância {#sec-023-definicao}
+
+O fluxo concatenado é proporcional à corrente, e a constante de proporcionalidade é
+a **indutância**:
+
+$$ L = \frac{N\Phi}{I}. $$
+
+A unidade é o **henry** (H): um henry é um weber-espira por ampère. Substituindo na
+lei de Faraday, obtém-se a equação que define o componente para o circuito:
+
+$$ v = L\,\frac{di}{dt}. $$
+
+Compare, lado a lado, com a do capacitor: $i = C\,dv/dt$. É a mesma equação com $v$
+e $i$ trocados, e $L$ no lugar de $C$. Todas as consequências trocam junto:
+
+- **A tensão depende da taxa de variação da corrente, não da corrente.** Um indutor
+  com 10 A constantes tem **zero volt** nos terminais (fora a resistência do fio).
+- **A corrente num indutor não pode saltar.** Um degrau de corrente exigiria tensão
+  infinita. Como nenhum circuito produz isso, a corrente sempre sobe em rampa — e a
+  inclinação é decidida pela tensão aplicada.
+- **O indutor é um integrador de tensão:**
+  $i(t) = i(0) + \frac{1}{L}\int_0^t v\,dt$. É essa forma que explica a fonte
+  chaveada do Volume 12: aplicar tensão constante num indutor faz a corrente subir em
+  rampa linear.
+
+::: {#fig-023-vldidt}
+
+```{.tikz}
+%%| filename: 023-vldidt
+%%| alt: Dois gráficos empilhados com o mesmo eixo de tempo em milissegundos, para um indutor de dez milihenries. Em cima, a corrente: sobe em rampa de zero a duzentos miliampères em dois milissegundos, fica constante por dois milissegundos, e desce a zero em um milissegundo. Embaixo, a tensão correspondente: um volt durante a rampa de subida, zero durante o patamar, e menos dois volts durante a descida. A tensão é retangular onde a corrente é uma rampa. É o espelho exato do gráfico do capacitor.
+
+\begin{tikzpicture}
+\begin{axis}[
+  name=ax1,
+  width=14.6cm, height=4.6cm,
+  ylabel={$i_L$ (mA)},
+  xmin=0, xmax=7, ymin=-40, ymax=260,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  xticklabels={},
+  ytick={0,100,200},
+]
+  \addplot[destaque, very thick] coordinates {(0,0) (2,200) (4,200) (5,0) (7,0)};
+  \node[font=\scriptsize, anchor=north west] at (axis cs:0.15,250)
+       {rampa: $200$ mA em $2$ ms};
+  \node[font=\scriptsize, anchor=south] at (axis cs:3.0,205) {constante};
+\end{axis}
+
+\begin{axis}[
+  at={(0cm,-0.9cm)}, anchor=north west,
+  width=14.6cm, height=4.6cm,
+  xlabel={$t$ (ms)}, ylabel={$v_L$ (V)},
+  xmin=0, xmax=7, ymin=-2.6, ymax=1.6,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  ytick={-2,-1,0,1},
+]
+  \addplot[curva, very thick] coordinates
+    {(0,1) (2,1) (2,0) (4,0) (4,-2) (5,-2) (5,0) (7,0)};
+  \node[font=\scriptsize, anchor=south] at (axis cs:1.0,1.05) {$+1$ V};
+  \node[font=\scriptsize, anchor=north] at (axis cs:4.5,-2.05) {$-2$ V};
+  \node[align=left, font=\scriptsize, anchor=north west]
+       at (axis cs:5.2,-0.4)
+       {$L = 10$ mH\\[2pt]
+        $v = L\,\dfrac{di}{dt}$};
+\end{axis}
+\end{tikzpicture}
+```
+
+A equação do indutor, desenhada — e propositalmente idêntica em forma à do capacitor
+(@fig-021-idvdt), com os papéis de tensão e corrente trocados. Onde a corrente sobe
+em rampa, a tensão é constante; onde a corrente é constante, a tensão é zero.
+
+:::
+
+## A geometria e o núcleo {#sec-023-geometria}
+
+Para o solenoide, a indutância sai da geometria, como a capacitância saía:
+
+$$ L = \mu_0\,\mu_r\,\frac{N^{2}A}{\ell}. $$
+
+O detalhe que mais importa é o **quadrado**: dobrar o número de espiras
+**quadruplica** a indutância, porque cada espira a mais aumenta o campo *e* corta
+mais fluxo. Não existe nada análogo no capacitor.
+
+Ponha números. Uma bobina de 100 espiras enrolada num tubo de 10 mm de diâmetro
+($A = 7{,}85 \times 10^{-5}$ m²) com 5 cm de comprimento, no ar:
+
+$$ L = 1{,}257\times10^{-6} \times 1 \times
+   \frac{100^{2} \times 7{,}85\times10^{-5}}{0{,}05} \approx 20\ \mu\text{H}. $$
+
+Cem espiras de fio para 20 µH. O henry, como o farad, é uma unidade absurdamente
+grande — e a saída é a mesma dos capacitores: um material que multiplica o efeito.
+
+::: {#fig-023-permeabilidade}
+
+```{.tikz}
+%%| filename: 023-permeabilidade
+%%| alt: Escala logarítmica horizontal de permeabilidade relativa, de um a cem mil, com marcações por material: ar e vácuo em um, pó de ferro entre dez e cem, ferrite de níquel-zinco em torno de cem, aço comum em torno de quinhentos, ferrite de manganês-zinco entre dois mil e quinze mil, ferro-silício laminado em torno de quatro mil, e mumetal acima de cinquenta mil.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \draw[thick, ->, >=stealth] (0,0) -- (15.2,0);
+
+  % 10^0 a 10^5 em 14,4 cm -> 2,88 cm/decada
+  \foreach \pot in {0,1,2,3,4,5}{
+      \pgfmathsetmacro{\xx}{\pot*2.88}
+      \draw[thick] (\xx,-0.14) -- (\xx,0.14);
+      \node[font=\scriptsize\bfseries, anchor=north] at (\xx,-0.22)
+           {$10^{\pot}$};
+  }
+
+  \foreach \pot/\yc/\dsc in {%
+    0/1.05/{ar, vácuo, cobre},
+    1.5/2.15/{pó de ferro},
+    2.1/1.05/{ferrite Ni-Zn},
+    2.7/2.15/{aço comum},
+    3.6/1.05/{ferro-silício laminado},
+    3.9/3.25/{ferrite Mn-Zn},
+    4.8/2.15/{mumetal, permalloy}}{
+      \pgfmathsetmacro{\xx}{\pot*2.88}
+      \draw[manualblue, thick] (\xx,0.16) -- (\xx,\yc-0.16);
+      \node[ponto] at (\xx,0.16) {};
+      \node[manualblue, font=\scriptsize, anchor=south] at (\xx,\yc-0.14)
+           {\dsc};
+  }
+
+  \node[font=\scriptsize, anchor=north, align=center] at (7.2,-0.9)
+       {permeabilidade relativa $\mu_r$ --- o fator pelo qual o núcleo
+        multiplica a indutância};
+
+\end{tikzpicture}
+```
+
+A permeabilidade relativa dos materiais de núcleo. A mesma bobina de 20 µH no ar
+passa a 20 mH com um núcleo de ferrite de $\mu_r = 1000$ — cinco décadas separam o
+melhor material do vácuo.
+
+:::
+
+O núcleo, porém, cobra caro por esse ganho, e o preço aparece de três formas que o
+@sec-cap-024 detalha:
+
+- **Saturação.** Acima de uma certa densidade de fluxo, o material deixa de
+  responder, $\mu_r$ despenca, e a indutância desaparece — justamente quando a
+  corrente é máxima.
+- **Perdas.** Histerese e correntes parasitas aquecem o núcleo, e as perdas crescem
+  com a frequência.
+- **Não linearidade.** $L$ passa a depender da corrente, o que quebra a
+  superposição do @sec-cap-017 dentro daquele componente.
+
+Por isso o mundo tem três famílias de núcleo, e não uma: ar (nenhum ganho, nenhuma
+saturação, uso em RF), pó de ferro e ferrite (ganho médio a alto, uso em fontes
+chaveadas e filtros), e laminado de ferro-silício (ganho alto em baixa frequência,
+uso em transformadores de rede).
+
+## Energia armazenada {#sec-023-energia}
+
+Integrando $p = vi = Li\,\frac{di}{dt}$:
+
+$$ W = \tfrac{1}{2}L\,I^{2}. $$
+
+Como no capacitor, é uma lei quadrática — mas agora na **corrente**. Um indutor de
+100 mH conduzindo 1 A guarda 50 mJ.
+
+E aqui está a diferença de temperamento anunciada na abertura. Para o capacitor, a
+pergunta perigosa é "o que acontece se eu curto-circuitar isto?". Para o indutor, é
+"o que acontece se eu **abrir** isto?".
+
+Ao abrir a chave, a corrente é forçada a ir a zero em um tempo curtíssimo — o tempo
+de separação dos contatos. Com $di/dt$ enorme, $v = L\,di/dt$ produz uma tensão
+enorme, com a polaridade que tenta manter a corrente circulando. Os 50 mJ têm de sair
+por algum lugar, e o lugar que sobra é o arco entre os contatos, ou a junção do
+transistor que fez o chaveamento.
+
+::: {#fig-023-lenz}
+
+```{.tikz}
+%%| filename: 023-lenz
+%%| alt: Circuito com uma bateria de nove volts, uma chave e a bobina de um relé em série. Em paralelo com a bobina há um LED ligado em polaridade invertida, que portanto não conduz com a chave fechada. Anotações indicam que ao fechar a chave a corrente sobe devagar e o LED fica apagado, e que ao abrir a chave a bobina inverte a polaridade e produz uma tensão muito maior que nove volts, que acende o LED por um instante.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, invert, l_={$9$ V}] (0,3.2);
+  \draw (0,3.2) to[cute open switch, l={chave}] (3.4,3.2);
+  \draw (3.4,3.2) to[L, l_={bobina do relé}, i>^={$i$}] (3.4,0);
+  \draw (3.4,0) -- (0,0);
+
+  % LED em antiparalelo
+  \draw (3.4,3.2) -- (6.6,3.2);
+  \draw (6.6,3.2) to[leD, invert, l={LED}] (6.6,0);
+  \draw (6.6,0) -- (3.4,0);
+  \node[ponto] at (3.4,3.2) {};
+  \node[ponto] at (3.4,0) {};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.6,-0.9)
+       {\textbf{chave fechada:} a corrente sobe em rampa
+        ($v = L\,di/dt$), o LED está\\
+        polarizado ao contrário e fica apagado.\\[5pt]
+        \textbf{chave aberta:} a corrente tenta ir a zero num instante.
+        A bobina\\
+        \textbf{inverte a polaridade} para mantê-la e produz dezenas
+        ou centenas de\\
+        volts --- o LED pisca, alimentado por uma tensão que não existe
+        no circuito.};
+
+  \node[manualred, font=\scriptsize, anchor=west, align=left]
+       at (7.8,0.7) {a energia $\tfrac{1}{2}LI^{2}$\\tem de sair
+                     por algum lugar};
+  \draw[manualred, thin, ->, >=stealth] (7.7,0.85) -- (6.9,1.35);
+
+\end{circuitikz}
+```
+
+A experiência que explica o indutor melhor que qualquer equação. O LED, ligado em
+polaridade invertida, é impossível de acender com a chave fechada — e pisca no
+instante em que ela abre. A tensão que o acende foi criada pelo próprio indutor,
+contra a fonte.
+
+:::
+
+## Associação {#sec-023-associacao}
+
+As regras dos indutores são as dos **resistores**, não as dos capacitores:
+
+$$ L_{\text{série}} = L_1 + L_2 + \cdots, \qquad
+   \frac{1}{L_{\text{paralelo}}} = \frac{1}{L_1} + \frac{1}{L_2} + \cdots. $$
+
+Com uma ressalva que não existe nos outros componentes: as fórmulas só valem se as
+bobinas **não estiverem acopladas**. Dois indutores próximos compartilham fluxo, e o
+resultado depende da orientação de cada um — pode ser maior ou menor que a soma.
+Isso é defeito quando não se quer, e é o transformador quando se quer (Volume 12).
+
+Na prática, indutores em série ou paralelo são raros. O que se faz é escolher ou
+enrolar o valor certo.
+
+## O indutor em regime permanente CC {#sec-023-cc}
+
+Se a corrente parou de mudar, $di/dt = 0$, logo $v = 0$.
+
+**Em regime permanente CC, um indutor é um curto-circuito.** Para achar o repouso de
+um circuito, apague os capacitores (circuito aberto) e substitua os indutores por
+fio — depois resolva a rede resistiva com o Volume 3.
+
+Isso explica um susto comum de bancada: medir a bobina de um relé com o ohmímetro e
+ler 60 Ω, ou medir um indutor de RF e ler 0,3 Ω. O instrumento não está com defeito e
+o componente não está em curto: em CC, é exatamente isso que um indutor é. O que se
+mede é a resistência do fio, e ela tem nome — **DCR**, assunto do @sec-cap-024.
+
+## A dualidade completa {#sec-023-dualidade}
+
+| | Capacitor | Indutor |
+|---|---|---|
+| Armazena energia em | campo elétrico | campo magnético |
+| Quantidade acumulada | carga $Q = CV$ | fluxo $N\Phi = LI$ |
+| Equação do componente | $i = C\,dv/dt$ | $v = L\,di/dt$ |
+| Energia | $\tfrac{1}{2}CV^{2}$ | $\tfrac{1}{2}LI^{2}$ |
+| Não pode saltar | a **tensão** | a **corrente** |
+| Em regime CC é | circuito **aberto** | **curto-circuito** |
+| Série | soma dos inversos | soma direta |
+| Paralelo | soma direta | soma dos inversos |
+| Geometria | $C = \varepsilon_0\varepsilon_r A/d$ | $L = \mu_0\mu_r N^2 A/\ell$ |
+| Perigo característico | **curto-circuitar** o componente carregado | **abrir** o componente energizado |
+| Parasita dominante | resistência série (ESR) | resistência série (DCR) |
+
+: A dualidade capacitor–indutor, item por item. Cada linha é uma tradução exata; usá-la
+economiza metade do esforço de aprender o segundo componente. {#tbl-023-dualidade}
+
+## 🧪 Laboratório {#sec-023-lab}
+
+**Fabricar campo magnético, enrolar um indutor e levar um susto controlado.** As
+Partes 1, 4 e 5 funcionam com qualquer multímetro; as Partes 2 e 3 dependem de o seu
+medir indutância, o que é menos comum — e há variante para quem não tem.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital (com escala de indutância, se houver)
+- 1 bússola pequena (ou uma agulha imantada boiando em rolha)
+- 5 m de fio de cobre esmaltado 0,3 mm (AWG 28) ou fio rígido fino
+- 1 caneta, 1 tubo plástico de 10 mm e 1 prego grande de aço (uns 10 cm)
+- 1 bastão de ferrite (de rádio AM velho) ou 1 núcleo de ferrite de fonte de sucata
+- 1 relé de 12 V com bobina acessível (ou uma bobina de campainha, ou o motor de um
+  brinquedo)
+- 1 LED vermelho e 1 LED verde
+- 1 resistor de 100 Ω, 1 de 1 kΩ, 1/4 W
+- 1 fonte de bancada com limite de corrente, ou bateria de 9 V
+- 1 ímã de neodímio pequeno
+- Clipes de papel
+- Protoboard, jumpers e fita crepe
+:::
+
+::: {.callout-warning}
+## O pico de abertura é real
+
+A Parte 5 produz, com uma bateria de 9 V, tensões de dezenas a centenas de volts nos
+terminais da bobina. A energia envolvida é minúscula e não oferece risco de choque
+com uma bobina de relé pequena, mas **é suficiente para destruir um transistor, um
+pino de microcontrolador ou a entrada do multímetro** se ela for medida na escala
+errada. Não meça o pico com o multímetro na escala de corrente, e não ligue essa
+montagem a nenhum circuito digital sem o diodo do @sec-cap-024.
+:::
+
+### Parte 1 — Ørsted, com uma bússola
+
+1. Estique um fio na direção norte-sul e ponha a bússola logo abaixo dele.
+2. Ligue o fio entre a fonte e o resistor de 100 Ω, de modo a circular uns 50 mA.
+3. Observe o desvio da agulha. Anote o sentido.
+4. Inverta a polaridade da fonte. A agulha desvia para o outro lado.
+5. Confira o resultado com a regra da mão direita.
+
+Este é literalmente o experimento de 1820 que iniciou o eletromagnetismo, e ele custa
+nada. Se a agulha mal se mexer, aumente a corrente (com o resistor de 100 Ω e 9 V são
+90 mA) ou enrole três voltas de fio em torno da bússola — três espiras triplicam o
+campo.
+
+### Parte 2 — Enrolar um indutor e prever o seu valor
+
+1. Enrole **100 espiras** de fio esmaltado no tubo de 10 mm, lado a lado, sem
+   sobrepor. Fixe as pontas com fita e raspe o esmalte dos terminais.
+2. Meça o comprimento ocupado pelas espiras e o diâmetro do tubo.
+3. Calcule a previsão: $L = \mu_0 N^2 A/\ell$. Para 10 mm de diâmetro e 5 cm de
+   comprimento, o esperado é cerca de 20 µH.
+4. Meça a indutância, se o seu multímetro tiver a escala. Meça também a resistência
+   do fio (DCR) — alguns ohms.
+
+Se a medida vier abaixo da previsão, a razão é geométrica: a fórmula supõe um
+solenoide **longo** em relação ao diâmetro. Com $\ell/d = 5$, o erro é de uns 10 %;
+com $\ell/d = 1$, chega a 50 %.
+
+### Parte 3 — A lei do quadrado
+
+1. Enrole uma segunda bobina no mesmo tubo, agora com **50 espiras**.
+2. Meça as duas. A razão deve ser próxima de 4, não de 2.
+3. Se puder, enrole uma de 200 espiras: a razão para a de 100 deve ser 4 de novo.
+
+**Sem escala de indutância no multímetro**, esta parte fica em suspenso até o
+@sec-cap-026, que mede indutância pelo período de oscilação de um circuito LC — e
+que é, de longe, o método mais preciso disponível numa bancada modesta.
+
+### Parte 4 — O núcleo
+
+1. Com a bobina de 100 espiras ligada à fonte limitada em 200 mA, conte quantos
+   clipes de papel a ponta do tubo levanta. Provavelmente zero.
+2. Enfie o prego de aço dentro do tubo e repita. Conte de novo.
+3. Troque o prego pelo bastão de ferrite e repita.
+4. Se tiver a escala de indutância, meça $L$ nas três situações, com a corrente
+   desligada.
+
+O salto entre "sem núcleo" e "com prego" é o $\mu_r$ da @fig-023-permeabilidade
+visto a olho nu. E o resultado do passo 3 costuma surpreender: a ferrite, que é
+ótima em alta frequência, levanta **menos** clipes que o prego de aço, porque a sua
+densidade de saturação é bem menor. Isso é o @sec-cap-024 batendo na porta.
+
+### Parte 5 — O pico de abertura (o experimento principal)
+
+1. Monte o circuito da @fig-023-lenz: bateria de 9 V, chave, bobina do relé em série.
+2. Ligue o LED **vermelho em polaridade invertida** em paralelo com a bobina — ânodo
+   no lado negativo. Com a chave fechada ele fica apagado; confirme.
+3. Feche a chave, espere um segundo e **abra**. O LED pisca.
+4. Repita algumas vezes, abrindo a chave depressa e devagar. Compare o brilho.
+5. Agora ligue o LED verde na polaridade **correta** em paralelo com a bobina, em
+   série com o resistor de 1 kΩ, e refaça. Ele acende com a chave fechada e apaga na
+   abertura — o oposto do vermelho.
+
+O passo 3 é o coração do capítulo: um LED que precisa de 2 V acendendo num circuito
+onde a única fonte tem 9 V, **no instante em que a fonte é desligada**, e com a
+polaridade trocada. A tensão veio do indutor, e o brilho do passo 4 mostra que ela
+depende de quão depressa a corrente foi interrompida.
+
+::: {.callout-note}
+## Por que a chave "devagar" produz menos pico
+
+Abrindo devagar, os contatos se separam com arco, o arco mantém corrente e o $di/dt$
+efetivo é menor. Abrindo depressa, a corrente cai em microssegundos e o pico é muito
+maior. Este é exatamente o motivo de relés e chaves terem vida útil especificada em
+número de operações **com carga indutiva** muito menor do que com carga resistiva:
+cada abertura queima um pouco de metal do contato.
+:::
+
+### Parte 6 — Faraday ao contrário
+
+1. Ligue a bobina de 100 espiras ao multímetro na escala de **milivolts CC** (ou
+   mV CA, se ela tiver retenção de pico).
+2. Passe o ímã de neodímio rapidamente por dentro do tubo. O multímetro registra um
+   pulso.
+3. Passe devagar. O pulso é menor.
+4. Passe o ímã com o polo invertido. O pulso muda de sinal.
+
+Fluxo variável gera tensão, e o valor depende da **velocidade** da variação, não da
+intensidade do ímã. É a lei de Faraday medida com R$ 30 de material — e é o princípio
+de todo gerador elétrico, de todo microfone dinâmico e de toda cabeça de leitura
+magnética.
+
+### Variante simulada (plano B)
+
+Simuladores tratam indutores como ideais e lineares, o que os torna perfeitos para a
+Parte 5 e inúteis para a Parte 4. No Falstad, monte bateria, chave e indutor com um
+resistor grande em paralelo (o simulador não converge com abertura ideal) e observe a
+tensão disparar na abertura; troque o resistor por um menor e veja o pico cair. É a
+demonstração numérica do que a Parte 5 mostra fisicamente.
+
+O que nenhum simulador dá: saturação de núcleo, $\mu_r$ dependente da frequência e o
+arco no contato. Essas três coisas são a diferença entre o indutor da equação e o
+indutor da gaveta.
+
+## 🔥 Onde Queima {#sec-023-queima}
+
+**Interromper corrente num indutor sem caminho de retorno.** É o modo de falha número
+um de circuitos indutivos. O transistor que aciona o relé morre por sobretensão entre
+coletor e emissor, muitas vezes na primeira vez que o circuito é desligado. A solução
+tem uma linha e custa centavos — o diodo de roda livre do @sec-cap-024.
+
+**Acionar relé, solenoide, motor ou válvula direto de um pino de microcontrolador.**
+Além da corrente, que já costuma passar do limite (@sec-cap-020), o pico de abertura
+destrói a proteção interna do pino.
+
+**Supor que a indutância é constante.** Com núcleo, $L$ cai brutalmente quando a
+corrente satura o material — e o circuito que se comportava bem em ensaio passa a
+puxar corrente sem controle no pico de carga.
+
+**Medir a bobina com o ohmímetro e achar que está em curto.** Em CC, um indutor é um
+fio. Ler 0,3 Ω numa bobina de RF é normal; é a DCR.
+
+**Enrolar um indutor com núcleo magnético num circuito com componente CC alta.** A
+corrente contínua consome sozinha boa parte da capacidade de fluxo do núcleo, e sobra
+pouco para o sinal. Núcleos com entreferro existem exatamente para isso
+(@sec-cap-024).
+
+**Pôr dois indutores próximos e supor que são independentes.** Eles compartilham
+fluxo. Duas bobinas idênticas lado a lado podem se somar ou se cancelar dependendo do
+sentido de enrolamento, e o acoplamento é uma via de ruído entre circuitos.
+
+**Esquecer que qualquer laço de fio é um indutor.** Uma malha de 10 cm × 10 cm tem
+cerca de 0,3 µH, o que é irrelevante em 1 kHz e decisivo em 10 MHz. É por isso que o
+desacoplamento do @sec-cap-022 é problema de área de laço antes de ser problema de
+capacitor.
+
+**Confiar na escala de indutância de um multímetro barato.** Ela mede em uma
+frequência fixa (1 kHz é comum) e sem corrente de polarização. Para indutor de fonte
+chaveada, o número que importa é outro.
+
+**Trabalhar com ímãs de neodímio perto de cartões, HDs e marca-passos.** Não é
+eletrônica, é segurança de bancada, e ímãs pequenos beliscam a pele com força
+surpreendente ao se atraírem.
+
+## O que fica deste capítulo {#sec-023-resumo}
+
+Corrente cria campo magnético; enrolar o fio concentra esse campo; um núcleo de alta
+permeabilidade o multiplica por mil ou mais. Fluxo variável induz tensão (Faraday), e
+a polaridade dessa tensão sempre se opõe à variação que a criou (Lenz).
+
+Aplicada ao próprio condutor, a lei de Lenz é a auto-indução, e ela se resume em
+$v = L\,di/dt$ — a equação dual de $i = C\,dv/dt$. Dela decorre tudo: tensão só
+existe quando a corrente muda; a corrente não pode saltar; o indutor integra tensão;
+e em regime permanente CC ele é um curto-circuito.
+
+A geometria dá $L = \mu_0\mu_r N^2 A/\ell$, com o número de espiras entrando ao
+**quadrado**. O núcleo é a alavanca principal, e ele cobra em saturação, perdas e não
+linearidade.
+
+A energia armazenada é $\frac{1}{2}LI^2$, e o perigo característico é o dual do
+capacitor: para o capacitor, curto-circuitar; para o indutor, **abrir**. A tensão de
+abertura é criada pelo próprio componente e destrói quem a provocou.
+
+A @tbl-023-dualidade resume o capítulo inteiro em onze linhas, e vale relê-la antes
+do @sec-cap-024, que faz com o indutor o que o @sec-cap-022 fez com o capacitor:
+apresenta o componente que existe de verdade, com DCR, capacitância parasita,
+auto-ressonância, perdas no núcleo e — o item mais importante de todos — saturação.

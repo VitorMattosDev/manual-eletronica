@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 22/104**
+**Progresso: 23/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -50,7 +50,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 - [x] 021 — Campo elétrico e capacitância — `capitulos/021-campo-eletrico-e-capacitancia.qmd`
 - [x] 022 — O capacitor real: tipos, ESR e tensão de trabalho — `capitulos/022-o-capacitor-real-tipos-esr-e-tensao-de-trabalho.qmd`
-- [ ] 023 — Campo magnético e indutância — `capitulos/023-campo-magnetico-e-indutancia.qmd`
+- [x] 023 — Campo magnético e indutância — `capitulos/023-campo-magnetico-e-indutancia.qmd`
 - [ ] 024 — O indutor real e a energia armazenada — `capitulos/024-o-indutor-real-e-a-energia-armazenada.qmd`
 - [ ] 025 — Transitórios RC: carga, descarga e constante de tempo — `capitulos/025-transitorios-rc-carga-descarga-e-constante-de-tempo.qmd`
 - [ ] 026 — Transitórios RL e circuitos RLC no domínio do tempo — `capitulos/026-transitorios-rl-e-circuitos-rlc-no-dominio-do-tempo.qmd`
