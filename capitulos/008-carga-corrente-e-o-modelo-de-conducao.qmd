@@ -1,3 +1,624 @@
 # Carga, corrente e o modelo de condução {#sec-cap-008}
 
-*(em elaboração)*
+O Volume 1 montou a bancada: instrumentos conhecidos nos seus limites, componentes
+legíveis, desenho compreensível. A partir daqui o manual constrói a física do
+ofício, e ela começa onde tudo começa — na carga elétrica.
+
+Este capítulo é o mais próximo da física pura que este livro chega. A razão é
+prática: quase todo erro conceitual que aparece depois, na bancada, é um erro
+sobre o que a corrente é. Achar que ela é consumida pelos componentes, que escolhe
+o caminho de menor resistência e ignora os outros, que os elétrons viajam da fonte
+até a lâmpada na velocidade da luz — cada uma dessas ideias produz um raciocínio
+errado num circuito real, e todas se dissolvem com um modelo de condução decente.
+
+## A carga é a grandeza primitiva {#sec-008-carga}
+
+Carga elétrica é uma propriedade da matéria, como massa. Não se define em termos
+de nada mais simples: define-se pelo que faz. Cargas de mesmo sinal se repelem,
+de sinais opostos se atraem, e a força entre elas é o que move tudo neste livro.
+
+Existem dois sinais. Chamá-los de "positivo" e "negativo" foi escolha de Benjamin
+Franklin, no século XVIII, e ele tinha cinquenta por cento de chance de acertar.
+Errou — voltaremos a isso.
+
+A unidade é o **coulomb** (C). Um coulomb corresponde a aproximadamente
+$6{,}24 \times 10^{18}$ elétrons, o que revela duas coisas de uma vez:
+
+**A carga é quantizada.** Não existe meia carga de elétron circulando por um fio.
+A carga elementar vale
+
+$$ e = 1{,}602 \times 10^{-19}\ \text{C}, $$
+
+e toda carga observável é um múltiplo inteiro dela. Na escala da eletrônica esse
+grão é fino demais para importar — mesmo 1 pA são seis milhões de elétrons por
+segundo —, e por isso tratamos a carga como contínua o tempo todo.
+
+**O coulomb é uma unidade gigantesca para carga estática e modesta para
+corrente.** Duas esferas com 1 C cada, separadas por um metro, se repeliriam com
+uma força de cerca de nove bilhões de newtons. Na prática, nenhum objeto do
+laboratório acumula mais que microcoulombs de carga estática — e mesmo assim
+descarrega com um estalo. Já como carga *em trânsito*, 1 C é o que atravessa uma
+lâmpada de LED comum em cerca de um minuto. A diferença entre carga parada e
+carga em movimento é o assunto do capítulo inteiro.
+
+Uma última propriedade, que vale como lei: **a carga se conserva**. Ela não é
+criada nem destruída; é apenas separada e transportada. Uma pilha não fabrica
+carga — ela separa carga, gastando energia química para isso. Essa conservação vai
+reaparecer no @sec-cap-013 com um nome próprio e uma equação, e é literalmente
+a primeira Lei de Kirchhoff.
+
+## Corrente é carga em trânsito {#sec-008-corrente}
+
+**Corrente elétrica é a taxa de passagem de carga por uma seção de um condutor.**
+Escolha um plano que corte o fio, conte a carga líquida que o atravessa por
+unidade de tempo, e você tem a corrente:
+
+$$ I = \frac{\Delta Q}{\Delta t}, \qquad \text{ou, no limite,} \qquad i = \frac{dQ}{dt}. $$
+
+A unidade é o **ampère** (A), e 1 A = 1 C/s. Um ampère é aproximadamente
+$6{,}24 \times 10^{18}$ elétrons cruzando aquele plano a cada segundo.
+
+Três consequências da definição, que parecem óbvias e são esquecidas o tempo todo:
+
+**Corrente é uma grandeza *através de*.** Sempre se fala em corrente *através de*
+um componente, nunca em corrente *em* um ponto — e é por isso que o amperímetro
+tem de ser inserido no caminho, interrompendo o circuito, como o @sec-cap-004
+mostrou.
+
+**Corrente tem sinal.** Ela é positiva num sentido e negativa no outro, e o
+sentido é uma escolha do analista. Um resultado negativo não é erro: significa que
+a corrente real vai no sentido oposto ao que você arbitrou.
+
+**A corrente exige um circuito fechado.** Carga que entra tem de sair, e um
+caminho que não fecha não conduz corrente permanente. Um fio solto na bancada não
+tem corrente por mais tensão que você aplique nele.
+
+::: {#fig-008-escala}
+
+```{.tikz}
+%%| filename: 008-escala-correntes
+%%| alt: Régua logarítmica de correntes de um picoampère a cem ampères, com marcações para fuga de amplificador operacional, microcontrolador em sono profundo, divisor de polarização, limiar de perigo para o corpo humano em dez miliampères, LED comum em vinte miliampères, módulo de rádio em meio ampère e motor de partida em cem ampères.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % --- eixo logaritmico: x = (expoente + 12) ---
+  \draw[thick] (-0.4,0) -- (14.7,0);
+  \foreach \e in {-12,-11,...,2}{
+    \pgfmathsetmacro{\xx}{\e+12}
+    \draw[thick] (\xx,0) -- (\xx,-0.16);
+  }
+  \foreach \e/\rot in {-12/1 pA, -9/1 nA, -6/{1 $\mu$A}, -3/1 mA, 0/1 A}{
+    \pgfmathsetmacro{\xx}{\e+12}
+    \node[anchor=north, font=\scriptsize\bfseries] at (\xx,-0.28) {\rot};
+  }
+  \node[anchor=north, font=\scriptsize\bfseries] at (14,-0.28) {100 A};
+
+  % --- marcadores acima ---
+  \foreach \e/\txt in {%
+      -12/{fuga de entrada de\\um amp-op CMOS},
+      -8/{fuga por placa\\suja ou úmida},
+      -4/{LED indicador de\\alto rendimento},
+      0/{porta de carregador\\USB no limite}}{
+    \pgfmathsetmacro{\xx}{\e+12}
+    \draw[manualblue, thin] (\xx,0) -- (\xx,1.15);
+    \fill[manualblue] (\xx,0) circle (2.2pt);
+    \node[manualblue, font=\scriptsize, align=center, anchor=south] at (\xx,1.2) {\txt};
+  }
+
+  % --- marcadores abaixo ---
+  \foreach \e/\txt in {%
+      -10/{corrente de escuro\\de um fotodiodo},
+      -6/{microcontrolador\\em sono profundo},
+      -3/{divisor de\\polarização},
+      2/{motor de partida\\de automóvel}}{
+    \pgfmathsetmacro{\xx}{\e+12}
+    \draw[manualgray, thin] (\xx,0) -- (\xx,-1.15);
+    \fill[manualgray] (\xx,0) circle (2.2pt);
+    \node[manualgray, font=\scriptsize, align=center, anchor=north] at (\xx,-1.2) {\txt};
+  }
+
+  % --- limiar de perigo ---
+  \pgfmathsetmacro{\xd}{-2+12}
+  \draw[manualred, very thick] (\xd,-0.5) -- (\xd,0.5);
+  \fill[manualred] (\xd,0) circle (2.6pt);
+  \node[manualred, font=\scriptsize\bfseries, align=left, anchor=north west]
+       at (\xd+0.18,-0.72) {10 mA: limiar de\\perigo (cap. 002)};
+
+\end{tikzpicture}
+```
+
+Quinze décadas de corrente na mesma régua. A eletrônica de bancada vive quase
+inteira entre 1 mA e 1 A, mas o mesmo multímetro tem de sobreviver aos dois
+extremos. O marcador vermelho é o valor do @sec-cap-002: a corrente que já não se
+solta do condutor não é grande — está a menos de uma década do LED do painel.
+
+:::
+
+## O sentido convencional e o erro de Franklin {#sec-008-sentido}
+
+Franklin decidiu que o fluido elétrico ia do corpo "com excesso" para o corpo "com
+falta", e batizou de positivo o que tinha excesso. A partir daí, todo mundo
+convencionou que **a corrente flui do terminal positivo para o negativo através do
+circuito externo**.
+
+Cento e cinquenta anos depois, J. J. Thomson descobriu o elétron — e ele carrega
+carga *negativa*. Nos metais, os portadores móveis são exatamente os elétrons.
+Logo, no fio, as partículas se deslocam **na direção contrária** à do sentido
+convencional da corrente.
+
+A convenção nunca foi corrigida, e não precisa ser. Uma corrente de carga positiva
+para a direita é matematicamente idêntica a uma corrente de carga negativa para a
+esquerda: mesma taxa de transporte de carga, mesmo sinal, mesmas equações. **Toda
+a análise de circuitos deste manual usa o sentido convencional, e nada muda.**
+
+Onde a distinção importa, e importa mesmo:
+
+- **Semicondutores** (Volume 8 em diante). Ali existem dois tipos de portador —
+  elétrons e lacunas — e eles se movem em sentidos opostos. O sinal deixa de ser
+  irrelevante.
+- **Eletroquímica**: galvanoplastia, corrosão, carga de baterias. Quem vai para o
+  eletrodo é a espécie física, não a convenção.
+- **Tubos de raios catódicos, feixes de íons, plasma**: o objeto que se move é
+  visível e tem sinal próprio.
+
+::: {#fig-008-deriva}
+
+```{.tikz}
+%%| filename: 008-deriva
+%%| alt: Corte de um condutor metálico mostrando a rede de íons positivos fixos, elétrons livres derivando lentamente para a esquerda em direção ao terminal positivo, e a seta do sentido convencional da corrente apontando para a direita, com anotações de velocidade de deriva de sete centésimos de milímetro por segundo e velocidade de propagação do campo de duzentos mil quilômetros por segundo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- corpo do condutor ----------
+  \draw[fill=manualgray!10, draw=manualgray, thick] (0,0) rectangle (12,2.4);
+  \draw[manualgray, thick] (-1.1,0.9) -- (0,0.9);
+  \draw[manualgray, thick] (-1.1,1.5) -- (0,1.5);
+  \draw[manualgray, thick] (12,0.9) -- (13.1,0.9);
+  \draw[manualgray, thick] (12,1.5) -- (13.1,1.5);
+  \node[anchor=east, align=right, font=\scriptsize] at (-1.2,1.2) {ao terminal\\$+$ da fonte};
+  \node[anchor=west, align=left, font=\scriptsize] at (13.2,1.2) {ao terminal\\$-$ da fonte};
+
+  % ---------- rede de ions positivos fixos ----------
+  \foreach \x in {0.6,1.6,...,11.6}{
+    \foreach \y in {0.45,1.2,1.95}{
+      \node[circle, draw=manualred, fill=manualred!12, inner sep=0.9pt,
+            font=\tiny] at (\x,\y) {$+$};
+    }
+  }
+
+  % ---------- eletrons livres, derivando para a esquerda ----------
+  \foreach \x/\y in {1.15/0.82, 2.65/1.58, 3.9/0.82, 5.15/1.58, 6.4/0.82,
+                     7.65/1.58, 8.9/0.82, 10.15/1.58, 11.15/0.82}{
+    \draw[manualblue, thin, -{Stealth[length=1.5mm]}] (\x-0.2,\y) -- (\x-0.62,\y);
+    \node[circle, draw=manualblue, fill=manualblue!30, inner sep=0.9pt,
+          font=\tiny] at (\x,\y) {$-$};
+  }
+
+  % ---------- secao de referencia ----------
+  \draw[manualgreen!55!black, thick, dashed] (7.0,-0.35) -- (7.0,2.75);
+  \node[manualgreen!55!black, font=\scriptsize, align=center, anchor=north]
+       at (7.0,-0.45) {seção de referência:\\$I = \Delta Q / \Delta t$ aqui};
+
+  % ---------- sentido convencional ----------
+  \draw[manualred, line width=2.2pt, -{Stealth[length=3.5mm]}] (2.2,3.35) -- (9.8,3.35);
+  \node[manualred, font=\small\bfseries, anchor=south] at (6.0,3.5)
+       {sentido convencional da corrente $I$};
+
+  % ---------- deriva real ----------
+  \draw[manualblue, line width=1.6pt, {Stealth[length=3mm]}-] (2.2,-2.3) -- (9.8,-2.3);
+  \node[manualblue, font=\small\bfseries, anchor=north] at (6.0,-2.45)
+       {deriva real dos elétrons};
+
+  % ---------- numeros ----------
+  \node[font=\scriptsize, align=left, anchor=north west] at (-1.4,-3.3)
+       {velocidade de deriva em fio de 1 mm$^2$ com 1 A:\\
+        cerca de \textbf{0,07 mm/s} --- 25 cm por hora};
+  \node[font=\scriptsize, align=left, anchor=north west] at (7.2,-3.3)
+       {velocidade com que o campo se estabelece:\\
+        cerca de \textbf{200 000 km/s} --- dois terços de $c$};
+
+\end{tikzpicture}
+```
+
+O modelo de condução num metal. A rede de íons positivos está fixa; os elétrons de
+condução movem-se caoticamente a centenas de quilômetros por segundo em todas as
+direções, e o campo aplicado apenas superpõe a essa agitação uma deriva lentíssima
+num sentido único. É essa deriva, e só ela, que constitui a corrente.
+
+:::
+
+## Por que a lâmpada acende na hora {#sec-008-velocidade}
+
+O número da figura anterior costuma provocar desconfiança, então vale a conta. Num
+fio de cobre de 1 mm² de seção conduzindo 1 A:
+
+$$ v_d = \frac{I}{n\,A\,e}, $$
+
+onde $n \approx 8{,}5 \times 10^{28}$ elétrons livres por metro cúbico é a
+densidade de portadores do cobre. Substituindo:
+
+$$ v_d = \frac{1}{8{,}5 \times 10^{28} \times 10^{-6} \times 1{,}6 \times 10^{-19}}
+       \approx 7{,}4 \times 10^{-5}\ \text{m/s}. $$
+
+São 0,074 mm/s. Um elétron que sai da pilha leva mais de três horas para percorrer
+um metro de fio.
+
+E, no entanto, o LED acende no instante em que você fecha a chave. As duas coisas
+convivem porque **o que se propaga depressa não é o elétron, é o campo**. O
+condutor já está cheio de elétrons livres antes de você ligar qualquer coisa; o
+que a fonte faz é estabelecer um campo elétrico ao longo dele, e esse campo se
+propaga a uma fração significativa da velocidade da luz — tipicamente 60 a 70 %
+de $c$ num cabo comum. Todos os elétrons do fio, do começo ao fim, começam a
+derivar quase ao mesmo tempo.
+
+A analogia que funciona é a de um cano já cheio de água: abrir a torneira de um
+lado faz sair água do outro imediatamente, e não é a mesma água. A analogia
+hidráulica vale para isso e para pouco mais — ela erra feio em capacitância,
+indutância e comportamento em alta frequência, e é por isso que este livro a usa
+com parcimônia.
+
+Duas consequências práticas, uma para agora e uma para depois:
+
+- **Agora:** não faz sentido raciocinar em termos de "os elétrons chegando ao
+  componente". Energia é entregue pelo campo, essencialmente ao mesmo tempo em
+  todo o circuito.
+- **Depois:** a propagação finita do sinal deixa de ser detalhe quando o tempo de
+  trânsito se aproxima do tempo de subida do sinal. Numa trilha de 10 cm, isso
+  são cerca de 0,5 ns — irrelevante em áudio, decisivo em lógica rápida. É o
+  assunto de integridade de sinal, no Volume 14.
+
+## Condutores, isolantes e o meio-termo caro {#sec-008-materiais}
+
+O que separa um condutor de um isolante é a existência de elétrons livres. Num
+metal, cada átomo cede um ou mais elétrons para uma nuvem coletiva; num isolante,
+todos os elétrons estão presos a ligações químicas.
+
+A grandeza que mede isso é a **resistividade** $\rho$, e ela tem a maior amplitude
+de valores de qualquer propriedade física comum — mais de vinte e quatro ordens de
+grandeza entre o melhor condutor e o melhor isolante:
+
+| Material | $\rho$ ($\Omega\cdot$m) a 20 °C | Papel na bancada |
+|---|---|---|
+| Prata | $1{,}6 \times 10^{-8}$ | contatos de relé, solda especial |
+| Cobre | $1{,}7 \times 10^{-8}$ | fios, trilhas de placa |
+| Alumínio | $2{,}8 \times 10^{-8}$ | dissipadores, cabos de potência |
+| Estanho-chumbo (solda) | $1{,}5 \times 10^{-7}$ | juntas |
+| Grafite | $\sim 10^{-5}$ | resistor de carvão, escova de motor |
+| Silício puro | $\sim 2{,}3 \times 10^{3}$ | matéria-prima do Volume 8 |
+| Vidro | $10^{10}$ a $10^{14}$ | isolação |
+| FR-4 (placa de circuito) | $\sim 10^{12}$ | substrato |
+| PTFE (teflon) | $> 10^{22}$ | isolação de alta impedância |
+
+: Resistividade de materiais comuns. Entre o cobre e o teflon há trinta ordens de
+grandeza — a razão entre eles é maior que a razão entre o diâmetro de um próton e
+o diâmetro do Sistema Solar. {#tbl-008-resistividade}
+
+Três observações que valem mais que a tabela:
+
+**Nenhum isolante é perfeito.** Todos conduzem um pouco. Numa placa limpa e seca,
+a fuga entre duas trilhas vizinhas é da ordem de picoampères e não importa. Numa
+placa com resíduo de fluxo e umidade, sobe para nanoampères ou microampères — e
+passa a importar muito num circuito de alta impedância. É por isso que placas de
+instrumentação são lavadas.
+
+**O silício puro não é nem uma coisa nem outra**, e é exatamente esse
+meio-termo que o torna útil: dopando-o, controla-se a resistividade em muitas
+ordens de grandeza, e aplicando um campo controla-se a dopagem efetiva. Todo o
+Volume 8 em diante vive disso.
+
+**Resistividade depende da temperatura.** Nos metais ela sobe com o aquecimento
+(mais agitação da rede, mais colisões); nos semicondutores e no carbono, desce
+(mais portadores liberados). O capítulo @sec-cap-010 quantifica isso, e o
+@sec-cap-011 mostra por que a combinação de "resistência que sobe com a
+temperatura" e "temperatura que sobe com a potência dissipada" às vezes é estável
+e às vezes é uma fuga térmica.
+
+## Densidade de corrente: o que o fio aguenta {#sec-008-densidade}
+
+Um fio não tem um limite de corrente; tem um limite de **densidade de corrente**:
+
+$$ J = \frac{I}{A}, $$
+
+normalmente em A/mm². O que aquece o condutor é a potência dissipada por unidade
+de volume, e ela cresce com $J^2$. Dobrar a corrente num mesmo fio quadruplica o
+aquecimento.
+
+Valores de projeto que servem de referência na bancada:
+
+| Situação | Densidade admissível |
+|---|---|
+| Fio em chicote fechado, dentro de caixa | 3 a 4 A/mm² |
+| Fio isolado ao ar livre | 6 a 8 A/mm² |
+| Trilha de placa, cobre de 35 µm, camada externa | ver nota abaixo |
+| Fusível (projetado para derreter) | dezenas de A/mm² |
+
+: Densidades de corrente usuais. Nenhum desses números é uma lei — todos dependem
+da temperatura ambiente, do isolamento e de quanto aquecimento você aceita.
+{#tbl-008-densidade}
+
+Para trilhas de placa a regra é diferente, porque o cobre é fino e largo e troca
+calor com o laminado. A referência prática, com cobre de 35 µm (1 oz) e aceitando
+10 °C de elevação numa camada externa: cerca de 0,3 mm de largura para 1 A,
+0,7 mm para 2 A, 1,2 mm para 3 A. Não é linear, e o assunto tem tratamento próprio
+no Volume 14 — por ora, guarde que trilha de sinal e trilha de potência não têm a
+mesma largura por acaso.
+
+O caso extremo e útil é o **fusível**: um condutor deliberadamente subdimensionado,
+para que ele seja o primeiro elo a falhar. Todo circuito tem um elemento que vai
+queimar primeiro; o fusível é o único caso em que você escolheu qual.
+
+## Corrente contínua e corrente alternada {#sec-008-cccca}
+
+**Corrente contínua (CC)** é a que não inverte de sentido. Ela não precisa ser
+constante — a corrente pulsante que sai de um retificador é CC, e varia de zero ao
+pico sessenta vezes por segundo. O que define é o sinal não mudar.
+
+**Corrente alternada (CA)** inverte periodicamente. A rede elétrica brasileira
+alterna 60 vezes por segundo; um sinal de áudio alterna de forma irregular
+milhares de vezes por segundo; um sinal de rádio, bilhões.
+
+Este volume e os dois seguintes tratam exclusivamente de CC, e não por
+conservadorismo: as leis de Kirchhoff, os teoremas de rede e a análise nodal são
+todos formulados primeiro em CC porque nesse regime não há defasagem entre tensão
+e corrente, e os números são reais. Quando a Fase 2 introduzir o CA, o ferramental
+inteiro será reaproveitado — trocando números reais por complexos, e resistência
+por impedância.
+
+É essa distinção que justifica as duas escalas separadas do multímetro do
+@sec-cap-004. Medir CA na escala de CC dá aproximadamente zero (o valor médio de
+uma senoide é nulo); medir CC na escala de CA dá aproximadamente zero também, em
+quase todo instrumento, porque a entrada é acoplada por capacitor.
+
+## Quatro coisas que a corrente não é {#sec-008-mitos}
+
+**A corrente não é consumida.** Esta é a confusão número um, e é a que mais
+atrapalha depois. Num resistor com 10 mA entrando por um terminal, saem 10 mA pelo
+outro. O que o resistor consome é **energia**, convertendo-a em calor; a carga
+segue intacta. Um LED brilhando não "gasta" corrente. Essa afirmação, escrita como
+equação, é a Lei de Kirchhoff das Correntes do @sec-cap-013.
+
+**A corrente não escolhe o caminho de menor resistência.** Ela percorre **todos**
+os caminhos disponíveis, distribuindo-se entre eles na proporção inversa das
+resistências. O ditado só é verdadeiro no caso extremo em que um caminho é
+milhares de vezes melhor que os outros — que é justamente o caso do curto-circuito,
+de onde o ditado veio. O caso geral é o divisor de corrente do @sec-cap-014.
+
+**A fonte não "empurra" uma corrente fixa no circuito.** Uma fonte de tensão
+estabelece uma diferença de potencial; quem determina a corrente é o conjunto
+fonte-mais-circuito. Ligue 9 V a 10 kΩ e circulam 0,9 mA; ligue os mesmos 9 V a
+10 Ω e circulam 0,9 A. A pilha não mudou. (A fonte de corrente faz o contrário — e
+é por isso que são símbolos diferentes no @sec-cap-007.)
+
+**Corrente não é a mesma coisa que perigo.** Uma fonte de 5 V capaz de 20 A não dá
+choque em ninguém: a pele não deixa passar corrente significativa com apenas 5 V.
+Já 230 V de uma tomada limitada a 10 A é letal. O que fere é a corrente que
+efetivamente atravessa o corpo, e ela depende da tensão e da resistência do
+caminho — como o @sec-cap-002 detalhou. A capacidade da fonte só diz o que ela
+*poderia* entregar.
+
+## 🧪 Laboratório {#sec-008-lab}
+
+**A corrente é a mesma em toda a série, e o amperímetro não é de graça.** Três
+experimentos curtos que estabelecem, com o multímetro, tudo o que este capítulo
+afirmou em texto.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada ajustável ou 1 pilha de 9 V com suporte
+- 1 multímetro digital (com escala de corrente e escala de resistência)
+- 1 resistor de 470 Ω, 1/4 W
+- 1 resistor de 1 kΩ, 1/4 W
+- 1 resistor de 2,2 kΩ, 1/4 W
+- 1 resistor de 10 kΩ, 1/4 W
+- 1 resistor de 100 Ω, 1/4 W
+- 1 LED vermelho de 5 mm
+- Opcional: 1 segundo multímetro (torna a Parte 3 muito mais direta)
+:::
+
+::: {.callout-note}
+## Antes de começar
+
+Revise o procedimento de medição de corrente do @sec-cap-004: cabo vermelho na
+entrada de corrente, circuito **aberto** para inserir o instrumento, e cabo de
+volta à entrada de tensão assim que terminar. A maior parte dos multímetros
+destruídos no mundo morreu ligada em paralelo com uma fonte, com o cabo esquecido
+na entrada de mA.
+:::
+
+::: {#fig-008-amperimetro}
+
+```{.tikz}
+%%| filename: 008-amperimetro
+%%| alt: Dois esquemáticos lado a lado. À esquerda, o amperímetro inserido em série com a fonte de nove volts e o resistor de quatrocentos e setenta ohms, marcado como correto. À direita, o mesmo amperímetro ligado em paralelo com a fonte, marcado em vermelho como curto-circuito através do shunt interno.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---------- painel A: em serie (certo) ----------
+  \begin{scope}
+    \draw (0,0) to[battery1, l={$9\,\mathrm{V}$}] (0,3)
+                to[ammeter] (3,3)
+                to[R, l={$470\,\Omega$}] (3,0) -- (0,0);
+    \draw (1.5,0) -- (1.5,-0.45);
+    \node[ground] at (1.5,-0.45) {};
+    \node[manualgreen!55!black, font=\small\bfseries, anchor=north]
+         at (1.5,-1.35) {em série: correto};
+    \node[font=\scriptsize, align=center, anchor=north] at (1.5,-1.85)
+         {o instrumento faz parte\\do laço; mede 19 mA};
+  \end{scope}
+
+  % ---------- painel B: em paralelo (errado) ----------
+  \begin{scope}[xshift=8cm]
+    \draw (0,0) to[battery1, l={$9\,\mathrm{V}$}] (0,3) -- (3,3)
+                to[R, l={$470\,\Omega$}] (3,0) -- (0,0);
+    \draw (0,3) -- (-2,3) to[ammeter] (-2,0) -- (0,0);
+    \fill (0,3) circle (2pt);
+    \fill (0,0) circle (2pt);
+    \draw[manualred, line width=1.6pt] (-2,1.5) circle (0.6);
+    \draw[manualred, line width=1.6pt] (-2.42,1.92) -- (-1.58,1.08);
+    \node[manualred, font=\small\bfseries, align=center, anchor=north]
+         at (0.5,-1.35) {em paralelo: curto-circuito};
+    \node[font=\scriptsize, align=center, anchor=north] at (0.5,-1.85)
+         {o shunt interno tem frações de ohm;\\a corrente só é limitada pela fonte};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+A única diferença entre medir e destruir. O amperímetro é projetado para ter
+resistência quase nula — é isso que o torna inofensivo em série e catastrófico em
+paralelo. O voltímetro é o oposto exato, e é por isso que os dois não são
+intercambiáveis.
+
+:::
+
+### Parte 1 — A corrente é a mesma em todo ponto de uma série
+
+1. Monte, em série, a fonte ajustada em 9,0 V, o resistor de 470 Ω, o resistor de
+   1 kΩ e o LED. Confirme que o LED acende (se não acender, ele está invertido —
+   inverta).
+2. Calcule a corrente esperada. Supondo 2,0 V de queda no LED:
+   $$ I = \frac{9{,}0 - 2{,}0}{470 + 1000} = \frac{7{,}0}{1470} \approx 4{,}8\ \text{mA}. $$
+3. Abra o circuito **entre a fonte e o resistor de 470 Ω** e insira o amperímetro.
+   Anote o valor.
+4. Feche esse ponto e abra o circuito **entre os dois resistores**. Meça de novo.
+5. Repita **entre o resistor de 1 kΩ e o LED**, e depois **entre o LED e o
+   retorno da fonte**.
+
+As quatro medições devem coincidir dentro da resolução do instrumento. Não há um
+ponto do laço em que "sobre" ou "falte" corrente, apesar de o LED estar
+visivelmente convertendo energia em luz e calor. É esse resultado, e não um
+argumento teórico, que sepulta a ideia de corrente consumida.
+
+### Parte 2 — Corrente em função da resistência
+
+1. Monte a fonte em 9,0 V em série apenas com um resistor e o amperímetro.
+2. Meça a corrente com cada um dos resistores: 10 kΩ, 2,2 kΩ, 1 kΩ, 470 Ω, 100 Ω.
+3. Monte a tabela: resistência nominal, corrente medida, e o produto
+   $R \times I$.
+
+| $R$ nominal | $I$ medida | $R \times I$ |
+|---|---|---|
+| 10 kΩ | | |
+| 2,2 kΩ | | |
+| 1 kΩ | | |
+| 470 Ω | | |
+| 100 Ω | | |
+
+: Tabela a preencher na Parte 2. {#tbl-008-lab}
+
+A terceira coluna deve dar aproximadamente 9 V em todas as linhas — e é a Lei de
+Ohm aparecendo antes de o @sec-cap-010 enunciá-la. Se a linha de 100 Ω destoar,
+não é erro seu: veja a Parte 3.
+
+### Parte 3 — O amperímetro perturba o circuito que mede
+
+Todo amperímetro mede corrente derrubando uma pequena tensão sobre um resistor
+interno (o *shunt*). Essa tensão é a **queda de inserção**, e ela subtrai do
+circuito exatamente o que você tentava medir.
+
+1. Com o resistor de 100 Ω e 9,0 V, a corrente prevista é 90 mA. Meça.
+2. Com o instrumento ainda no circuito, meça — com o segundo multímetro, ou
+   desfazendo e refazendo a montagem — a tensão **entre as duas pontas de prova do
+   amperímetro**. Numa escala de mA, é comum encontrar de 0,1 V a 0,5 V.
+3. Calcule o *shunt* efetivo: $R_\text{shunt} = V_\text{queda} / I$.
+4. Refaça a previsão incluindo o shunt em série:
+   $I = 9{,}0 / (100 + R_\text{shunt})$, e compare com o medido.
+
+Em 10 kΩ, um shunt de 3 Ω é 0,03 % do circuito e some no ruído. Em 100 Ω, são 3 %
+— maior que a tolerância do resistor. **Todo instrumento altera o que mede**, e
+saber de quanto é a diferença entre medir e adivinhar.
+
+### Parte 4 — Nenhum isolante é perfeito
+
+1. Multímetro na maior escala de resistência.
+2. Meça entre dois furos de colunas **diferentes** da protoboard, distantes uns
+   2 cm. O instrumento deve indicar sobrecarga (fora de escala): a resistência é
+   alta demais para ele.
+3. Agora encoste um dedo de cada mão em cada uma das duas pontas de prova, sem
+   deixar os dedos se tocarem. Aparece uma leitura — tipicamente entre 500 kΩ e
+   alguns megaohms.
+4. Umedeça levemente as pontas dos dedos e repita. O valor cai bastante.
+
+Você acabou de medir um "isolante" conduzindo. Numa placa de circuito, esse mesmo
+caminho existe entre trilhas vizinhas, através de resíduo de fluxo e umidade
+adsorvida. Em circuitos de baixa impedância, não faz diferença; num circuito de
+alta impedância, é um resistor invisível ligado onde você não pediu.
+
+### Variante simulada (plano B)
+
+O simulador Falstad (`falstad.com/circuit`) desenha explicitamente os portadores
+como pontos que se movem pelos fios, com velocidade proporcional à corrente, e
+permite alternar entre sentido convencional e fluxo de elétrons. É a melhor
+ilustração disponível das Partes 1 e 2 — monte a série de dois resistores com o
+LED e observe que a densidade de pontos é idêntica nos dois lados de cada
+componente. As Partes 3 e 4 não têm equivalente simulado: são justamente sobre o
+que o modelo ideal do simulador não contém.
+
+## 🔥 Onde Queima {#sec-008-queima}
+
+**Amperímetro em paralelo com a fonte.** O instrumento em modo corrente é
+praticamente um curto — alguns ohms, às vezes frações de ohm. Ligá-lo diretamente
+aos terminais de uma fonte cria uma corrente limitada apenas pela capacidade da
+fonte. O melhor caso é o fusível interno abrindo; o pior, numa bateria de lítio ou
+de chumbo, é o cabo vaporizando. Amperímetro **sempre** em série.
+
+**Esquecer o cabo na entrada de corrente.** É a variante mais comum e mais cara do
+erro anterior: você mede corrente, termina, e no minuto seguinte vai medir a
+tensão da fonte — com o cabo ainda no jaque de mA. Crie o hábito de devolver o
+cabo à entrada de tensão *no mesmo gesto* em que desmonta a medição.
+
+**Confundir velocidade de deriva com velocidade do sinal.** O erro parece
+acadêmico até o momento em que alguém tenta explicar atraso de propagação em
+trilha longa e conclui, com a conta da deriva, que uma placa levaria horas para
+responder. São dois fenômenos diferentes, com sete ordens de grandeza entre eles.
+
+**Raciocinar com "corrente consumida".** Produz erros concretos: dimensionar a
+fonte somando errado as correntes dos ramos, procurar defeito no lugar errado
+porque "a corrente já foi gasta antes", e errar todo balanço de nó. Corrente que
+entra num componente sai dele.
+
+**Aplicar "menor resistência" como se fosse exclusividade.** Um caminho paralelo
+de resistência dez vezes maior ainda leva 10 % da corrente. Em circuitos de
+proteção e em caminhos de terra, esse resto é exatamente o que causa o problema.
+
+**Subdimensionar condutor por olhar só a corrente média.** Um motor que consome
+2 A em regime puxa 8 A ou mais na partida, durante centenas de milissegundos. Fio,
+trilha, conector e fusível têm de sobreviver ao pico, não à média.
+
+**Tratar isolação como infinita em circuito de alta impedância.** Numa entrada de
+1 GΩ, um caminho de fuga de 100 MΩ pela superfície suja da placa é um divisor de
+tensão que arruína a medição — e ele muda com a umidade do dia, o que torna o
+defeito intermitente e quase impossível de rastrear sem suspeitar dele antes.
+
+**Medir corrente sem estimar antes a ordem de grandeza.** A escala de mA do
+multímetro tem fusível de 200 ou 400 mA; a escala de 10 A costuma ser
+desprotegida. Entrar num circuito de 2 A pela escala de mA queima o fusível na
+hora; entrar num circuito de 20 A pela escala de 10 A queima coisas mais caras.
+Sempre estime primeiro.
+
+## O que fica deste capítulo {#sec-008-resumo}
+
+Carga é a grandeza primitiva, medida em coulombs, quantizada em unidades de
+$1{,}602 \times 10^{-19}$ C, e conservada. Corrente é carga atravessando uma seção
+por unidade de tempo, medida em ampères, e por isso é sempre uma grandeza
+*através de* — o que obriga o amperímetro a entrar em série.
+
+O sentido convencional vai do positivo para o negativo, ao contrário do movimento
+real dos elétrons num metal; a discrepância é histórica, é matematicamente
+inócua na análise de circuitos, e volta a importar nos semicondutores.
+
+No modelo de condução, uma rede fixa de íons positivos convive com uma nuvem de
+elétrons livres em agitação térmica violenta e desordenada. O campo aplicado
+superpõe a essa agitação uma deriva de frações de milímetro por segundo — mas o
+campo se estabelece a dois terços da velocidade da luz, e é por isso que o
+circuito responde na hora.
+
+Nenhum isolante é perfeito, nenhum condutor tem resistência nula, e o limite de um
+fio é de densidade de corrente, não de corrente. Por fim: corrente não é
+consumida, não escolhe um caminho só, e não é imposta pela fonte — ela é o
+resultado do encontro entre a fonte e o circuito.
+
+Falta a outra metade do par. Corrente é o *quê* se move; o próximo capítulo trata
+do *porquê* — tensão, potencial e a referência que dá sentido a ambos.
