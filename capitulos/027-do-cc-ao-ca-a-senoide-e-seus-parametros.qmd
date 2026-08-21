@@ -1,3 +1,680 @@
 # Do CC ao CA: a senoide e seus parâmetros {#sec-cap-027}
 
-*(em elaboração)*
+Todas as fontes deste manual, até agora, foram constantes. A pilha de 9 V do
+@sec-cap-009 tinha 9 V ontem, tem 9 V hoje e terá 9 V até acabar. Mesmo os
+capacitores e indutores do Volume 4, que só existem porque alguma coisa **muda**,
+foram excitados por degraus: liga, espera, desliga.
+
+A tomada da parede não faz nada disso. A tensão nela sobe, passa por um máximo, cai,
+inverte o sinal, chega a um mínimo simétrico e volta — sessenta vezes por segundo,
+sem parar, desde que a usina entrou em operação. Não há um instante em que ela valha
+"o seu valor": ela vale um valor diferente a cada microssegundo.
+
+E ainda assim se diz que a tomada tem 127 V. Esse número é o assunto do
+@sec-cap-028; este capítulo é sobre o que ele descreve. Antes de medir a senoide é
+preciso saber o que ela é, quais são os cinco números que a definem por completo, e
+por que — entre todas as formas de onda possíveis — é justamente essa que o mundo
+inteiro usa.
+
+## O que muda quando a fonte varia {#sec-027-muda}
+
+A parte tranquilizadora primeiro: **nada do que foi provado até aqui deixa de valer**.
+As leis de Kirchhoff (@sec-cap-013) são consequência da conservação de carga e de
+energia, e não fazem suposição nenhuma sobre a forma da fonte. A soma das correntes
+num nó é zero às três da tarde e é zero no pico da senoide. A lei de Ohm
+(@sec-cap-010) vale a cada instante: se um resistor de 1 kΩ tem 3 V nos terminais
+neste microssegundo, ele conduz 3 mA neste microssegundo.
+
+O que muda é o que os **outros dois** componentes fazem. Um capacitor obedece a
+$i = C\,dv/dt$ (@sec-cap-021) e um indutor a $v = L\,di/dt$ (@sec-cap-023). Com fonte
+constante, $dv/dt$ e $di/dt$ são zero em regime permanente, e os dois componentes
+somem da análise: capacitor vira circuito aberto, indutor vira curto. Foi por isso que
+o Volume 3 conseguiu resolver redes inteiras sem mencioná-los.
+
+Com fonte variando o tempo todo, a derivada nunca é zero, e os dois nunca somem. Um
+circuito com resistor e capacitor deixa de ter uma resposta e passa a ter duas — a que
+depende da amplitude e a que depende da **frequência**. Toda a Fase 2 é o
+desenvolvimento dessa segunda dependência.
+
+Há um terceiro efeito, mais sutil e mais importante do que parece. Em CC, tensão e
+corrente num circuito atingem o máximo juntas, porque só existe uma resistência entre
+elas. Em CA, o capacitor e o indutor **atrasam uma em relação à outra**, e a partir
+daí é possível ter tensão alta e corrente alta ao mesmo tempo, no mesmo circuito, sem
+que nenhuma potência seja consumida. Isso não é jogo de palavras — é a base da conta
+de luz industrial, e é o assunto dos capítulos 031 e 032.
+
+## Anatomia da senoide {#sec-027-anatomia}
+
+A forma completa é
+
+$$ v(t) = V_{p}\,\operatorname{sen}(\omega t + \phi), $$
+
+e ela tem exatamente três parâmetros. Sabendo $V_p$, $\omega$ e $\phi$, o valor da
+tensão em qualquer instante — passado ou futuro — está determinado. Nenhum outro sinal
+periódico do mundo se descreve com tão pouca informação.
+
+::: {#fig-027-anatomia}
+
+```{.tikz}
+%%| filename: 027-anatomia
+%%| alt: Gráfico de uma senoide de cinco volts de pico e um milissegundo de período, em função do tempo em milissegundos. Setas verticais marcam a amplitude de pico, do eixo zero até o máximo, e a tensão de pico a pico, do mínimo ao máximo. Uma seta horizontal entre dois máximos consecutivos marca o período. Linhas tracejadas auxiliares ligam os máximos e o mínimo aos eixos.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=15.4cm, height=8.4cm,
+  xlabel={tempo (ms)}, ylabel={$v(t)$ (V)},
+  xmin=-0.08, xmax=2.55, ymin=-7.4, ymax=7.4,
+  axis lines=middle,
+  xtick={0,0.5,1,1.5,2,2.5},
+  xticklabels={{0},{0,5},{1},{1,5},{2},{2,5}},
+  ytick={-5,-2.5,2.5,5},
+  yticklabels={{-5},{-2,5},{2,5},{5}},
+  grid=both, grid style={manualgray!20},
+  font=\footnotesize,
+  every axis x label/.style={at={(ticklabel* cs:1.0)}, anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1.0)}, anchor=south east},
+]
+
+  \addplot[curva, domain=0:2.5, samples=400] {5*sin(360*x)};
+
+  % auxiliares
+  \draw[auxiliar] (axis cs:0.25,0) -- (axis cs:0.25,5);
+  \draw[auxiliar] (axis cs:0.75,0) -- (axis cs:0.75,-5);
+  \draw[auxiliar] (axis cs:1.25,0) -- (axis cs:1.25,5);
+  \draw[auxiliar] (axis cs:0,5) -- (axis cs:1.35,5);
+  \draw[auxiliar] (axis cs:0,-5) -- (axis cs:0.9,-5);
+
+  % amplitude de pico
+  \draw[vetor, manualred] (axis cs:0.25,0) -- (axis cs:0.25,5);
+  \node[manualred, anchor=west, font=\scriptsize] at (axis cs:0.28,2.6)
+       {$V_p = 5$ V};
+
+  % pico a pico
+  \draw[vetor, manualgreen] (axis cs:0.62,-5) -- (axis cs:0.62,5);
+  \draw[vetor, manualgreen] (axis cs:0.62,5) -- (axis cs:0.62,-5);
+  \node[manualgreen, anchor=south west, font=\scriptsize, align=left]
+       at (axis cs:0.64,0.4) {$V_{pp} = 10$ V};
+
+  % periodo
+  \draw[vetor, manualyellow] (axis cs:0.25,6.3) -- (axis cs:1.25,6.3);
+  \draw[vetor, manualyellow] (axis cs:1.25,6.3) -- (axis cs:0.25,6.3);
+  \node[manualyellow, anchor=south, font=\scriptsize]
+       at (axis cs:0.75,6.4) {$T = 1$ ms};
+
+  \node[manualblue, anchor=west, font=\scriptsize, align=left]
+       at (axis cs:1.30,-6.4) {$f = 1/T = 1$ kHz\\$\omega = 2\pi f = 6283$ rad/s};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A senoide e os seus quatro números de bancada: pico, pico a pico, período e
+frequência. Note que $V_{pp}$ é exatamente $2V_p$ **porque a senoide é simétrica** —
+numa onda com componente contínua ou num dente de serra assimétrico essa relação não
+vale.
+
+:::
+
+### Amplitude
+
+$V_p$ é a **amplitude de pico**: a distância do eixo zero até o máximo. É o número que
+importa para isolação e para saturação. Um capacitor de 25 V ligado a um sinal de
+20 V de pico está trabalhando em 20 V, não no "valor da fonte" que aparece no
+multímetro — e essa distinção já matou muito eletrolítico.
+
+Na bancada e no osciloscópio se usa mais o **valor de pico a pico**, $V_{pp}$, porque
+é o que se mede direto na tela: da crista ao vale. Para uma senoide,
+$V_{pp} = 2V_p$.
+
+### Período e frequência
+
+O **período** $T$ é o tempo de um ciclo completo, em segundos. A **frequência** $f$ é
+quantos ciclos cabem em um segundo, em hertz. As duas são o mesmo fato escrito de dois
+jeitos:
+
+$$ f = \frac{1}{T}, \qquad T = \frac{1}{f}. $$
+
+Vale a pena fixar as equivalências que aparecem toda hora, porque elas evitam a
+calculadora em 90 % dos casos:
+
+| Frequência | Período | Onde aparece |
+|---|---|---|
+| 50 Hz | 20 ms | rede elétrica europeia |
+| 60 Hz | 16,67 ms | rede elétrica brasileira |
+| 1 kHz | 1 ms | tom de referência de áudio |
+| 20 kHz | 50 µs | topo da audição humana |
+| 100 kHz | 10 µs | fonte chaveada típica |
+| 1 MHz | 1 µs | rádio AM, clock lento |
+| 100 MHz | 10 ns | rádio FM, clock de microcontrolador rápido |
+
+: Pares período–frequência que compensam saber de cor. A regra mnemônica: 1 sobre 1
+dá 1, e cada passo de mil numa coluna é um passo de mil na outra, para o outro
+lado. {#tbl-027-pares}
+
+## Frequência angular: por que 2π aparece {#sec-027-omega}
+
+Dentro do seno não pode haver segundos: seno é uma função de **ângulo**. É preciso
+converter "quanto tempo passou" em "quanto do ciclo já foi percorrido", e um ciclo
+completo são $2\pi$ radianos. Daí a **frequência angular**
+
+$$ \omega = 2\pi f = \frac{2\pi}{T}, $$
+
+medida em radianos por segundo. Ela é a velocidade com que o ângulo avança.
+
+O 2π incomoda todo iniciante, e a reclamação é justa: por que não escrever
+$\operatorname{sen}(2\pi f t)$ e acabar? Porque $\omega$ aparece sozinho, sem o seno
+por perto, em quase todas as fórmulas que vêm a seguir — $X_L = \omega L$,
+$X_C = 1/\omega C$, $\omega_0 = 1/\sqrt{LC}$. Carregar $2\pi f$ em todas elas
+tornaria a álgebra ilegível. O preço é lembrar, na hora de responder a uma pergunta
+prática, que **o valor que se lê no gerador de funções é $f$, e o que entra na conta
+é $\omega$**.
+
+Uma armadilha de calculadora que custa muito tempo: a maioria das calculadoras
+científicas está em modo grau, e $\omega t$ sai em radianos. Um
+$\operatorname{sen}(6283 \times 0{,}0001)$ calculado em modo grau dá 0,011 em vez de
+0,588. Se a sua conta de CA deu um número absurdamente pequeno, o modo da calculadora
+é o primeiro suspeito.
+
+## Fase, defasagem e o que "adiantado" significa {#sec-027-fase}
+
+O terceiro parâmetro, $\phi$, é a **fase inicial**: onde a senoide está no instante
+$t = 0$. Sozinho, ele não tem significado nenhum — mudar $\phi$ é apenas escolher
+outro instante para começar a contar o tempo, e nenhum circuito percebe isso.
+
+O que tem significado é a **defasagem**: a diferença de fase entre dois sinais do
+mesmo circuito, na mesma frequência. Essa diferença é física, é medível, e não
+depende de onde se colocou o zero do relógio.
+
+::: {#fig-027-fase}
+
+```{.tikz}
+%%| filename: 027-fase
+%%| alt: Duas senoides de mesmo período traçadas no mesmo gráfico em função do tempo em milissegundos. A curva azul é a tensão, com cinco volts de pico, e passa pelo zero subindo na origem. A curva vermelha é a corrente, com três unidades de pico, e passa pelo zero subindo um pouco depois, atrasada. Uma seta horizontal entre os dois cruzamentos por zero marca o intervalo de atraso, correspondente a sessenta graus de defasagem.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=15.4cm, height=8.0cm,
+  xlabel={tempo (ms)},
+  xmin=-0.08, xmax=2.35, ymin=-6.6, ymax=9.4,
+  axis lines=middle,
+  xtick={0,0.5,1,1.5,2},
+  xticklabels={{0},{0,5},{1},{1,5},{2}},
+  ytick={-5,5},
+  grid=both, grid style={manualgray!20},
+  font=\footnotesize,
+  legend style={at={(0.99,0.99)}, anchor=north east, font=\scriptsize,
+                draw=manualgray!50},
+  every axis x label/.style={at={(ticklabel* cs:1.0)}, anchor=north west},
+]
+
+  \addplot[curva, domain=0:2.3, samples=400] {5*sin(360*x)};
+  \addlegendentry{$v(t) = 5\,\mathrm{sen}(\omega t)$}
+
+  \addplot[destaque, domain=0:2.3, samples=400] {3*sin(360*x - 60)};
+  \addlegendentry{$i(t) = 3\,\mathrm{sen}(\omega t - 60^{\circ})$}
+
+  \draw[auxiliar] (axis cs:0,0) -- (axis cs:0,-5.8);
+  \draw[auxiliar] (axis cs:0.1667,0) -- (axis cs:0.1667,-5.8);
+
+  \draw[vetor, manualyellow] (axis cs:0,-5.2) -- (axis cs:0.1667,-5.2);
+  \draw[vetor, manualyellow] (axis cs:0.1667,-5.2) -- (axis cs:0,-5.2);
+  \node[manualyellow, anchor=west, font=\scriptsize, align=left]
+       at (axis cs:0.22,-5.2)
+       {$\Delta t = 0{,}167$ ms $\;\Rightarrow\; \phi = 60^{\circ}$};
+
+  \node[manualgray, anchor=north west, font=\scriptsize, align=left]
+       at (axis cs:0.03,9.2) {a corrente cruza o zero \emph{depois}:\\está atrasada};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+Tensão e corrente na mesma frequência, defasadas de 60°. O sinal atrasado é o que
+chega **depois** ao mesmo ponto do ciclo — aqui, a corrente. Repare que a defasagem
+não muda a frequência: as duas curvas cruzam o zero a cada 0,5 ms.
+
+:::
+
+Converter entre defasagem em graus e atraso em segundos é conta de regra de três, e um
+ciclo inteiro são 360° ou $T$ segundos:
+
+$$ \phi = 360^{\circ}\,\frac{\Delta t}{T}, \qquad
+   \Delta t = \frac{\phi}{360^{\circ}}\,T. $$
+
+Na figura, $\Delta t = 0{,}167$ ms num período de 1 ms dá exatamente 60°.
+
+Duas convenções que confundem quase todo mundo na primeira semana:
+
+**"Adiantado" e "atrasado" são relativos, e o par é sempre invertível.** Dizer que a
+corrente está 60° atrasada da tensão é o mesmo que dizer que a tensão está 60°
+adiantada da corrente. Não existe atraso absoluto.
+
+**O sinal de $\phi$ segue a escrita, não a intuição.** Em
+$\operatorname{sen}(\omega t - 60^{\circ})$, o menos indica **atraso**, porque é
+preciso esperar mais tempo para que o argumento chegue ao mesmo valor. Muita gente lê
+o menos como "menor, logo antes" e inverte tudo.
+
+**Defasagem só faz sentido entre sinais de mesma frequência.** Dois sinais de 60 Hz e
+50 Hz não têm uma defasagem: têm uma diferença que cresce indefinidamente. Isso vale
+inclusive para os harmônicos de um mesmo sinal, e é a razão de o assunto do Volume 7
+não caber no de agora.
+
+## O círculo por trás da senoide {#sec-027-circulo}
+
+A senoide não é uma curva que alguém inventou porque era bonita: é a **sombra de um
+movimento circular uniforme**. Um ponto girando com velocidade angular constante,
+projetado sobre um eixo, traça exatamente $V_p \operatorname{sen}(\omega t)$.
+
+::: {#fig-027-circulo}
+
+```{.tikz}
+%%| filename: 027-circulo
+%%| alt: À esquerda, um círculo com um raio traçado num ângulo de sessenta graus a partir da horizontal, com uma seta curva indicando rotação anti-horária e uma linha tracejada horizontal ligando a ponta do raio à altura correspondente. À direita, o gráfico da senoide em função do ângulo, de zero a trezentos e sessenta graus, com um ponto marcado em sessenta graus na mesma altura da linha tracejada que vem do círculo. Uma anotação diz que a altura do ponto no círculo é o valor da senoide.
+
+\begin{tikzpicture}
+
+  % ----- circulo gerador -----
+  \begin{scope}[shift={(0,0)}]
+    \draw[eixo] (-2.9,0) -- (2.9,0);
+    \draw[eixo] (0,-2.9) -- (0,2.9);
+    \draw[manualgray, thin] (0,0) circle (2.2);
+
+    \draw[vetor, manualblue] (0,0) -- (60:2.2);
+    \node[manualblue, font=\scriptsize, anchor=south west] at (60:2.3) {$V_p$};
+
+    \draw[auxiliar] (60:2.2) -- (0,{2.2*sin(60)});
+    \node[ponto, manualblue] at (60:2.2) {};
+
+    \draw[manualred, thick, ->, >=stealth] (0.85,0) arc (0:60:0.85);
+    \node[manualred, font=\scriptsize] at (33:1.15) {$\omega t$};
+
+    \draw[manualgreen, ->, >=stealth, thick] (-14:2.75) arc (-14:38:2.75);
+    \node[manualgreen, font=\scriptsize, anchor=west] at (10:2.95) {$\omega$};
+
+    \node[font=\scriptsize, anchor=north] at (0,-3.1)
+         {ponto girando a $\omega$ rad/s};
+  \end{scope}
+
+  % ----- senoide correspondente -----
+  \begin{axis}[
+    at={(3.9cm,-3.2cm)}, anchor=south west,
+    width=10.6cm, height=7.2cm,
+    xlabel={$\omega t$ (graus)},
+    xmin=-12, xmax=392, ymin=-3.5, ymax=3.5,
+    axis lines=middle,
+    xtick={0,60,90,180,270,360},
+    ytick=\empty,
+    font=\footnotesize,
+  ]
+    \addplot[curva, domain=0:375, samples=300] {2.2*sin(x)};
+    \draw[auxiliar] (axis cs:-12,1.905) -- (axis cs:60,1.905);
+    \draw[auxiliar] (axis cs:60,0) -- (axis cs:60,1.905);
+    \node[ponto, manualblue] at (axis cs:60,1.905) {};
+    \node[manualgray, font=\scriptsize, anchor=north west, align=left]
+         at (axis cs:96,3.4) {a altura do ponto no círculo\\\emph{é} o valor da senoide};
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+A senoide é a projeção vertical de um ponto que gira com velocidade angular constante.
+Amplitude é o raio, frequência angular é a velocidade de giro, fase é onde o ponto
+estava quando o cronômetro começou. Guardar esta figura: ela **é** o fasor do
+@sec-cap-029, com outro nome.
+
+:::
+
+Essa imagem não é ilustrativa: é literal, e explica de onde vem a energia elétrica do
+planeta. Uma bobina girando dentro de um campo magnético uniforme concatena um fluxo
+proporcional ao cosseno do ângulo; pela lei de Faraday (@sec-cap-023), a tensão
+induzida é a derivada desse fluxo, portanto um seno. O gerador da usina não "produz
+uma senoide" por escolha de projeto — ele produz uma senoide porque gira.
+
+E é também a razão de a rede ter **três** fases. Três bobinas montadas a 120° uma da
+outra no mesmo eixo geram três senoides defasadas de 120°, e a soma instantânea das
+três é exatamente zero em todo instante. Um sistema trifásico equilibrado entrega
+potência constante e dispensa o retorno — vantagem que nenhum sistema monofásico tem.
+
+## Por que senoide, e não outra forma {#sec-027-porque}
+
+Existe uma razão matemática, mais profunda do que a do gerador, para o mundo inteiro
+usar senoides como referência. Ela cabe em uma frase:
+
+> **A senoide é a única forma de onda que atravessa resistores, capacitores e
+> indutores sem mudar de forma.**
+
+Derive uma senoide: sai uma senoide, com amplitude multiplicada por $\omega$ e fase
+adiantada de 90°. Integre uma senoide: sai uma senoide, com amplitude dividida por
+$\omega$ e fase atrasada de 90°. Some duas senoides de mesma frequência: sai uma
+senoide de mesma frequência. Nenhuma outra função tem essa propriedade.
+
+Como um circuito de R, L e C só faz exatamente essas três coisas — multiplicar por
+constante, derivar e integrar —, a consequência é enorme: **se a entrada for senoidal,
+todas as tensões e correntes do circuito serão senoides da mesma frequência**. Elas
+podem ter amplitudes e fases diferentes, mas a forma e a frequência são as mesmas em
+todos os pontos.
+
+Isso reduz o problema de resolver equações diferenciais ao problema de acompanhar dois
+números por sinal: amplitude e fase. É exatamente o que os fasores do @sec-cap-029
+fazem, e é por isso que a análise de CA acaba sendo **mais fácil** que a de
+transitórios, não mais difícil.
+
+Onda quadrada não tem essa sorte. Passe uma onda quadrada por um capacitor e o que sai
+não é uma quadrada menor: são cantos arredondados, uma forma diferente. Falar em
+"ganho" de um circuito para onda quadrada não faz sentido, porque não há um único
+número que descreva o que aconteceu. Falar em ganho para senoide faz — e o Volume 7
+mostra como reduzir qualquer sinal periódico a uma soma de senoides justamente para
+recuperar essa facilidade.
+
+## As outras formas de onda {#sec-027-formas}
+
+A senoide é a referência, mas não é a única coisa que passa por um fio.
+
+::: {#fig-027-formas}
+
+```{.tikz}
+%%| filename: 027-formas
+%%| alt: Quatro painéis dispostos em duas linhas de dois, cada um com um eixo horizontal de tempo e um eixo vertical. No painel superior esquerdo, uma onda senoidal suave. No superior direito, uma onda quadrada com transições verticais entre dois níveis simétricos. No inferior esquerdo, uma onda triangular com subidas e descidas de mesma inclinação. No inferior direito, um dente de serra com subida em rampa e queda vertical. Cada painel tem o nome da forma escrito acima.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- estilo comum dos eixinhos ----------
+  \tikzset{
+    painel/.pic={
+      \draw[eixo] (-0.3,0) -- (6.6,0);
+      \draw[eixo] (0,-1.6) -- (0,1.6);
+    }
+  }
+
+  % ---------- senoide ----------
+  \begin{scope}[shift={(0,0)}]
+    \pic{painel};
+    \draw[curva] plot[domain=0:6.3,samples=200] (\x, {1.2*sin(\x*180/1.575)});
+    \node[anchor=south west, font=\scriptsize] at (0.1,1.65) {\textbf{senoidal}};
+    \node[manualgray, anchor=north east, font=\scriptsize, align=right]
+         at (6.6,-1.85) {rede, áudio, RF};
+  \end{scope}
+
+  % ---------- quadrada ----------
+  \begin{scope}[shift={(8.5,0)}]
+    \pic{painel};
+    \draw[curva] (0,1.2) -- (1.575,1.2) -- (1.575,-1.2) -- (3.15,-1.2)
+                 -- (3.15,1.2) -- (4.725,1.2) -- (4.725,-1.2) -- (6.3,-1.2);
+    \node[anchor=south west, font=\scriptsize] at (0.1,1.65) {\textbf{quadrada}};
+    \node[manualgray, anchor=north east, font=\scriptsize, align=right]
+         at (6.6,-1.85) {clock, PWM, chaveamento};
+  \end{scope}
+
+  % ---------- triangular ----------
+  \begin{scope}[shift={(0,-5.4)}]
+    \pic{painel};
+    \draw[curva] (0,0) -- (0.7875,1.2) -- (2.3625,-1.2) -- (3.9375,1.2)
+                 -- (5.5125,-1.2) -- (6.3,0);
+    \node[anchor=south west, font=\scriptsize] at (0.1,1.65) {\textbf{triangular}};
+    \node[manualgray, anchor=north east, font=\scriptsize, align=right]
+         at (6.6,-1.85) {rampa de comparação, geradores};
+  \end{scope}
+
+  % ---------- dente de serra ----------
+  \begin{scope}[shift={(8.5,-5.4)}]
+    \pic{painel};
+    \draw[curva] (0,-1.2) -- (1.575,1.2) -- (1.575,-1.2) -- (3.15,1.2)
+                 -- (3.15,-1.2) -- (4.725,1.2) -- (4.725,-1.2) -- (6.3,1.2);
+    \node[anchor=south west, font=\scriptsize] at (0.1,1.65) {\textbf{dente de serra}};
+    \node[manualgray, anchor=north east, font=\scriptsize, align=right]
+         at (6.6,-1.85) {varredura, PWM analógico};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+As quatro formas periódicas que aparecem na bancada. Todas têm período, frequência e
+valor de pico; só a senoidal tem uma **única** frequência. As outras três são somas de
+muitas senoides — assunto do Volume 7 —, e é por isso que passar uma quadrada por um
+filtro deforma o sinal.
+
+:::
+
+Um detalhe de vocabulário que confunde: **alternada** e **senoidal** não são
+sinônimos. "Alternada" quer dizer que o sinal troca de polaridade, ou seja, que o
+valor médio é zero. A quadrada da figura é alternada; uma onda quadrada de 0 a 5 V
+(o clock de um microcontrolador) **não é**, porque nunca fica negativa. Ela é
+periódica e variável, mas não alternada — tem uma componente contínua de 2,5 V somada
+a uma quadrada alternada de ±2,5 V. Essa decomposição é exatamente o que um capacitor
+de acoplamento faz, e o Volume 6 vive disso.
+
+## Notação: quando é maiúsculo e quando é minúsculo {#sec-027-notacao}
+
+A partir daqui o livro passa a usar uma convenção que é padrão na literatura e que
+precisa ser lida com atenção, porque a diferença entre duas grandezas passa a ser uma
+letra maiúscula.
+
+| Escrita | Nome | Significado |
+|---|---|---|
+| $v(t)$, $i(t)$ | valor instantâneo | o número neste instante; muda o tempo todo |
+| $V_p$, $I_p$ | valor de pico | o máximo do valor instantâneo |
+| $V_{pp}$ | pico a pico | do mínimo ao máximo |
+| $V$, $I$ | valor eficaz (RMS) | o número do multímetro; assunto do @sec-cap-028 |
+| $\mathbf{V}$, $\mathbf{I}$ | fasor | amplitude **e** fase juntas; @sec-cap-029 |
+
+: Convenção de notação da Fase 2. Minúscula é instantânea, maiúscula é um valor único
+que resume o sinal, negrito é um número complexo. {#tbl-027-notacao}
+
+A regra prática: **letra minúscula sempre vem acompanhada de $(t)$ e sempre está
+dentro de uma equação diferencial**; letra maiúscula sozinha é um número de catálogo
+ou de multímetro. Quando um livro escreve $V = IR$ com maiúsculas em um circuito CA,
+ele está falando de valores eficazes; quando escreve $v = iR$, está falando do que
+acontece em cada instante. Para um resistor as duas são verdadeiras. Para um
+capacitor, só a segunda.
+
+## A rede elétrica brasileira {#sec-027-rede}
+
+Números concretos, porque eles vão aparecer em todos os capítulos de fonte da Fase 4:
+
+- **Frequência: 60 Hz**, em todo o país, com período de 16,67 ms. A tolerância
+  operativa do sistema é estreita — de 59,9 a 60,1 Hz em regime normal.
+- **Tensão de distribuição:** 127 V ou 220 V entre fase e neutro, conforme a região.
+  Esses são valores **eficazes**; o pico correspondente é $127\sqrt{2} = 180$ V e
+  $220\sqrt{2} = 311$ V. É o pico que a isolação do seu circuito precisa aguentar,
+  não o valor nominal.
+- **Entre duas fases** de um sistema 127 V, a tensão é 220 V — não 254 V —, porque as
+  fases estão defasadas de 120° e a soma é vetorial, não aritmética. O @sec-cap-029
+  torna essa conta trivial.
+
+Que a frequência seja 60 Hz e não 50 Hz tem consequência prática direta: um
+transformador dimensionado para 60 Hz **satura** se for ligado em 50 Hz com a mesma
+tensão, porque o fluxo é proporcional a $V/f$ (@sec-cap-024). O contrário é seguro. Um
+equipamento europeu de 50 Hz funciona no Brasil; um equipamento brasileiro de 60 Hz
+levado à Europa pode esquentar e morrer, mesmo com a tensão certa.
+
+::: {.callout-warning}
+## O pico é 41 % maior que o valor nominal
+
+Todo cálculo de isolação, de tensão reversa de diodo e de tensão de trabalho de
+capacitor em circuito ligado à rede usa o **pico**, e o pico de 220 V eficazes é
+311 V. Um capacitor de 250 V ligado direto na rede de 220 V está sobre-tensionado, não
+sub-utilizado. As regras de segurança do @sec-cap-002 valem integralmente daqui em
+diante, e este manual só trabalha com a rede através de transformador isolador.
+:::
+
+## 🧪 Laboratório {#sec-027-lab}
+
+**Ver que o sinal alterna, medir período e frequência sem osciloscópio, e provar na
+bancada que o valor médio de uma senoide é zero.** O osciloscópio só entra no
+Volume 7; até lá, o multímetro com escala de frequência e um pouco de astúcia dão
+conta.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escalas CA (V~) e, de preferência, com frequencímetro (Hz)
+- 1 fonte de tomada **de saída em corrente alternada**, de 9 a 12 V CA (o
+  "transformador" de campainha, de portão eletrônico ou de telefone antigo). Não
+  serve fonte de saída CC
+- 1 celular ou computador com aplicativo gerador de tom, e 1 cabo com plugue P2 e
+  duas pontas descascadas
+- 2 LEDs vermelhos de 5 mm
+- 1 resistor de 1 kΩ, 1/4 W, e 1 de 470 Ω, 1/4 W
+- 1 capacitor de 100 nF, poliéster
+- 1 fonte de bancada CC ajustável (ou pilha de 9 V) e 2 jumpers soltos
+- Protoboard, jumpers e um cronômetro (o do celular serve)
+:::
+
+::: {.callout-warning}
+## Nada de tomada direta
+
+Todo este roteiro é feito com fonte de tomada de saída **em baixa tensão** ou com
+saída de áudio. Em nenhum momento se encosta ponta de prova, LED ou dedo em condutor
+ligado aos 127 V ou 220 V da instalação. A fonte de tomada existe justamente para
+fazer a isolação — use-a.
+:::
+
+### Parte 1 — Provar que alterna
+
+1. Monte dois LEDs em **antiparalelo** (ânodo de um no cátodo do outro, e vice-versa)
+   em série com o resistor de 470 Ω.
+2. Ligue o conjunto na fonte de bancada CC, em 5 V. Apenas **um** LED acende. Inverta
+   a polaridade: acende o outro.
+3. Agora ligue o mesmo conjunto na saída de 9 a 12 V CA da fonte de tomada. **Os dois
+   acendem ao mesmo tempo.**
+4. Apague a luz do ambiente e sacuda o conjunto de LEDs rapidamente, na horizontal.
+   Em vez de dois riscos contínuos, aparecem dois tracejados **alternados**.
+
+O passo 3 é a definição de corrente alternada vista a olho nu: a corrente vai nos dois
+sentidos. O passo 4 mostra que ela não vai nos dois sentidos ao mesmo tempo — vai
+alternadamente, rápido demais para o olho separar. Cada traço luminoso é meio ciclo, e
+os dois tracejados estão intercalados porque um LED conduz enquanto o outro bloqueia.
+
+### Parte 2 — CA com as próprias mãos
+
+1. Ligue o conjunto de LEDs à fonte CC em 5 V, com os dois jumpers soltos nos polos.
+2. Troque a polaridade manualmente, o mais rápido que conseguir, contando as trocas.
+3. Cronometre 10 segundos e conte quantos ciclos completos você fez.
+
+Se você fez 15 ciclos em 10 s, gerou uma onda quadrada alternada de 1,5 Hz, com
+período de 0,67 s. Essa é a mesma coisa que a usina faz — só que a 60 Hz, e com uma
+forma bem mais suave. A conta $f = 1/T$ nasce aqui, com as suas mãos como gerador.
+
+### Parte 3 — Medir a frequência
+
+1. Ponha o multímetro na escala CA e meça a fonte de tomada. Anote o valor. Compare
+   com o que está escrito no corpo dela (quase sempre a fonte entrega mais que o
+   nominal sem carga — assunto do @sec-cap-020).
+2. Se o multímetro tiver escala Hz, meça a frequência da mesma fonte. Deve dar
+   60,0 Hz, com uma casa decimal de variação.
+3. Calcule $T = 1/f$ e confirme os 16,67 ms.
+4. Ligue o cabo P2 no celular, gere um tom de 1000 Hz e meça a frequência nas pontas
+   descascadas. Depois 100 Hz, 440 Hz e 5000 Hz.
+5. Para cada uma, calcule o período antes de medir e confira.
+
+O passo 4 tem uma armadilha instrutiva: em frequências muito baixas ou com amplitude
+pequena, o frequencímetro do multímetro começa a errar ou a não travar. Todo
+instrumento tem faixa de entrada — o do multímetro típico é de uns 20 Hz a 200 kHz, e
+exige alguns décimos de volt para disparar o contador.
+
+### Parte 4 — O valor médio é zero
+
+1. Com o multímetro na escala **CC** (V⎓), meça a saída da fonte de tomada CA.
+2. Anote o valor. Ele fica perto de zero — tipicamente abaixo de 0,1 V.
+3. Agora meça a mesma fonte na escala **CA** (V~). Dá 9 a 13 V.
+
+O mesmo sinal, o mesmo instrumento, dois números completamente diferentes. Não é
+defeito: a escala CC de um multímetro mede o **valor médio**, e o valor médio de uma
+senoide simétrica é exatamente zero, porque o semiciclo positivo cancela o negativo. A
+escala CA mede outra coisa — e o que é essa outra coisa é o capítulo inteiro que vem a
+seguir.
+
+### Parte 5 — O capacitor já se comporta diferente
+
+1. Monte o resistor de 1 kΩ em série com o capacitor de 100 nF.
+2. Alimente o conjunto com o tom de 1000 Hz do celular e meça, na escala CA, a tensão
+   sobre o resistor e sobre o capacitor.
+3. Some os dois valores medidos e compare com a tensão total da fonte.
+4. Repita em 100 Hz e em 5000 Hz.
+
+A soma **não fecha**, e a diferença é grande — em 1 kHz os dois valores somados dão
+bem mais que a fonte. Isso não é erro de medição nem lei de Kirchhoff violada: as duas
+tensões estão defasadas, e valores eficazes de sinais defasados não se somam
+aritmeticamente. Anote os três conjuntos de números e guarde: eles serão explicados
+com precisão no @sec-cap-029, e a conta vai fechar.
+
+### Variante simulada (plano B)
+
+No Falstad ou no ngspice, uma fonte senoidal de 5 V de pico e 1 kHz alimentando um
+resistor já permite tudo: medir período na tela, mudar $\phi$ e ver a curva deslizar,
+somar duas fontes de mesma frequência e verificar que a soma continua senoidal.
+
+O experimento que mais vale a pena repetir no simulador é o da Parte 5, porque lá é
+possível **ver** as duas tensões defasadas na mesma tela, o que o multímetro esconde.
+Ponha o traço de $v_R$ e o de $v_C$ juntos e meça o intervalo entre os cruzamentos por
+zero: dá 90° entre eles, sempre, em qualquer frequência.
+
+Uma armadilha do simulador: fonte senoidal em SPICE se declara com **valor de pico**
+(`SIN(0 5 1k)` são 5 V de pico, não eficazes), enquanto na análise CA (`AC 1`) o valor
+é uma amplitude de referência. Misturar os dois dá resultado com fator $\sqrt{2}$ de
+erro, e é o engano mais comum de quem sai da bancada para o simulador.
+
+## 🔥 Onde Queima {#sec-027-queima}
+
+**Dimensionar isolação pelo valor nominal em vez do pico.** A rede de 220 V tem picos
+de 311 V, e a de 127 V tem picos de 180 V. Capacitor, diodo e transistor veem o pico.
+Este é o erro que mais estoura componente em fonte caseira.
+
+**Confundir alternado com senoidal.** Um clock de 0 a 5 V é periódico e não é
+alternado; um sinal de áudio é alternado e não é senoidal. As três palavras descrevem
+propriedades diferentes.
+
+**Somar valores de CA aritmeticamente.** Duas tensões de 10 V em série num circuito CA
+podem dar 20 V, 14,1 V, 10 V ou zero, dependendo da defasagem. Só se somam
+aritmeticamente sinais **em fase**.
+
+**Deixar a calculadora em grau ao calcular $\omega t$.** $\omega t$ está em radianos.
+O sintoma é um resultado absurdamente pequeno, e a causa demora horas a ser
+encontrada.
+
+**Esquecer o fator $2\pi$ entre $f$ e $\omega$.** Todo cálculo de reatância que der
+6,28 vezes errado tem essa origem. É o erro isolado mais frequente no Volume 6.
+
+**Achar que a defasagem depende de onde se ligou a ponta de prova.** A fase inicial
+$\phi$ de um único sinal é arbitrária. A **diferença** entre dois sinais não é, e é
+sempre ela que interessa.
+
+**Ligar equipamento de 60 Hz em rede de 50 Hz.** O fluxo no núcleo do transformador é
+proporcional a $V/f$; baixar a frequência com a mesma tensão empurra o núcleo para a
+saturação. Aquece, ronca e queima. O caminho inverso é inofensivo.
+
+**Ler o valor de pico a pico como se fosse a amplitude.** Osciloscópio mede $V_{pp}$;
+a fórmula usa $V_p$. Fator de 2 de erro, e ele se propaga para toda a conta de
+potência como fator de 4.
+
+**Supor que um sinal deformado ainda tem "uma frequência".** Uma senoide achatada no
+topo por saturação já é uma soma de frequências, e a análise de fasores não se aplica
+a ela diretamente. Ver a forma antes de aplicar a fórmula é o hábito que separa a
+medição correta da errada.
+
+## O que fica deste capítulo {#sec-027-resumo}
+
+Uma senoide se descreve por completo com três números: amplitude $V_p$, frequência
+angular $\omega$ e fase $\phi$. Da amplitude saem o pico e o pico a pico; da
+frequência angular saem $f = \omega/2\pi$ e $T = 1/f$; a fase só tem sentido quando
+comparada com a de outro sinal de mesma frequência.
+
+Frequência angular existe porque seno é função de ângulo, não de tempo, e um ciclo são
+$2\pi$ radianos. O fator $2\pi$ entre $f$ e $\omega$ é a fonte de erro numérica mais
+comum de toda a Fase 2.
+
+A senoide é a projeção de um movimento circular uniforme — o gerador da usina produz
+senoide porque gira. E é a única forma de onda que atravessa R, L e C sem mudar de
+forma, o que faz dela a única em que "ganho" e "defasagem" são descrições completas do
+que o circuito fez com o sinal.
+
+As leis de Kirchhoff e a lei de Ohm continuam valendo a cada instante. O que deixa de
+valer é a soma aritmética de valores medidos: em CA, sinais defasados se somam
+vetorialmente, e a Parte 5 do laboratório mostra isso com um resistor, um capacitor e
+um multímetro.
+
+Falta agora o número do meio: aquele que o multímetro mostra quando se mede a tomada,
+que não é o pico, não é o valor médio — que é zero — e que precisa ser definido de tal
+forma que a conta de potência do @sec-cap-011 continue funcionando. É o valor eficaz,
+e o @sec-cap-028 mostra de onde ele vem, por que vale $V_p/\sqrt{2}$ só para senoides,
+e em que condição exata o seu multímetro está mentindo.
