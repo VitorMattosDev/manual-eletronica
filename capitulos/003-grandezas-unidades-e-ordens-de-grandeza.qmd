@@ -1,3 +1,526 @@
 # Grandezas, unidades e ordens de grandeza {#sec-cap-003}
 
-*(em elaboração)*
+Um número sozinho não diz nada em eletrônica. "4,7" pode ser um resistor de
+4,7 Ω, um de 4,7 kΩ, um capacitor de 4,7 µF ou a tensão de uma célula de lítio
+carregada — quatro objetos que não se parecem em nada. A unidade não é um enfeite
+pendurado no fim do número: ela é **metade da informação**.
+
+E há uma segunda metade, menos óbvia e mais útil: saber, antes de medir, em que
+faixa o resultado deveria cair. Um técnico experiente não é mais rápido que um
+iniciante porque calcula melhor — é mais rápido porque, ao ver 3,7 MΩ onde
+esperava 3,7 kΩ, sabe imediatamente que a ponta de prova está solta. Este
+capítulo constrói as duas metades.
+
+## As grandezas e como elas se encaixam {#sec-003-grandezas}
+
+O Sistema Internacional define sete unidades de base. A eletrônica usa quatro
+delas — segundo, metro, quilograma e **ampère** — e deriva todo o resto. O
+ampère é a única unidade elétrica de base; volt, ohm, coulomb, farad, watt,
+henry e hertz são todos construídos a partir dele.
+
+| Grandeza | Símbolo | Unidade | Definição |
+|---|---|---|---|
+| Carga | $Q$ | coulomb (C) | $1\ \text{C} = 1\ \text{A}\cdot\text{s}$ |
+| Corrente | $I$ | ampère (A) | unidade de base; $1\ \text{A} = 1\ \text{C/s}$ |
+| Tensão | $V$ | volt (V) | $1\ \text{V} = 1\ \text{J/C}$ |
+| Resistência | $R$ | ohm (Ω) | $1\ \Omega = 1\ \text{V/A}$ |
+| Capacitância | $C$ | farad (F) | $1\ \text{F} = 1\ \text{C/V}$ |
+| Indutância | $L$ | henry (H) | $1\ \text{H} = 1\ \text{V}\cdot\text{s/A}$ |
+| Potência | $P$ | watt (W) | $1\ \text{W} = 1\ \text{J/s} = 1\ \text{V}\cdot\text{A}$ |
+| Energia | $W$ | joule (J) | $1\ \text{J} = 1\ \text{W}\cdot\text{s}$ |
+| Frequência | $f$ | hertz (Hz) | $1\ \text{Hz} = 1\ \text{s}^{-1}$ |
+
+: As nove grandezas que sustentam o manual inteiro. Cada definição da coluna da
+direita é uma equação de verdade, não uma curiosidade — elas são a base do
+truque da @sec-003-dimensional. {#tbl-003-grandezas}
+
+Duas leituras dessa tabela pagam o tempo gasto nela.
+
+A primeira: **tensão é energia por unidade de carga**. Um volt significa que cada
+coulomb que atravessa o elemento ganha (ou perde) um joule. Isso explica por que
+tensão é sempre medida *entre dois pontos* — energia por carga só faz sentido
+como diferença entre onde a carga estava e onde ela chegou. Não existe "a tensão
+deste ponto" sem uma referência implícita, e o Volume 2 dedica um capítulo
+inteiro a essa referência.
+
+A segunda: **corrente é carga por unidade de tempo**. Um ampère é um coulomb
+passando por segundo — cerca de $6{,}24 \times 10^{18}$ elétrons. É um número
+absurdo, e é por isso que ninguém conta elétrons: conta-se corrente.
+
+## Prefixos e a notação de engenharia {#sec-003-prefixos}
+
+Componentes reais vivem em faixas extremas. O capacitor de desacoplamento ao lado
+de um microcontrolador vale 0,0000001 F. O resistor de polarização de uma entrada
+vale 1 000 000 Ω. Escrever esses números por extenso é convite a erro, e é por
+isso que os prefixos existem.
+
+| Prefixo | Símbolo | Fator | Onde aparece |
+|---|---|---|---|
+| pico | p | $10^{-12}$ | capacitâncias parasitas, capacitores de cristal |
+| nano | n | $10^{-9}$ | desacoplamento, capacitores cerâmicos, correntes de fuga |
+| micro | µ | $10^{-6}$ | eletrolíticos, correntes de repouso, atrasos |
+| mili | m | $10^{-3}$ | correntes de circuito, tensões de sinal, segundos |
+| — | — | $10^{0}$ | ohms, volts, ampères |
+| quilo | k | $10^{3}$ | resistores, hertz |
+| mega | M | $10^{6}$ | resistores de alto valor, hertz de clock |
+| giga | G | $10^{9}$ | resistências de isolação, hertz de RF |
+
+: Os oito prefixos que cobrem 99 % da eletrônica. Note que a lista pula de mil em
+mil: não há "centi" nem "deca" em nenhum lugar deste livro. {#tbl-003-prefixos}
+
+Essa tabela salta de $10^{3}$ em $10^{3}$ de propósito, e daí sai a convenção
+mais prática do ofício: a **notação de engenharia**, em que o expoente é sempre
+múltiplo de três e a mantissa fica entre 1 e 999.
+
+A notação científica escreveria a corrente de um LED como
+$1{,}5 \times 10^{-2}$ A. Correto, e inútil na bancada: não existe prefixo para
+$10^{-2}$, e nenhum multímetro tem escala de centiampère. A notação de engenharia
+escreve $15 \times 10^{-3}$ A, que se lê direto como **15 mA** — a escala do
+instrumento, a marcação do componente e o número na conta finalmente coincidem.
+
+::: {.callout-note}
+## Cuidado com a grafia
+
+**k** de quilo é minúsculo; **M** de mega é maiúsculo. "10 KΩ" está errado
+(K maiúsculo é kelvin) e "10 mΩ" é dez miliohms — um milhão de vezes menos que
+os 10 MΩ que a pessoa provavelmente quis escrever. Em texto onde o µ não existe,
+escreve-se `uF`, nunca `mF`.
+:::
+
+### As notações que substituem a vírgula
+
+Em marcação de componente e em esquemático, a vírgula decimal desaparece com
+facilidade: ela some numa fotocópia ruim, num PDF de baixa resolução ou sob uma
+gota de fluxo. A solução consagrada é **colocar o prefixo no lugar da vírgula**:
+
+| Escrito | Significa |
+|---|---|
+| `4k7` | 4,7 kΩ |
+| `4R7` ou `4E7` | 4,7 Ω |
+| `R47` | 0,47 Ω |
+| `1M2` | 1,2 MΩ |
+| `100R` | 100 Ω |
+
+: Notação sem vírgula, comum em esquemáticos e serigrafias. O símbolo que marcaria
+a unidade ocupa a posição da vírgula. {#tbl-003-notacao}
+
+Esse esquema é impossível de ler errado, e por isso vale a pena reconhecê-lo
+mesmo que você prefira escrever com vírgula.
+
+## As três réguas {#sec-003-reguas}
+
+A habilidade que mais separa quem sabe de quem está aprendendo não é calcular —
+é **estimar**. Saber que a resistência de um pedaço de fio é da ordem de
+miliohms, que a corrente de um LED é da ordem de miliampères e que a capacitância
+entre duas trilhas vizinhas é da ordem de picofarads permite descartar um
+resultado absurdo em um segundo, sem refazer conta nenhuma.
+
+::: {#fig-tres-reguas}
+
+```{.tikz}
+%%| filename: 003-tres-reguas
+%%| alt: Três réguas logarítmicas empilhadas, de resistência, corrente e capacitância, cada uma com valores típicos de eletrônica marcados ao longo da escala.
+
+\begin{tikzpicture}[font=\small]
+
+% ============ RESISTENCIA ============
+\begin{scope}
+  \draw[thick] (0,0) -- (12,0);
+  \foreach \x/\lab in {0/{1\ \mathrm{m}\Omega}, 3/{1\ \Omega}, 6/{1\ \mathrm{k}\Omega},
+                       9/{1\ \mathrm{M}\Omega}, 12/{1\ \mathrm{G}\Omega}} {
+    \draw[thick] (\x,-0.2) -- (\x,0.2);
+    \node[below, font=\footnotesize] at (\x,-0.24) {$\lab$};
+  }
+  \foreach \x in {1,2,4,5,7,8,10,11} { \draw (\x,-0.1) -- (\x,0.1); }
+  \node[anchor=west, font=\small\bfseries] at (0,-1.0) {resistência};
+
+  \foreach \x/\y/\txt in {%
+      1.0/0.5/{contato de\\um bom conector},
+      2.0/1.35/{2 m de fio\\22 AWG},
+      3.9/2.2/{bobina de\\alto-falante},
+      5.67/0.5/{resistor do LED\\do cap. 1},
+      7.0/1.35/{potenciômetro\\comum},
+      9.0/2.2/{polarização de\\entrada},
+      10.0/0.5/{entrada do\\voltímetro},
+      12.0/1.35/{isolação de\\um cabo bom}} {
+    \draw[manualgray, thin] (\x,0.16) -- ({\x},{\y-0.05});
+    \node[font=\scriptsize, align=center, anchor=south, text=manualblue!75!black]
+         at ({\x},{\y}) {\txt};
+  }
+\end{scope}
+
+% ============ CORRENTE ============
+\begin{scope}[yshift=-5.0cm]
+  \draw[thick] (0,0) -- (12,0);
+  \foreach \x/\lab in {0/{1\ \mathrm{nA}}, 3/{1\ \mu\mathrm{A}}, 6/{1\ \mathrm{mA}},
+                       9/{1\ \mathrm{A}}, 12/{1\ \mathrm{kA}}} {
+    \draw[thick] (\x,-0.2) -- (\x,0.2);
+    \node[below, font=\footnotesize] at (\x,-0.24) {$\lab$};
+  }
+  \foreach \x in {1,2,4,5,7,8,10,11} { \draw (\x,-0.1) -- (\x,0.1); }
+  \node[anchor=west, font=\small\bfseries] at (0,-1.0) {corrente};
+
+  \foreach \x/\y/\txt in {%
+      1.0/0.5/{fuga de um\\cerâmico},
+      3.0/1.35/{microcontrolador\\dormindo},
+      5.0/2.2/{corrente de base\\de um transistor},
+      6.0/0.5/{limiar de\\percepção},
+      7.18/1.35/{LED do\\cap. 1},
+      8.7/2.2/{porta USB},
+      10.2/0.5/{disjuntor da\\tomada},
+      11.48/1.35/{partida de um\\motor de carro}} {
+    \draw[manualgray, thin] (\x,0.16) -- ({\x},{\y-0.05});
+    \node[font=\scriptsize, align=center, anchor=south, text=manualblue!75!black]
+         at ({\x},{\y}) {\txt};
+  }
+\end{scope}
+
+% ============ CAPACITANCIA ============
+\begin{scope}[yshift=-10.0cm]
+  \draw[thick] (0,0) -- (12,0);
+  \foreach \x/\lab in {0/{1\ \mathrm{pF}}, 3/{1\ \mathrm{nF}}, 6/{1\ \mu\mathrm{F}},
+                       9/{1\ \mathrm{mF}}, 12/{1\ \mathrm{F}}} {
+    \draw[thick] (\x,-0.2) -- (\x,0.2);
+    \node[below, font=\footnotesize] at (\x,-0.24) {$\lab$};
+  }
+  \foreach \x in {1,2,4,5,7,8,10,11} { \draw (\x,-0.1) -- (\x,0.1); }
+  \node[anchor=west, font=\small\bfseries] at (0,-1.0) {capacitância};
+
+  \foreach \x/\y/\txt in {%
+      0.3/0.5/{entre duas trilhas\\da protoboard},
+      1.34/1.35/{capacitor de\\cristal},
+      3.0/2.2/{cerâmico\\``102''},
+      5.0/0.5/{desacoplamento\\``104''},
+      6.0/1.35/{acoplamento\\de áudio},
+      8.67/2.2/{filtro de fonte\\linear},
+      10.0/0.5/{banco de fonte\\de bancada},
+      12.0/1.35/{supercapacitor}} {
+    \draw[manualgray, thin] (\x,0.16) -- ({\x},{\y-0.05});
+    \node[font=\scriptsize, align=center, anchor=south, text=manualblue!75!black]
+         at ({\x},{\y}) {\txt};
+  }
+\end{scope}
+
+\end{tikzpicture}
+```
+
+As três réguas da eletrônica prática, em escala logarítmica: doze ordens de
+grandeza cada uma. Vale a pena voltar a esta figura sempre que um resultado
+parecer estranho — quase sempre o problema é ter caído na régua errada por três
+casas.
+
+:::
+
+Repare em quantas décadas cada régua ocupa. Resistência útil vai de miliohms
+(contatos, fios) a gigaohms (isolação): doze ordens de grandeza. Corrente vai de
+nanoampères (fugas) a centenas de ampères (partida de motor). Capacitância vai de
+picofarads parasitas a farads de supercapacitor. Nenhuma outra área da engenharia
+manipula rotineiramente faixas tão largas com o mesmo instrumento na mão.
+
+## O truque que elimina metade dos erros de prefixo {#sec-003-truque}
+
+A lei de Ohm com unidades de base exige converter tudo para volts, ampères e
+ohms, e é aí que nascem os erros de mil. Existe uma combinação de prefixos que
+**se cancela sozinha** e dispensa a conversão:
+
+$$
+\boxed{\ \text{volt} = \text{k}\Omega \times \text{mA}\ }
+$$
+
+Porque $10^{3} \times 10^{-3} = 1$. Na prática:
+
+- $10\ \text{k}\Omega \times 0{,}5\ \text{mA} = 5\ \text{V}$, direto.
+- $\dfrac{5\ \text{V}}{2{,}2\ \text{k}\Omega} = 2{,}27\ \text{mA}$, direto.
+- $5\ \text{V} \times 2{,}27\ \text{mA} = 11{,}4\ \text{mW}$, direto — porque
+  $\text{V} \times \text{mA} = \text{mW}$.
+
+Como a eletrônica de bancada vive quase inteira nessa faixa — quilo-ohms,
+miliampères, volts, miliwatts —, adotar esse trio como unidade de trabalho
+padrão elimina a maior parte das trocas de casa decimal. As mesmas
+compensações valem uma casa acima e uma abaixo: $\text{M}\Omega \times \mu\text{A}$
+também dá volt, e $\Omega \times \text{A}$ também.
+
+## Análise dimensional: a verificação que custa cinco segundos {#sec-003-dimensional}
+
+Como as unidades derivadas são definidas umas a partir das outras, elas podem ser
+multiplicadas e canceladas como números. Isso dá um teste gratuito para qualquer
+fórmula: **se as unidades dos dois lados não baterem, a fórmula está errada** —
+sem exceção, sem discussão, sem precisar entender a física.
+
+O exemplo mais útil do livro inteiro é a constante de tempo $\tau = RC$, que
+aparecerá pela primeira vez no Volume 4. Ela deveria dar segundos. Dá?
+
+$$
+\Omega \cdot \text{F}
+= \frac{\text{V}}{\text{A}} \cdot \frac{\text{C}}{\text{V}}
+= \frac{\text{C}}{\text{A}}
+= \frac{\text{A}\cdot\text{s}}{\text{A}}
+= \text{s}.
+$$
+
+Dá. E o mesmo vale para a constante de tempo indutiva $\tau = L/R$:
+
+$$
+\frac{\text{H}}{\Omega}
+= \frac{\text{V}\cdot\text{s}/\text{A}}{\text{V}/\text{A}}
+= \text{s}.
+$$
+
+Esse hábito pega erro de memória antes que ele vire erro de bancada. Se alguém
+escrever $\tau = R/C$, a análise dimensional entrega $\Omega/\text{F} =
+\text{s}^{-1}\!\cdot\!\Omega^{2}$ — que não é tempo nenhum, e a fórmula morre ali,
+sem custar um resistor queimado.
+
+## Algarismos significativos e a precisão que não existe {#sec-003-significativos}
+
+No @sec-cap-001 calculamos um resistor de 466,7 Ω a partir de uma pilha de 9 V.
+Aquele "466,7" contém uma mentira embutida, e ela merece ser exposta.
+
+A pilha não vale 9,000 V. Vale "9 V" no rótulo, ou seja, **um** algarismo
+significativo, com valor real entre 7 V (descarregada) e 9,6 V (nova). A tensão
+direta do LED foi *suposta* como 2,0 V, quando a peça real varia entre 1,8 V e
+2,2 V. Com duas entradas dessas, escrever quatro algarismos no resultado é
+teatro: a incerteza real do cálculo é de dezenas de por cento, não de décimos.
+
+A regra prática, sem formalismo: **o resultado não pode ter mais precisão que a
+pior entrada**. Se um dado tem dois algarismos significativos, o resultado tem
+dois. E há um caso especial que se aplica o tempo todo em eletrônica: quando o
+resultado vai virar um valor comercial de 5 % de tolerância, qualquer coisa além
+de dois algarismos significativos é descartada na hora seguinte de qualquer jeito.
+
+Isso não significa calcular com desleixo. Significa **calcular com todas as casas
+e arredondar só na hora de decidir**, e depois reconhecer que o número escolhido
+carrega uma faixa, não um ponto. É a diferença entre "o resistor é 470 Ω" e "o
+resistor está entre 446,5 Ω e 493,5 Ω, e o circuito precisa funcionar em toda
+essa faixa".
+
+## Um componente, muitas grafias {#sec-003-grafias}
+
+O erro de prefixo mais caro da eletrônica acontece com capacitores, porque a
+mesma peça é chamada por nomes diferentes conforme quem fala. Um capacitor de
+desacoplamento comum aparece na literatura de cinco formas distintas, todas
+corretas, todas o mesmo componente:
+
+::: {#fig-cem-nano}
+
+```{.tikz}
+%%| filename: 003-cem-nano
+%%| alt: Diagrama radial mostrando seis grafias equivalentes do mesmo capacitor de 100 nanofarads, todas apontando para uma caixa central.
+
+\begin{tikzpicture}[
+  font=\small,
+  sat/.style={draw=manualgray, thick, rounded corners=2.5pt, fill=white,
+              align=center, text width=3.5cm, minimum height=1.0cm,
+              inner sep=3pt, font=\footnotesize},
+  seta/.style={-{Stealth[length=2.2mm]}, manualgray, thin},
+]
+  \node[draw=manualblue, very thick, rounded corners=3pt, fill=manualblue!12,
+        align=center, minimum width=2.8cm, minimum height=1.4cm,
+        font=\normalsize\bfseries] (c) at (0,0) {$100\ \mathrm{nF}$};
+
+  \node[sat] (a1) at (-5.0, 1.9) {$0{,}0000001\ \mathrm{F}$\\\emph{por extenso}};
+  \node[sat] (a2) at (-5.0, 0.0) {$1 \times 10^{-7}\ \mathrm{F}$\\\emph{científica}};
+  \node[sat] (a3) at (-5.0,-1.9) {$100 \times 10^{-9}\ \mathrm{F}$\\\emph{engenharia}};
+
+  \node[sat] (b1) at ( 5.0, 1.9) {$0{,}1\ \mu\mathrm{F}$\\\emph{escola americana}};
+  \node[sat] (b2) at ( 5.0, 0.0) {$100\,000\ \mathrm{pF}$\\\emph{catálogo antigo}};
+  \node[sat] (b3) at ( 5.0,-1.9) {\textbf{104}\\\emph{marcação no corpo}};
+
+  \draw[seta] (a1) -- (c);
+  \draw[seta] (a2) -- (c);
+  \draw[seta] (a3) -- (c);
+  \draw[seta] (b1) -- (c);
+  \draw[seta] (b2) -- (c);
+  \draw[seta] (b3) -- (c);
+
+  \node[font=\scriptsize, manualgray, align=center] at (0,-2.5)
+       {O mesmo componente, na mesma gaveta.\\Seis grafias, nenhuma errada.};
+\end{tikzpicture}
+```
+
+Seis maneiras de escrever o capacitor mais comum da eletrônica digital. Quem lê
+"0,1 µF" num livro americano e procura "100 nF" na loja está procurando a mesma
+peça — e quem lê "104" no corpo do componente está lendo a marcação codificada,
+detalhada no @sec-cap-006.
+
+:::
+
+Vale decorar dois pontos de referência dessa bagunça: **100 nF = 0,1 µF** (o
+desacoplamento universal) e **1 µF = 1000 nF**. Com esses dois na cabeça,
+qualquer outra conversão sai por proporção.
+
+## 🧪 Laboratório {#sec-003-lab}
+
+**Estimar antes de medir.** O experimento deste capítulo não tem circuito: tem
+uma tabela. Você vai escrever um palpite para cada grandeza *antes* de medir, e
+depois comparar. O que se treina aqui não é precisão — é ordem de grandeza, que é
+a habilidade que sobra quando o instrumento está longe.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital
+- 1 resistor de 470 Ω, 1/4 W
+- 1 resistor de 10 kΩ, 1/4 W
+- 1 resistor de 1 MΩ, 1/4 W
+- 1 capacitor cerâmico de 100 nF (marcado `104`)
+- 1 capacitor eletrolítico de 470 µF / 25 V
+- 1 LED de 5 mm
+- 1 pilha de 9 V e 1 pilha AA nova
+- 1 m de fio de cobre rígido (o do próprio kit de jumpers serve)
+- 1 protoboard
+- Papel e caneta — a tabela de palpites é a parte que não se pula
+:::
+
+### Passo 1 — Preencher a coluna do palpite
+
+Antes de encostar o multímetro em qualquer coisa, escreva a **ordem de grandeza**
+que você espera para cada item. Não o valor: só o expoente e a unidade — "dezenas
+de miliohms", "unidades de volts", "centenas de nanofarads".
+
+| # | O que medir | Palpite | Medido |
+|---|---|---|---|
+| 1 | Resistência do resistor de 470 Ω | | |
+| 2 | Resistência das pontas de prova encostadas uma na outra | | |
+| 3 | Resistência de 1 m do fio de cobre | | |
+| 4 | Resistência entre dois furos vizinhos da protoboard (sem nada ligado) | | |
+| 5 | Resistência do LED, ohmímetro no sentido direto | | |
+| 6 | A mesma, com o LED invertido | | |
+| 7 | Tensão da pilha AA nova | | |
+| 8 | Tensão da pilha de 9 V | | |
+| 9 | Capacitância do cerâmico `104` | | |
+| 10 | Capacitância do eletrolítico de 470 µF | | |
+
+: Tabela de palpites do laboratório. Preencher a terceira coluna **antes** da
+quarta é o experimento inteiro. {#tbl-003-palpites}
+
+### Passo 2 — Medir, e prestar atenção nos itens 2 e 3
+
+Meça tudo. A maioria dos itens confirma o palpite; dois deles ensinam algo novo.
+
+**Item 2 — as pontas de prova têm resistência.** Encoste uma na outra na escala
+de 200 Ω. O multímetro não marca zero: marca algo entre 0,2 Ω e 0,8 Ω, que são os
+cabos, os contatos e a chave rotativa. Esse valor **entra em toda medição de
+resistência baixa** que você fizer, somado ao componente. Não há como o
+instrumento distinguir os dois.
+
+**Item 3 — o fio parece um curto, e não é.** Um metro de fio de cobre de 0,5 mm²
+tem cerca de 35 mΩ. A escala de 200 Ω do multímetro tem resolução de 0,1 Ω — ou
+seja, **três vezes maior que a grandeza medida**. O instrumento vai marcar 0,4 Ω,
+que é quase inteiramente a resistência das pontas do item 2. Subtraia o item 2 do
+item 3: sobra 0,0 Ω ou 0,1 Ω, o que já não significa mais nada.
+
+Essa é a primeira aparição de um limite que vale para todo instrumento: **medir
+abaixo da resolução não produz um número ruim, produz um número sem sentido**.
+Medir a resistência de um fio exige método de quatro fios, assunto do
+@sec-cap-004. Por enquanto, a lição é reconhecer quando o instrumento na sua mão
+não tem o que responder.
+
+**Itens 5 e 6 — o ohmímetro conversa com o LED.** No sentido direto o multímetro
+marca alguns quilo-ohms ou simplesmente `OL`, dependendo da tensão que ele injeta;
+no reverso, `OL` sempre. Nenhum dos dois números é "a resistência do LED", porque
+o LED não tem resistência — tem uma curva. Guarde essa medição estranha: ela vira
+tema no Volume 8.
+
+**Itens 9 e 10 — tolerância assimétrica.** Se o multímetro tiver capacímetro, o
+cerâmico de 100 nF deve marcar entre 80 nF e 120 nF (tolerância típica de 20 %) e
+o eletrolítico de 470 µF pode marcar qualquer coisa entre 380 µF e 850 µF —
+eletrolíticos comuns têm tolerância de −20 % a +80 %, assimétrica de propósito.
+Sem capacímetro, pule os dois e volte a eles no @sec-cap-006.
+
+### Passo 3 — Converter para todas as grafias
+
+Pegue os itens 9 e 10 e escreva cada um nas seis formas da @fig-cem-nano:
+por extenso, científica, engenharia, em µF, em pF e na marcação codificada. É
+tedioso, leva três minutos e é o exercício que faz o erro de mil parar de
+acontecer.
+
+### Passo 4 — Fechar o ciclo com o circuito do capítulo 1
+
+Se você ainda tem o circuito do @sec-cap-001 montado (pilha, 470 Ω, LED), calcule
+a corrente usando exclusivamente a régua kΩ × mA:
+
+$$
+I = \frac{V_R}{R} = \frac{7{,}0\ \text{V}}{0{,}47\ \text{k}\Omega} = 14{,}9\ \text{mA},
+$$
+
+e a potência com V × mA:
+
+$$
+P_R = 7{,}0\ \text{V} \times 14{,}9\ \text{mA} = 104\ \text{mW}.
+$$
+
+Nenhuma conversão, nenhuma potência de dez escrita, nenhum zero contado errado.
+Compare com a conta do @sec-cap-001, que usou volts e ampères: mesmo resultado,
+metade do risco.
+
+### Variante simulada (plano B)
+
+Sem componentes, a parte que importa deste laboratório — a coluna do palpite —
+funciona igual: escreva as estimativas para os dez itens e depois confira contra
+a @fig-tres-reguas e contra os valores citados no texto. O item 2 e o item 3, em
+compensação, não têm substituto: **simulador nenhum tem resistência de ponta de
+prova**, e é exatamente por isso que ele nunca vai ensinar essa lição.
+
+## 🔥 Onde Queima {#sec-003-queima}
+
+**Confundir mili com mega.** `m` e `M` estão separados por um fator de $10^{9}$ e
+por uma tecla de *shift*. Um resistor de "10 mΩ" onde se queria 10 MΩ transforma
+um divisor de alta impedância em curto-circuito. Escreva sempre `M` maiúsculo e
+`m` minúsculo, e desconfie de qualquer texto que use `K` maiúsculo — quem erra o
+K costuma errar o resto.
+
+**Ler `104` como 104 pF.** A marcação de capacitor cerâmico é código, não valor:
+`104` significa $10 \times 10^{4}$ pF = 100 nF, mil vezes mais do que a leitura
+ingênua. Um filtro projetado para 100 nF montado com 100 pF simplesmente não
+filtra nada, e o sintoma é ruído inexplicável — nunca um componente queimado, o
+que torna o erro muito mais difícil de achar.
+
+**Ponto decimal americano em texto brasileiro.** Um datasheet escreve `4.7 kΩ`; a
+planilha configurada em português lê `47`. O erro de 10× passa despercebido porque
+o número continua plausível. Ao copiar valores de documentação estrangeira,
+converta explicitamente, e prefira as notações `4k7` e `R47`, que não têm como
+ser mal interpretadas.
+
+**Misturar prefixos dentro da mesma fórmula.** Dividir volts por quilo-ohms e
+anotar o resultado como ampères é o erro de mil clássico. Ou converta tudo para
+unidades de base, ou trabalhe consistentemente em V, kΩ, mA e mW — mas nunca meio
+a meio, que é onde o erro se esconde.
+
+**Escrever precisão que não existe.** "466,7 Ω" a partir de uma pilha de 9 V
+nominais é falsa precisão: quatro algarismos derivados de uma entrada com um. Não
+é só feio — é perigoso, porque induz a acreditar que 466,7 Ω e 470 Ω são
+diferentes o bastante para importar, quando a tolerância do próprio resistor é
+vinte vezes maior que essa diferença.
+
+**Confundir potência com energia.** Watt é joule por segundo; watt-hora é
+energia. Uma bateria de "2000 mAh" não informa energia nenhuma até que a tensão
+entre na conta: 2000 mAh a 3,7 V são 7,4 Wh; os mesmos 2000 mAh a 1,2 V são
+2,4 Wh, um terço. Comparar baterias por mAh só é honesto quando as tensões são
+iguais.
+
+**Esquecer a resistência das pontas de prova.** Toda medição abaixo de uns 10 Ω
+carrega os 0,2 Ω a 0,8 Ω dos cabos. Medir 0,5 Ω de um shunt com pontas de 0,4 Ω
+produz um erro de 80 %. Encoste as pontas uma na outra antes, anote, subtraia — ou
+use um instrumento com função de zerar (`REL`).
+
+**Aceitar leitura abaixo da resolução do instrumento.** Um multímetro de 2000
+contagens na escala de 200 Ω resolve 0,1 Ω. Ele *vai* mostrar um número ao medir
+35 mΩ, e esse número é lixo. Nenhum instrumento avisa que está fora da sua faixa
+útil: essa verificação é sempre sua.
+
+## O que fica deste capítulo {#sec-003-resumo}
+
+Toda grandeza elétrica se deriva do ampère e do segundo, e as definições da
+@tbl-003-grandezas são equações utilizáveis — daí a análise dimensional pegar
+fórmula errada em cinco segundos.
+
+Os prefixos saltam de mil em mil, o que faz da notação de engenharia a única que
+conversa com o instrumento e com a etiqueta do componente. Trabalhar em V, kΩ, mA
+e mW cancela os prefixos sozinho e elimina a maioria dos erros de casa decimal.
+
+E a habilidade central não é calcular com precisão, é estimar com faixa: saber em
+que década o resultado deveria cair, e reconhecer quando o instrumento não tem
+resolução para responder à pergunta. O próximo capítulo pega justamente esse
+instrumento — o multímetro — e examina o que ele mede, como ele mede e em que
+situações ele mente.
