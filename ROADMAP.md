@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 15/104**
+**Progresso: 16/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -39,7 +39,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 ### Volume 3 — Análise de Circuitos
 
 - [x] 015 — Análise nodal — `capitulos/015-analise-nodal.qmd`
-- [ ] 016 — Análise de malhas — `capitulos/016-analise-de-malhas.qmd`
+- [x] 016 — Análise de malhas — `capitulos/016-analise-de-malhas.qmd`
 - [ ] 017 — Superposição e linearidade — `capitulos/017-superposicao-e-linearidade.qmd`
 - [ ] 018 — Teoremas de Thévenin e Norton — `capitulos/018-teoremas-de-thevenin-e-norton.qmd`
 - [ ] 019 — Máxima transferência de potência e casamento — `capitulos/019-maxima-transferencia-de-potencia-e-casamento.qmd`

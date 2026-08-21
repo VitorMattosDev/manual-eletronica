@@ -1,3 +1,643 @@
 # Análise de malhas {#sec-cap-016}
 
-*(em elaboração)*
+O @sec-cap-015 fez uma troca de incógnitas e ganhou um método. Trocar as correntes
+de ramo pelas tensões de nó eliminou a LKT das contas e reduziu a ponte a duas
+equações.
+
+A troca simétrica também funciona, e produz o segundo método geral do manual.
+Desta vez a incógnita é uma **corrente de malha**, a LKC é que sai das contas, e o
+sistema que sobra é feito só de equações de LKT.
+
+Não é redundância. Os dois métodos são econômicos em circuitos de forma oposta:
+onde a análise nodal precisa de seis equações, a de malhas costuma precisar de
+uma, e vice-versa. Saber montar os dois e contar as equações **antes** de começar
+é o que separa quinze minutos de duas horas.
+
+## Malha, laço e circuito planar {#sec-016-planar}
+
+Três palavras que não são sinônimos:
+
+- Um **laço** (ou *loop*) é qualquer caminho fechado pelo circuito que não repete
+  nó nenhum.
+- Uma **malha** (ou *malha essencial*, *mesh*) é um laço que **não contém nenhum
+  outro laço dentro de si**. São as "janelas" do desenho.
+- Um circuito é **planar** se puder ser desenhado no papel sem que nenhum fio
+  cruze outro.
+
+Um circuito de duas janelas tem três laços — a janela esquerda, a direita e o
+contorno externo — mas apenas **duas malhas**. O contorno externo contém as outras
+duas e por isso não é malha. E não faz falta: sua equação de LKT é a soma das
+outras duas, não acrescenta informação nenhuma.
+
+A restrição séria é a planaridade. "Malha" é uma noção de **desenho**, não de
+circuito: só faz sentido falar em janela num diagrama sem cruzamentos. A análise
+nodal não tem esse problema — ela funciona em qualquer circuito, planar ou não. É
+a primeira diferença de fundo entre os dois métodos, e a razão de todo simulador
+usar nodal.
+
+Na prática de bancada isso raramente morde: quase tudo o que se monta em
+protoboard é planar, e circuitos que *parecem* ter cruzamentos costumam ser
+redesenháveis sem eles. Mas a partir de umas seis malhas com interligações
+cruzadas, a planaridade deixa de ser óbvia — e aí a escolha do método deixa de ser
+uma questão de conveniência.
+
+::: {#fig-016-malhas}
+
+```{.tikz}
+%%| filename: 016-malhas
+%%| alt: Circuito de duas janelas com uma fonte à esquerda, um resistor no topo de cada janela e um resistor compartilhado no ramo central. Duas setas circulares no sentido horário indicam as correntes de malha um e dois. O ramo central é percorrido pelas duas correntes em sentidos opostos, e a corrente real naquele resistor é a diferença entre elas.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, invert, l_={$V_S$}] (0,4.4);
+  \draw (0,4.4) to[R, l={$R_A$}] (4.4,4.4);
+  \draw (4.4,4.4) to[R, l={$R_B$}] (8.8,4.4);
+  \draw (4.4,4.4) to[R, l_={$R_C$}] (4.4,0);
+  \draw (8.8,4.4) to[R, l={$R_D$}] (8.8,0);
+  \draw (0,0) -- (8.8,0);
+  \node[ponto] at (4.4,4.4) {};
+  \node[ponto] at (4.4,0) {};
+  \draw (2.2,0) -- (2.2,-0.6);
+  \node[ground] at (2.2,-0.6) {};
+
+  % correntes de malha
+  \draw[manualblue, very thick, -{Stealth[length=3mm]}]
+       (2.2,2.2) ++(120:0.95) arc (120:-150:0.95);
+  \node[manualblue, font=\scriptsize\bfseries] at (2.2,2.2) {$I_1$};
+
+  \draw[manualgreen!55!black, very thick, -{Stealth[length=3mm]}]
+       (6.6,2.2) ++(120:0.95) arc (120:-150:0.95);
+  \node[manualgreen!55!black, font=\scriptsize\bfseries] at (6.6,2.2) {$I_2$};
+
+  % o laco externo, que nao e malha
+  \draw[manualgray, dashed, thick, rounded corners=6pt]
+       (-0.55,-1.1) rectangle (9.7,4.95);
+  \node[manualgray, font=\scriptsize, anchor=south west] at (-0.55,5.05)
+       {laço externo: fechado, mas \textbf{não é malha} --- contém as outras duas};
+
+  % ramo compartilhado: as duas correntes, em sentidos opostos
+  \draw[manualred, thick, -{Stealth[length=2.2mm]}] (4.78,3.0) -- (4.78,2.2);
+  \draw[manualred, thick, -{Stealth[length=2.2mm]}] (5.22,1.4) -- (5.22,2.2);
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.9,-1.6)
+       {Correntes de ramo a partir das correntes de malha:\\[3pt]
+        por $R_A$: $I_1$ \qquad por $R_B$ e $R_D$: $I_2$ \qquad
+        por $R_C$: $\mathbf{I_1 - I_2}$ (para baixo)\\[3pt]
+        As duas setas vermelhas são $I_1$ descendo e $I_2$ subindo pelo
+        \textbf{mesmo} resistor. Só o ramo compartilhado exige subtração;\\
+        em todos os outros, a corrente de malha \textbf{é} a corrente de ramo.};
+
+\end{circuitikz}
+```
+
+Duas malhas, duas incógnitas. As setas circulares não são correntes que alguém
+possa medir: são variáveis de contabilidade. O que o amperímetro lê num ramo
+compartilhado é a **diferença** entre as duas.
+
+:::
+
+## A corrente de malha como incógnita {#sec-016-incognita}
+
+Aqui está a ideia que faz o método funcionar: imagine que em cada janela do
+circuito circula uma corrente própria, fechada sobre si mesma. A corrente real de
+um ramo é a **soma algébrica** das correntes de malha que passam por ele.
+
+Como toda corrente de malha entra e sai de cada nó que visita, **a LKC é satisfeita
+automaticamente**. É o espelho exato do que aconteceu no @sec-cap-015, onde
+escrever tensões como diferença de potenciais de nó satisfazia a LKT de graça.
+Sobram apenas equações de LKT, uma por malha.
+
+Quantas? Para um circuito planar com $b$ ramos e $n$ nós, o número de malhas é
+
+$$ m = b - n + 1, $$
+
+que é exatamente o número de equações de LKT que o @sec-cap-013 já pedia. A
+economia em relação ao método bruto é a mesma da nodal, pela outra ponta: lá
+descartamos as equações de LKT, aqui descartamos as de LKC.
+
+**A convenção que evita metade dos erros:** escolha **todas** as correntes de malha
+no mesmo sentido, e por hábito no **sentido horário**. Não é obrigatório, mas com
+essa escolha a matriz do sistema sai com uma estrutura fixa e conferível, como
+veremos. Correntes de malha em sentidos misturados funcionam e produzem sinais
+trocados fora da diagonal, o que destrói a única conferência barata que o método
+oferece.
+
+E, como na nodal, **o sinal do resultado se encarrega do sentido real**: uma
+corrente de malha negativa quer dizer que ela circula no sentido anti-horário.
+Não há nada a adivinhar de antemão.
+
+## O método em cinco passos {#sec-016-metodo}
+
+1. **Verifique que o circuito é planar** e redesenhe-o sem cruzamentos, se preciso.
+2. **Identifique as malhas** (as janelas) e atribua a cada uma uma corrente no
+   **sentido horário**.
+3. **Escreva a LKT em cada malha**, percorrendo-a no sentido da sua corrente e
+   somando as quedas: cada resistor contribui com sua resistência vezes a corrente
+   líquida que o atravessa naquele sentido.
+4. **Resolva o sistema.**
+5. **Volte aos ramos**: corrente de ramo é soma ou diferença de correntes de malha;
+   daí saem as tensões por Ohm, e o balanço de potência confere tudo.
+
+O passo 3 tem uma forma fechada que dispensa percorrer nada, e é ela que se usa na
+prática — a próxima seção.
+
+## O mesmo circuito, agora por malhas {#sec-016-exemplo}
+
+O circuito do @sec-cap-013 e do @sec-cap-015 pela terceira vez. Ele tem 3 ramos e
+2 nós, logo $m = 3 - 2 + 1 = 2$ malhas: duas equações, contra a única da análise
+nodal. Já dá para prever qual método era o certo aqui — mas o valor do exercício é
+ver os três caminhos convergirem para os mesmos três números.
+
+::: {#fig-016-exemplo}
+
+```{.tikz}
+%%| filename: 016-exemplo
+%%| alt: O circuito de duas fontes dos capítulos treze e quinze resolvido por análise de malhas. A malha da esquerda tem a fonte de nove volts, o resistor de um kilo-ohm e o de dois vírgula dois kilo-ohms; a da direita tem o de dois vírgula dois, o de um vírgula cinco e a fonte de cinco volts. As duas correntes de malha são horárias e valem três vírgula cento e oitenta e seis e zero vírgula quinhentos e quarenta e três miliampères.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, invert, l_={$9$ V}] (0,4.4);
+  \draw (0,4.4) to[R, l={$R_1 = 1\,\mathrm{k}$}] (4.6,4.4);
+  \draw (4.6,4.4) to[R, l={$R_3 = 1{,}5\,\mathrm{k}$}] (9.2,4.4);
+  \draw (4.6,4.4) to[R, l={$R_2 = 2{,}2\,\mathrm{k}$}] (4.6,0);
+  \draw (9.2,0) to[battery1, invert, l_={$5$ V}] (9.2,4.4);
+  \draw (0,0) -- (9.2,0);
+  \node[ponto] at (4.6,4.4) {};
+  \node[ponto] at (4.6,0) {};
+  \draw (2.3,0) -- (2.3,-0.6);
+  \node[ground] at (2.3,-0.6) {};
+
+  \draw[manualblue, very thick, -{Stealth[length=3mm]}]
+       (2.3,2.2) ++(120:0.95) arc (120:-150:0.95);
+  \node[manualblue, font=\scriptsize\bfseries, align=center] at (2.3,2.2)
+       {$I_1$\\$3{,}186$};
+
+  \draw[manualgreen!55!black, very thick, -{Stealth[length=3mm]}]
+       (6.9,2.2) ++(120:0.95) arc (120:-150:0.95);
+  \node[manualgreen!55!black, font=\scriptsize\bfseries, align=center] at (6.9,2.2)
+       {$I_2$\\$0{,}543$};
+
+  \draw[manualred, thick, -{Stealth[length=2.2mm]}] (4.42,1.2) -- (4.42,0.45);
+  \node[manualred, font=\scriptsize, anchor=east] at (4.30,0.8)
+       {$I_1 - I_2 = 2{,}643$ mA};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.9,-1.4)
+       {Percorrendo cada malha no sentido da sua própria corrente, em kilo-ohms,
+        miliampères e volts:\\[4pt]
+        malha 1: \ $3{,}2\,I_1 - 2{,}2\,I_2 = +9$
+        \qquad\qquad
+        malha 2: \ $-2{,}2\,I_1 + 3{,}7\,I_2 = -5$\\[4pt]
+        $I_1 = 3{,}186$ mA \quad $I_2 = 0{,}543$ mA \quad
+        e a corrente de $R_2$ é a diferença, $2{,}643$ mA --- os mesmos números
+        do capítulo 13.};
+
+\end{circuitikz}
+```
+
+O terceiro caminho para os mesmos três números. Repare no $-5$ do lado direito: a
+malha 2, percorrida no sentido horário, entra na fonte de 5 V pelo terminal
+positivo — a fonte é uma **queda** nessa malha, não uma subida.
+
+:::
+
+**Malha 1**, percorrida no sentido horário a partir do canto inferior esquerdo. A
+fonte de 9 V é uma subida; $R_1$ e $R_2$ são quedas. Por $R_2$ passa $I_1$ para
+baixo e $I_2$ para cima, líquido $I_1 - I_2$:
+
+$$ 9 = 1\,I_1 + 2{,}2\,(I_1 - I_2) = 3{,}2\,I_1 - 2{,}2\,I_2. $$
+
+**Malha 2**, também horária. Por $R_3$ passa $I_2$; por $R_2$ passa $I_2 - I_1$
+para cima; e a fonte de 5 V, percorrida de cima para baixo, é entrada pelo `+` —
+queda de 5 V:
+
+$$ 0 = 1{,}5\,I_2 + 2{,}2\,(I_2 - I_1) + 5
+   \quad\Longrightarrow\quad
+   -2{,}2\,I_1 + 3{,}7\,I_2 = -5. $$
+
+**Resolvendo.** O determinante é $3{,}2 \times 3{,}7 - 2{,}2^2 = 11{,}84 - 4{,}84
+= 7{,}00$, e daí
+
+$$ I_1 = \frac{9 \times 3{,}7 - 2{,}2 \times 5}{7{,}00} = \frac{22{,}3}{7} =
+   3{,}186\ \text{mA}, \qquad
+   I_2 = \frac{3{,}2 \times (-5) + 2{,}2 \times 9}{7{,}00} = \frac{3{,}8}{7} =
+   0{,}543\ \text{mA}. $$
+
+**Voltando aos ramos.** $I_{R_1} = I_1 = 3{,}186$ mA. $I_{R_3} = I_2 = 0{,}543$ mA,
+positiva e no sentido horário, isto é, **entrando** na fonte de 5 V — o mesmo fato
+físico que no @sec-cap-013 apareceu como sinal negativo, porque lá a seta tinha
+sido arbitrada ao contrário. E $I_{R_2} = I_1 - I_2 = 2{,}643$ mA para baixo.
+
+Os três números batem, pela terceira vez e por três caminhos independentes. É essa
+convergência que autoriza confiar num método.
+
+## A matriz por inspeção {#sec-016-matriz}
+
+Com todas as correntes no sentido horário, o sistema tem sempre a mesma estrutura:
+
+$$ \begin{aligned}
+   R_{11}\,I_1 - R_{12}\,I_2 &= V_1 \\
+   -R_{21}\,I_1 + R_{22}\,I_2 &= V_2
+   \end{aligned} $$
+
+- $R_{11}$: **soma de todas as resistências da malha 1**. Sempre positiva.
+- $R_{12} = R_{21}$: **soma das resistências compartilhadas** entre as malhas 1 e
+  2. Entra sempre com sinal **negativo** — é o que a escolha de sentido único
+  garante.
+- $V_1$: **soma algébrica das fontes de tensão da malha 1**, contadas positivas
+  quando a malha as percorre do `−` para o `+` (subida) e negativas no caso
+  contrário.
+
+É a mesma forma da matriz nodal do @sec-cap-015, com resistências no lugar de
+condutâncias e correntes no lugar de tensões. E a mesma conferência: **positivo na
+diagonal, negativo fora, simétrica**. Um sinal positivo fora da diagonal, num
+circuito só de resistores com malhas todas horárias, é erro — sempre.
+
+::: {.callout-tip}
+## As duas matrizes lado a lado
+
+| | Nodal | Malhas |
+|---|---|---|
+| Incógnita | tensão de nó | corrente de malha |
+| Lei satisfeita de graça | LKT | LKC |
+| Equações | $n - 1$ | $b - n + 1$ |
+| Diagonal | $\sum G$ do nó | $\sum R$ da malha |
+| Fora da diagonal | $-G$ compartilhada | $-R$ compartilhada |
+| Lado direito | correntes injetadas | subidas de tensão |
+| Caso trivial | fonte de corrente | fonte de tensão |
+| Caso que exige truque | fonte de tensão flutuante (supernó) | fonte de corrente compartilhada (supermalha) |
+| Circuito não planar | funciona | **não funciona** |
+
+: Os dois métodos são a mesma ideia aplicada às duas grandezas. Saber isso reduz
+pela metade o que há para memorizar. {#tbl-016-dual}
+:::
+
+## Fontes de corrente e a supermalha {#sec-016-supermalha}
+
+O ponto cego do método é o simétrico do que a nodal tinha: **uma fonte de corrente
+ideal não tem resistência**, e a tensão sobre ela não é determinada pela corrente
+— é o que quer que o resto do circuito imponha. Não há termo para escrever na LKT.
+
+Dois casos, de novo:
+
+**Caso 1 — a fonte de corrente está num ramo que pertence a uma só malha.** Então
+aquela corrente de malha está *dada*, e a malha não precisa de equação. Uma fonte
+de 2 mA no ramo externo da malha 1 significa $I_1 = 2$ mA (ou $-2$ mA, conforme o
+sentido), ponto final.
+
+**Caso 2 — a fonte de corrente está no ramo compartilhado entre duas malhas.**
+Nenhuma das duas correntes é conhecida e não se pode escrever LKT em nenhuma delas
+isoladamente, porque a tensão sobre a fonte é desconhecida. A saída é a
+**supermalha**: percorrer o contorno que envolve as duas malhas **pulando o ramo da
+fonte**. A tensão desconhecida não aparece porque o caminho não passa por ela.
+
+A supermalha dá **uma** equação de LKT para **duas** malhas; a segunda vem da
+própria fonte: $I_2 - I_1 = I_S$.
+
+::: {#fig-016-supermalha}
+
+```{.tikz}
+%%| filename: 016-supermalha
+%%| alt: Circuito de duas malhas com uma fonte de doze volts à esquerda, um resistor de um kilo-ohm no topo da malha esquerda, uma fonte de corrente de dois miliampères no ramo central compartilhado, e resistores de dois vírgula dois e três vírgula três kilo-ohms na malha direita. Um caminho tracejado contorna as duas malhas pulando o ramo da fonte de corrente, formando a supermalha. As correntes resultam zero vírgula cento e cinquenta e quatro e dois vírgula cento e cinquenta e quatro miliampères.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, invert, l_={$12$ V}] (0,4.4);
+  \draw (0,4.4) to[R, l={$R_1 = 1\,\mathrm{k}$}] (4.4,4.4);
+  \draw (4.4,4.4) to[R, l={$R_2 = 2{,}2\,\mathrm{k}$}] (8.8,4.4);
+  \draw (4.4,0) to[I, l_={$I_S = 2$ mA}] (4.4,4.4);
+  \draw (8.8,4.4) to[R, l={$R_3 = 3{,}3\,\mathrm{k}$}] (8.8,0);
+  \draw (0,0) -- (8.8,0);
+  \node[ponto] at (4.4,4.4) {};
+  \node[ponto] at (4.4,0) {};
+  \draw (2.2,0) -- (2.2,-0.6);
+  \node[ground] at (2.2,-0.6) {};
+
+  \node[manualblue, font=\scriptsize\bfseries, anchor=south] at (2.2,2.9)
+       {$I_1 = 0{,}154$ mA};
+  \node[manualgreen!55!black, font=\scriptsize\bfseries, anchor=south] at (7.0,2.9)
+       {$I_2 = 2{,}154$ mA};
+
+  % caminho da supermalha
+  \draw[manualred, very thick, dashed, rounded corners=8pt]
+       (0.55,0.55) -- (0.55,3.85) -- (8.25,3.85) -- (8.25,0.55) -- cycle;
+  \node[manualred, font=\scriptsize\bfseries, anchor=south] at (4.4,5.3)
+       {supermalha: passa por fora, sem tocar no ramo da fonte};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.9,-1.4)
+       {As duas correntes de malha continuam horárias. LKT ao longo do contorno
+        tracejado --- a tensão sobre a fonte de corrente não aparece:\\[3pt]
+        $-12 + 1\,I_1 + 2{,}2\,I_2 + 3{,}3\,I_2 = 0$
+        \qquad e \qquad $I_2 - I_1 = 2$\\[4pt]
+        $I_1 = 0{,}154$ mA \quad $I_2 = 2{,}154$ mA \quad e sobre a fonte de
+        corrente há $11{,}85$ V, que ela não escolheu.};
+
+\end{circuitikz}
+```
+
+A supermalha em serviço. O caminho tracejado é um laço legítimo do circuito — não
+é malha, mas a LKT vale para qualquer laço, e este foi escolhido justamente por
+evitar o único elemento cuja tensão não sabemos escrever.
+
+:::
+
+**Resolvendo.** Da restrição, $I_1 = I_2 - 2$. Substituindo na equação da
+supermalha:
+
+$$ (I_2 - 2) + 5{,}5\,I_2 = 12 \quad\Longrightarrow\quad 6{,}5\,I_2 = 14
+   \quad\Longrightarrow\quad I_2 = 2{,}154\ \text{mA}, \quad I_1 = 0{,}154\ \text{mA}. $$
+
+**A tensão sobre a fonte de corrente**, que o método não usou mas que existe:
+subindo pelo ramo da esquerda, $V = 12 - 1 \times 0{,}154 = 11{,}846$ V; descendo
+pelo ramo da direita, $V = (2{,}2 + 3{,}3) \times 2{,}154 = 11{,}846$ V. Fecha —
+e essa dupla contagem é a conferência natural da supermalha.
+
+**O balanço de potência**, que fecha tudo:
+
+| Elemento | Cálculo | Potência |
+|---|---|---|
+| Fonte de 12 V | $12 \times 0{,}154$ mA | $-1{,}85$ mW (fornece) |
+| Fonte de 2 mA | $11{,}846 \times 2$ mA | $-23{,}69$ mW (fornece) |
+| $R_1$ | $(0{,}154)^2 \times 1$ | $+0{,}02$ mW |
+| $R_2$ | $(2{,}154)^2 \times 2{,}2$ | $+10{,}21$ mW |
+| $R_3$ | $(2{,}154)^2 \times 3{,}3$ | $+15{,}31$ mW |
+| **Soma** | | $\approx 0$ |
+
+: Balanço de potência do circuito com supermalha. Quase toda a energia vem da fonte
+de corrente, não da de tensão. {#tbl-016-balanco}
+
+Repare no que a tabela conta: a fonte de tensão de 12 V, aparentemente a
+protagonista, entrega 1,85 mW, e a modesta fonte de 2 mA entrega treze vezes mais.
+Uma fonte de corrente ideal produz a tensão que for preciso — e é exatamente por
+isso que ela não existe. O @sec-cap-020 volta a esse ponto.
+
+## Nodal ou malhas? {#sec-016-escolha}
+
+A pergunta se responde **contando**, antes de escrever uma única equação:
+
+- **Nodal:** $n - 1$ equações, onde $n$ é o número de nós essenciais. Menos uma
+  para cada fonte de tensão aterrada.
+- **Malhas:** $b - n + 1$ equações. Menos uma para cada fonte de corrente que
+  pertença a uma só malha.
+
+Escolha o menor. Em caso de empate, prefira nodal — as tensões de nó são o que o
+multímetro mede, e a conferência na bancada fica direta.
+
+::: {#fig-016-escolha}
+
+```{.tikz}
+%%| filename: 016-escolha
+%%| alt: Dois circuitos lado a lado. À esquerda, quatro resistores em paralelo alimentados por uma fonte através de um resistor série: a análise nodal precisa de uma equação e a de malhas de quatro. À direita, cinco resistores em série numa única malha: a análise nodal precisa de cinco equações e a de malhas de uma.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ================= paralelo: nodal vence =================
+  \begin{scope}
+    \draw (0,0) to[battery1, invert, l_={$V_S$}] (0,4.6);
+    \draw (0,4.6) to[R, l={$R_0$}] (2.0,4.6);
+    \draw (2.0,4.6) -- (7.4,4.6);
+    \draw (0,0) -- (7.4,0);
+    \foreach \xx/\rr in {2.0/{$R_1$}, 3.8/{$R_2$}, 5.6/{$R_3$}, 7.4/{$R_4$}}{
+      \draw (\xx,4.6) to[R, l={\rr}] (\xx,0);
+    }
+    \foreach \xx in {2.0, 3.8, 5.6}{
+      \node[ponto] at (\xx,4.6) {};
+      \node[ponto] at (\xx,0) {};
+    }
+    \draw (1.0,0) -- (1.0,-0.6);
+    \node[ground] at (1.0,-0.6) {};
+
+    \node[manualblue, font=\scriptsize\bfseries, anchor=south] at (4.7,5.4)
+       {2 nós essenciais \ $\Rightarrow$ \ \textbf{1} equação nodal};
+    \node[manualred, font=\scriptsize\bfseries, anchor=north] at (4.7,-1.1)
+       {4 malhas \ $\Rightarrow$ \ \textbf{4} equações de malha};
+    \node[font=\scriptsize\bfseries, anchor=north] at (4.7,-1.75)
+       {circuito \textbf{largo}};
+  \end{scope}
+
+  % ================= serie: malhas vencem =================
+  \begin{scope}[xshift=11.0cm]
+    \draw (0,0) to[battery1, invert, l_={$V_S$}] (0,4.6);
+    \draw (0,4.6) to[R, l={$R_1$}] (2.2,4.6);
+    \draw (2.2,4.6) to[R, l={$R_2$}] (4.4,4.6);
+    \draw (4.4,4.6) to[R, l={$R_3$}] (4.4,2.3);
+    \draw (4.4,2.3) to[R, l={$R_4$}] (4.4,0);
+    \draw (4.4,0) to[R, l={$R_5$}] (0,0);
+    \foreach \pt in {(2.2,4.6), (4.4,2.3)}{
+      \node[ponto] at \pt {};
+    }
+    \draw[manualred, very thick, -{Stealth[length=3mm]}]
+         (2.2,2.3) ++(120:0.85) arc (120:-150:0.85);
+
+    \node[manualblue, font=\scriptsize\bfseries, anchor=south] at (2.2,5.4)
+       {6 nós \ $\Rightarrow$ \ \textbf{5} equações nodais};
+    \node[manualred, font=\scriptsize\bfseries, anchor=north] at (2.2,-1.1)
+       {1 malha \ $\Rightarrow$ \ \textbf{1} equação de malha};
+    \node[font=\scriptsize\bfseries, anchor=north] at (2.2,-1.75)
+       {circuito \textbf{comprido}};
+    \node[manualgray, font=\scriptsize, align=center, anchor=north] at (2.2,-2.4)
+       {(e nenhum desses nós é \emph{essencial}: reduzida a série,\\
+        este circuito não precisa de método nenhum)};
+  \end{scope}
+
+\end{circuitikz}
+```
+
+Os dois extremos. Circuito "largo" — muitos ramos em paralelo entre poucos nós —
+pede nodal. Circuito "comprido" — muitos elementos em série num laço só — pede
+malhas, com a ressalva em cinza: elementos em série se reduzem antes de qualquer
+método.
+
+:::
+
+A ressalva do painel direito merece ser dita por extenso, porque ela desmonta
+metade dos exemplos de livro-texto: **antes de escolher método, reduza o que for
+redutível.** Séries e paralelos do @sec-cap-012 eliminam nós e malhas de graça, e
+um circuito que parecia pedir cinco equações costuma pedir duas depois de meia
+dúzia de associações. A contagem que decide o método é a contagem **do circuito
+já reduzido**.
+
+Feita a redução, na eletrônica que este manual vai encontrar o placar ainda pende
+para a nodal: fontes de alimentação são poucas, o terra é único, e transistores e
+amp-ops se comportam como fontes de corrente controladas — o caso trivial da
+nodal. É por isso que todo simulador é nodal por dentro. A análise de malhas ganha
+em circuitos com muitos laços e poucos ramos paralelos, e continua sendo a mais
+confortável de fazer à mão quando o desenho já vem com janelas óbvias.
+
+## 🧪 Laboratório {#sec-016-lab}
+
+**Medir uma corrente que não existe.** As correntes de malha são ficções de
+cálculo, e o experimento central deste laboratório é justamente o de mostrar que
+elas *não* são o que o amperímetro lê no ramo compartilhado — mas que a diferença
+entre elas é. Vale a regra de sempre: **prever por escrito antes de medir**.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada em 9,0 V e uma segunda fonte (ou pilha recarregável) em 5,0 V
+- 1 multímetro digital
+- 1 resistor de 1 kΩ, 1/4 W
+- 1 resistor de 1,5 kΩ, 1/4 W
+- 1 resistor de 2,2 kΩ, 1/4 W
+- 1 resistor de 3,3 kΩ, 1/4 W
+- 1 resistor de 4,7 kΩ, 1/4 W
+- 1 resistor de 10 kΩ, 1/4 W
+- 1 potenciômetro de 10 kΩ (para a Parte 4)
+:::
+
+### Parte 1 — As duas malhas e a corrente do ramo compartilhado
+
+1. Monte o circuito da @fig-016-exemplo. Meça os resistores antes e use os valores
+   reais nas equações.
+2. Escreva as duas equações de malha e resolva. Preveja $I_1$, $I_2$ e $I_1 - I_2$.
+3. Meça a corrente em $R_1$ (abrindo o ramo e pondo o amperímetro em série).
+   Deve dar $I_1$.
+4. Meça a corrente em $R_3$. Deve dar $I_2$.
+5. Meça a corrente em $R_2$. Deve dar a **diferença**.
+6. Confira: as três medidas satisfazem a LKC no nó do meio?
+
+A pergunta que fecha a parte: em que ponto do circuito você poderia pôr um
+amperímetro para ler $I_1$ **e** $I_2$ ao mesmo tempo? Em nenhum. Elas não são
+correntes reais.
+
+### Parte 2 — Três métodos, um circuito
+
+1. Ainda com o circuito montado, resolva-o também por análise nodal (uma equação,
+   @sec-cap-015) e pelo método bruto de Kirchhoff (três equações, @sec-cap-013).
+2. Preencha a tabela e compare com as medidas:
+
+| Método | Equações | $I_{R_1}$ | $I_{R_2}$ | $I_{R_3}$ |
+|---|---|---|---|---|
+| Kirchhoff cru | 3 | | | |
+| Nodal | 1 | | | |
+| Malhas | 2 | | | |
+| **Medido** | — | | | |
+
+: Tabela da Parte 2. As três linhas de cálculo têm de coincidir entre si; a linha
+medida difere delas apenas pela tolerância dos resistores e pelo instrumento.
+{#tbl-016-lab}
+
+Cronometre os três. A diferença de esforço é o argumento inteiro deste volume.
+
+### Parte 3 — Uma malha a mais
+
+1. Acrescente ao circuito um terceiro ramo: 3,3 kΩ em série com 4,7 kΩ, ligados do
+   nó X ao terra, com o ponto entre eles chamado de Y.
+2. Conte: quantos nós essenciais? Quantas malhas? Qual método dá o sistema menor?
+3. Resolva pelo método que você escolheu e preveja $V_X$, $V_Y$ e as correntes dos
+   cinco resistores.
+4. Meça as duas tensões e pelo menos três correntes. Confira a LKC em X e em Y.
+
+Este é o exercício que ensina a **contar antes de escrever**. Um circuito com dois
+nós essenciais e três malhas não deixa dúvida sobre qual método usar, e a lição
+vale mais que a resposta numérica.
+
+### Parte 4 — A fonte de corrente que você não tem
+
+Uma fonte de corrente de bancada é cara, e a supermalha parece inacessível. Não é:
+
+1. Monte um "aproximador de fonte de corrente" — a fonte de 9,0 V em série com o
+   resistor de 10 kΩ. Para qualquer carga bem menor que 10 kΩ, ele entrega
+   aproximadamente $9/10\,\text{k} = 0{,}9$ mA, quase independentemente da carga.
+2. Meça a corrente entregue com cargas de 1 kΩ, 2,2 kΩ e 4,7 kΩ. Ela varia — anote
+   quanto.
+3. Substitua o resistor de 10 kΩ pelo potenciômetro e observe: a "fonte de
+   corrente" é ajustável, e quanto maior a resistência série, mais constante a
+   corrente e menor o valor máximo.
+
+O ponto: **fonte de corrente real é fonte de tensão com uma resistência série
+grande**. Quanto maior a resistência, melhor a aproximação e pior o aproveitamento.
+Essa troca é o assunto do @sec-cap-018, onde ela ganha nome — transformação de
+fontes — e do @sec-cap-020, onde vira medida de qualidade de uma fonte.
+
+### Variante simulada (plano B)
+
+O simulador resolve as Partes 1 a 3 imediatamente e tem uma fonte de corrente
+ideal de graça, o que permite montar a @fig-016-supermalha exatamente como
+desenhada e conferir os 11,85 V sobre ela.
+
+Faça também o exercício que só o simulador permite: monte a supermalha com a fonte
+de corrente ideal, depois substitua-a pelo par "fonte de tensão + resistor série"
+da Parte 4 e compare. Quanto maior a resistência série, mais os resultados se
+aproximam — e você verá o preço em tensão de alimentação necessária.
+
+## 🔥 Onde Queima {#sec-016-queima}
+
+**Aplicar malhas a circuito não planar.** O método simplesmente não existe ali:
+sem desenho sem cruzamentos, não há janelas para chamar de malha. Se você não
+conseguir redesenhar sem cruzamentos depois de duas tentativas honestas, use
+nodal. A nodal não tem essa restrição.
+
+**Misturar sentidos das correntes de malha.** Funciona, mas destrói a estrutura
+"positivo na diagonal, negativo fora", que é a única conferência barata do método.
+Todas horárias, sempre.
+
+**Esquecer que o ramo compartilhado carrega duas correntes.** Escrever
+$2{,}2\,I_1$ em vez de $2{,}2\,(I_1 - I_2)$ é o erro número um do método, e ele não
+dá sintoma nenhum: o sistema resolve, os números saem, e estão errados. A defesa é
+montar por inspeção — o termo fora da diagonal *é* a resistência compartilhada, e
+se ele não apareceu, você esqueceu o acoplamento.
+
+**Trocar o sinal de uma fonte.** Uma fonte percorrida do `−` para o `+` é subida
+(entra positiva no lado direito); do `+` para o `−` é queda. Como as malhas são
+todas horárias, uma mesma fonte pode ser subida numa malha e queda na malha
+vizinha. Marque as polaridades no desenho **antes** de escrever qualquer equação,
+como o @sec-cap-013 exige.
+
+**Escrever LKT numa malha que contém fonte de corrente ideal.** A tensão sobre ela
+é desconhecida e não há termo para escrever. Se a fonte é exclusiva de uma malha,
+aquela corrente está dada; se é compartilhada, use supermalha.
+
+**Esquecer a equação de restrição da supermalha.** A supermalha dá uma equação para
+duas incógnitas. A segunda é $I_2 - I_1 = I_S$, com o sinal ditado pelo sentido
+desenhado da fonte. Sem ela o sistema é indeterminado — e o sintoma é uma matriz
+singular, que num simulador aparece como erro de convergência.
+
+**Tomar corrente de malha por corrente de ramo na hora de medir.** No ramo
+compartilhado, o amperímetro lê a diferença. Se você previu 3,186 mA e mediu
+2,643 mA, o método não errou: você comparou a coisa errada.
+
+**Somar as correntes de malha para achar a corrente total da fonte.** Só se a
+fonte estiver num ramo compartilhado. Numa fonte que pertence a uma só malha, a
+corrente dela **é** a corrente daquela malha, e somar as duas dá um número que não
+existe.
+
+**Amperímetro em paralelo.** Toda a Parte 1 é feita de medições de corrente, que
+exigem **abrir o ramo** e pôr o instrumento em série. Amperímetro em paralelo com
+um resistor é um curto naquele resistor: leitura absurda, fusível queimado, e no
+caso de um ramo de fonte, uma fonte em curto. O @sec-cap-004 já detalhava; aqui a
+tentação é maior porque há muitas correntes para medir e a preguiça sugere não
+desmontar nada.
+
+**Confiar no sinal da resposta sem interpretá-lo.** Corrente de malha negativa
+significa circulação anti-horária, e isso muda o sentido físico de **todas** as
+correntes de ramo daquela malha. Não é um detalhe: num circuito com diodos ou
+transistores — Volumes 8 e 9 — o sentido determina se o componente conduz ou não.
+
+## O que fica deste capítulo {#sec-016-resumo}
+
+A análise de malhas troca as correntes de ramo por correntes de malha — ficções
+que circulam em cada janela de um circuito planar. Como toda corrente de malha
+entra e sai de cada nó, a LKC é satisfeita de graça, e sobram $b - n + 1$ equações,
+todas de LKT.
+
+Com todas as correntes no sentido horário, a matriz sai com estrutura fixa: soma
+das resistências da malha na diagonal, menos a resistência compartilhada fora dela,
+simétrica, com as subidas de tensão do lado direito. É a imagem espelhada da matriz
+nodal do @sec-cap-015, e a mesma conferência vale.
+
+Fontes de corrente exigem atenção porque não têm resistência. Exclusivas de uma
+malha, elas **dão** aquela corrente e eliminam uma incógnita; compartilhadas, pedem
+a supermalha — um laço que contorna as duas malhas pulando o ramo da fonte, mais a
+equação da própria fonte.
+
+A escolha entre os dois métodos se faz contando equações antes de escrever
+qualquer uma: $n - 1$ para nodal, $b - n + 1$ para malhas, descontadas as fontes
+que eliminam incógnitas. Circuito largo pede nodal; circuito comprido pede malhas;
+circuito não planar não deixa escolha.
+
+Nodal e malhas resolvem qualquer circuito resistivo, mas resolvem **o circuito
+inteiro de uma vez**. O @sec-cap-017 abre a terceira via: em vez de resolver tudo
+junto, quebrar o problema em pedaços que se somam — o que só é possível porque
+estes circuitos são lineares, e o que prepara o terreno para o teorema que dá nome
+ao @sec-cap-018.
