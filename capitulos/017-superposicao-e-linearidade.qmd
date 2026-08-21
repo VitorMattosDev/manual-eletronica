@@ -1,3 +1,631 @@
 # Superposição e linearidade {#sec-cap-017}
 
-*(em elaboração)*
+Os dois métodos anteriores atacam o circuito inteiro de uma vez: monta-se um
+sistema, resolve-se, saem todos os números juntos. Isso é eficiente e é
+completamente opaco. Um sistema de três equações resolvido não diz **de onde** vem
+cada volt.
+
+A superposição faz o contrário. Ela quebra o circuito em tantos problemas quantas
+forem as fontes, resolve cada um sozinho — com fontes desligadas, o que costuma
+reduzir o problema a divisores de tensão do @sec-cap-014 — e soma os resultados. É
+quase sempre mais trabalho aritmético e quase sempre mais informação: você fica
+sabendo quanto cada fonte contribui, separadamente.
+
+E ela não é um truque de cálculo. Superposição é a consequência direta de os
+circuitos deste volume serem **lineares** — e é a ferramenta que, no Volume 9,
+permite analisar um amplificador separando a polarização em corrente contínua do
+sinal que se quer amplificar. Metade da eletrônica analógica é essa separação.
+
+## O que "linear" quer dizer {#sec-017-linear}
+
+Um elemento é linear quando a relação entre tensão e corrente satisfaz duas
+propriedades:
+
+- **Homogeneidade:** dobrar a causa dobra o efeito. Se $V$ produz $I$, então
+  $kV$ produz $kI$, para qualquer $k$ — inclusive negativo.
+- **Aditividade:** o efeito de duas causas juntas é a soma dos efeitos separados.
+  Se $V_a$ produz $I_a$ e $V_b$ produz $I_b$, então $V_a + V_b$ produz $I_a + I_b$.
+
+Um resistor obedece às duas, porque $I = V/R$ é uma reta que passa pela origem —
+a lei de Ohm do @sec-cap-010 é, literalmente, o enunciado de que o resistor é
+linear. Fontes ideais entram como as "causas", e todo circuito feito só de
+resistores e fontes ideais é linear.
+
+O que **não** é linear:
+
+- **Diodos e transistores**, cuja curva é exponencial (Volumes 8 e 9). Dobrar a
+  tensão sobre um diodo pode multiplicar a corrente por milhares.
+- **Potência**, mesmo em resistores lineares: $P = I^2 R$ é quadrática. Este é o
+  ponto que mais derruba gente, e ele tem seção própria adiante.
+- **Qualquer coisa que sature**: uma fonte que chega ao limite de corrente, um
+  amplificador que bate no trilho de alimentação, um núcleo magnético saturado.
+
+::: {#fig-017-linear}
+
+```{.tikz}
+%%| filename: 017-linear
+%%| alt: Dois gráficos. À esquerda, curvas de corrente por tensão de um resistor de cem ohms, que é uma reta pela origem, e de um diodo, que é uma exponencial. Dobrar a tensão dobra a corrente do resistor e multiplica por centenas a do diodo. À direita, a parábola da potência num resistor de dois vírgula dois kilo-ohms em função da corrente, mostrando que a potência de uma corrente de dois vírgula seis quatro miliampères é muito maior do que a soma das potências de um vírgula noventa e três e zero vírgula setenta e um miliampères.
+
+\begin{tikzpicture}
+
+\begin{axis}[
+  name=ax1,
+  width=8.6cm, height=6.8cm,
+  xlabel={$V$ (V)}, ylabel={$I$ (mA)},
+  xmin=0, xmax=0.76, ymin=0, ymax=16,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  legend style={at={(0.03,0.97)}, anchor=north west, font=\scriptsize,
+                draw=manualgray!50},
+]
+  \addplot[curva, domain=0:0.76, samples=2] {20*x};
+  \addlegendentry{resistor de 50 $\Omega$}
+  \addplot[destaque, domain=0:0.71, samples=200] {12*exp((x-0.70)/0.0435)};
+  \addlegendentry{diodo de silício}
+
+  \node[ponto] at (axis cs:0.30,6.0) {};
+  \node[ponto] at (axis cs:0.60,12.0) {};
+  \draw[manualgray, dashed, thin] (axis cs:0.30,0) -- (axis cs:0.30,6.0);
+  \draw[manualgray, dashed, thin] (axis cs:0.60,0) -- (axis cs:0.60,12.0);
+
+  \node[font=\scriptsize, align=left, anchor=north east] at (axis cs:0.58,15.6)
+       {$0{,}30 \to 0{,}60$ V:\\
+        resistor $\times 2$\\
+        diodo $\times 1000$};
+\end{axis}
+
+\begin{axis}[
+  at={(ax1.right of south east)}, anchor={left of south west},
+  width=8.6cm, height=6.8cm,
+  xlabel={$I$ (mA) em $R_2 = 2{,}2$ k$\Omega$}, ylabel={$P$ (mW)},
+  xmin=0, xmax=3.1, ymin=0, ymax=18,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+]
+  \addplot[curva, domain=0:3.1, samples=120] {2.2*x*x};
+
+  \draw[manualgray, dashed, thin] (axis cs:1.929,0) -- (axis cs:1.929,8.18);
+  \draw[manualgray, dashed, thin] (axis cs:0.714,0) -- (axis cs:0.714,1.12);
+  \draw[manualred, dashed, thin] (axis cs:2.643,0) -- (axis cs:2.643,15.37);
+  \draw[manualred, dashed, thin] (axis cs:0,15.37) -- (axis cs:2.643,15.37);
+  \draw[manualgreen!55!black, dashed, thin]
+       (axis cs:0,9.30) -- (axis cs:2.643,9.30);
+
+  \node[ponto] at (axis cs:1.929,8.18) {};
+  \node[ponto] at (axis cs:0.714,1.12) {};
+  \node[ponto] at (axis cs:2.643,15.37) {};
+
+  \node[manualred, font=\scriptsize, anchor=north west] at (axis cs:0.08,15.2)
+       {$P(2{,}643) = 15{,}37$ mW \ \textbf{(real)}};
+  \node[manualgreen!55!black, font=\scriptsize, anchor=south west]
+       at (axis cs:0.08,9.45)
+       {$P(1{,}929) + P(0{,}714) = 9{,}30$ mW};
+  \node[font=\scriptsize, anchor=south east] at (axis cs:3.05,0.45)
+       {a diferença é o termo cruzado};
+\end{axis}
+
+\end{tikzpicture}
+```
+
+À esquerda, o que a linearidade permite: no resistor, dobrar a tensão dobra a
+corrente; no diodo, multiplica por mil. À direita, o que ela **não** permite:
+potência é quadrática, e a potência da soma das correntes não é a soma das
+potências.
+
+:::
+
+## Desligar uma fonte {#sec-017-desligar}
+
+O verbo é enganoso. "Desligar" uma fonte não é removê-la do circuito: é **zerar o
+seu valor**, deixando no lugar o que sobra do componente.
+
+- **Fonte de tensão zerada é um curto-circuito.** Uma fonte ideal de 0 V é um
+  elemento que impõe zero volts entre seus terminais — exatamente o que um fio faz.
+- **Fonte de corrente zerada é um circuito aberto.** Uma fonte ideal de 0 A é um
+  elemento que impõe corrente nula — exatamente o que um circuito aberto faz.
+
+Trocar as duas coisas é o erro clássico do assunto, e a maneira de não trocar é
+não decorar: pergunte o que a fonte **impõe** quando o seu valor é zero.
+
+::: {.callout-warning}
+## Zerar é conceito de papel, não instrução de bancada
+
+Curto-circuitar a fonte de bancada para "desligá-la" é como se destroem fontes,
+se abrem fusíveis e se derretem jumpers. Na bancada, o procedimento equivalente é
+**substituir a fonte por um fio** — desligá-la do circuito e ligar aquele ponto ao
+terra com um jumper — depois de desenergizar tudo.
+
+E há a assimetria que o @sec-cap-020 vai explorar: fonte real tem resistência
+interna, e zerá-la deixa essa resistência no lugar, não um fio. Para fontes
+ideais, que são as deste capítulo, o curto é exato.
+:::
+
+## O método em quatro passos {#sec-017-metodo}
+
+1. **Zere todas as fontes menos uma.** Tensão vira curto, corrente vira aberto.
+2. **Resolva o circuito simplificado.** Com uma fonte só, ele quase sempre vira
+   associação série-paralelo mais divisor — @sec-cap-012 e @sec-cap-014, sem
+   sistema nenhum.
+3. **Repita para cada fonte.**
+4. **Some algebricamente** as contribuições, respeitando os sinais.
+
+O passo 2 é onde a superposição paga: cada subcircuito é mais simples que o
+original, e o total de trabalho aritmético costuma ser comparável ao de um sistema
+— com a vantagem de que cada parcela é conferível sozinha.
+
+## O circuito de sempre, pela quarta vez {#sec-017-exemplo}
+
+Duas fontes, duas parcelas.
+
+::: {#fig-017-desligar}
+
+```{.tikz}
+%%| filename: 017-desligar
+%%| alt: O circuito de duas fontes decomposto em dois subcircuitos. No primeiro, a fonte de cinco volts foi substituída por um curto e só a de nove volts atua, produzindo quatro vírgula vinte e quatro volts no nó X. No segundo, a fonte de nove volts foi substituída por um curto e só a de cinco volts atua, produzindo um vírgula cinquenta e sete volts. A soma das duas parcelas é cinco vírgula oitenta e um volts, o mesmo resultado dos capítulos anteriores.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % =============== só a fonte de 9 V ===============
+  \begin{scope}
+    \draw (0,0) to[battery1, invert, l_={$9$ V}] (0,3.8);
+    \draw (0,3.8) to[R, l={$1\,\mathrm{k}$}] (3.0,3.8);
+    \draw (3.0,3.8) to[R, l={$1{,}5\,\mathrm{k}$}] (6.0,3.8);
+    \draw (3.0,3.8) to[R, l_={$2{,}2\,\mathrm{k}$}] (3.0,0);
+    \draw[manualred, very thick] (6.0,3.8) -- (6.0,0);
+    \draw (0,0) -- (6.0,0);
+    \node[ponto] at (3.0,3.8) {};
+    \node[ponto] at (3.0,0) {};
+    \node[manualred, font=\scriptsize\bfseries, anchor=south, rotate=90]
+         at (6.3,1.9) {fonte de 5 V zerada: curto};
+    \node[font=\scriptsize\bfseries, anchor=south] at (3.0,4.35) {X};
+    \node[manualblue, font=\scriptsize\bfseries, anchor=south] at (3.0,4.75)
+         {$V_X' = 4{,}243$ V};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-0.6,-0.7)
+         {$1{,}5 \parallel 2{,}2 = 0{,}892$ k$\Omega$\\[2pt]
+          $V_X' = 9 \times \dfrac{0{,}892}{1 + 0{,}892} = 4{,}243$ V};
+  \end{scope}
+
+  % =============== só a fonte de 5 V ===============
+  \begin{scope}[xshift=10.4cm]
+    \draw[manualred, very thick] (0,3.8) -- (0,0);
+    \draw (0,3.8) to[R, l={$1\,\mathrm{k}$}] (3.0,3.8);
+    \draw (3.0,3.8) to[R, l={$1{,}5\,\mathrm{k}$}] (6.0,3.8);
+    \draw (3.0,3.8) to[R, l_={$2{,}2\,\mathrm{k}$}] (3.0,0);
+    \draw (6.0,0) to[battery1, invert, l={$5$ V}] (6.0,3.8);
+    \draw (0,0) -- (6.0,0);
+    \node[ponto] at (3.0,3.8) {};
+    \node[ponto] at (3.0,0) {};
+    \node[manualred, font=\scriptsize\bfseries, anchor=north, rotate=90]
+         at (-0.3,1.9) {fonte de 9 V zerada: curto};
+    \node[font=\scriptsize\bfseries, anchor=south] at (3.0,4.35) {X};
+    \node[manualblue, font=\scriptsize\bfseries, anchor=south] at (3.0,4.75)
+         {$V_X'' = 1{,}571$ V};
+    \node[align=left, font=\scriptsize, anchor=north west] at (-0.6,-0.7)
+         {$1 \parallel 2{,}2 = 0{,}688$ k$\Omega$\\[2pt]
+          $V_X'' = 5 \times \dfrac{0{,}688}{1{,}5 + 0{,}688} = 1{,}571$ V};
+  \end{scope}
+
+  \node[manualgreen!55!black, font=\bfseries, anchor=north] at (8.2,-2.1)
+       {$V_X = V_X' + V_X'' = 4{,}243 + 1{,}571 = 5{,}814$ V};
+
+\end{circuitikz}
+```
+
+A superposição em ação. Cada subcircuito é um divisor de tensão comum, resolvido
+sem sistema nenhum — e as duas parcelas somam exatamente o valor que a análise
+nodal, a de malhas e o Kirchhoff cru já tinham produzido.
+
+:::
+
+**Só a fonte de 9 V.** Com a de 5 V em curto, $R_3$ fica em paralelo com $R_2$:
+
+$$ 1{,}5 \parallel 2{,}2 = \frac{1{,}5 \times 2{,}2}{3{,}7} = 0{,}892\ \text{k}\Omega,
+   \qquad
+   V_X' = 9 \times \frac{0{,}892}{1 + 0{,}892} = 4{,}243\ \text{V}. $$
+
+**Só a fonte de 5 V.** Com a de 9 V em curto, $R_1$ fica em paralelo com $R_2$:
+
+$$ 1 \parallel 2{,}2 = \frac{2{,}2}{3{,}2} = 0{,}688\ \text{k}\Omega,
+   \qquad
+   V_X'' = 5 \times \frac{0{,}688}{1{,}5 + 0{,}688} = 1{,}571\ \text{V}. $$
+
+**Somando:** $V_X = 4{,}243 + 1{,}571 = 5{,}814$ V. O mesmo número, pela quarta vez.
+
+E as correntes, que é onde os sinais aparecem:
+
+| Grandeza | só 9 V | só 5 V | soma |
+|---|---|---|---|
+| $V_X$ | $+4{,}243$ V | $+1{,}571$ V | $5{,}814$ V |
+| $I_{R_1}$ (para X) | $+4{,}757$ mA | $-1{,}571$ mA | $3{,}186$ mA |
+| $I_{R_2}$ (para o terra) | $+1{,}929$ mA | $+0{,}714$ mA | $2{,}643$ mA |
+| $I_{R_3}$ (para X) | $-2{,}829$ mA | $+2{,}286$ mA | $-0{,}543$ mA |
+
+: Superposição das três correntes de ramo. As parcelas de $I_{R_1}$ e $I_{R_3}$ têm
+sinais opostos: cada fonte empurra corrente pelo ramo da outra em sentido
+contrário. {#tbl-017-parcelas}
+
+A linha de $I_{R_1}$ merece atenção: a fonte de 9 V manda 4,757 mA para o nó X, e a
+de 5 V puxa 1,571 mA **de volta** pelo mesmo resistor. Nenhum dos dois números é
+mensurável isoladamente — o amperímetro lê 3,186 mA —, mas os dois são reais no
+sentido de que descrevem quanto cada fonte é responsável pelo resultado. Essa
+atribuição de responsabilidade é o produto da superposição, e nenhum dos outros
+métodos a fornece.
+
+## O que não se superpõe: a potência {#sec-017-potencia}
+
+Superpor potências é o erro mais caro deste capítulo, porque ele parece razoável e
+dá números plausíveis.
+
+Em $R_2$, com as parcelas da @tbl-017-parcelas:
+
+$$ P' = (1{,}929\ \text{mA})^2 \times 2{,}2\ \text{k}\Omega = 8{,}18\ \text{mW},
+   \qquad
+   P'' = (0{,}714\ \text{mA})^2 \times 2{,}2\ \text{k}\Omega = 1{,}12\ \text{mW}, $$
+
+e a soma dá 9,30 mW. Mas a potência **real** dissipada é
+
+$$ P = (2{,}643\ \text{mA})^2 \times 2{,}2\ \text{k}\Omega = 15{,}37\ \text{mW}, $$
+
+que é o valor que o @sec-cap-013 já tinha obtido no balanço de potência. A
+diferença — 6,06 mW, 65 % a mais — não é erro de arredondamento: é o **termo
+cruzado** que a expansão do quadrado produz:
+
+$$ (I' + I'')^2 R = I'^2 R + I''^2 R + \underbrace{2\,I'I''R}_{\text{termo cruzado}}. $$
+
+A regra prática é curta: **superponha tensões e correntes; depois calcule a
+potência a partir do total.** Nunca some potências parciais.
+
+Isso não é uma esquisitice matemática. É a razão de dois sinais somados num mesmo
+resistor poderem dissipar mais — ou menos, se tiverem sinais opostos — do que a
+soma do que dissipariam sozinhos, e é o que faz um amplificador esquentar de forma
+não intuitiva quando dois canais tocam a mesma nota. O Volume 7 volta ao assunto
+com o valor eficaz.
+
+## Linearidade sem superposição: o método da proporcionalidade {#sec-017-proporcionalidade}
+
+A homogeneidade sozinha dá um método de cálculo que é a maneira mais rápida que
+existe de resolver uma rede escada — o arranjo série-paralelo alternado que aparece
+em atenuadores, conversores digital-analógicos e divisores de precisão.
+
+A ideia: **chute a resposta e ajuste a escala no fim.** Se o circuito é linear e
+tem uma só fonte, suponha um valor conveniente na saída, caminhe de trás para a
+frente calculando tudo por Ohm e LKC até chegar à fonte, e compare a tensão de
+fonte que o seu chute exigiria com a tensão de fonte real. A razão entre as duas é
+o fator que escala **todas** as grandezas de uma vez.
+
+::: {#fig-017-escada}
+
+```{.tikz}
+%%| filename: 017-escada
+%%| alt: Rede escada com três resistores de um kilo-ohm em série e três de dois vírgula dois kilo-ohms em derivação, alimentada por doze volts. Supondo um volt na saída, o cálculo de trás para a frente exige quatro vírgula oitocentos e cinquenta e quatro volts na fonte, e o fator de escala doze dividido por quatro vírgula oitocentos e cinquenta e quatro igual a dois vírgula quatrocentos e setenta e dois leva à saída real de dois vírgula quatrocentos e setenta e dois volts.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, invert, l_={$12$ V}] (0,3.6);
+  \draw (0,3.6) to[R, l={$1\,\mathrm{k}$}] (2.6,3.6);
+  \draw (2.6,3.6) to[R, l={$1\,\mathrm{k}$}] (5.2,3.6);
+  \draw (5.2,3.6) to[R, l={$1\,\mathrm{k}$}] (7.8,3.6);
+  \draw (2.6,3.6) to[R, l_={$2{,}2\,\mathrm{k}$}] (2.6,0);
+  \draw (5.2,3.6) to[R, l_={$2{,}2\,\mathrm{k}$}] (5.2,0);
+  \draw (7.8,3.6) to[R, l_={$2{,}2\,\mathrm{k}$}] (7.8,0);
+  \draw (0,0) -- (7.8,0);
+  \foreach \xx in {2.6, 5.2}{
+    \node[ponto] at (\xx,3.6) {};
+    \node[ponto] at (\xx,0) {};
+  }
+  \draw (1.3,0) -- (1.3,-0.6);
+  \node[ground] at (1.3,-0.6) {};
+
+  \foreach \xx/\nome in {2.6/A, 5.2/B, 7.8/C}{
+    \node[font=\scriptsize\bfseries, anchor=south east] at (\xx-0.1,3.75) {\nome};
+  }
+
+  % o chute
+  \draw[manualgray, dashed, thin] (7.8,1.8) -- (9.3,1.8);
+  \node[manualgray, font=\scriptsize, anchor=west, align=left] at (9.4,1.8)
+       {chute:\\$V_C = 1{,}000$ V};
+
+  \draw[manualred, very thick, -{Stealth[length=3mm]}] (8.9,4.4) -- (0.6,4.4);
+  \node[manualred, font=\scriptsize\bfseries, anchor=south] at (4.7,4.5)
+       {o cálculo caminha da saída para a fonte};
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.8,-1.2)
+       {Com $V_C = 1{,}000$ V, tudo sai por Ohm e LKC, da direita para a esquerda:\\[3pt]
+        $I_{2{,}2\text{k}}^{(C)} = 0{,}4545$ \ $\Rightarrow$ \
+        $V_B = 1{,}000 + 0{,}4545 = 1{,}4545$ \ $\Rightarrow$ \
+        $I_{2{,}2\text{k}}^{(B)} = 0{,}6612$ \ $\Rightarrow$ \
+        $I_{1\text{k}}^{(AB)} = 1{,}1157$\\[3pt]
+        $V_A = 1{,}4545 + 1{,}1157 = 2{,}5702$ \ $\Rightarrow$ \
+        $I_{2{,}2\text{k}}^{(A)} = 1{,}1683$ \ $\Rightarrow$ \
+        $I_{1\text{k}}^{(SA)} = 2{,}2840$ \ $\Rightarrow$ \
+        $V_S^{\text{chute}} = 4{,}8542$ V\\[4pt]
+        \textcolor{manualred}{\textbf{fator de escala}} $\ k = \dfrac{12}{4{,}8542}
+        = 2{,}4720$ \qquad
+        $V_C^{\text{real}} = 1{,}000 \times 2{,}4720 = \mathbf{2{,}472}$ V \qquad
+        $V_A = 6{,}354$ V \quad $V_B = 3{,}596$ V};
+
+\end{circuitikz}
+```
+
+O método da proporcionalidade numa escada de três seções. Nenhum sistema de
+equações, nenhuma redução série-paralelo em cadeia: só Ohm e LKC, na ordem certa,
+e uma multiplicação no fim.
+
+:::
+
+**A conferência.** Vale reduzir a escada por associação e comparar, porque as duas
+contas são independentes. Dobrando da direita para a esquerda:
+
+$$ 2{,}2 + 1 = 3{,}2 \ \Rightarrow\ 3{,}2 \parallel 2{,}2 = 1{,}3037
+   \ \Rightarrow\ +1 = 2{,}3037
+   \ \Rightarrow\ \parallel 2{,}2 = 1{,}1253
+   \ \Rightarrow\ +1 = 2{,}1253\ \text{k}\Omega. $$
+
+A corrente total é $12/2{,}1253 = 5{,}646$ mA, que é exatamente
+$2{,}2840 \times 2{,}4720$. Fecha.
+
+::: {.callout-tip}
+## Por que isto funciona, e quando não funciona
+
+Funciona porque o circuito tem **uma só fonte**: nesse caso toda grandeza do
+circuito é proporcional ao valor dela, e um fator único escala tudo. Com duas
+fontes independentes, não há fator único — mas há superposição, e você pode aplicar
+proporcionalidade a cada parcela separadamente.
+
+Não funciona em circuito com elemento não linear. Um LED na escada torna o fator de
+escala falso, porque a queda do LED não escala junto — ela é aproximadamente
+constante. O @sec-cap-010 já avisava que LED não é resistor; aqui a consequência é
+que ele quebra a única propriedade que o método usa.
+:::
+
+## Onde a superposição é indispensável {#sec-017-uso}
+
+Como método de cálculo, superposição raramente é a escolha mais rápida. Como
+**modo de pensar**, ela é a base de quase toda a eletrônica analógica.
+
+O caso decisivo é a separação entre **polarização** e **sinal**. Um amplificador
+tem uma fonte de alimentação contínua, que estabelece o ponto de operação, e um
+sinal alternado pequeno, que é o que se quer amplificar. Analisar os dois juntos é
+inviável. Analisar os dois separados — uma análise em corrente contínua com o sinal
+zerado, uma análise só do sinal com a alimentação zerada — é o procedimento padrão
+dos Volumes 9, 10 e 11.
+
+::: {#fig-017-cc-ca}
+
+```{.tikz}
+%%| filename: 017-cc-ca
+%%| alt: À esquerda, o mesmo circuito de dois ramos, com a fonte de nove volts contínua num ramo e uma fonte de sinal senoidal de um volt de pico no outro. À direita, o gráfico da tensão no nó X ao longo do tempo: um patamar contínuo de quatro vírgula duzentos e quarenta e três volts somado a uma ondulação senoidal de zero vírgula trezentos e catorze volts de pico.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \begin{scope}[yshift=0.2cm]
+    \draw[thick] (0,0) to[battery1, invert, l_={$9$ V}] (0,3.6);
+    \draw[thick] (0,3.6) to[R, l={$1\,\mathrm{k}$}] (2.8,3.6);
+    \draw[thick] (2.8,3.6) to[R, l={$1{,}5\,\mathrm{k}$}] (5.6,3.6);
+    \draw[thick] (2.8,3.6) to[R, l_={$2{,}2\,\mathrm{k}$}] (2.8,0);
+    \draw[thick] (5.6,0) to[sV, invert, l={$v_s = 1{,}0$ V$_\text{p}$}] (5.6,3.6);
+    \draw[thick] (0,0) -- (5.6,0);
+    \node[ponto] at (2.8,3.6) {};
+    \node[ponto] at (2.8,0) {};
+    \draw[thick] (1.4,0) -- (1.4,-0.6);
+    \node[ground] at (1.4,-0.6) {};
+    \node[font=\scriptsize\bfseries, anchor=south] at (2.8,4.1) {X};
+
+    \node[align=left, font=\scriptsize, anchor=north west] at (-0.7,-1.1)
+         {parcela CC (zerando $v_s$): \ $4{,}243$ V\\[2pt]
+          parcela CA (zerando os 9 V): \ $0{,}314\,\sin\omega t$};
+  \end{scope}
+
+\begin{axis}[
+  at={(8.6cm,0cm)}, anchor=south west,
+  width=8.4cm, height=6.4cm,
+  xlabel={$t$}, ylabel={$v_X$ (V)},
+  xmin=0, xmax=6.3, ymin=0, ymax=5.2,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  xtick={0,3.1416,6.2832},
+  xticklabels={{0},{$T/2$},{$T$}},
+  ytick={0,1,2,3,4.243},
+  yticklabels={{0},{1},{2},{3},{4,243}},
+]
+  \addplot[auxiliar, domain=0:6.2832, samples=2] {4.243};
+  \addplot[curva, domain=0:6.2832, samples=200] {4.243 + 0.314*sin(deg(x))};
+
+  \node[manualgray, font=\scriptsize, anchor=north west] at (axis cs:0.2,3.88)
+       {parcela CC: $4{,}243$ V};
+  \draw[manualred, thick, {Stealth[length=2mm]}-{Stealth[length=2mm]}]
+       (axis cs:1.5708,3.929) -- (axis cs:1.5708,4.557);
+  \node[manualred, font=\scriptsize, anchor=west] at (axis cs:2.0,3.15)
+       {$\pm 0{,}314$ V (parcela CA)};
+\end{axis}
+
+\end{tikzpicture}
+```
+
+A superposição como ferramenta de projeto. A fonte contínua estabelece o nível; o
+sinal cavalga sobre ele. As duas análises são independentes, e é essa independência
+que torna a eletrônica analógica tratável.
+
+:::
+
+Repare no fator do sinal: 0,314 V de saída para 1,0 V de entrada. É a mesma
+divisão que produziu 1,571 V para 5 V — porque o circuito é o mesmo e o método é
+linear. Um circuito resistivo **atenua** o sinal; para amplificá-lo é preciso um
+elemento ativo, que é toda a Fase 3 deste manual.
+
+Outros lugares onde a superposição é a ferramenta natural:
+
+| Situação | O que se superpõe |
+|---|---|
+| Polarização + sinal | nível CC e sinal CA |
+| Múltiplas alimentações (+12 V, −12 V, +5 V) | a contribuição de cada trilho |
+| Ruído somado ao sinal | sinal desejado e interferência |
+| Offset de amplificador | erro CC e sinal |
+| Somador de tensões (Volume 11) | cada entrada, separadamente |
+
+: A superposição no dia a dia. Em todos esses casos o interesse é **atribuir
+responsabilidade** — quanto do resultado vem de onde. {#tbl-017-usos}
+
+## 🧪 Laboratório {#sec-017-lab}
+
+**Medir uma parcela.** O experimento central é o de desligar uma fonte de verdade,
+substituí-la por um fio e medir a contribuição da outra sozinha — depois somar os
+dois números e ver aparecer a leitura do circuito completo.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada em 9,0 V e uma segunda fonte em 5,0 V (ou pilha recarregável)
+- 1 multímetro digital
+- 3 resistores de 1 kΩ, 1/4 W
+- 1 resistor de 1,5 kΩ, 1/4 W
+- 3 resistores de 2,2 kΩ, 1/4 W
+- 1 LED vermelho (para a Parte 4)
+- 1 resistor de 470 Ω, 1/4 W (para a Parte 4)
+:::
+
+### Parte 1 — As duas parcelas, medidas
+
+1. Monte o circuito de duas fontes (9,0 V através de 1 kΩ, 5,0 V através de
+   1,5 kΩ, 2,2 kΩ de X ao terra). Meça $V_X$ e anote.
+2. **Desenergize tudo.** Retire a fonte de 5 V e ligue aquele ponto ao terra com um
+   jumper. Religue e meça $V_X$. Previsto: 4,243 V.
+3. Desenergize. Recoloque a fonte de 5 V, retire a de 9 V e ponha um jumper no
+   lugar dela. Religue e meça $V_X$. Previsto: 1,571 V.
+4. Some as duas leituras e compare com a do passo 1.
+
+A soma vai bater com uma precisão que surpreende — quase sempre dentro de alguns
+milivolts —, porque os três valores usam os **mesmos** resistores e as tolerâncias
+se cancelam.
+
+### Parte 2 — A potência não soma
+
+1. Nos três casos da Parte 1, meça também a corrente em $R_2$ (o de 2,2 kΩ).
+   Previsto: 1,929 mA, 0,714 mA e 2,643 mA.
+2. Calcule $P = I^2 R$ nos três casos.
+3. Compare $P_{\text{parcela 1}} + P_{\text{parcela 2}}$ com $P_{\text{total}}$.
+   Previsto: 9,30 mW contra 15,37 mW.
+4. Calcule o termo cruzado $2 I' I'' R$ e verifique que ele fecha a diferença.
+
+Este é o experimento mais barato do capítulo e o que mais rende: os números não
+são próximos, são 65 % diferentes. Não há como atribuir isso a tolerância.
+
+### Parte 3 — A escada e o fator de escala
+
+1. Monte a escada da @fig-017-escada: três resistores de 1 kΩ em série, três de
+   2,2 kΩ em derivação, 12,0 V na entrada.
+2. **Antes de medir**, refaça o método da proporcionalidade com os valores
+   *medidos* dos seis resistores. Preveja $V_A$, $V_B$ e $V_C$.
+3. Meça as três. Previsto com valores nominais: 6,354 V, 3,596 V e 2,472 V.
+4. Agora mude a fonte para 6,0 V e meça de novo. **Todas** as tensões têm de cair
+   exatamente à metade.
+
+O passo 4 é a demonstração direta da homogeneidade, e ele vale mais do que a
+definição: você acabou de verificar experimentalmente a propriedade de que a
+superposição depende.
+
+### Parte 4 — Quebrar a linearidade de propósito
+
+1. Na escada, substitua o resistor de 2,2 kΩ do meio (nó B) pela série de um LED
+   vermelho com o resistor de 470 Ω.
+2. Meça $V_A$, $V_B$ e $V_C$ com 12,0 V.
+3. Agora reduza a fonte para 6,0 V e meça de novo.
+
+As tensões **não** caem à metade. Com 12 V o LED conduz e derruba cerca de 1,9 V
+quase constantes; com 6 V ele conduz muito menos, ou nem acende, e o ramo do meio
+passa a se comportar como um circuito aberto. O fator de escala único deixou de
+existir — e com ele, a superposição.
+
+4. Tente aplicar o método da proporcionalidade a esse circuito e veja onde ele
+   falha: na hora de escalar a queda do LED.
+
+### Variante simulada (plano B)
+
+O simulador faz a Parte 1 sem desmontar nada — basta zerar o valor de uma fonte, o
+que é literalmente o que o método manda — e a Parte 3 com uma varredura da tensão
+de entrada, que desenha a reta da homogeneidade.
+
+A Parte 4 fica ainda melhor simulada: varra a fonte de 0 a 15 V e plote $V_C$
+contra $V_S$ com e sem o LED. Com resistores puros sai uma reta pela origem; com o
+LED sai uma curva com joelho. Ver as duas no mesmo gráfico é a definição de
+linearidade, desenhada.
+
+## 🔥 Onde Queima {#sec-017-queima}
+
+**Somar potências.** O erro estrutural do capítulo. Potência é quadrática;
+superponha correntes e tensões, e só então calcule a potência. Sintoma: um cálculo
+de dissipação que dá bem menos que a realidade, um resistor dimensionado para
+9 mW que na prática torra 15 mW.
+
+**Trocar curto por aberto ao zerar.** Fonte de tensão zerada é curto; fonte de
+corrente zerada é aberto. Trocar os dois dá um circuito completamente diferente e
+um resultado plausível — que é o pior tipo de erro.
+
+**Curto-circuitar a fonte de bancada na bancada.** O método é de papel. Na prática,
+desligue a fonte do circuito e ponha um jumper no lugar dela, com tudo
+desenergizado. Uma fonte com limite de corrente sobrevive; uma pilha em curto
+esquenta, vaza e pode romper, como o @sec-cap-002 detalha.
+
+**Aplicar superposição a circuito não linear.** Diodo, transistor, LED, lâmpada
+incandescente, núcleo saturado: em todos, a soma das parcelas não é a resposta.
+Este é o erro que aparece disfarçado, porque o circuito "quase linear" dá quase
+certo — até não dar.
+
+**Esquecer que a fonte real tem resistência interna.** Zerar uma fonte ideal deixa
+um fio; zerar uma fonte real deixa a sua resistência interna no lugar. Em cálculos
+de circuito com fonte de baixa impedância a diferença é desprezível, e em cálculo
+de sinal com fonte de sinal de 50 Ω ela não é. O @sec-cap-020 trata disso.
+
+**Perder o sinal de uma parcela.** As contribuições podem ter sentidos opostos, e a
+soma é **algébrica**. Escreva sempre a referência de sinal — "corrente positiva
+para X", "tensão positiva em cima" — antes de somar, e mantenha-a em todas as
+parcelas.
+
+**Achar que a parcela é mensurável no circuito completo.** Não é. Com as duas
+fontes ligadas, o amperímetro lê a soma. A parcela só existe no subcircuito, e para
+medi-la é preciso montar aquele subcircuito.
+
+**Usar proporcionalidade em circuito com mais de uma fonte.** O fator de escala
+único só existe com uma fonte. Com duas, ou você superpõe e escala cada parcela, ou
+não escala nada.
+
+**Deixar um ramo sem caminho para o terra ao zerar uma fonte de corrente.** Abrir a
+fonte de corrente pode isolar um trecho do circuito, e um nó sem caminho de
+corrente contínua para a referência não tem tensão definida. No papel isso aparece
+como sistema indeterminado; no simulador, como o erro de nó flutuante do
+@sec-cap-015.
+
+**Confundir "desligar a fonte" com "desligar o circuito".** Zerar a fonte de 5 V
+não remove os 1,5 kΩ do ramo dela: o resistor continua ali, e é justamente ele que
+entra em paralelo com $R_2$ e muda o divisor. Remover o ramo inteiro é outro
+circuito, com outra resposta.
+
+## O que fica deste capítulo {#sec-017-resumo}
+
+Um circuito é linear quando dobrar a causa dobra o efeito e os efeitos de causas
+diferentes se somam. Resistores e fontes ideais são lineares; diodos, transistores
+e qualquer coisa que sature não são.
+
+Em circuito linear vale a **superposição**: a resposta a várias fontes é a soma das
+respostas a cada uma sozinha, com as demais **zeradas** — tensão vira curto,
+corrente vira aberto. Cada subcircuito costuma cair em associação série-paralelo
+mais divisor, sem sistema nenhum.
+
+**Potência não se superpõe.** $P = I^2R$ é quadrática, e a diferença é o termo
+cruzado $2I'I''R$ — no exemplo do capítulo, 65 % do valor. Superponha tensões e
+correntes; calcule a potência no fim, a partir do total.
+
+Só a homogeneidade já dá um método próprio, o da **proporcionalidade**: numa rede
+de fonte única, chute a saída, caminhe de trás para a frente e escale tudo pelo
+fator $V_S^{\text{real}}/V_S^{\text{chute}}$. É a forma mais rápida de resolver
+uma escada.
+
+O valor duradouro da superposição não é aritmético, é conceitual: ela **atribui
+responsabilidade**. Quanto do resultado vem de cada fonte, quanto é polarização e
+quanto é sinal, quanto é ruído. Essa separação é a espinha dorsal dos Volumes 9
+a 11.
+
+E ela prepara o próximo passo. Se um circuito linear responde de forma proporcional
+a cada fonte, então tudo o que ele faz visto de dois terminais pode ser resumido em
+dois números — uma tensão e uma resistência. É o teorema de Thévenin, e é o assunto
+do @sec-cap-018.
