@@ -49,7 +49,7 @@ Três consequências:
 
   % ================= sem carga =================
   \begin{scope}
-    \draw (0,0) to[battery1, l_={$9{,}0$ V}] (0,5.0) -- (2.6,5.0);
+    \draw (0,0) to[battery1, invert, l_={$9{,}0$ V}] (0,5.0) -- (2.6,5.0);
     \draw (2.6,5.0) to[R, l={$R_1 = 10\,\mathrm{k}$}] (2.6,2.8);
     \draw (2.6,2.8) to[R, l={$R_2 = 10\,\mathrm{k}$}] (2.6,0.6);
     \draw (2.6,0.6) -- (2.6,0) -- (0,0);
@@ -67,7 +67,7 @@ Três consequências:
 
   % ================= com carga =================
   \begin{scope}[xshift=8.6cm]
-    \draw (0,0) to[battery1, l_={$9{,}0$ V}] (0,5.0) -- (2.6,5.0);
+    \draw (0,0) to[battery1, invert, l_={$9{,}0$ V}] (0,5.0) -- (2.6,5.0);
     \draw (2.6,5.0) to[R, l={$R_1 = 10\,\mathrm{k}$}] (2.6,2.8);
     \draw (2.6,2.8) to[R, l={$R_2 = 10\,\mathrm{k}$}] (2.6,0.6);
     \draw (2.6,0.6) -- (2.6,0) -- (0,0);
@@ -273,7 +273,7 @@ divisor de razão variável; usá-lo com dois é fazer um resistor variável, ch
 
   % ================= como divisor =================
   \begin{scope}
-    \draw (0,0) to[battery1, l_={$9{,}0$ V}] (0,4.4) -- (2.4,4.4);
+    \draw (0,0) to[battery1, invert, l_={$9{,}0$ V}] (0,4.4) -- (2.4,4.4);
     \draw (2.4,4.4) to[pR, mirror, l_={$10\,\mathrm{k}$}, name=P] (2.4,0.8);
     \draw (2.4,0.8) -- (2.4,0) -- (0,0);
     \draw (1.2,0) -- (1.2,-0.55);
@@ -291,7 +291,7 @@ divisor de razão variável; usá-lo com dois é fazer um resistor variável, ch
 
   % ================= como reostato =================
   \begin{scope}[xshift=10.4cm]
-    \draw (0,0) to[battery1, l_={$9{,}0$ V}] (0,4.4) -- (2.4,4.4);
+    \draw (0,0) to[battery1, invert, l_={$9{,}0$ V}] (0,4.4) -- (2.4,4.4);
     \draw (2.4,4.4) to[vR, l={$10\,\mathrm{k}$}] (2.4,2.6);
     \draw (2.4,2.6) to[R, l={$470\,\Omega$}] (2.4,1.4);
     \draw (2.4,1.4) to[leD, l={LED}] (2.4,0);

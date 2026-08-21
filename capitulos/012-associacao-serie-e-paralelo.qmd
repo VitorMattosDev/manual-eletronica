@@ -76,7 +76,7 @@ $R_1 \parallel R_2$ lê-se "$R_1$ em paralelo com $R_2$".
 
   % ================= SERIE =================
   \begin{scope}
-    \draw (0,0) to[battery1, l_={$12$ V}] (0,6.0) -- (2.6,6.0);
+    \draw (0,0) to[battery1, invert, l_={$12$ V}] (0,6.0) -- (2.6,6.0);
     \draw (2.6,6.0) to[R, l={$R_1 = 1\,\mathrm{k}\Omega$}, a_={$1{,}52$ V}] (2.6,4.0);
     \draw (2.6,4.0) to[R, l={$R_2 = 2{,}2\,\mathrm{k}\Omega$}, a_={$3{,}34$ V}] (2.6,2.0);
     \draw (2.6,2.0) to[R, l={$R_3 = 4{,}7\,\mathrm{k}\Omega$}, a_={$7{,}14$ V}] (2.6,0);
@@ -96,7 +96,7 @@ $R_1 \parallel R_2$ lê-se "$R_1$ em paralelo com $R_2$".
 
   % ================= PARALELO =================
   \begin{scope}[xshift=8.0cm]
-    \draw (0,0) to[battery1, l_={$12$ V}] (0,6.0) -- (5.6,6.0);
+    \draw (0,0) to[battery1, invert, l_={$12$ V}] (0,6.0) -- (5.6,6.0);
     \draw (0,0) -- (5.6,0);
     \draw (1.6,6.0) to[R, l={$1\,\mathrm{k}\Omega$}] (1.6,0);
     \draw (3.6,6.0) to[R, l={$2{,}2\,\mathrm{k}\Omega$}] (3.6,0);

@@ -351,7 +351,7 @@ comprar 1 %.
 
 \begin{circuitikz}[american, font=\small]
   % pilha: desenhada de baixo para cima, a placa longa (+) fica no topo
-  \draw (0,0) to[battery1, l_=$9\,\mathrm{V}$] (0,3.4);
+  \draw (0,0) to[battery1, invert, l_=$9\,\mathrm{V}$] (0,3.4);
   \node[font=\footnotesize] at (0.32,2.05) {$+$};
   \node[font=\footnotesize] at (0.32,1.35) {$-$};
 

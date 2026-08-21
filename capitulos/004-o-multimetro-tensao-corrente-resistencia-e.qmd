@@ -26,7 +26,7 @@ distintos que dividem o mesmo visor.
 
 \begin{circuitikz}[american, font=\small]
   % circuito principal
-  \draw (0,0) to[battery1, l_=$9\,\mathrm{V}$] (0,3);
+  \draw (0,0) to[battery1, invert, l_=$9\,\mathrm{V}$] (0,3);
   \draw (0,3) -- (1.0,3)
         to[rmeter, t=A, color=manualred] (2.6,3)
         to[R, l=$470\,\Omega$] (5.6,3);
@@ -178,7 +178,7 @@ voltage* — é subtraída do circuito.
 %%| alt: Circuito com pilha AA de 1,5 volt e resistor de 22 ohms; o amperímetro inserido em série acrescenta 1 ohm de shunt, reduzindo a corrente de 68 para 65 miliampères.
 
 \begin{circuitikz}[american, font=\small]
-  \draw (0,0) to[battery1, l_=$1{,}5\,\mathrm{V}$] (0,2.8);
+  \draw (0,0) to[battery1, invert, l_=$1{,}5\,\mathrm{V}$] (0,2.8);
   \draw (0,2.8) -- (1.2,2.8) to[R, l=$22\,\Omega$] (4.2,2.8);
   \draw (4.2,2.8) -- (5.4,2.8);
 

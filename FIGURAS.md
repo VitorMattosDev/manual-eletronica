@@ -97,9 +97,29 @@ instalado só como dependência do `circuitikz` e **não é usado** no corpo do 
 - **Rótulo e tensão no mesmo lado se sobrepõem.** Em componente horizontal, `l=`
   fica em cima e `v_>=` embaixo; em componente vertical, `l_=` de um lado e
   `v^>=` do outro. Testar visualmente, não supor.
-- **Polaridade da pilha:** `(0,0) to[battery1] (0,3)` põe o **positivo em cima**
-  (placa longa no fim do caminho). Já `to[V=...]` de baixo para cima põe o `+`
-  **embaixo**. Convenções diferentes no mesmo pacote.
+- **Polaridade da fonte: o `+` fica no INÍCIO do caminho.** Vale para `battery1`
+  (placa longa = positivo) e para `V` (o `+` desenhado dentro do círculo). Logo
+  `(0,0) to[battery1] (0,3)` põe o **positivo embaixo** e o negativo em cima — o
+  contrário do que quase todo mundo supõe ao desenhar o trilho de alimentação
+  subindo da referência.
+
+  A correção é `invert`, que troca a polaridade **sem** mexer no lado do rótulo:
+
+  ```latex
+  \draw (0,0) to[battery1, invert, l_={$9$ V}] (0,4.4);   % + em cima
+  ```
+
+  Alternativa equivalente: desenhar o caminho do `+` para o `−`, isto é, de cima
+  para baixo. As duas formas dão o mesmo símbolo; `invert` é preferível porque
+  preserva a ordem natural de leitura do `\draw`.
+
+  Esta nota estava **errada** até 21/08/2026 (dizia "positivo em cima") e as 20
+  pilhas dos capítulos 001 a 014 foram desenhadas de cabeça para baixo por causa
+  dela. Nenhuma validação textual pega isso: o SVG sai, a contagem fecha, o
+  `?@` não aparece. Só o PNG do `verificar-figuras.py`, olhado com atenção, pega
+  — e ainda assim é preciso saber qual placa é a longa. Quando houver dúvida de
+  polaridade, renderize um teste isolado com `to[V]`, que desenha `+` e `−`
+  explícitos, e use-o como gabarito.
 - **`pgfmath` estoura acima de ~16384.** Exponencial de diodo escrita ao natural
   passa de $10^{7}$ e derruba o `pgfplots` — que ainda assim emite um SVG
   quebrado. Ancorar a exponencial no valor máximo:

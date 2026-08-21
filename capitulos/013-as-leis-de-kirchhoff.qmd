@@ -146,7 +146,7 @@ exatamente a leitura da @fig-009-escada.
 
 \begin{circuitikz}[american, font=\footnotesize]
 
-  \draw (0,0) to[battery1, l_={$12$ V}] (0,4.2);
+  \draw (0,0) to[battery1, invert, l_={$12$ V}] (0,4.2);
   \draw (0,4.2) to[R, l={$1\,\mathrm{k}\Omega$}] (4.6,4.2);
   \draw (4.6,4.2) to[R, l={$2{,}2\,\mathrm{k}\Omega$}] (4.6,0);
   \draw (4.6,0) to[R, l={$4{,}7\,\mathrm{k}\Omega$}] (0,0);
@@ -265,13 +265,13 @@ Total 6, para 6 correntes. A associação série-paralelo falhava; Kirchhoff nã
 \begin{circuitikz}[american, font=\footnotesize]
 
   % ramo da esquerda: 9 V + 1 k
-  \draw (0,0) to[battery1, l={$V_1 = 9$ V}] (0,4.0);
+  \draw (0,0) to[battery1, invert, l={$V_1 = 9$ V}] (0,4.0);
   \draw (0,4.0) -- (0.7,4.0);
   \draw (0.7,4.0) to[R, l_={$R_1 = 1\,\mathrm{k}$}] (2.7,4.0);
   \draw (2.7,4.0) -- (3.5,4.0);
 
   % ramo da direita: 5 V + 1,5 k
-  \draw (7.0,0) to[battery1, l_={$V_2 = 5$ V}] (7.0,4.0);
+  \draw (7.0,0) to[battery1, invert, l_={$V_2 = 5$ V}] (7.0,4.0);
   \draw (7.0,4.0) -- (6.3,4.0);
   \draw (4.3,4.0) to[R, l_={$R_3 = 1{,}5\,\mathrm{k}$}] (6.3,4.0);
   \draw (4.3,4.0) -- (3.5,4.0);
