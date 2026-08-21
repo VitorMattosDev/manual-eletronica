@@ -1,3 +1,613 @@
 # O capacitor real: tipos, ESR e tensão de trabalho {#sec-cap-022}
 
-*(em elaboração)*
+O capacitor do @sec-cap-021 tem dois terminais, uma capacitância e mais nada. O
+capacitor da gaveta tem, além disso, resistência em série, indutância própria,
+corrente de fuga, uma capacitância que muda com a tensão aplicada, outra
+dependência com a temperatura, uma data de validade e um modo de falha preferido.
+
+Nada disso é detalhe de acabamento. Um capacitor cerâmico de 10 µF marcado 6,3 V
+entrega **2,5 µF** quando alimentado com 5 V — e o circuito que dependia dos 10 µF
+não funciona, sem que nenhuma medida "em bancada" acuse nada, porque o multímetro
+mede sem tensão de polarização.
+
+Este capítulo é o mapa dessas mentiras. Ele é longo porque cada família de capacitor
+mente de um jeito diferente, e escolher errado é o erro de componente mais comum em
+eletrônica.
+
+## O modelo do capacitor real {#sec-022-modelo}
+
+Quatro elementos parasitas bastam para explicar quase tudo o que um capacitor faz de
+inesperado:
+
+::: {#fig-022-modelo}
+
+```{.tikz}
+%%| filename: 022-modelo
+%%| alt: Modelo elétrico do capacitor real. Entre os dois terminais há, em série, uma indutância própria chamada ESL, uma resistência série equivalente chamada ESR e a capacitância ideal C. Em paralelo com a capacitância ideal há uma resistência de fuga muito alta. Anotações indicam que a ESL vem dos terminais e do enrolamento, a ESR vem dos eletrodos, do eletrólito e das perdas no dielétrico, e a resistência de fuga vem da condução residual através do dielétrico.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) node[left, font=\scriptsize] {terminal} -- (0.6,0);
+  \node[ponto] at (0,0) {};
+
+  \draw (0.6,0) to[L, l={ESL}] (3.0,0);
+  \draw (3.0,0) to[R, l={ESR}] (5.4,0);
+  \draw (5.4,0) to[C, l={$C$}] (7.8,0);
+
+  % fuga em paralelo com o capacitor ideal
+  \draw (5.4,0) -- (5.4,-1.6);
+  \draw (5.4,-1.6) to[R, l_={$R_{\text{fuga}}$}] (7.8,-1.6);
+  \draw (7.8,-1.6) -- (7.8,0);
+
+  \draw (7.8,0) -- (8.6,0) node[right, font=\scriptsize] {terminal};
+  \node[ponto] at (8.6,0) {};
+
+  \node[manualblue, font=\scriptsize, anchor=north, align=center]
+       at (1.8,-0.55) {terminais e\\enrolamento\\(nH)};
+  \node[manualred, font=\scriptsize, anchor=north, align=center]
+       at (3.0,-2.5) {eletrodos, eletrólito\\e perda no dielétrico\\(m$\Omega$ a $\Omega$)};
+  \node[manualgray, font=\scriptsize, anchor=north, align=center]
+       at (9.4,-1.9) {condução residual\\pelo dielétrico\\(M$\Omega$ a G$\Omega$)};
+  \draw[manualgray, thin, ->, >=stealth] (9.0,-2.1) -- (7.4,-1.8);
+  \draw[manualred, thin, ->, >=stealth] (3.6,-1.9) -- (4.2,-0.3);
+
+\end{circuitikz}
+```
+
+O capacitor real. A ESL e a ESR estão **em série** com a capacitância — por isso
+elas mandam em frequência alta e em corrente alta. A fuga está em **paralelo** — por
+isso ela manda em CC e em tempos longos.
+
+:::
+
+- **ESR** (*equivalent series resistance*): resistência série equivalente. Reúne a
+  resistência dos eletrodos, do eletrólito e das perdas no dielétrico. É ela que
+  **aquece** o capacitor quando passa ondulação, e é ela que arruína um filtro de
+  fonte chaveada.
+- **ESL** (*equivalent series inductance*): indutância dos terminais e do
+  enrolamento, tipicamente de 1 a 20 nH. Acima de uma certa frequência, o capacitor
+  **é um indutor**.
+- $R_{\text{fuga}}$: caminho de condução residual pelo dielétrico. Em cerâmicos e
+  filmes é enorme (GΩ); em eletrolíticos é ruim o bastante para descarregar o
+  capacitor em minutos.
+- **Absorção dielétrica**: não aparece no modelo de quatro elementos porque não é um
+  elemento — é a polarização que relaxa devagar e devolve carga depois da descarga,
+  como a Parte 5 do laboratório do @sec-cap-021 mostrou.
+
+## A impedância contra a frequência {#sec-022-impedancia}
+
+O Volume 5 desenvolve impedância com rigor; por ora, basta o módulo. Um capacitor
+ideal tem $|Z| = 1/(2\pi f C)$: quanto maior a frequência, menor a impedância, sem
+limite. O real tem
+
+$$ |Z| = \sqrt{\text{ESR}^{2}
+   + \left(2\pi f\,\text{ESL} - \frac{1}{2\pi f\,C}\right)^{2}}, $$
+
+que desce como o ideal, encosta no piso da ESR e **volta a subir** como um indutor.
+
+::: {#fig-022-impedancia}
+
+```{.tikz}
+%%| filename: 022-impedancia
+%%| alt: Gráfico log-log do módulo da impedância contra a frequência, de dez quilohertz a um gigahertz, para três capacitores. O eletrolítico de cem microfarads desce até um piso de meio ohm em cerca de cem quilohertz e volta a subir. O cerâmico de dez microfarads desce até cinco miliohms perto de um megahertz e sobe depois. O cerâmico de cem nanofarads desce até vinte miliohms perto de dezesseis megahertz. Cada curva tem forma de V, com o fundo na frequência de auto-ressonância, e acima dela o capacitor se comporta como indutor.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=15.0cm, height=8.0cm,
+  xmode=log, ymode=log,
+  xlabel={frequência (Hz)}, ylabel={$|Z|$ ($\Omega$)},
+  xmin=1e4, xmax=1e9, ymin=2e-3, ymax=2e2,
+  grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  legend style={at={(0.98,0.03)}, anchor=south east, font=\scriptsize,
+                draw=manualgray!50},
+]
+  % 100 uF eletrolitico: ESR 0,5 ohm, ESL 10 nH
+  \addplot[manualred, very thick, domain=4:9, samples=280]
+    ({10^x}, {sqrt(0.5^2 + (2*pi*(10^x)*10e-9 - 1/(2*pi*(10^x)*100e-6))^2)});
+  \addlegendentry{$100\ \mu$F eletrolítico}
+
+  % 10 uF ceramico: ESR 5 mohm, ESL 1,5 nH
+  \addplot[manualgreen!55!black, very thick, domain=4:9, samples=280]
+    ({10^x}, {sqrt(0.005^2 + (2*pi*(10^x)*1.5e-9 - 1/(2*pi*(10^x)*10e-6))^2)});
+  \addlegendentry{$10\ \mu$F cerâmico X5R}
+
+  % 100 nF ceramico: ESR 20 mohm, ESL 1 nH
+  \addplot[curva, domain=4:9, samples=280]
+    ({10^x}, {sqrt(0.02^2 + (2*pi*(10^x)*1e-9 - 1/(2*pi*(10^x)*100e-9))^2)});
+  \addlegendentry{$100$ nF cerâmico X7R}
+
+  \node[font=\scriptsize, anchor=north east, align=right]
+       at (axis cs:3e8,1.5e2)
+       {acima da auto-ressonância,\\o capacitor \textbf{é um indutor}};
+  \node[font=\scriptsize, anchor=west, align=left]
+       at (axis cs:1.3e4,3.4e-3)
+       {o fundo de cada V é a ESR};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+Impedância real contra frequência. Cada capacitor só é capacitor à esquerda do seu
+fundo; à direita ele é um indutor com o valor da ESL. É por isso que fontes e placas
+digitais levam um eletrolítico grande **e** um cerâmico pequeno em paralelo: cada um
+cobre uma faixa.
+
+:::
+
+Três leituras que valem para o manual inteiro:
+
+- **Não existe "o capacitor de desacoplamento".** Existe uma combinação. O
+  eletrolítico segura de 100 Hz a 100 kHz; o cerâmico de 100 nF segura de 100 kHz a
+  20 MHz; acima disso quem manda é o próprio plano de terra da placa.
+- **Capacitância maior nem sempre é impedância menor.** Em 50 MHz, o cerâmico de
+  100 nF tem impedância **menor** que o de 10 µF, porque o de 10 µF já passou da sua
+  auto-ressonância.
+- **A ESL depende mais do encapsulamento e do desenho da placa do que do
+  capacitor.** Dois centímetros de trilha valem cerca de 20 nH — dez vezes a ESL do
+  componente. Desacoplamento é problema de geometria antes de ser problema de
+  componente.
+
+## As famílias {#sec-022-familias}
+
+::: {#fig-022-mapa}
+
+```{.tikz}
+%%| filename: 022-mapa
+%%| alt: Mapa das famílias de capacitor. Eixo horizontal logarítmico de capacitância, de um picofarad a cem farads. Seis faixas horizontais, uma por família. Cerâmico classe um vai de um picofarad a cem nanofarads, de dezesseis a mil volts. Cerâmico classe dois vai de cem picofarads a cem microfarads, de seis vírgula três a cem volts. Filme vai de um nanofarad a dez microfarads, de cinquenta a mil volts. Tântalo vai de cem nanofarads a um milifarad, de quatro a cinquenta volts. Eletrolítico de alumínio vai de cem nanofarads a cem milifarads, de seis vírgula três a quatrocentos e cinquenta volts. Supercapacitor vai de zero vírgula um farad a cem farads, de dois vírgula cinco a cinco vírgula cinco volts.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=15.4cm, height=7.6cm,
+  xmode=log,
+  xlabel={capacitância (F)},
+  xmin=3e-13, xmax=3e2, ymin=0.3, ymax=6.7,
+  grid=major, grid style={manualgray!25},
+  font=\footnotesize,
+  ytick={1,2,3,4,5,6},
+  yticklabels={{supercapacitor},{eletrolítico Al},{tântalo},{filme},
+               {cerâmico classe 2},{cerâmico classe 1}},
+  ytick style={draw=none},
+]
+  \draw[fill=manualblue!22, draw=manualblue, thick]
+    (axis cs:1e-12,5.72) rectangle (axis cs:1e-7,6.28);
+  \node[font=\scriptsize] at (axis cs:3.2e-10,6.0) {16 a 1000 V};
+
+  \draw[fill=manualgreen!22, draw=manualgreen!60!black, thick]
+    (axis cs:1e-10,4.72) rectangle (axis cs:1e-4,5.28);
+  \node[font=\scriptsize] at (axis cs:1e-7,5.0) {6,3 a 100 V};
+
+  \draw[fill=manualyellow!22, draw=manualyellow!80!black, thick]
+    (axis cs:1e-9,3.72) rectangle (axis cs:1e-5,4.28);
+  \node[font=\scriptsize] at (axis cs:1e-7,4.0) {50 a 1000 V};
+
+  \draw[fill=manualred!18, draw=manualred, thick]
+    (axis cs:1e-7,2.72) rectangle (axis cs:1e-3,3.28);
+  \node[font=\scriptsize] at (axis cs:1e-5,3.0) {4 a 50 V};
+
+  \draw[fill=manualgray!25, draw=manualgray, thick]
+    (axis cs:1e-7,1.72) rectangle (axis cs:1e-1,2.28);
+  \node[font=\scriptsize] at (axis cs:1e-4,2.0) {6,3 a 450 V};
+
+  \draw[fill=manualblue!12, draw=manualblue!70, thick]
+    (axis cs:1e-1,0.72) rectangle (axis cs:1e2,1.28);
+  \node[font=\scriptsize] at (axis cs:3.2,1.0) {2,5 a 5,5 V};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+Onde cada família vive. A faixa mostra a capacitância disponível; o texto dentro
+dela, a faixa de tensão de trabalho. Repare que quase nada ocupa ao mesmo tempo o
+canto de alta capacitância e o de alta tensão — essa é a restrição física central do
+componente.
+
+:::
+
+| Família | Tolerância | ESR | Estabilidade | Polar? | Uso característico |
+|---|---|---|---|---|---|
+| Cerâmico classe 1 (C0G/NP0) | ±1 a ±5 % | muito baixa | excelente | não | temporização, filtros, RF |
+| Cerâmico classe 2 (X7R) | ±10 a ±20 % | muito baixa | ruim | não | desacoplamento |
+| Cerâmico classe 2 (Y5V) | +80/−20 % | muito baixa | péssima | não | volume barato, nada crítico |
+| Filme poliéster | ±5 a ±10 % | baixa | boa | não | acoplamento, uso geral |
+| Filme polipropileno | ±1 a ±5 % | muito baixa | ótima | não | áudio, alta tensão, ressonância |
+| Eletrolítico de alumínio | −20/+50 % | **alta** | ruim, envelhece | **sim** | reservatório de fonte |
+| Eletrolítico de baixa ESR | −20/+50 % | média | ruim, envelhece | **sim** | fonte chaveada |
+| Tântalo | ±10 a ±20 % | média-baixa | boa | **sim** | pouco espaço, tensão baixa |
+| Supercapacitor | −20/+80 % | alta | ruim | **sim** | retenção de memória, energia |
+
+: As famílias e o que esperar de cada uma. A coluna de tolerância já elimina metade
+das escolhas erradas: nenhum circuito de temporização deve usar um capacitor com
++80/−20 %. {#tbl-022-familias}
+
+## O código de três caracteres da cerâmica {#sec-022-codigo}
+
+Um capacitor cerâmico marcado **104** vale 100 nF (@sec-cap-006). Mas o que decide se
+ele serve é o **código de temperatura** impresso ao lado, e ele é lido caractere a
+caractere:
+
+| 1º — temp. mínima | 2º — temp. máxima | 3º — variação máxima de $C$ |
+|---|---|---|
+| X = −55 °C | 4 = +65 °C | P = ±10 % |
+| Y = −30 °C | 5 = +85 °C | R = ±15 % |
+| Z = +10 °C | 6 = +105 °C | S = ±22 % |
+| | 7 = +125 °C | T = +22/−33 % |
+| | 8 = +150 °C | U = +22/−56 % |
+| | | V = +22/−82 % |
+
+: O código EIA das cerâmicas de classe 2. {#tbl-022-eia}
+
+Assim:
+
+- **X7R** = −55 a +125 °C, com no máximo ±15 % de variação. É o cavalo de batalha.
+- **X5R** = −55 a +85 °C, ±15 %. Idêntico ao X7R até 85 °C, e mais barato.
+- **Y5V** = −30 a +85 °C, **+22/−82 %**. Um capacitor de 1 µF Y5V pode valer 180 nF
+  a 85 °C. Ele existe porque é barato e porque em desacoplamento grosseiro isso às
+  vezes basta.
+
+**C0G** (também escrito NP0) é outra coisa: classe 1, com coeficiente de temperatura
+de 0 ± 30 ppm/°C, tolerância de ±5 % ou melhor e nenhuma dependência da tensão
+aplicada. Em troca, a capacitância disponível é mil vezes menor no mesmo tamanho. É o
+único cerâmico que se usa para temporização e para filtros de precisão.
+
+## O efeito da tensão CC {#sec-022-dcbias}
+
+Este é o item que mais surpreende quem vem da teoria, e o motivo é simples: **não
+existe no modelo de quatro elementos, não aparece no multímetro e não está na primeira
+página do datasheet.**
+
+As cerâmicas de classe 2 são ferroelétricas. A permissividade enorme que as torna
+úteis vem de domínios que se reorientam sob campo — e que, uma vez alinhados por uma
+tensão CC, deixam de contribuir. Resultado: **a capacitância cai conforme a tensão
+aplicada sobe**, e cai muito.
+
+::: {#fig-022-dcbias}
+
+```{.tikz}
+%%| filename: 022-dcbias
+%%| alt: Gráfico da capacitância efetiva, em porcentagem do valor nominal, contra a tensão contínua aplicada expressa em porcentagem da tensão nominal do componente. A curva do C0G é uma reta horizontal em cem por cento. A do X7R de tensão folgada cai suavemente até cerca de oitenta e oito por cento. A do X5R miniatura cai a sessenta por cento com um quarto da tensão nominal e a vinte e cinco por cento na tensão nominal. A do Y5V cai ainda mais, chegando a dezoito por cento na tensão nominal.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=14.4cm, height=7.4cm,
+  xlabel={tensão CC aplicada (\% da tensão nominal)},
+  ylabel={capacitância efetiva (\% do nominal)},
+  xmin=0, xmax=118, ymin=0, ymax=112,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  xtick={0,25,50,75,100},
+  ytick={0,20,40,60,80,100},
+]
+  \addplot[manualgreen!55!black, very thick] coordinates
+    {(0,100) (25,100) (50,100) (75,100) (100,100)};
+  \addplot[curva] coordinates
+    {(0,100) (25,98) (50,95) (75,92) (100,88)};
+  \addplot[destaque, very thick] coordinates
+    {(0,100) (12,78) (25,60) (50,42) (75,31) (100,25)};
+  \addplot[manualgray, very thick, dashed] coordinates
+    {(0,100) (12,68) (25,48) (50,31) (75,22) (100,18)};
+
+  \node[manualgreen!55!black, font=\scriptsize, anchor=west]
+       at (axis cs:101,100) {C0G};
+  \node[manualblue, font=\scriptsize, anchor=west]
+       at (axis cs:101,88) {X7R folgado};
+  \node[manualred, font=\scriptsize, anchor=west]
+       at (axis cs:101,26) {X5R};
+  \node[manualgray, font=\scriptsize, anchor=west]
+       at (axis cs:101,16) {Y5V};
+
+  \draw[manualred, thin, dashed] (axis cs:0,25) -- (axis cs:100,25);
+  \node[manualred, font=\scriptsize, anchor=north west, align=left]
+       at (axis cs:36,84)
+       {Um X5R de $10\ \mu$F/6,3 V\\
+        alimentado com $5$ V entrega\\
+        cerca de $2{,}5\ \mu$F.};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+O efeito da tensão CC sobre a capacitância. Curvas típicas — o número exato só sai do
+datasheet do componente específico, e é a razão de esse gráfico existir lá. O C0G é
+imune; a cerâmica de classe 2, não.
+
+:::
+
+Como o efeito piora com a miniaturização (mesma capacitância em dielétrico mais fino
+significa campo mais alto), **um capacitor menor com o mesmo valor impresso é um
+capacitor pior**. E a defesa é sempre a mesma:
+
+- **Escolha tensão nominal de 2 a 4 vezes a tensão de trabalho.** Não por segurança
+  — por capacitância. Um 10 µF/25 V operando em 5 V perde muito menos que um
+  10 µF/6,3 V no mesmo ponto.
+- **Prefira o encapsulamento maior** quando houver espaço.
+- **Use C0G onde o valor importa.** Temporização, filtro, oscilador.
+- **Leia a curva do datasheet**, sempre. É o único número verdadeiro.
+
+## Tensão de trabalho, ondulação e vida útil {#sec-022-vida}
+
+Três especificações do eletrolítico que costumam ser ignoradas, e as três matam o
+componente.
+
+**Tensão nominal.** É valor de CC, com o pico da ondulação incluído. Ultrapassá-la
+fura o óxido. A prática é operar entre 60 % e 80 % dela — abaixo de 50 % em
+eletrolíticos de alumínio a camada de óxido chega a se degradar por falta de
+reformação, e é por isso que "usar 450 V num circuito de 12 V" também é errado.
+
+**Corrente de ondulação** (*ripple current*). O eletrolítico de uma fonte não fica
+parado: ele é carregado e descarregado a cada ciclo, e essa corrente eficaz atravessa
+a ESR. A potência dissipada **dentro** do capacitor é
+
+$$ P = I_{\text{rms}}^{2}\,\text{ESR}. $$
+
+Um capacitor de 1000 µF com 0,1 Ω de ESR conduzindo 2 A eficazes dissipa 0,4 W — no
+próprio corpo, sem dissipador, num objeto do tamanho de um dedo mínimo. Ele aquece,
+o eletrólito evapora mais depressa, a ESR sobe, ele dissipa mais, e o ciclo se fecha.
+
+**Vida útil.** É especificada em horas a uma temperatura, tipicamente 2000 h a
+105 °C, e obedece a uma regra de Arrhenius: **a vida dobra a cada 10 °C abaixo do
+máximo**.
+
+$$ L = L_0 \times 2^{(T_{\max} - T)/10}. $$
+
+Um capacitor de 2000 h a 105 °C operando a 65 °C dura $2000 \times 2^{4} =
+32\,000$ h, ou cerca de 3,6 anos ligado sem parar. O mesmo capacitor a 95 °C dura
+4000 h, cinco meses. **Dez graus decidem um fator de dois**, e é por isso que a
+posição do eletrolítico na placa — longe do dissipador, longe do transformador — é
+uma decisão de projeto e não de estética.
+
+| Temperatura de operação | Vida (base 2000 h a 105 °C) |
+|---|---|
+| 105 °C | 2 000 h (2,8 meses) |
+| 95 °C | 4 000 h (5,5 meses) |
+| 85 °C | 8 000 h (11 meses) |
+| 65 °C | 32 000 h (3,6 anos) |
+| 45 °C | 128 000 h (14,6 anos) |
+
+: Vida útil de um eletrolítico contra temperatura. A tabela explica sozinha por que
+equipamento barato falha em dois anos e equipamento bom não. {#tbl-022-vida}
+
+## Corrente de fuga {#sec-022-fuga}
+
+O eletrolítico conduz. A regra prática do fabricante é
+
+$$ I_{\text{fuga}} \approx 0{,}01\,C\,V + 3\ \mu\text{A}, $$
+
+com $C$ em µF e $V$ em volts. Um 470 µF/25 V carregado a 25 V vaza cerca de 120 µA —
+o que é irrelevante numa fonte de 1 A e é catastrófico num circuito de amostragem
+que trabalha com nanoampères.
+
+Por isso a divisão de trabalho é rígida:
+
+- **Eletrolítico e tântalo:** reservatório de energia, filtragem, desacoplamento
+  grosso. Onde fuga de microampères não importa.
+- **Filme e cerâmico classe 1:** temporização, integração, amostragem, qualquer coisa
+  em que a carga precise ficar parada. Fuga na casa dos picoampères.
+
+E há o caso do eletrolítico **guardado**: sem tensão por anos, a camada de óxido se
+dissolve parcialmente e a fuga inicial fica altíssima. Equipamento valvulado antigo
+exige *reforming* — subir a tensão devagar, com corrente limitada, para reconstruir o
+óxido. Ligar direto na tomada estoura o capacitor.
+
+## Como cada família falha {#sec-022-falha}
+
+| Família | Modo de falha | Sinal externo |
+|---|---|---|
+| Eletrolítico de alumínio | seca: ESR sobe, $C$ cai | topo estufado, eletrólito seco na base, fonte com ruído |
+| Eletrolítico invertido | gás, pressão, ruptura | estouro, cheiro forte, papel espalhado |
+| Tântalo | **curto**, com incêndio | queima trilha, fumaça, chama |
+| Cerâmico MLCC | trinca mecânica → curto | nada visível; placa que falha depois de flexionada |
+| Filme | autorregenerativo, $C$ cai devagar | quase nunca falha |
+| Supercapacitor | seca, ESR sobe | perde retenção |
+
+: Modos de falha por família. Duas linhas merecem atenção especial: o tântalo, que
+falha em curto e pega fogo, e o MLCC, que trinca sem deixar
+marca. {#tbl-022-falhas}
+
+**O tântalo** falha em curto porque o mecanismo de falha do dielétrico de pentóxido
+de tântalo é térmico e regenerativo: um ponto fraco conduz, aquece, o óxido vizinho
+se degrada, conduz mais. Se houver corrente disponível, ele queima com chama. Por
+isso a regra é dura: **derate de 50 % na tensão** (um tântalo de 16 V não trabalha
+acima de 8 V) e, quando possível, resistência em série limitando a corrente de
+partida.
+
+**O MLCC** trinca porque é cerâmica soldada rigidamente numa placa que flexiona. A
+trinca vira caminho de condução, às vezes semanas depois. Daí as regras de layout:
+não pôr MLCC perto de bordas que serão despaneladas, nem alinhado com furos de
+parafuso, e usar versões *soft termination* onde a flexão é inevitável. O Volume 14
+volta ao assunto do lado da montagem em SMD.
+
+## 🧪 Laboratório {#sec-022-lab}
+
+**Ler capacitores reais, medir suas tolerâncias, e flagrar dois deles mentindo.** O
+roteiro é quase todo de medição comparativa — que é o que se pode fazer honestamente
+com um multímetro.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro com função de capacitância
+- 10 capacitores cerâmicos de 100 nF do mesmo lote (marcados 104)
+- 3 capacitores cerâmicos variados com código de temperatura legível (X7R, Y5V, C0G)
+- 2 capacitores de filme (poliéster) de 100 nF
+- 2 eletrolíticos de 470 µF/25 V novos
+- 1 ou 2 eletrolíticos **retirados de sucata** (fonte de PC, monitor, roteador velho)
+- 1 resistor de 1 MΩ, 1 de 100 kΩ e 1 de 470 Ω, 1/4 W
+- 1 fonte de bancada ou bateria de 9 V
+- 1 cronômetro
+- Protoboard e jumpers
+:::
+
+::: {.callout-warning}
+## Sucata só depois de descarregada
+
+Placas de fonte guardam capacitores carregados a centenas de volts por semanas
+(@sec-cap-002). Antes de encostar em qualquer eletrolítico de sucata: descarregue
+através de um resistor de alguns kΩ e 2 W, meça, espere um minuto, meça de novo — a
+absorção dielétrica devolve tensão. Só depois desolde. Se a placa tiver capacitores
+maiores que 100 µF marcados acima de 100 V, e você não tiver certeza do
+procedimento, escolha outra sucata.
+:::
+
+### Parte 1 — Ler o que está escrito
+
+1. Separe os capacitores e transcreva **tudo** o que estiver impresso em cada um.
+2. Decodifique: valor (@sec-cap-006), tensão de trabalho, código de temperatura
+   (@tbl-022-eia), tolerância.
+3. Classifique cada um na @tbl-022-familias e escreva, para cada um, uma aplicação em
+   que ele serve e uma em que ele não serve.
+
+Um capacitor cerâmico sem código de temperatura impresso deve ser tratado como Y5V
+até prova em contrário. Isso não é pessimismo: é o que costuma ser.
+
+### Parte 2 — A tolerância que ninguém verifica
+
+1. Meça os dez cerâmicos de 100 nF. Anote os dez valores.
+2. Calcule média e desvio. Compare o espalhamento com a tolerância impressa.
+3. Meça os dois capacitores de filme de 100 nF. Compare o espalhamento com o dos
+   cerâmicos.
+
+O resultado esperado: os cerâmicos ficam sistematicamente **abaixo** do nominal e
+espalhados; os de filme ficam agrupados e perto do valor. Guarde esses dez valores —
+o @sec-cap-025 usa capacitores medidos, não nominais, para prever constantes de
+tempo.
+
+### Parte 3 — Medir a corrente de fuga
+
+1. Carregue um eletrolítico novo de 470 µF a 9,0 V e desconecte a fonte.
+2. Meça a tensão a cada 60 s durante 10 minutos, encostando as pontas só no instante
+   da leitura.
+3. Calcule a corrente de fuga média por $i = C\,\Delta v/\Delta t$ — a equação do
+   @sec-cap-021 usada ao contrário.
+4. Compare com a regra $0{,}01\,CV + 3\ \mu$A $\approx 45\ \mu$A.
+5. Repita com um capacitor de filme de 100 nF carregado a 9 V, deixado 10 minutos.
+
+O passo 5 é a comparação que importa. O capacitor de filme praticamente não perde
+tensão — e é por isso que ele, e não o eletrolítico, é usado para segurar carga.
+
+::: {.callout-note}
+## O voltímetro também é uma fuga
+
+Um multímetro digital tem 10 MΩ de impedância de entrada. Deixado ligado no
+capacitor de filme de 100 nF, ele o descarrega com $\tau = RC = 1$ s: em cinco
+segundos não há mais nada para medir. Por isso o roteiro manda tocar só no instante
+da leitura. É a mesma armadilha do @sec-cap-014, agora no domínio do tempo.
+:::
+
+### Parte 4 — O capacitor que secou
+
+1. Meça a capacitância dos eletrolíticos de sucata e compare com o valor impresso.
+2. Meça os novos de 470 µF e compare também.
+3. Faça a Parte 3 (fuga) com um capacitor de sucata.
+
+Um eletrolítico de fonte de PC com dez anos de uso costuma medir de 50 % a 80 % do
+nominal, e sua fuga é muito maior. O multímetro comum **não** mede ESR, que é o
+parâmetro que mais se degrada — mas a queda de capacitância acompanha a subida da
+ESR o suficiente para servir de indicador. Um capacitor 30 % abaixo do nominal está
+condenado.
+
+### Parte 5 — Caçar a curva de tensão CC no datasheet
+
+Este é um exercício de engenharia, não de bancada, e é o único jeito honesto de
+chegar ao número sem uma ponte LCR com polarização.
+
+1. Escolha um MLCC real de catálogo — por exemplo um 10 µF, 6,3 V, X5R, 0805.
+2. Baixe o datasheet do fabricante e localize o gráfico *DC bias characteristics*.
+3. Leia a capacitância efetiva em 3,3 V e em 5,0 V.
+4. Repita para o mesmo valor em 25 V e em encapsulamento 1206.
+5. Monte uma tabela dos quatro casos e responda: qual componente você compraria para
+   desacoplar um regulador de 5 V que exige "no mínimo 4,7 µF"?
+
+Quase sempre a resposta é o componente maior e de tensão mais alta — e quase sempre
+o projeto original tinha o menor.
+
+### Variante simulada (plano B)
+
+A curva de impedância do @fig-022-impedancia sai direto de qualquer simulador com uma
+análise CA: monte $C$ em série com ESR e ESL, varra de 10 Hz a 1 GHz e peça o módulo
+da impedância. Depois ponha um eletrolítico de 100 µF **em paralelo** com um cerâmico
+de 100 nF e veja a curva combinada: dois vales e, entre eles, um pico de
+antirressonância que a maioria dos projetos ignora.
+
+Esse pico é real e é a razão de placas críticas usarem muitos valores diferentes de
+capacitor em paralelo — assunto que o Volume 14 retoma.
+
+## 🔥 Onde Queima {#sec-022-queima}
+
+**Inverter um eletrolítico.** O óxido se dissolve, o eletrólito ferve, a pressão sobe
+e o selo rompe. Em placas montadas às pressas, é o erro número um. Confira a faixa
+impressa (negativo) antes de soldar.
+
+**Comprar pela capacitância e ignorar a ESR.** Trocar o eletrolítico de uma fonte
+chaveada por "outro de 1000 µF" qualquer é trocar um de baixa ESR por um comum. A
+fonte passa a esquentar, a ondulação sobe e o novo capacitor seca em meses.
+
+**Ignorar a corrente de ondulação.** $P = I_{\text{rms}}^2\,\text{ESR}$ aquece o
+capacitor por dentro, onde nenhum dissipador chega. Capacitor estufado quase sempre
+é capacitor que trabalhou acima da ondulação nominal.
+
+**Pôr o eletrolítico ao lado do dissipador.** Dez graus a mais é metade da vida.
+Este é um erro de layout que se paga em campo, dois anos depois.
+
+**Confiar no valor impresso de um MLCC de classe 2.** Um 10 µF/6,3 V em 5 V entrega
+2,5 µF. Se o circuito exige 4,7 µF, ele não os tem — e nada na bancada acusa isso,
+porque o multímetro mede sem polarização.
+
+**Usar Y5V em qualquer coisa que precise de um valor.** +22/−82 % sobre a
+temperatura, mais o efeito da tensão CC, mais a tolerância de fabricação. Y5V é
+capacitância aproximada, não capacitância.
+
+**Usar cerâmico de classe 2 em temporização.** A constante de tempo passa a depender
+da temperatura e da tensão. Use C0G ou filme — sempre.
+
+**Operar tântalo perto da tensão nominal.** Ele falha em curto e queima. Derate de
+50 %, no mínimo, e resistência em série se a fonte tiver corrente sobrando.
+
+**Flexionar a placa depois de montada.** MLCC trinca e vira curto — às vezes semanas
+depois, o que torna o defeito quase impossível de rastrear.
+
+**Esquecer que o cerâmico é piezoelétrico.** Um X7R sob tensão variável **vibra**, e
+uma placa cheia deles chia audivelmente em fontes chaveadas. Ao contrário, ele também
+capta vibração: cerâmico de classe 2 em entrada de amplificador é um microfone.
+
+**Trocar um eletrolítico por um cerâmico "melhor" na saída de um regulador.** Muitos
+reguladores lineares dependem da ESR do capacitor de saída para serem estáveis. Um
+cerâmico de ESR quase nula tira o zero da malha e o regulador oscila. É um erro
+clássico, e o Volume 12 explica o mecanismo.
+
+**Ligar um eletrolítico guardado por anos direto na tensão nominal.** A fuga inicial
+é enorme e ele aquece. Reforme com tensão crescente e corrente limitada.
+
+**Medir capacitância na placa.** O resto do circuito entra em paralelo. Desolde uma
+perna, sempre.
+
+## O que fica deste capítulo {#sec-022-resumo}
+
+O capacitor real é a capacitância ideal com quatro companhias: ESL em série (mandando
+em alta frequência), ESR em série (mandando em corrente alta, e aquecendo o
+componente), fuga em paralelo (mandando em tempos longos) e absorção dielétrica
+(devolvendo carga depois da descarga).
+
+A impedância real tem forma de V: cai como capacitor, encosta no piso da ESR e sobe
+como indutor acima da auto-ressonância. Nenhum capacitor cobre toda a faixa, e é por
+isso que se usam valores diferentes em paralelo.
+
+Cada família é uma escolha dentro do mesmo conflito físico entre capacitância,
+tensão, estabilidade e volume. Cerâmico classe 1 e filme para valores precisos;
+cerâmico classe 2 para desacoplamento; eletrolítico e tântalo para energia. O código
+de três caracteres da cerâmica diz em três letras se o componente serve.
+
+A cerâmica de classe 2 perde capacitância com a tensão CC aplicada — até 75 % dela —
+e esse efeito não aparece em medida de bancada. A defesa é escolher tensão nominal
+folgada, encapsulamento maior e ler a curva do datasheet.
+
+No eletrolítico, três especificações decidem a vida do produto: tensão de trabalho,
+corrente de ondulação e temperatura. A vida dobra a cada 10 °C a menos, o que faz da
+posição do componente na placa uma decisão de engenharia.
+
+E cada família falha do seu jeito: o eletrolítico seca e estufa, o tântalo entra em
+curto e queima, o MLCC trinca sem deixar marca.
+
+Com o capacitor real esgotado, o @sec-cap-023 abre a outra metade do volume: o campo
+**magnético**, a indutância, e um componente que armazena energia da forma dual — em
+corrente em vez de tensão.
