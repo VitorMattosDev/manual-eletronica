@@ -1,3 +1,579 @@
 # Componentes passivos: identificação, código de cores e tolerância {#sec-cap-006}
 
-*(em elaboração)*
+Um resistor não tem valor: tem uma **faixa**. Um capacitor cerâmico não tem
+capacitância fixa: tem uma capacitância que depende da tensão aplicada, da
+temperatura e da idade. Um eletrolítico não é um capacitor com polaridade: é um
+capacitor que se destrói se a polaridade for invertida.
+
+Nada disso é defeito. É a diferença entre o componente do esquemático — um número
+puro — e o componente da gaveta, que é um objeto físico com dispersão de
+fabricação, dependência de temperatura e limites de operação. Este capítulo é
+sobre ler esse objeto: o que está escrito nele, o que não está, e o que muda
+quando ele entra em serviço.
+
+## Por que os valores são esses e não outros {#sec-006-series}
+
+A pergunta inevitável de quem abre um kit de resistores pela primeira vez: por que
+existe 47 kΩ e 56 kΩ, mas não 50 kΩ?
+
+A resposta é elegante. Os valores comerciais não são espaçados uniformemente; são
+espaçados **logaritmicamente**, de modo que a razão entre um valor e o seguinte
+seja constante. A série E12 tem doze valores por década, e a razão entre vizinhos
+é $\sqrt[12]{10} \approx 1{,}21$ — cerca de 21 %. Como cada resistor de E12 tem
+tolerância de ±10 %, as faixas de valores possíveis de dois vizinhos **se tocam**.
+
+::: {#fig-serie-e12}
+
+```{.tikz}
+%%| filename: 006-serie-e12
+%%| alt: Uma década em escala logarítmica com os doze valores da série E12 marcados, cada um com sua faixa de tolerância de dez por cento desenhada como um segmento; os segmentos vizinhos se tocam e cobrem a década inteira.
+
+\begin{tikzpicture}[font=\footnotesize]
+  % eixo
+  \draw[thick] (0,0) -- (10,0);
+  \draw[thick] (10,-0.1) -- (10,0.1);
+  \node[font=\scriptsize, anchor=north] at (10,-0.16) {100};
+
+  \foreach \val [count=\i] in {10,12,15,18,22,27,33,39,47,56,68,82} {
+    \pgfmathsetmacro{\xc}{10*log10(\val/10)}
+    \pgfmathsetmacro{\xlo}{10*log10(0.9*\val/10)}
+    \pgfmathsetmacro{\xhi}{10*log10(1.1*\val/10)}
+    \pgfmathsetmacro{\yy}{0.55 + 0.42*mod(\i,3)}
+    \draw[manualblue, line width=4pt, opacity=0.5]
+         ({\xlo},{\yy}) -- ({\xhi},{\yy});
+    \draw[manualgray, thin] ({\xc},0.06) -- ({\xc},{\yy});
+    \draw[thick] ({\xc},-0.1) -- ({\xc},0.1);
+    \node[font=\scriptsize, anchor=north] at ({\xc},-0.16) {\val};
+  }
+
+  \node[manualblue!70!black, font=\scriptsize, anchor=west] at (10.3,1.0)
+       {cada segmento é a faixa};
+  \node[manualblue!70!black, font=\scriptsize, anchor=west] at (10.3,0.65)
+       {de $\pm 10\,\%$ de um valor};
+
+  \node[manualgray, font=\scriptsize, anchor=north, align=center] at (5,-1.2)
+       {os doze valores da série E12, em uma década};
+\end{tikzpicture}
+```
+
+A série E12 numa década, com a faixa de tolerância de ±10 % de cada valor
+desenhada como um segmento. Os segmentos se encostam: **qualquer resistência
+dentro da década é coberta por algum valor comercial**. É por isso que a série
+tem doze valores, e é por isso que 50 kΩ não existe — 47 kΩ com 10 % já cobre
+50 kΩ.
+
+:::
+
+O mesmo raciocínio gera as outras séries:
+
+| Série | Valores por década | Tolerância típica | Valores |
+|---|---|---|---|
+| E6 | 6 | ±20 % | 10, 15, 22, 33, 47, 68 |
+| E12 | 12 | ±10 % | E6 + 12, 18, 27, 39, 56, 82 |
+| E24 | 24 | ±5 % | E12 + 11, 13, 16, 20, 24, 30, 36, 43, 51, 62, 75, 91 |
+| E48 | 48 | ±2 % | (série de precisão) |
+| E96 | 96 | ±1 % | (série de precisão) |
+
+: As séries de valores comerciais. Resistores comuns são E12 e E24; capacitores
+cerâmicos e eletrolíticos, E6 e E12. Precisão de 1 % vive na E96.
+{#tbl-006-series}
+
+A consequência prática já apareceu no @sec-cap-001 e vai se repetir por 104
+capítulos: **o cálculo dá um número, e o projeto usa o vizinho comercial**. Um
+divisor que pede 3,7 kΩ recebe 3,9 kΩ (E12) ou 3,6 kΩ (E24), e o efeito do
+arredondamento é recalculado, nunca ignorado.
+
+## O código de cores {#sec-006-cores}
+
+Resistores com terminais axiais trazem o valor em faixas coloridas, porque
+imprimir números legíveis num cilindro de 2 mm é difícil e porque as faixas se
+leem em qualquer orientação de rotação.
+
+::: {#fig-codigo-cores}
+
+```{.tikz}
+%%| filename: 006-codigo-cores
+%%| alt: Dois resistores desenhados com suas faixas coloridas: um de quatro faixas valendo 470 ohms com 5 por cento, e outro de cinco faixas valendo 1,50 kilo-ohm com 1 por cento, cada faixa anotada com seu significado.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \definecolor{dourado}{HTML}{C9A227}
+  \definecolor{corpobege}{HTML}{E8D9B5}
+
+% ---------------- 4 faixas ----------------
+\begin{scope}
+  \draw[thick] (-1.6,0) -- (-0.8,0);
+  \draw[thick] (4.6,0) -- (5.4,0);
+  \draw[thick, fill=corpobege, rounded corners=6pt] (-0.8,-0.5) rectangle (4.6,0.5);
+
+  \fill[yellow]  (0.15,-0.5) rectangle (0.45,0.5);
+  \fill[violet]  (1.25,-0.5) rectangle (1.55,0.5);
+  \fill[brown]   (2.35,-0.5) rectangle (2.65,0.5);
+  \fill[dourado] (3.95,-0.5) rectangle (4.25,0.5);
+
+  \foreach \x/\y/\txt in {0.3/-1.2/{amarelo\\$\mathbf{4}$},
+                          1.4/-1.95/{violeta\\$\mathbf{7}$},
+                          2.5/-1.2/{marrom\\$\mathbf{\times 10}$},
+                          4.1/-1.95/{dourado\\$\mathbf{\pm 5\,\%}$}} {
+    \draw[manualgray, thin] (\x,-0.55) -- ({\x},{\y});
+    \node[font=\scriptsize, align=center, anchor=north] at ({\x},{\y}) {\txt};
+  }
+
+  \node[anchor=west, font=\small] at (5.8,0)
+       {$47 \times 10 = \mathbf{470\ \Omega} \pm 5\,\%$};
+  \node[anchor=east, font=\small\bfseries, manualgray] at (-1.8,0) {4 faixas};
+\end{scope}
+
+% ---------------- 5 faixas ----------------
+\begin{scope}[yshift=-4.6cm]
+  \draw[thick] (-1.6,0) -- (-0.8,0);
+  \draw[thick] (4.6,0) -- (5.4,0);
+  \draw[thick, fill=corpobege, rounded corners=6pt] (-0.8,-0.5) rectangle (4.6,0.5);
+
+  \fill[brown] (0.15,-0.5) rectangle (0.45,0.5);
+  \fill[green] (1.05,-0.5) rectangle (1.35,0.5);
+  \fill[black] (1.95,-0.5) rectangle (2.25,0.5);
+  \fill[brown] (2.85,-0.5) rectangle (3.15,0.5);
+  \fill[brown] (4.05,-0.5) rectangle (4.35,0.5);
+
+  \foreach \x/\y/\txt in {0.3/-1.2/{marrom\\$\mathbf{1}$},
+                          1.2/-1.95/{verde\\$\mathbf{5}$},
+                          2.1/-1.2/{preto\\$\mathbf{0}$},
+                          3.0/-1.95/{marrom\\$\mathbf{\times 10}$},
+                          4.2/-1.2/{marrom\\$\mathbf{\pm 1\,\%}$}} {
+    \draw[manualgray, thin] (\x,-0.55) -- ({\x},{\y});
+    \node[font=\scriptsize, align=center, anchor=north] at ({\x},{\y}) {\txt};
+  }
+
+  \node[anchor=west, font=\small] at (5.8,0)
+       {$150 \times 10 = \mathbf{1{,}50\ \mathrm{k}\Omega} \pm 1\,\%$};
+  \node[anchor=east, font=\small\bfseries, manualgray] at (-1.8,0) {5 faixas};
+\end{scope}
+
+  \node[manualred, font=\scriptsize, align=center, anchor=north] at (1.9,-7.6)
+       {A faixa de tolerância é a que está \textbf{separada} das demais.\\
+        Ela fica à direita — e é por ela que se descobre de que lado começar a ler.};
+
+\end{tikzpicture}
+```
+
+Os dois formatos que cobrem quase tudo o que existe na gaveta. Na versão de
+quatro faixas, duas são dígitos; na de cinco, três são dígitos, o que permite
+representar os valores de E48 e E96.
+
+:::
+
+A tabela de cores é a mesma para dígitos e para multiplicador:
+
+| Cor | Dígito | Multiplicador | Tolerância |
+|---|---|---|---|
+| Preto | 0 | ×1 | — |
+| Marrom | 1 | ×10 | ±1 % |
+| Vermelho | 2 | ×100 | ±2 % |
+| Laranja | 3 | ×1 k | — |
+| Amarelo | 4 | ×10 k | — |
+| Verde | 5 | ×100 k | ±0,5 % |
+| Azul | 6 | ×1 M | ±0,25 % |
+| Violeta | 7 | ×10 M | ±0,1 % |
+| Cinza | 8 | — | — |
+| Branco | 9 | — | — |
+| Dourado | — | ×0,1 | ±5 % |
+| Prata | — | ×0,01 | ±10 % |
+
+: Código de cores. As três últimas colunas usam a mesma cor com significados
+diferentes conforme a posição da faixa. {#tbl-006-cores}
+
+Duas dicas que resolvem 90 % das dúvidas de leitura:
+
+**Comece pela tolerância.** Dourado e prata só aparecem como multiplicador em
+valores abaixo de 10 Ω, que são raros. Se você vê dourado ou prata numa ponta, é
+a faixa de tolerância, e a leitura começa do outro lado.
+
+**Olhe o espaçamento.** Em resistores bem fabricados, a faixa de tolerância fica
+visivelmente mais afastada do grupo. Em resistores baratos essa pista some, e aí
+resta o que sempre resta: **medir**. Um multímetro resolve em dois segundos uma
+dúvida de leitura que consumiria cinco minutos sob luz ruim.
+
+### Marcação SMD
+
+Componentes de montagem em superfície não têm espaço para faixas e usam números:
+
+- **Três dígitos:** os dois primeiros são valor, o terceiro é o número de zeros.
+  `472` = 47 × 10² = 4,7 kΩ.
+- **Quatro dígitos** (precisão): três de valor, um de zeros. `4701` = 470 × 10 =
+  4,70 kΩ.
+- **Com `R`:** o `R` ocupa a posição da vírgula. `4R7` = 4,7 Ω; `R47` = 0,47 Ω.
+- **`0` ou `000`:** resistor de zero ohm, um jumper que existe para ser inserido
+  pela mesma máquina que insere os outros componentes.
+- **EIA-96:** dois dígitos que indexam uma tabela de 96 valores, mais uma letra
+  para o multiplicador. `01C` = 100 × 100 = 10 kΩ. Exige consulta à tabela; na
+  bancada, medir é mais rápido.
+
+## Potência: o tamanho é a especificação {#sec-006-potencia}
+
+A potência nominal de um resistor é uma propriedade **térmica**, e por isso está
+diretamente ligada ao tamanho físico — um corpo maior dissipa mais calor para o
+ar.
+
+| Potência | Comprimento do corpo | Uso típico |
+|---|---|---|
+| 1/8 W | 3 mm | sinal, alta densidade |
+| 1/4 W | 6 mm | o padrão da bancada |
+| 1/2 W | 9 mm | correntes moderadas |
+| 1 W | 11 mm | polarização de potência |
+| 2 W e acima | 15 mm ou mais | fonte, carga, *bleeder* |
+
+: Potência nominal por tamanho de corpo, para resistores de filme com terminais
+axiais. As dimensões variam entre fabricantes; a ordem de grandeza não.
+{#tbl-006-potencia}
+
+Três avisos que acompanham essa tabela:
+
+**A potência nominal vale a 25 °C, ao ar livre.** Dentro de uma caixa fechada, a
+70 °C, um resistor de 1/4 W dissipa bem menos que 250 mW. A folha de dados traz
+uma curva de *derating* que começa a cair por volta de 70 °C e chega a zero em
+155 °C ou 175 °C. Na bancada, a regra de bolso é usar **metade** da potência
+nominal e dormir tranquilo.
+
+**Resistor quente muda de valor.** O coeficiente de temperatura de um resistor de
+filme de carbono comum é de 200 ppm/°C a 500 ppm/°C. Aquecido em 100 °C, ele
+muda 2 % a 5 % — mais que a própria tolerância de fabricação. Em divisores de
+precisão, isso importa; e é medível na bancada, como mostra o laboratório.
+
+**Resistor de fio é indutivo.** Resistores de potência bobinados são espiras de
+fio de nicromo: têm indutância de microhenries, e em circuitos rápidos se
+comportam como indutores em série. Para potência com sinal rápido, procure
+versões marcadas como não indutivas.
+
+## Tolerância que se soma e tolerância que se cancela {#sec-006-tolerancia}
+
+Um erro conceitual comum: achar que dois resistores de 5 % em série dão um
+conjunto de 10 %. Não dão — e o motivo vale para todo o resto do livro.
+
+Em **série**, a resistência total é $R_1 + R_2$. Se ambos estiverem no extremo
+superior, a soma está 5 % acima. Se ambos no inferior, 5 % abaixo. A tolerância
+do conjunto continua sendo **±5 %**, e não ±10 %.
+
+Num **divisor de tensão**, algo melhor acontece. A razão é
+$V_\text{saída}/V_\text{entrada} = R_2/(R_1 + R_2)$, e o pior caso é $R_2$ no
+máximo com $R_1$ no mínimo. Com dois resistores iguais de 10 kΩ e 5 %:
+
+$$
+\frac{1{,}05 \times 10}{0{,}95 \times 10 + 1{,}05 \times 10} = \frac{10{,}5}{20{,}0} = 0{,}525 ,
+$$
+
+contra 0,500 nominal: um erro de **+5 %**, e não os 10 % que a intuição sugere.
+Parte do erro se cancela porque $R_2$ aparece nos dois lugares da fração. Esse
+cancelamento parcial é a razão pela qual circuitos bem projetados dependem de
+**razões** entre componentes, e não de valores absolutos — ideia que reaparece
+com força nos amplificadores operacionais, no Volume 12.
+
+Quando a razão precisa ser realmente exata — referências de tensão,
+amplificadores de instrumentação, conversores —, a solução não é comprar 5 % e
+selecionar: é comprar **1 %** da série E96, e de preferência do mesmo lote, para
+que os coeficientes de temperatura sejam parecidos e as derivas se cancelem.
+
+## Capacitores: o componente que mente mais {#sec-006-capacitores}
+
+O resistor da gaveta é honesto: 470 Ω com 5 % vai medir entre 446 Ω e 494 Ω e
+ficar lá. Capacitor cerâmico não funciona assim.
+
+### Marcação
+
+Cerâmicos pequenos usam **três dígitos em picofarads**, no mesmo esquema do SMD:
+`104` = 10 × 10⁴ pF = 100 000 pF = **100 nF**. Uma letra depois indica
+tolerância: `J` = ±5 %, `K` = ±10 %, `M` = ±20 %.
+
+Um segundo código, de três caracteres, indica o **dielétrico**, e é ele que conta
+a história de verdade:
+
+| Código | Faixa de temperatura | Variação nessa faixa | Comportamento |
+|---|---|---|---|
+| C0G / NP0 | −55 °C a +125 °C | ±0,3 % | classe 1: estável, previsível |
+| X7R | −55 °C a +125 °C | ±15 % | classe 2: perde com tensão |
+| X5R | −55 °C a +85 °C | ±15 % | classe 2: idem |
+| Y5V | −30 °C a +85 °C | +22 % / −82 % | classe 2: instável |
+
+: Dielétricos cerâmicos. A coluna da variação descreve **apenas** o efeito da
+temperatura — o efeito da tensão contínua aplicada é separado, e maior.
+{#tbl-006-dieletricos}
+
+### O efeito que ninguém conta: capacitância cai com a tensão
+
+Capacitores cerâmicos de classe 2 usam titanato de bário, um material
+ferroelétrico cuja permissividade **diminui** com o campo elétrico aplicado. Na
+prática: um capacitor de 10 µF X5R de 6,3 V, alimentado com 5 V, entrega perto de
+3 µF. Não é defeito, não está fora de especificação, e não vem escrito no corpo
+da peça.
+
+::: {#fig-dc-bias}
+
+```{.tikz}
+%%| filename: 006-dc-bias
+%%| alt: Curvas de capacitância em porcentagem do valor nominal contra tensão contínua aplicada, para dielétricos C0G, X7R e Y5V, mostrando que os cerâmicos de classe 2 perdem grande parte da capacitância.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=12cm, height=7cm,
+  xmin=0, xmax=25, ymin=0, ymax=110,
+  xlabel={tensão contínua aplicada (V)},
+  ylabel={capacitância (\% do nominal)},
+  axis lines=left,
+  xtick={0,5,10,15,20,25},
+  ytick={0,20,40,60,80,100},
+  grid=major, grid style={manualgray!22},
+  label style={font=\footnotesize}, tick label style={font=\footnotesize},
+  legend style={font=\footnotesize, at={(0.98,0.98)}, anchor=north east,
+                draw=manualgray!50},
+]
+  \addplot[manualgreen!60!black, very thick]
+    coordinates {(0,100) (5,100) (10,100) (15,99.8) (20,99.7) (25,99.6)};
+  \addlegendentry{C0G / NP0 (classe 1)}
+
+  \addplot[curva]
+    coordinates {(0,100) (2,97) (5,88) (8,78) (10,72) (12,66) (16,56) (20,48) (25,42)};
+  \addlegendentry{X7R (classe 2)}
+
+  \addplot[manualred, very thick]
+    coordinates {(0,100) (2,85) (5,60) (8,42) (10,35) (12,29) (16,22) (20,17) (25,14)};
+  \addlegendentry{Y5V (classe 2)}
+
+  \addplot[auxiliar, forget plot] coordinates {(0,50) (25,50)};
+  \node[manualgray, font=\scriptsize, anchor=north west] at (axis cs:0.5,49.2)
+       {metade do valor nominal};
+\end{axis}
+\end{tikzpicture}
+```
+
+Perda de capacitância com tensão contínua aplicada, para três dielétricos com a
+**mesma marcação de valor** e tensão nominal de 25 V. Um X7R usado a 20 V entrega
+menos da metade do que está escrito nele; um Y5V, um sexto. As curvas são
+típicas — cada fabricante e cada tamanho de encapsulamento tem a sua.
+
+:::
+
+Três decisões práticas saem dessa figura:
+
+1. **Filtro e temporização pedem C0G/NP0.** Se a capacitância precisa valer o que
+   está escrito, classe 1 é a única opção — ao custo de valores baixos: C0G
+   raramente passa de alguns nanofarads.
+2. **Desacoplamento aceita classe 2 com folga.** Aqui a capacitância exata não
+   importa, mas a perda importa: especifique um capacitor com tensão nominal de
+   **duas a três vezes** a tensão de trabalho, e a curva opera na parte plana.
+3. **Y5V não entra em projeto novo.** Perder 80 % da capacitância com a
+   temperatura e mais um tanto com a tensão o torna útil apenas onde qualquer
+   valor serve.
+
+### Eletrolíticos
+
+O eletrolítico de alumínio troca estabilidade por densidade: ele oferece
+centenas ou milhares de microfarads num corpo pequeno, e cobra por isso:
+
+- **Polaridade obrigatória.** A faixa clara com sinais de menos marca o terminal
+  negativo, e a perna mais curta é a negativa. Invertido, o óxido isolante se
+  desfaz, a corrente dispara, o eletrólito ferve e o entalhe em cruz do topo
+  arrebenta.
+- **Tolerância assimétrica.** −20 % a +80 % é comum. Um capacitor de 470 µF pode
+  medir 380 µF ou 850 µF e estar perfeito.
+- **ESR importa.** A resistência série equivalente, de dezenas a centenas de
+  miliohms, é o que limita a corrente de ondulação e o que aquece o componente em
+  fonte chaveada. Assunto do Volume 4.
+- **Vida útil finita.** A especificação típica é de 2000 h a 105 °C, e a vida
+  **dobra a cada 10 °C abaixo disso** — o que dá dezenas de anos a 40 °C. O
+  eletrólito seca, a capacitância cai e a ESR sobe. É por isso que equipamento
+  antigo tende a falhar pelos eletrolíticos antes de qualquer outra coisa.
+
+**Tântalo** merece um parágrafo próprio: é menor, mais estável e mais caro que o
+eletrolítico de alumínio, e falha em **curto-circuito**, às vezes com chama. A
+regra da indústria é usá-lo com no mínimo o dobro da tensão de trabalho — muitas
+vezes o triplo — e nunca em posição onde um curto seja catastrófico.
+
+**Filme** (poliéster, polipropileno) é o oposto: estável, sem polaridade,
+tolerante a tensão, com ESR baixíssima, e grande. Vive em filtros, em circuitos de
+áudio e onde há tensão alternada de rede.
+
+## 🧪 Laboratório {#sec-006-lab}
+
+**Ler, prever, medir, comparar.** Três partes: verificar a tolerância declarada de
+um punhado de resistores, ver o cancelamento parcial de erro num divisor, e
+medir a mudança de resistência de um resistor quente.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital (com capacímetro, se possível)
+- 10 resistores variados com faixas legíveis, de valores diferentes
+- 2 resistores de 10 kΩ, 1/4 W, 5 %
+- 1 resistor de 100 Ω, 1/4 W, 5 %
+- 3 a 5 capacitores cerâmicos com marcação de três dígitos
+- 2 capacitores eletrolíticos de valores diferentes
+- 1 fonte de bancada ajustável (ou pilha de 9 V)
+- 1 protoboard e fios jumper
+- Uma lupa ou a câmera do celular no modo macro, para as faixas
+:::
+
+### Parte 1 — Dez resistores, dez previsões
+
+1. Para cada resistor, **leia as faixas e anote o valor e a tolerância antes de
+   medir**. Se a leitura for ambígua, anote as duas possibilidades — parte do
+   exercício é descobrir com que frequência isso acontece.
+2. Meça cada um, lembrando de subtrair a resistência das pontas de prova nos
+   valores baixos (@sec-cap-003).
+3. Calcule o desvio percentual de cada um:
+   $$ \delta = \frac{R_\text{medido} - R_\text{nominal}}{R_\text{nominal}} \times 100\,\%. $$
+4. Confira: todos os dez devem cair dentro da tolerância declarada. Se algum não
+   cair, desconfie primeiro da leitura das faixas, depois do instrumento, e só
+   por último do componente.
+
+Agora a parte interessante: **olhe o sinal dos dez desvios**. Se vieram do mesmo
+saquinho, é comum que quase todos tenham o mesmo sinal e magnitude parecida — a
+dispersão dentro de um lote é bem menor que a tolerância declarada. Tolerância é
+um contrato sobre o pior caso, não uma descrição do que sai da fábrica.
+
+### Parte 2 — O divisor que erra menos do que deveria
+
+1. Meça os dois resistores de 10 kΩ separadamente. Anote $R_1$ e $R_2$ com todos
+   os dígitos que o instrumento der.
+2. Monte o divisor entre 9 V e o terra, com $R_2$ embaixo. Meça a tensão de
+   entrada $V_\text{ent}$ e a tensão do ponto médio $V_\text{saída}$.
+3. Calcule a razão medida $k = V_\text{saída}/V_\text{ent}$ e a razão prevista
+   pelos resistores medidos, $R_2/(R_1+R_2)$. Elas devem bater com folga — é a
+   mesma medição feita de dois jeitos.
+4. Calcule o pior caso teórico com a tolerância de 5 %:
+   $$ k_\text{máx} = \frac{1{,}05\,R}{0{,}95\,R + 1{,}05\,R} = 0{,}525,
+      \qquad
+      k_\text{mín} = \frac{0{,}95\,R}{1{,}05\,R + 0{,}95\,R} = 0{,}475. $$
+5. Compare com o desvio real dos resistores da Parte 1. Se ambos os resistores
+   desviaram para o mesmo lado — o caso comum dentro de um lote —, o erro da
+   **razão** é muito menor que o erro de cada um.
+
+É o cancelamento parcial em ação: numa razão, o erro comum aos dois componentes
+some.
+
+### Parte 3 — O resistor que muda de valor quando esquenta
+
+::: {.callout-warning}
+## Vai ficar quente
+
+O resistor desta parte opera na sua potência nominal e chega a mais de 100 °C.
+Não toque nele com o circuito ligado. Desligue e espere alguns segundos antes de
+qualquer medição por contato.
+:::
+
+1. Meça o resistor de 100 Ω à temperatura ambiente. Anote $R_\text{frio}$ com
+   todas as casas.
+2. Monte-o sozinho na protoboard e alimente com **5 V**. A corrente é
+   $5{,}0/100 = 50$ mA e a dissipação é
+   $P = 5{,}0 \times 0{,}050 = 250$ mW — exatamente a potência nominal de um
+   1/4 W. Ele vai esquentar muito.
+3. Deixe ligado por dois minutos.
+4. **Desligue a fonte** e meça a resistência imediatamente, antes que ele esfrie.
+   Anote $R_\text{quente}$.
+5. Calcule a variação percentual. Para um filme de carbono comum, espere algo
+   entre 1 % e 5 %.
+
+Duas conclusões. A primeira: a "tolerância de 5 %" impressa no componente
+descreve a dispersão de fabricação **à temperatura ambiente** — o resistor quente
+sai dessa faixa sozinho, sem nenhum defeito. A segunda: operar na potência
+nominal é possível, mas desconfortável. Metade da nominal é o número de projeto.
+
+### Parte 4 — Decodificar a gaveta de capacitores
+
+1. Para cada cerâmico, decodifique os três dígitos em picofarads e converta para
+   nanofarads. Anote também a letra de tolerância e o código de dielétrico, se
+   houver.
+2. Meça com o capacímetro e compare. Cerâmicos costumam ficar bem dentro da
+   tolerância quando medidos **sem tensão contínua aplicada** — que é como o
+   multímetro mede. A perda da @fig-dc-bias só aparece com o capacitor
+   polarizado, e nenhum multímetro comum consegue mostrá-la.
+3. Para os eletrolíticos, anote capacitância nominal, tensão de trabalho,
+   temperatura nominal (85 °C ou 105 °C) e a posição da faixa de polaridade.
+   Meça e verifique contra a tolerância assimétrica de −20 % a +80 %.
+4. Se algum eletrolítico for antigo — de sucata, ou parado na gaveta há anos —
+   compare com um novo do mesmo valor. Queda de capacitância é a assinatura de
+   um capacitor seco.
+
+### Variante simulada (plano B)
+
+O efeito de tensão contínua da @fig-dc-bias é o único item deste capítulo que a
+bancada modesta não alcança: medi-lo exige um medidor LCR com polarização. Em
+compensação, ele está tabelado: os fabricantes publicam as curvas para cada
+código de peça, e localizar a curva do capacitor que você tem na mão — no site do
+fabricante, pelo código do encapsulamento — é um exercício que vale tanto quanto
+a medição.
+
+As Partes 1, 2 e 3 não têm variante simulada, pela razão de sempre: em simulador,
+todo resistor de 10 kΩ vale exatamente 10 000,000 Ω e não esquenta.
+
+## 🔥 Onde Queima {#sec-006-queima}
+
+**Eletrolítico invertido.** O óxido que forma o dielétrico se desfaz, a corrente
+de fuga dispara, o eletrólito ferve e o componente arrebenta pelo entalhe do
+topo, expelindo líquido quente. Confira a faixa clara e a perna curta **antes** de
+energizar, sempre — e faça a primeira energização com o rosto fora da linha de
+tiro.
+
+**Capacitor no limite da tensão nominal.** A tensão nominal é um teto absoluto,
+não um ponto de operação. Transientes de comutação, picos de partida e a
+ondulação da fonte somam-se à tensão média. Projete com o **dobro**: barramento
+de 12 V pede capacitor de 25 V; barramento de 24 V pede 50 V.
+
+**Contar com a capacitância escrita num cerâmico de classe 2.** Um X7R de 10 µF
+alimentado perto da tensão nominal entrega metade disso; um Y5V, um sexto. O
+sintoma é um filtro que não filtra ou um temporizador que atrasa menos do que o
+projetado — e nunca um componente queimado, o que torna o erro muito difícil de
+localizar. Temporização e filtro pedem C0G ou filme.
+
+**Tântalo sem folga de tensão.** Tântalo falha em curto, e um curto num barramento
+de alimentação vira chama. Use no mínimo o dobro da tensão de trabalho, e evite
+tântalo na entrada de alimentação, onde os transientes vivem.
+
+**Ler o código de cores ao contrário.** `marrom-preto-vermelho` é 1 kΩ; lido do
+outro lado, `vermelho-preto-marrom` é 200 Ω. Comece pela faixa de tolerância —
+dourada ou prateada, e mais afastada do grupo. Na dúvida, meça.
+
+**Ler um resistor de cinco faixas como se fosse de quatro.** O mesmo componente
+sai com valor cem vezes errado. Conte as faixas antes de interpretá-las.
+
+**Confiar nas cores de um resistor que já aqueceu.** Calor escurece o corpo e
+altera os pigmentos: vermelho vira marrom, laranja vira marrom, marrom vira
+preto. Resistor de placa queimada não se lê, se **mede** — e, se estiver aberto,
+se descobre pelo esquemático.
+
+**Confundir vermelho com laranja sob luz amarela.** Lâmpada incandescente e LED
+de temperatura de cor baixa destroem a distinção. Trabalhe sob luz branca, use a
+câmera do celular, ou meça.
+
+**Usar a potência nominal como ponto de projeto.** 250 mW num resistor de 1/4 W
+funciona a 25 °C ao ar livre e falha dentro de uma caixa a 60 °C. Metade da
+nominal é a regra de bolso, e a curva de *derating* da folha de dados é a regra
+exata.
+
+**Resistor bobinado em circuito rápido.** É um indutor de microhenries com
+resistência. Em fonte chaveada, em medição de corrente por *shunt* ou em qualquer
+sinal rápido, use versão não indutiva ou de filme metálico.
+
+**Eletrolítico velho de gaveta.** Capacitor eletrolítico envelhece parado: o
+eletrólito seca, a capacitância cai e a ESR sobe. Um capacitor de sucata que
+"mede certo" no capacímetro ainda pode ter ESR alta demais para uma fonte — e a
+ESR é justamente o que o capacímetro comum não mede.
+
+## O que fica deste capítulo {#sec-006-resumo}
+
+Valores comerciais são espaçados logaritmicamente para que as faixas de
+tolerância se toquem: E12 com 10 % cobre a década inteira com doze valores. O
+código de cores se lê a partir da faixa de tolerância, e a potência do resistor
+se lê no tamanho do corpo — com metade da nominal como número de projeto.
+
+Tolerância se comporta de formas diferentes conforme o circuito: some em série,
+mas se cancela parcialmente numa razão, o que faz de razões entre componentes a
+base de todo projeto preciso.
+
+E o capacitor cerâmico de classe 2 é o componente menos honesto da gaveta: perde
+metade da capacitância com tensão contínua aplicada, sem que nada disso apareça
+escrito nele. Filtro e temporização pedem classe 1 ou filme; desacoplamento
+aceita classe 2 com o dobro ou o triplo da tensão nominal.
+
+O próximo capítulo fecha o Volume 1 com a linguagem que descreve tudo isso no
+papel: o esquemático — como lê-lo, como desenhá-lo, e como não se perder num
+diagrama de cem componentes.
