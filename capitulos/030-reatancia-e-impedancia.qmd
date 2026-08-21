@@ -1,3 +1,678 @@
 # Reatância e impedância {#sec-cap-030}
 
-*(em elaboração)*
+O @sec-cap-029 terminou com um número complexo sem nome no meio de uma conta:
+
+$$ \mathbf{V}_s = \left(R + \frac{1}{j\omega C}\right)\mathbf{I}. $$
+
+O parêntese ocupa, nessa equação, exatamente o lugar que $R$ ocupava na lei de Ohm. Ele
+tem dimensão de ohm, multiplica a corrente e devolve a tensão. A diferença é que ele
+é complexo — e por isso carrega duas informações em vez de uma: **quanto** a corrente é
+limitada e **de quanto** ela é defasada.
+
+Esse número tem nome: **impedância**. Ele é a peça que faltava para reaproveitar, em
+corrente alternada, tudo o que o Volume 3 construiu em contínua. Divisor de tensão,
+análise nodal, análise de malhas, Thévenin, Norton, superposição — nenhum desses
+métodos precisa ser reaprendido. Precisa apenas que se troque $R$ por $\mathbf{Z}$ e
+que a calculadora esteja em modo complexo.
+
+## Impedância: a lei de Ohm em CA {#sec-030-definicao}
+
+A definição é a mais econômica possível:
+
+$$ \boxed{\;\mathbf{Z} = \frac{\mathbf{V}}{\mathbf{I}}\;}
+   \qquad [\mathbf{Z}] = \Omega. $$
+
+Sendo uma razão de fasores, a impedância é um número complexo, e as suas duas partes
+têm significado físico direto:
+
+$$ \mathbf{Z} = |Z|\,\angle\,\theta, \qquad
+   |Z| = \frac{V}{I}, \qquad
+   \theta = \phi_v - \phi_i. $$
+
+O **módulo** é a razão entre os valores eficazes — quantos volts por ampere. O
+**ângulo** é de quanto a tensão está adiantada em relação à corrente. Ângulo positivo
+significa tensão na frente (comportamento indutivo); ângulo negativo, corrente na
+frente (comportamento capacitivo); ângulo zero, os dois juntos (resistivo puro).
+
+Em forma retangular, escreve-se
+
+$$ \mathbf{Z} = R + jX, $$
+
+onde $R$ é a **resistência** e $X$ é a **reatância**, ambas em ohm. A distinção entre
+as duas não é notacional — é energética, e é a coisa mais importante do capítulo:
+
+> A parte **resistiva** consome energia e a transforma em calor. A parte **reativa**
+> apenas empresta energia ao campo e devolve, sem consumir nada.
+
+Um resistor de 100 Ω dissipa. Uma reatância de 100 Ω limita a corrente exatamente com
+a mesma força e **não esquenta**. As duas aparecem em ohms, as duas limitam corrente, e
+só uma cobra a conta de luz. O @sec-cap-031 desenvolve essa diferença até a última
+consequência.
+
+## Os três componentes {#sec-030-tres}
+
+### Resistor
+
+$$ \mathbf{Z}_R = R, \qquad \theta = 0^{\circ}. $$
+
+Tensão e corrente em fase, sempre, em qualquer frequência. O resistor é o único
+componente cuja impedância não depende de $\omega$ — e é por isso que ele funciona
+igual em CC e em CA.
+
+### Indutor
+
+De $v = L\,di/dt$ e da regra $d/dt \leftrightarrow j\omega$ do @sec-cap-029:
+
+$$ \mathbf{Z}_L = j\omega L = jX_L, \qquad X_L = \omega L = 2\pi f L. $$
+
+A reatância indutiva é **positiva** e **cresce com a frequência**. O ângulo é
+$+90^{\circ}$: a tensão está adiantada de um quarto de ciclo em relação à corrente.
+
+Isso tem uma leitura física imediata, e ela é o @sec-cap-023 dito em outras palavras: o
+indutor se opõe à **variação** da corrente. Quanto mais rápida a variação, mais ele se
+opõe. Em CC ($f = 0$) ele não se opõe a nada e vira um curto; em frequência muito alta
+ele vira um circuito aberto.
+
+### Capacitor
+
+De $i = C\,dv/dt$:
+
+$$ \mathbf{Z}_C = \frac{1}{j\omega C} = -\frac{j}{\omega C} = -jX_C,
+   \qquad X_C = \frac{1}{\omega C} = \frac{1}{2\pi f C}. $$
+
+A reatância capacitiva **cai com a frequência**, e a impedância tem ângulo
+$-90^{\circ}$: a corrente está adiantada em relação à tensão. Também aqui a leitura
+física é o @sec-cap-021: o capacitor se opõe à variação da **tensão**, e em CC, com
+tensão constante, ele é um circuito aberto.
+
+::: {.callout-warning}
+## O sinal de $X_C$, e a confusão que ele causa
+
+Por convenção, $X_C = 1/\omega C$ é definido **positivo**, e o sinal de menos aparece
+separado: $\mathbf{Z}_C = -jX_C$. Ou seja, a reatância do capacitor é um número
+positivo que entra na impedância com sinal negativo.
+
+Algumas referências definem $X_C$ já negativo e escrevem $\mathbf{Z}_C = jX_C$. As duas
+convivem, e as duas estão certas dentro do próprio texto. O que não se pode é
+misturá-las no meio de uma conta — o resultado sai com o ângulo trocado de sinal, e um
+circuito capacitivo passa a ser descrito como indutivo. Este manual usa
+$X_C > 0$ com $\mathbf{Z}_C = -jX_C$.
+:::
+
+::: {#fig-030-vi}
+
+```{.tikz}
+%%| filename: 030-vi
+%%| alt: Três gráficos empilhados, todos com o mesmo eixo horizontal de ângulo de zero a setecentos e vinte graus. No de cima, marcado resistor, a curva azul da tensão e a curva vermelha da corrente sobem e descem juntas, cruzando o zero no mesmo instante. No do meio, marcado indutor, a curva vermelha da corrente atinge o máximo um quarto de ciclo depois da azul, portanto a tensão está adiantada de noventa graus. No de baixo, marcado capacitor, a curva vermelha da corrente atinge o máximo um quarto de ciclo antes da azul, portanto a corrente está adiantada de noventa graus.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \pgfplotsset{
+    fatia/.style={
+      width=14.6cm, height=4.3cm,
+      xmin=-20, xmax=790, ymin=-1.75, ymax=1.75,
+      axis lines=middle,
+      xtick={0,180,360,540,720},
+      ytick=\empty,
+      font=\footnotesize,
+      x axis line style={manualgray},
+      y axis line style={manualgray},
+    }
+  }
+
+  % ---------------- resistor ----------------
+  \begin{axis}[fatia, at={(0cm,0cm)}, anchor=north west, xticklabels={}]
+    \addplot[curva,    domain=0:775, samples=320] {1.3*cos(x)};
+    \addplot[destaque, domain=0:775, samples=320] {0.85*cos(x)};
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (14.9,-2.15)
+       {\textbf{resistor}\\$\mathbf{Z} = R$\\$\theta = 0^{\circ}$};
+
+  % ---------------- indutor ----------------
+  \begin{axis}[fatia, at={(0cm,-4.7cm)}, anchor=north west, xticklabels={}]
+    \addplot[curva,    domain=0:775, samples=320] {1.3*cos(x)};
+    \addplot[destaque, domain=0:775, samples=320] {0.85*cos(x-90)};
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (14.9,-6.85)
+       {\textbf{indutor}\\$\mathbf{Z} = jX_L$\\$\theta = +90^{\circ}$\\[2pt]
+        a tensão vem\\na frente};
+
+  % ---------------- capacitor ----------------
+  \begin{axis}[fatia, at={(0cm,-9.4cm)}, anchor=north west,
+               xlabel={$\omega t$ (graus)}]
+    \addplot[curva,    domain=0:775, samples=320] {1.3*cos(x)};
+    \addplot[destaque, domain=0:775, samples=320] {0.85*cos(x+90)};
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (14.9,-11.55)
+       {\textbf{capacitor}\\$\mathbf{Z} = -jX_C$\\$\theta = -90^{\circ}$\\[2pt]
+        a corrente vem\\na frente};
+
+  \node[manualblue, anchor=west, font=\scriptsize] at (0.4,0.55) {$v(t)$};
+  \node[manualred,  anchor=west, font=\scriptsize] at (1.9,0.55) {$i(t)$};
+
+\end{tikzpicture}
+```
+
+As três relações de fase, no tempo. No resistor as duas curvas cruzam o zero juntas; no
+indutor a corrente chega atrasada de um quarto de ciclo; no capacitor, adiantada. Toda
+a análise de CA é a contabilidade desses três casos.
+
+:::
+
+A regra de memória que se usa em português é direta: **no indutor a tensão vem na
+frente; no capacitor a corrente vem na frente**. Em inglês circula o mnemônico *ELI the
+ICE man* — em L, o E (tensão) vem antes do I; em C, o I vem antes do E.
+
+Reunindo tudo:
+
+| Componente | $\mathbf{Z}$ | Módulo | Ângulo | Com $f\to 0$ | Com $f\to\infty$ |
+|---|---|---|---|---|---|
+| Resistor | $R$ | $R$ | $0^{\circ}$ | $R$ | $R$ |
+| Indutor | $j\omega L$ | $\omega L$ | $+90^{\circ}$ | curto | aberto |
+| Capacitor | $1/j\omega C$ | $1/\omega C$ | $-90^{\circ}$ | aberto | curto |
+
+: Impedância dos três componentes ideais. As duas últimas colunas são o mesmo
+comportamento em CC que o Volume 4 obteve por outro caminho — agora como caso limite,
+não como regra separada. {#tbl-030-tres}
+
+## A reatância contra a frequência {#sec-030-reatancia}
+
+As duas reatâncias variam com a frequência em sentidos opostos, e desenhar isso em
+escala logarítmica torna o comportamento óbvio: duas retas, uma subindo e uma descendo,
+que se cruzam.
+
+::: {#fig-030-reatancia}
+
+```{.tikz}
+%%| filename: 030-reatancia
+%%| alt: Gráfico log-log da reatância em ohms contra a frequência de cem hertz a cem quilohertz. Uma reta azul ascendente é a reatância indutiva de um indutor de dez milihenries, indo de cerca de seis ohms a cem hertz até cerca de seis mil ohms a cem quilohertz. Uma reta vermelha descendente é a reatância capacitiva de um capacitor de cem nanofarads, indo de cerca de dezesseis mil ohms a cem hertz até cerca de dezesseis ohms a cem quilohertz. As duas se cruzam perto de cinco quilohertz num valor de trezentos e dezesseis ohms. Uma linha cinza horizontal em trezentos e dezesseis ohms representa um resistor, que não depende da frequência.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=15.2cm, height=9.2cm,
+  xmode=log, ymode=log,
+  xlabel={frequência (Hz)}, ylabel={reatância ($\Omega$)},
+  xmin=100, xmax=1e5, ymin=3, ymax=4e4,
+  grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  legend style={at={(0.5,1.02)}, anchor=south, legend columns=3,
+                font=\scriptsize, draw=manualgray!50},
+]
+
+  % X_L de 10 mH  ->  0.0628 * f
+  \addplot[curva, domain=2:5, samples=120]
+          ({10^x}, {0.062832*(10^x)});
+  \addlegendentry{$X_L = \omega L$, \ $L = 10$ mH}
+
+  % X_C de 100 nF -> 1.5915e6 / f
+  \addplot[destaque, domain=2:5, samples=120]
+          ({10^x}, {1.5915e6/(10^x)});
+  \addlegendentry{$X_C = 1/\omega C$, \ $C = 100$ nF}
+
+  \addplot[manualgray, thick, dashed, domain=2:5, samples=2]
+          ({10^x}, {1000});
+  \addlegendentry{$R = 1$ k$\Omega$ (não depende de $f$)}
+
+  \node[ponto, manualyellow] at (axis cs:5033,316) {};
+  \draw[auxiliar] (axis cs:5033,3) -- (axis cs:5033,316);
+  \draw[manualyellow, thin] (axis cs:5033,316) -- (axis cs:6600,1750);
+  \node[manualyellow, font=\scriptsize, anchor=south west, align=left]
+       at (axis cs:6300,1850)
+       {$X_L = X_C$ em 5,03 kHz\\ambas valem 316 $\Omega$};
+
+  \node[manualblue, font=\scriptsize, anchor=north west, align=left]
+       at (axis cs:115,3.3e4) {abaixo do cruzamento\\o capacitor manda};
+  \node[manualred, font=\scriptsize, anchor=south east, align=right]
+       at (axis cs:7.5e4,4.5) {acima dele\\o indutor manda};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+Reatância contra frequência, em escala log-log. As duas são retas: $X_L$ sobe uma
+década por década, $X_C$ desce uma década por década. O cruzamento é a **ressonância**,
+assunto do Volume 6 — aqui ele aparece apenas como o ponto em que os dois componentes
+oferecem a mesma oposição.
+
+:::
+
+Alguns valores de referência que compensa ter na cabeça, porque eles dão o palpite
+antes da calculadora:
+
+| Componente | 60 Hz | 1 kHz | 100 kHz |
+|---|---|---|---|
+| $C = 100$ nF | 26,5 kΩ | 1,59 kΩ | 15,9 Ω |
+| $C = 10$ µF | 265 Ω | 15,9 Ω | 0,159 Ω |
+| $L = 10$ mH | 3,77 Ω | 62,8 Ω | 6,28 kΩ |
+| $L = 1$ mH | 0,377 Ω | 6,28 Ω | 628 Ω |
+
+: Reatâncias de valores comuns em três frequências. Cada passo de 10 na frequência é um
+passo de 10 na reatância — para cima no indutor, para baixo no
+capacitor. {#tbl-030-valores}
+
+A primeira linha explica um fato de bancada: um capacitor de 100 nF **não desacopla
+nada em 60 Hz** — 26,5 kΩ é praticamente um circuito aberto. Ele desacopla em
+100 kHz, onde vale 16 Ω. É por isso que uma fonte leva um eletrolítico grande **e** um
+cerâmico pequeno em paralelo: cada um cobre uma faixa de frequência, e o
+@sec-cap-022 já mostrava a curva sem ainda ter a palavra "reatância".
+
+## O plano de impedância {#sec-030-plano}
+
+::: {#fig-030-plano}
+
+```{.tikz}
+%%| filename: 030-plano
+%%| alt: Painel esquerdo com o plano de impedância, tendo a resistência no eixo horizontal e a reatância no eixo vertical. O semiplano superior está marcado como indutivo e o inferior como capacitivo, e o eixo horizontal positivo como resistivo puro. Um vetor no primeiro quadrante representa uma impedância indutiva e outro no quarto quadrante uma impedância capacitiva. Painel direito com o triângulo de impedância de um circuito RC série, com cateto horizontal igual a mil e quinhentos ohms de resistência, cateto vertical para baixo igual a dois mil ohms de reatância capacitiva, e hipotenusa igual a dois mil e quinhentos ohms, formando um ângulo de menos cinquenta e três vírgula treze graus.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- plano ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw[eixo] (-0.7,0) -- (4.6,0) node[below right, font=\scriptsize] {$R$};
+    \draw[eixo] (0,-3.4) -- (0,3.4) node[left, font=\scriptsize] {$X$};
+
+    \fill[manualblue!7]  (0,0) rectangle (4.4,3.2);
+    \fill[manualgreen!7] (0,0) rectangle (4.4,-3.2);
+
+    \draw[vetor, manualblue]  (0,0) -- (3.0,2.4);
+    \draw[vetor, manualgreen] (0,0) -- (3.0,-2.4);
+    \draw[vetor, manualgray]  (0,0) -- (3.9,0);
+
+    \node[manualblue, font=\scriptsize, anchor=south west, align=left]
+         at (3.05,2.4) {indutivo\\$\theta > 0$};
+    \node[manualgreen, font=\scriptsize, anchor=north west, align=left]
+         at (3.05,-2.45) {capacitivo\\$\theta < 0$};
+    \node[manualgray, font=\scriptsize, anchor=south east] at (3.9,0.1)
+         {resistivo puro};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (2.0,-3.75)
+         {$\mathbf{Z} = R + jX$};
+  \end{scope}
+
+  % ---------------- triangulo ----------------
+  \begin{scope}[shift={(9.0,1.6)}]
+    \draw[eixo] (-0.5,0) -- (4.4,0) node[below right, font=\scriptsize] {$R$};
+    \draw[eixo] (0,-3.9) -- (0,0.9) node[left, font=\scriptsize] {$X$};
+
+    \draw[vetor, manualblue]  (0,0) -- (3.0,0);
+    \draw[vetor, manualgreen] (3.0,0) -- (3.0,-3.2);
+    \draw[vetor, manualred]   (0,0) -- (3.0,-3.2);
+
+    \node[manualblue, font=\scriptsize, anchor=south] at (1.5,0.08)
+         {$R = 1{,}5$ k$\Omega$};
+    \node[manualgreen, font=\scriptsize, anchor=west] at (3.1,-1.6)
+         {$X_C = 2$ k$\Omega$};
+    \node[manualred, font=\scriptsize, anchor=north east, align=right]
+         at (1.55,-1.85) {$|Z| = 2{,}5$ k$\Omega$};
+
+    \draw[manualyellow, thick, ->, >=stealth] (-4:1.0) arc (-4:-43:1.0);
+    \node[manualyellow, font=\tiny, anchor=west] at (-24:1.15)
+         {$-53{,}13^{\circ}$};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (1.8,-4.25)
+         {triângulo de impedância\\do RC série em 796 Hz};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O plano de impedância e o triângulo. Note que **$R$ é sempre positivo** — um componente
+passivo não entrega energia —, então só existem os quadrantes da direita. O triângulo
+da direita é o mesmo 3–4–5 do @fig-029-soma, agora em ohms em vez de volts: dividir os
+três lados pela corrente transforma um no outro.
+
+:::
+
+Esse último ponto é mais útil do que parece. O triângulo de tensões e o triângulo de
+impedâncias são **semelhantes**, porque $\mathbf{V} = \mathbf{Z}\mathbf{I}$ e a
+corrente é a mesma nos três elementos de um circuito série. Medir tensões com um
+multímetro é, portanto, medir impedâncias — e é assim que o laboratório deste capítulo
+funciona sem nenhum instrumento especializado.
+
+## Associação: as regras do Volume 2, intactas {#sec-030-associacao}
+
+As fórmulas do @sec-cap-012 valem **sem uma única alteração**, com $\mathbf{Z}$ no
+lugar de $R$:
+
+$$ \mathbf{Z}_{\text{série}} = \mathbf{Z}_1 + \mathbf{Z}_2 + \cdots, $$
+
+$$ \frac{1}{\mathbf{Z}_{\text{paralelo}}} = \frac{1}{\mathbf{Z}_1} +
+   \frac{1}{\mathbf{Z}_2} + \cdots,
+   \qquad
+   \mathbf{Z}_{1\parallel 2} = \frac{\mathbf{Z}_1\mathbf{Z}_2}
+                                     {\mathbf{Z}_1 + \mathbf{Z}_2}. $$
+
+::: {#fig-030-associacao}
+
+```{.tikz}
+%%| filename: 030-associacao
+%%| alt: Dois esquemáticos lado a lado. À esquerda, um resistor de mil e quinhentos ohms em série com um capacitor de cem nanofarads, entre dois terminais, com a fórmula da impedância série indicada abaixo. À direita, um resistor de mil ohms em paralelo com um indutor de dez milihenries, entre dois terminais, com a fórmula da impedância paralela indicada abaixo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- serie ----------------
+  \begin{scope}[shift={(0,0)}]
+    \node[ponto] at (0,0) {};
+    \draw (0,0) to[R, l={$1{,}5$ k$\Omega$}] (2.6,0)
+                to[C, l={$100$ nF}] (5.2,0);
+    \node[ponto] at (5.2,0) {};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (2.6,-1.0)
+         {$\mathbf{Z} = R - jX_C$\\
+          $= 1500 - j2000 = 2500\,\angle\,{-53{,}13^{\circ}}\ \Omega$\\
+          (em 796 Hz)};
+  \end{scope}
+
+  % ---------------- paralelo ----------------
+  \begin{scope}[shift={(9.2,0)}]
+    \node[ponto] at (0,0) {};
+    \draw (0,0) -- (0.8,0);
+    \draw (0.8,0) -- (0.8,1.3);
+    \draw (0.8,1.3) to[R, l={$1$ k$\Omega$}] (3.8,1.3);
+    \draw (3.8,1.3) -- (3.8,0);
+    \draw (0.8,0) -- (0.8,-1.3);
+    \draw (0.8,-1.3) to[L, l_={$10$ mH}] (3.8,-1.3);
+    \draw (3.8,-1.3) -- (3.8,0);
+    \draw (3.8,0) -- (4.6,0);
+    \node[ponto] at (4.6,0) {};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (2.3,-2.3)
+         {$\mathbf{Z} = \dfrac{R \cdot jX_L}{R + jX_L}$\\[2pt]
+          $= 3{,}92 + j62{,}6 = 62{,}7\,\angle\,86{,}4^{\circ}\ \Omega$\\
+          (em 1 kHz)};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+Série e paralelo, com impedâncias. As fórmulas são as do @sec-cap-012 letra por letra;
+só a aritmética mudou de real para complexa. Repare no resultado do paralelo: a parte
+real vale 3,92 Ω, embora o único resistor do circuito tenha 1 kΩ.
+
+:::
+
+Esse detalhe do paralelo merece um parágrafo, porque contraria a intuição de CC. Num
+paralelo R–L, a parte real da impedância equivalente **não** é $R$:
+
+$$ \mathbf{Z} = \frac{1000 \times j62{,}8}{1000 + j62{,}8}
+              = \frac{62800\,\angle\,90^{\circ}}{1002\,\angle\,3{,}6^{\circ}}
+              = 62{,}7\,\angle\,86{,}4^{\circ} = 3{,}92 + j62{,}6\ \Omega. $$
+
+Resistência e reatância se misturam na associação. Um circuito com um resistor de 1 kΩ
+pode apresentar 3,92 Ω de resistência equivalente, e um circuito sem nenhum resistor —
+só L e C — pode apresentar resistência equivalente nula, mas nunca negativa. A regra de
+sanidade é essa: **na associação de componentes passivos, a parte real do resultado
+nunca fica negativa**. Se deu, a conta está errada.
+
+### O mesmo exemplo, resolvido inteiro
+
+Retomando o RC do @sec-cap-029, agora com a fonte como referência de fase, para mostrar
+que a escolha da referência não muda nada de físico:
+
+$$ \mathbf{Z} = 1500 - j2000 = 2500\,\angle\,{-53{,}13^{\circ}}\ \Omega, $$
+
+$$ \mathbf{I} = \frac{\mathbf{V}_s}{\mathbf{Z}}
+              = \frac{10\,\angle\,0^{\circ}}{2500\,\angle\,{-53{,}13^{\circ}}}
+              = 4\,\angle\,53{,}13^{\circ}\ \text{mA}, $$
+
+$$ \mathbf{V}_R = R\mathbf{I} = 6\,\angle\,53{,}13^{\circ}\ \text{V},
+   \qquad
+   \mathbf{V}_C = -jX_C\,\mathbf{I} = 8\,\angle\,{-36{,}87^{\circ}}\ \text{V}. $$
+
+Somando: $6\angle 53{,}13^{\circ} + 8\angle{-36{,}87^{\circ}} =
+(3{,}6 + j4{,}8) + (6{,}4 - j4{,}8) = 10 + j0$. Fecha exatamente na fonte.
+
+Compare com o @sec-cap-029: lá, com a corrente como referência, os fasores eram
+$6\angle 0^{\circ}$ e $8\angle{-90^{\circ}}$. Todos os módulos são idênticos e todas
+as **diferenças** de ângulo são idênticas — só o zero da escala de fase mudou. É a
+mesma liberdade de escolher o nó de referência do @sec-cap-009, agora aplicada à fase.
+
+### Divisor de tensão em CA
+
+E, como consequência direta, o divisor do @sec-cap-014 sobrevive intacto:
+
+$$ \mathbf{V}_{\text{out}} = \mathbf{V}_{\text{in}}\,
+   \frac{\mathbf{Z}_2}{\mathbf{Z}_1 + \mathbf{Z}_2}. $$
+
+A diferença em relação ao divisor resistivo é que a razão agora **depende da
+frequência**, porque $\mathbf{Z}$ depende. Um divisor com $R$ em cima e $C$ embaixo
+divide pouco em frequência baixa e muito em frequência alta. Isso é um filtro, é a
+abertura do Volume 6, e não precisa de nenhuma teoria nova além desta linha.
+
+## Admitância, condutância e susceptância {#sec-030-admitancia}
+
+Para associações em paralelo, inverter tudo dá menos trabalho. O inverso da impedância
+é a **admitância**:
+
+$$ \mathbf{Y} = \frac{1}{\mathbf{Z}} = G + jB, \qquad [\mathbf{Y}] = \text{S}, $$
+
+com $G$ chamada **condutância** e $B$, **susceptância**, ambas em siemens
+(@sec-cap-010). Em paralelo, as admitâncias simplesmente se somam:
+
+$$ \mathbf{Y}_{\text{paralelo}} = \mathbf{Y}_1 + \mathbf{Y}_2 + \cdots $$
+
+Há uma armadilha aqui que derruba muita gente:
+
+$$ G \neq \frac{1}{R} \qquad\text{e}\qquad B \neq \frac{1}{X}, $$
+
+exceto nos casos puros. Invertendo $\mathbf{Z} = R + jX$ corretamente:
+
+$$ \mathbf{Y} = \frac{R - jX}{R^2 + X^2}
+   \quad\Longrightarrow\quad
+   G = \frac{R}{R^2+X^2}, \qquad B = \frac{-X}{R^2+X^2}. $$
+
+Só quando $X = 0$ é que $G = 1/R$. Inverter parte por parte é o erro clássico, e ele
+não aparece no módulo — só no ângulo.
+
+## Impedância dos componentes reais {#sec-030-reais}
+
+Tudo acima trata de componentes ideais. Os reais do Volume 4 têm mais termos, e agora é
+possível escrevê-los:
+
+$$ \mathbf{Z}_{C,\text{real}} \approx \text{ESR} + j\omega L_{\text{ESL}}
+   + \frac{1}{j\omega C},
+   \qquad
+   \mathbf{Z}_{L,\text{real}} \approx \text{DCR} + j\omega L
+   \ \parallel \frac{1}{j\omega C_{\text{esp}}}. $$
+
+O capacitor real, portanto, tem um módulo de impedância que **cai, atinge um mínimo e
+volta a subir**: em baixa frequência manda o $1/\omega C$, em alta manda o
+$\omega L_{\text{ESL}}$, e no fundo do vale sobra só a ESR. Esse fundo é a
+auto-ressonância, e a curva é exatamente a @fig-022-impedancia — que agora tem uma
+equação, e não só um desenho.
+
+O indutor real faz o espelho: sobe, atinge um máximo na auto-ressonância e desce
+(@fig-024-impedancia). Acima da SRF ele é capacitor, e o filtro que dependia dele para
+de funcionar.
+
+Consequência prática, e é a razão de tudo isso importar: **usar um componente acima da
+sua auto-ressonância é usar o componente errado**. Um eletrolítico de 470 µF com SRF de
+30 kHz não filtra nada em 200 kHz — o que atua ali é a ESL dele. É por isso que fonte
+chaveada leva cerâmico ao lado do eletrolítico, e por isso que a trilha até o capacitor
+de desacoplamento precisa ser curta: cada centímetro de trilha acrescenta cerca de
+10 nH de ESL, e em 100 MHz 10 nH já são 6,3 Ω.
+
+## 🧪 Laboratório {#sec-030-lab}
+
+**Medir reatância com um multímetro comum, e provar que ela varia com a frequência
+exatamente como a fórmula diz.** O truque é o mesmo do @sec-cap-029: um resistor
+conhecido em série serve de amperímetro.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala CA e escala de resistência
+- 1 gerador de sinal: celular ou computador com aplicativo gerador de tom, e cabo com
+  plugue P2 e pontas descascadas
+- 1 resistor de 1 kΩ, 1/4 W, medido com o ohmímetro e anotado
+- 1 resistor de 330 Ω e 1 de 100 Ω, 1/4 W
+- 1 capacitor de 100 nF e 1 de 10 nF, poliéster
+- 1 indutor de 10 mH (ou o maior indutor da gaveta; na falta dele, a bobina do relé do
+  @sec-cap-024 serve, com a ressalva da Parte 3)
+- Protoboard, jumpers e papel para a tabela
+:::
+
+### Parte 1 — O resistor como amperímetro
+
+Todo este roteiro depende de uma ideia só, e vale enunciá-la antes: num circuito série,
+a corrente é a mesma em todos os elementos. Medindo a tensão sobre um resistor
+**conhecido**, obtém-se a corrente por $I = V_R/R$. Sabendo a corrente e medindo a
+tensão sobre o componente desconhecido, obtém-se o módulo da impedância dele por
+$|Z| = V_X/I$. Nenhum instrumento além do multímetro.
+
+1. Meça o resistor de 1 kΩ com o ohmímetro e anote o valor **real** (será algo entre
+   0,95 e 1,05 kΩ).
+2. Monte-o em série com o capacitor de 100 nF, alimentado pelo gerador.
+
+### Parte 2 — $X_C$ contra a frequência
+
+1. Ajuste o gerador para 500 Hz. Meça $V_R$ e $V_C$.
+2. Calcule $I = V_R/R$ e $X_C = V_C/I$.
+3. Repita em 1 kHz, 2 kHz e 4 kHz. Monte a tabela.
+4. Para cada linha, calcule também $1/(2\pi f C)$ e ponha na coluna ao lado.
+
+| $f$ | $V_R$ | $V_C$ | $I = V_R/R$ | $X_C$ medido | $1/2\pi f C$ |
+|---|---|---|---|---|---|
+| 500 Hz | | | | | 3183 Ω |
+| 1 kHz | | | | | 1592 Ω |
+| 2 kHz | | | | | 796 Ω |
+| 4 kHz | | | | | 398 Ω |
+
+: Tabela da Parte 2. As duas últimas colunas devem concordar dentro da tolerância do
+capacitor, que é ±10 % em poliéster. {#tbl-030-lab}
+
+Olhe para a coluna de $X_C$ medido: **cada vez que a frequência dobra, ela cai pela
+metade**. Essa é a reta descendente da @fig-030-reatancia, obtida com quatro medidas e
+uma divisão.
+
+5. Troque o capacitor por 10 nF e refaça uma linha. A reatância fica dez vezes maior na
+   mesma frequência — a outra metade da lei.
+
+### Parte 3 — $X_L$ contra a frequência, e a honestidade sobre o indutor
+
+1. Meça a resistência ôhmica do indutor com o ohmímetro. Anote como DCR.
+2. Monte o indutor em série com o resistor de 100 Ω e alimente com o gerador.
+3. Em 1 kHz, meça $V_R$ e $V_L$. Calcule $I$ e $|Z_L| = V_L/I$.
+4. **Descontar a DCR:** o que você mediu é o módulo da impedância completa da bobina.
+   A reatância sai por Pitágoras:
+   $X_L = \sqrt{|Z_L|^2 - \text{DCR}^2}$.
+5. Compare com $2\pi f L$.
+6. Repita em 2 kHz e 4 kHz. A reatância deve **dobrar** a cada dobro de frequência.
+
+O passo 4 é o que separa uma medição de um número. Um indutor de 10 mH com 25 Ω de DCR
+em 1 kHz tem $X_L = 62{,}8$ Ω e $|Z| = 67{,}6$ Ω — ignorar a DCR daria um erro de 8 %,
+e em 500 Hz daria 30 %.
+
+Duas ressalvas honestas sobre esta parte:
+
+- A escala CA de um multímetro comum é especificada tipicamente até 1 kHz
+  (@sec-cap-028). Medir em 4 kHz produz um número que pode estar 10 % errado por causa
+  do instrumento, não do circuito. Se os seus pontos de alta frequência não fecharem,
+  desconfie do multímetro antes da teoria.
+- Se você usar a bobina de um relé em vez de um indutor de catálogo, a indutância dela
+  depende da posição da armadura e não está escrita em lugar nenhum. O experimento
+  ainda mostra que $X_L$ cresce com $f$, mas não permite conferir contra um valor
+  nominal.
+
+### Parte 4 — Achar o cruzamento
+
+1. Monte o indutor **em série** com o capacitor de 100 nF, e o conjunto em série com o
+   resistor de 100 Ω.
+2. Varra a frequência de 1 kHz a 10 kHz procurando o ponto em que $V_R$ é **máxima**.
+3. Anote essa frequência.
+
+Nesse ponto, $X_L = X_C$: as duas reatâncias se cancelam, a impedância do conjunto LC
+cai para quase zero, e sobra só o resistor limitando a corrente. É a ressonância série,
+e ela é o assunto do @sec-cap-037 — medida aqui, três volumes antes, com um multímetro.
+
+Compare com $f_0 = 1/(2\pi\sqrt{LC})$. Para 10 mH e 100 nF, dá 5,03 kHz.
+
+### Parte 5 — A tabela da gaveta
+
+1. Escolha cinco capacitores e três indutores da sua gaveta.
+2. Calcule a reatância de cada um em 60 Hz, 1 kHz e 100 kHz.
+3. Anote a tabela e guarde-a junto com os componentes.
+
+Vale mais do que parece: essa tabela transforma "100 nF" em "26 kΩ na rede, 16 Ω num
+chaveamento" — e é assim que se escolhe capacitor de desacoplamento sem consultar nada.
+
+### Variante simulada (plano B)
+
+No ngspice, a análise `.ac dec 20 10 1e6` seguida de `plot mag(v(x)/i(vsrc))` desenha
+diretamente a curva de impedância de qualquer rede. Reproduzir a @fig-030-reatancia
+leva duas linhas.
+
+Duas experiências que só o simulador entrega com facilidade:
+
+- Ponha um capacitor **real** — 100 nF em série com 0,1 Ω de ESR e 5 nH de ESL — e
+  varra até 100 MHz. O V de impedância aparece, com o fundo do vale em 0,1 Ω. Essa é a
+  @fig-022-impedancia gerada por você.
+- Monte o paralelo R–L da @fig-030-associacao e confirme numericamente que a parte real
+  da impedância equivalente é 3,92 Ω, e não 1 kΩ. É a demonstração mais rápida de que
+  resistência e reatância se misturam na associação.
+
+## 🔥 Onde Queima {#sec-030-queima}
+
+**Somar módulos de impedância.** $|Z_1| + |Z_2|$ não é $|Z_1 + Z_2|$. Um resistor de
+1,5 kΩ em série com uma reatância de 2 kΩ dá 2,5 kΩ, não 3,5 kΩ.
+
+**Inverter impedância parte por parte.** $G$ não é $1/R$ quando há reatância. A
+inversão correta é $\mathbf{Y} = (R - jX)/(R^2 + X^2)$.
+
+**Trocar o sinal de $X_C$ no meio da conta.** As duas convenções existem; misturá-las
+transforma capacitivo em indutivo e inverte o sinal de toda a fase.
+
+**Esquecer a DCR ao medir um indutor.** O que o método do resistor em série mede é
+$|Z|$, não $X_L$. Descontar em quadratura é obrigatório em frequência baixa.
+
+**Achar que reatância aquece.** Reatância limita corrente sem dissipar. É a ESR e a DCR
+que aquecem — e são elas que não aparecem no símbolo do componente.
+
+**Usar componente acima da auto-ressonância.** Acima da SRF o capacitor é indutor e o
+indutor é capacitor. O filtro projetado faz o contrário do previsto.
+
+**Aplicar 100 nF como desacoplamento de 60 Hz.** São 26,5 kΩ: um circuito aberto.
+Desacoplamento de rede pede microfarads; de chaveamento, nanofarads.
+
+**Calcular reatância com $f$ no lugar de $\omega$.** Erro de fator 6,28, e é o mais
+frequente de todo o volume. $X_L = 2\pi f L$, não $fL$.
+
+**Supor que a impedância de um paralelo tem a resistência do resistor.** Como mostra a
+@fig-030-associacao, um paralelo com resistor de 1 kΩ pode ter 3,92 Ω de parte real.
+
+**Ignorar a indutância da trilha em alta frequência.** Cerca de 10 nH por centímetro.
+Em 100 MHz isso são 6,3 Ω em série com o seu capacitor de desacoplamento perfeito.
+
+**Medir impedância com o multímetro fora da faixa de frequência dele.** Acima de 1 kHz,
+a maioria dos instrumentos comuns lê para menos e não avisa.
+
+## O que fica deste capítulo {#sec-030-resumo}
+
+Impedância é a razão entre os fasores de tensão e corrente, $\mathbf{Z} =
+\mathbf{V}/\mathbf{I}$, medida em ohm. O módulo diz quantos volts por ampere; o ângulo
+diz de quanto a tensão está adiantada em relação à corrente.
+
+Escrita como $R + jX$, a parte resistiva **consome** energia e a parte reativa apenas a
+**empresta e devolve**. As duas limitam corrente com a mesma força; só a primeira
+esquenta.
+
+Os três componentes: $\mathbf{Z}_R = R$ com 0°; $\mathbf{Z}_L = j\omega L$ com +90°, e
+$X_L$ crescendo com a frequência; $\mathbf{Z}_C = 1/j\omega C$ com −90°, e $X_C$ caindo
+com a frequência. Nos limites, o indutor é curto em CC e aberto em alta frequência; o
+capacitor faz o oposto.
+
+Todas as ferramentas do Volume 3 continuam valendo com $\mathbf{Z}$ no lugar de $R$ —
+série soma, paralelo é produto sobre soma, divisor é razão de impedâncias. A diferença
+é que agora tudo depende da frequência, e é essa dependência que o Volume 6 vai
+explorar sistematicamente.
+
+Resistência e reatância se misturam na associação: um paralelo com um resistor de 1 kΩ
+pode apresentar 3,92 Ω de parte real. E a parte real de uma rede passiva nunca é
+negativa — teste de sanidade para qualquer resultado.
+
+Falta a pergunta que a distinção entre $R$ e $X$ deixou pendente: se a reatância não
+consome energia, o que exatamente acontece com a corrente que passa por ela? Ela existe,
+aquece os fios, ocupa o transformador e é cobrada da indústria — mas não vira trabalho.
+O @sec-cap-031 separa a potência em três parcelas, mostra que elas formam um triângulo
+semelhante ao da impedância, e explica por que a companhia elétrica cobra por uma
+grandeza que o consumidor doméstico nunca vê na conta.
