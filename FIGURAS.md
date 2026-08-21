@@ -150,12 +150,37 @@ instalado só como dependência do `circuitikz` e **não é usado** no corpo do 
   desenhada para cima com `l_=` vai parar **dentro** da malha, em cima das setas
   de corrente. Conferir sempre no PNG do `verificar-figuras.py`.
 
+- **`\\` dentro de `\node` só funciona com `align=` declarado.** Sem
+  `align=left` (ou `center`/`right`), o TikZ **ignora** a quebra e emenda as
+  linhas num parágrafo só — sem aviso, sem erro. Aconteceu no capítulo 017, num
+  nó de anotação em que todos os vizinhos tinham `align=left` e só aquele não
+  tinha. Regra: todo nó com `\\` leva `align=`.
+
+- **Dois `axis` do `pgfplots` lado a lado**, sem a biblioteca `calc`:
+
+  ```latex
+  \begin{axis}[name=ax1, ...] ... \end{axis}
+  \begin{axis}[at={(ax1.right of south east)}, anchor={left of south west}, ...]
+  ```
+
+- **Circuito e gráfico na mesma figura:** `\begin{tikzpicture}` (não
+  `circuitikz`) contendo um `\begin{scope}` com o circuito e, ao lado, um
+  `\begin{axis}[at={(8.4cm,0cm)}, anchor=south west, ...]`. Dentro do `scope` do
+  circuito, `to[R]`, `to[battery1]` etc. continuam funcionando porque o pacote já
+  está carregado. Usado nos capítulos 017 e 020.
+
 ## Largura das figuras
 
 O PNG de conferência é montado com `varwidth=17cm`: o que passar disso aparece
 **cortado no PNG** e sai largo demais na página do livro. Figura de três ou quatro
 painéis não cabe numa linha — dispor em **duas linhas de dois** (`xshift` +
 `yshift`), como na redução da rede escada do capítulo 012.
+
+Ordem de grandeza medida no Volume 3: **três painéis de circuito com rótulos não
+cabem** (o terceiro sumiu em `018-ponte` e o quarto em `018-transformacao`). Dois
+painéis de até ~7 cm cada é o teto seguro. O sintoma é discreto — o painel
+simplesmente não aparece no PNG, sem erro do LaTeX —, então conte a largura antes:
+maior `xshift` + largura do último painel + folga dos rótulos.
 
 ## Smoke test obrigatório
 
