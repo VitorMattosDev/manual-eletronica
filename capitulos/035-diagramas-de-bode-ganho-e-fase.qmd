@@ -1,3 +1,616 @@
 # Diagramas de Bode: ganho e fase {#sec-cap-035}
 
-*(em elaboração)*
+Os dois capítulos anteriores desenharam a mesma curva duas vezes e chamaram as retas
+cinzas de "assíntotas" sem explicar de onde elas vêm. Este capítulo explica — e
+transforma o que parecia um truque de desenho no método padrão de analisar qualquer
+circuito no domínio da frequência.
+
+A ideia é de Hendrik Bode, dos Laboratórios Bell, nos anos 1930, e ela tem duas partes.
+A primeira é escolher as escalas certas: frequência em logaritmo, ganho em decibéis,
+fase em graus. A segunda é perceber o que essas escalas fazem com a matemática:
+**multiplicação vira soma**. Circuitos em cascata, que exigiriam multiplicar números
+complexos, passam a ser resolvidos empilhando retas.
+
+O resultado é uma ferramenta que se usa com lápis e papel, sem calculadora, e que
+continua sendo a linguagem em que folhas de dados de amplificadores operacionais,
+malhas de controle e fontes chaveadas se comunicam.
+
+## Por que logaritmo em tudo {#sec-035-porque}
+
+Um circuito de áudio trabalha de 20 Hz a 20 kHz: três décadas. Um amplificador
+operacional pode ter resposta útil de 1 Hz a 10 MHz: sete décadas. Um filtro pode
+atenuar de 1 a $10^{-5}$: cinco décadas de amplitude.
+
+Em escala linear, nada disso cabe num gráfico.
+
+::: {#fig-035-decada}
+
+```{.tikz}
+%%| filename: 035-decada
+%%| alt: Dois gráficos lado a lado mostrando a mesma resposta de um filtro RC de mil hertz. No da esquerda, com eixo horizontal linear de zero a vinte quilohertz e eixo vertical linear de zero a um, toda a informação está espremida no primeiro vigésimo do eixo: a curva despenca junto ao eixo vertical e depois corre colada ao zero, sem que se distinga nada. No da direita, com eixo horizontal logarítmico de dez hertz a um megahertz e eixo vertical em decibéis, a mesma curva aparece como um patamar horizontal seguido de uma reta descendente perfeita, com o joelho bem visível em mil hertz.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- escala linear ----------------
+  \begin{axis}[
+      at={(0cm,0cm)}, anchor=north west,
+      width=7.8cm, height=6.4cm,
+      xmin=0, xmax=20000, ymin=0, ymax=1.08,
+      xlabel={$f$ (Hz), escala linear},
+      ylabel={$|H|$, escala linear},
+      xtick={0,5000,10000,15000,20000},
+      xticklabels={{0},{5 k},{10 k},{15 k},{20 k}},
+      scaled x ticks=false,
+      ytick={0,0.5,1}, yticklabels={{0},{$0{,}5$},{1}},
+      grid=both, grid style={manualgray!22}, font=\footnotesize,
+    ]
+    \addplot[curva, domain=0:20000, samples=400] {1/sqrt(1+(x/1000)^2)};
+  \end{axis}
+  \node[manualgray, anchor=north, font=\scriptsize, align=center] at (3.9,-5.95)
+       {tudo acontece no\\primeiro vigésimo do eixo};
+
+  % ---------------- escala log-log ----------------
+  \begin{axis}[
+      xmode=log,
+      at={(8.4cm,0cm)}, anchor=north west,
+      width=7.8cm, height=6.4cm,
+      xmin=10, xmax=1e6, ymin=-62, ymax=8,
+      xlabel={$f$ (Hz), escala logarítmica},
+      ylabel={$|H|$ (dB)},
+      xtick={10,100,1000,10000,100000,1000000},
+      xticklabels={{10},{100},{1 k},{10 k},{100 k},{1 M}},
+      ytick={0,-20,-40,-60},
+      yticklabels={{0},{$-20$},{$-40$},{$-60$}},
+      grid=both, grid style={manualgray!22}, font=\footnotesize,
+    ]
+    \addplot[curva, domain=1:6, samples=280]
+            ({10^x}, {-10*log10(1+10^(2*(x-3)))});
+    \addplot[manualred, only marks, mark=*, mark size=2pt]
+            coordinates {(1000,-3.01)};
+  \end{axis}
+  \node[manualgray, anchor=north, font=\scriptsize, align=center] at (12.3,-5.95)
+       {patamar, joelho e reta:\\três décadas de atenuação visíveis};
+
+\end{tikzpicture}
+```
+
+O mesmo filtro RC de 1 kHz, nas duas escalas. À esquerda não há o que ler; à direita,
+tudo é reta. A escolha das escalas não é cosmética — é o que torna o método possível.
+
+:::
+
+Três escolhas, então, e cada uma tem uma razão precisa.
+
+**Frequência em logaritmo.** Porque o que importa em eletrônica é a razão entre
+frequências, não a diferença. De 20 Hz a 40 Hz há a mesma "distância musical" que de
+10 kHz a 20 kHz — uma oitava —, ainda que a diferença numérica seja mil vezes maior.
+Duas unidades convivem:
+
+- **Década** — fator 10 em frequência. É a unidade padrão da eletrônica.
+- **Oitava** — fator 2. É a unidade herdada da música, ainda usada em áudio.
+
+Uma década tem $\log_2 10 = 3{,}32$ oitavas, o que dá a conversão que se usa a toda
+hora: **20 dB por década são 6 dB por oitava**.
+
+**Ganho em decibéis.** Porque o decibel é logarítmico, e logaritmo de produto é soma de
+logaritmos. Para uma razão de **tensões** (ou de correntes):
+
+$$ |H|_{\text{dB}} = 20\log_{10}|H|. $$
+
+O fator 20, e não 10, é porque potência vai com o quadrado da tensão: um ganho de tensão
+de 2 é um ganho de potência de 4, e $10\log_{10}4 = 20\log_{10}2 = 6{,}02$ dB. O decibel
+tem uma história e uma família de variantes (dBm, dBV, dBu) que são assunto do Volume 7;
+aqui basta a tabela de conversão mental:
+
+| $|H|$ | dB | Como lembrar |
+|---|---|---|
+| 1000 | +60 | três décadas |
+| 100 | +40 | duas décadas |
+| 10 | +20 | uma década |
+| 2 | +6,02 | dobrar $\approx$ 6 dB |
+| $\sqrt{2} = 1{,}41$ | +3,01 | meia potência |
+| 1 | 0 | ganho unitário |
+| $0{,}707$ | −3,01 | o ponto de corte |
+| $0{,}5$ | −6,02 | metade |
+| $0{,}1$ | −20 | um décimo |
+| $0{,}01$ | −40 | um centésimo |
+
+: Conversões de decibel que resolvem quase tudo de cabeça. Qualquer outro valor sai
+somando estas: um ganho de 20 são 26 dB ($20 \to 20$ dB, mais $2 \to 6$ dB).
+{#tbl-035-db}
+
+**Fase em graus, em escala linear.** A fase já é uma grandeza limitada — na prática,
+entre $-180^{\circ}$ e $+180^{\circ}$ por bloco —, então não há nada a comprimir. O que
+o eixo logarítmico de frequência faz com ela é transformar a curva do arco-tangente
+numa transição quase reta ao longo de duas décadas.
+
+## O que o logaritmo faz com a cascata {#sec-035-cascata}
+
+Aqui está o motivo real de tudo isto existir.
+
+Quando dois blocos são ligados em cascata — e isolados um do outro, de modo que o
+segundo não carregue o primeiro —, a função de transferência total é o **produto**:
+
+$$ \mathbf{H}_{\text{total}} = \mathbf{H}_1 \cdot \mathbf{H}_2. $$
+
+Multiplicar números complexos é multiplicar módulos e somar ângulos (@sec-cap-029). Em
+decibéis, multiplicar módulos vira somar:
+
+$$ |H_{\text{total}}|_{\text{dB}} = |H_1|_{\text{dB}} + |H_2|_{\text{dB}},
+   \qquad
+   \phi_{\text{total}} = \phi_1 + \phi_2. $$
+
+**Nos dois eixos do diagrama de Bode, blocos em cascata se somam.** Traçar a resposta de
+um sistema complicado passa a ser desenhar a resposta de cada pedaço e empilhar. É por
+isso que o método sobrevive a sistemas de oito polos que nenhuma pessoa razoável
+calcularia à mão.
+
+::: {.callout-warning}
+## A cascata só soma se os blocos estiverem isolados
+
+A regra do produto vale quando o segundo bloco **não carrega** o primeiro. Dois RC
+ligados diretamente um no outro não obedecem: o segundo resistor entra em paralelo com o
+primeiro capacitor e muda as duas frequências de corte. O erro pode passar de 30 %.
+
+Isolar significa que a impedância de entrada do segundo bloco é muito maior que a
+impedância de saída do primeiro — ou, melhor, que há um seguidor de tensão entre os dois
+(@sec-cap-065). O @sec-cap-036 desenvolve esse ponto, que é a diferença entre um filtro
+de segunda ordem e dois filtros de primeira ordem atrapalhando-se mutuamente.
+:::
+
+## Os quatro blocos elementares {#sec-035-blocos}
+
+Toda função de transferência de circuito passivo ou ativo, por mais feia que pareça,
+fatora-se num produto de quatro tipos de termo. Sabendo desenhar os quatro, desenha-se
+qualquer um.
+
+::: {#fig-035-blocos}
+
+```{.tikz}
+%%| filename: 035-blocos
+%%| alt: Quatro gráficos de Bode de módulo dispostos em duas linhas de dois, todos com eixo horizontal logarítmico e eixo vertical em decibéis. No primeiro, ganho constante: uma reta horizontal em quarenta decibéis. No segundo, polo: patamar em zero decibel até a frequência do polo e depois uma reta descendente de vinte decibéis por década, com a curva exata azul passando três decibéis abaixo do joelho. No terceiro, zero: reta ascendente de vinte decibéis por década até a frequência do zero, depois patamar em zero decibel, com a curva exata azul passando três decibéis acima do joelho. No quarto, polo na origem: uma única reta descendente de vinte decibéis por década, sem joelho, cruzando zero decibel na frequência de referência.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \pgfplotsset{
+    cel/.style={
+      width=7.4cm, height=4.8cm,
+      xmin=0.01, xmax=100,
+      xtick={0.01,0.1,1,10,100},
+      xticklabels={{$0{,}01$},{$0{,}1$},{$1$},{$10$},{$100$}},
+      grid=both, grid style={manualgray!22},
+      font=\scriptsize,
+      ylabel={dB},
+    }
+  }
+
+  % ---------------- ganho constante ----------------
+  \begin{axis}[xmode=log, cel, at={(0cm,0cm)}, anchor=north west,
+      ymin=-12, ymax=52, ytick={0,20,40}]
+    \addplot[curva, domain=-2:2, samples=2] ({10^x}, {40});
+  \end{axis}
+  \node[anchor=north, font=\scriptsize, align=center] at (3.9,-4.3)
+       {\textbf{ganho constante} \quad $\mathbf{H} = K$\\[1pt]
+        horizontal em $20\log_{10}K$; fase $0^{\circ}$};
+
+  % ---------------- polo ----------------
+  \begin{axis}[xmode=log, cel, at={(8.6cm,0cm)}, anchor=north west,
+      ymin=-46, ymax=14, ytick={0,-20,-40},
+      yticklabels={{0},{$-20$},{$-40$}}]
+    \addplot[auxiliar, domain=-2:0, samples=2] ({10^x}, {0});
+    \addplot[auxiliar, domain=0:2,  samples=2] ({10^x}, {-20*x});
+    \addplot[curva, domain=-2:2, samples=200]
+            ({10^x}, {-10*log10(1+10^(2*x))});
+  \end{axis}
+  \node[anchor=north, font=\scriptsize, align=center] at (12.5,-4.3)
+       {\textbf{polo} \quad $\mathbf{H} = \dfrac{1}{1+jf/f_0}$\\[1pt]
+        quebra para $-20$ dB/déc; fase $0^{\circ} \to -90^{\circ}$};
+
+  % ---------------- zero ----------------
+  \begin{axis}[xmode=log, cel, at={(0cm,-7.2cm)}, anchor=north west,
+      ymin=-46, ymax=14, ytick={0,-20,-40},
+      yticklabels={{0},{$-20$},{$-40$}}]
+    \addplot[auxiliar, domain=-2:0, samples=2] ({10^x}, {20*x});
+    \addplot[auxiliar, domain=0:2,  samples=2] ({10^x}, {0});
+    \addplot[curva, domain=-2:2, samples=200]
+            ({10^x}, {10*log10(1+10^(2*x))-20*x});
+  \end{axis}
+  \node[anchor=north, font=\scriptsize, align=center] at (3.9,-11.5)
+       {\textbf{zero} \quad $\mathbf{H} = \dfrac{jf/f_0}{1+jf/f_0}$\\[1pt]
+        sobe a $+20$ dB/déc; fase $+90^{\circ} \to 0^{\circ}$};
+
+  % ---------------- polo na origem ----------------
+  \begin{axis}[xmode=log, cel, at={(8.6cm,-7.2cm)}, anchor=north west,
+      ymin=-46, ymax=54, ytick={40,20,0,-20,-40},
+      yticklabels={{$+40$},{$+20$},{0},{$-20$},{$-40$}}]
+    \addplot[curva, domain=-2:2, samples=2] ({10^x}, {-20*x});
+  \end{axis}
+  \node[anchor=north, font=\scriptsize, align=center] at (12.5,-11.5)
+       {\textbf{polo na origem} \quad $\mathbf{H} = \dfrac{f_0}{jf}$\\[1pt]
+        reta única, $-20$ dB/déc; fase $-90^{\circ}$ sempre};
+
+\end{tikzpicture}
+```
+
+Os quatro blocos elementares, em módulo. Em cinza, a assíntota; em azul, a curva exata.
+O eixo horizontal está normalizado pela frequência do polo ou do zero.
+
+:::
+
+Duas observações sobre a figura.
+
+O **zero** desenhado é o zero do passa-altas, isto é, um zero acompanhado de um polo na
+mesma frequência. Existe também o zero solitário, $\mathbf{H} = 1 + jf/f_0$, cuja
+assíntota é horizontal em 0 dB até $f_0$ e depois sobe indefinidamente. Ele aparece em
+redes de compensação e em folhas de dados de reguladores.
+
+O **polo na origem** não tem joelho: é uma reta única, com fase constante em −90°. Ele é
+o integrador puro, e é o que descreve a resposta em malha aberta de um amplificador
+operacional acima da primeira quebra (Volume 11).
+
+## As regras de traçado {#sec-035-regras}
+
+O procedimento inteiro cabe em seis passos.
+
+1. **Escreva $\mathbf{H}$ em forma fatorada**, com cada termo na forma $(1 + jf/f_k)$.
+   Cada $f_k$ do denominador é um polo; cada $f_k$ do numerador é um zero.
+2. **Marque no eixo** todas as frequências de quebra em ordem crescente.
+3. **Comece pela esquerda**, na frequência mais baixa de interesse, com o valor
+   assintótico de baixa frequência: o ganho constante, corrigido pela inclinação de
+   qualquer polo ou zero na origem.
+4. **Ande para a direita**. A cada polo, some −20 dB/década à inclinação; a cada zero,
+   some +20 dB/década.
+5. **Corrija os joelhos**: −3 dB em cada polo, +3 dB em cada zero.
+6. **Faça a fase separadamente**: cada polo tira 90°, cada zero soma 90°, ao longo de
+   duas décadas centradas na quebra, com inclinação de 45° por década.
+
+| Termo | Módulo (assintótico) | Fase |
+|---|---|---|
+| Ganho $K$ | horizontal em $20\log_{10}\|K\|$ | 0° (ou 180° se $K<0$) |
+| Polo em $f_0$ | $-20$ dB/déc a partir de $f_0$ | 0° $\to$ −90° |
+| Zero em $f_0$ | $+20$ dB/déc a partir de $f_0$ | 0° $\to$ +90° |
+| Polo na origem | $-20$ dB/déc em todo o eixo | −90° constante |
+| Zero na origem | $+20$ dB/déc em todo o eixo | +90° constante |
+
+: As regras de traçado. Cada linha se **soma** às demais, nos dois gráficos.
+{#tbl-035-regras}
+
+### O erro da aproximação, medido
+
+A assíntota é uma aproximação, e é honesto saber de quanto.
+
+::: {#fig-035-erro}
+
+```{.tikz}
+%%| filename: 035-erro
+%%| alt: Gráfico de um polo isolado, com eixo horizontal logarítmico indo de um décimo até dez vezes a frequência do polo. A curva exata em azul e a assíntota em duas retas cinzas tracejadas quase coincidem nas pontas e se afastam perto do joelho. Três setas verticais vermelhas marcam a diferença entre as duas: um decibel em meia frequência do polo, três decibéis exatamente na frequência do polo e um decibel no dobro da frequência do polo.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log,
+  width=15.0cm, height=8.0cm,
+  xmin=0.1, xmax=10, ymin=-24, ymax=4,
+  xlabel={$f/f_0$}, ylabel={$|H|$ (dB)},
+  xtick={0.1,0.2,0.5,1,2,5,10},
+  xticklabels={{$0{,}1$},{$0{,}2$},{$0{,}5$},{$1$},{$2$},{$5$},{$10$}},
+  ytick={0,-3,-6,-12,-18},
+  yticklabels={{0},{$-3$},{$-6$},{$-12$},{$-18$}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+]
+  \addplot[auxiliar, domain=-1:0, samples=2] ({10^x}, {0});
+  \addplot[auxiliar, domain=0:1,  samples=2] ({10^x}, {-20*x});
+  \addplot[curva, domain=-1:1, samples=240] ({10^x}, {-10*log10(1+10^(2*x))});
+
+  \draw[<->, >=stealth, manualred, thick] (axis cs:0.5,0) -- (axis cs:0.5,-0.97);
+  \node[manualred, anchor=south, font=\scriptsize] at (axis cs:0.5,0.15)
+       {$1$ dB};
+
+  \draw[<->, >=stealth, manualred, thick] (axis cs:1,0) -- (axis cs:1,-3.01);
+  \node[manualred, anchor=south, font=\scriptsize] at (axis cs:1,0.15)
+       {$3$ dB};
+
+  \draw[<->, >=stealth, manualred, thick] (axis cs:2,-6.02) -- (axis cs:2,-6.99);
+  \node[manualred, anchor=west, font=\scriptsize] at (axis cs:2.2,-6.5)
+       {$1$ dB};
+
+  \node[manualgray, anchor=west, font=\scriptsize, align=left]
+       at (axis cs:2.6,-2.2) {a uma década de distância\\o erro já é de $0{,}04$ dB};
+\end{axis}
+\end{tikzpicture}
+```
+
+O erro da aproximação assintótica, que é sempre o mesmo em qualquer polo ou zero: 3 dB
+na quebra, 1 dB a uma oitava dos dois lados, 0,04 dB a uma década. Traçar as retas e
+arredondar o joelho "à mão" produz um gráfico melhor que 1 dB em toda parte.
+
+:::
+
+O erro máximo de 3 dB acontece exatamente no polo, cai a 1 dB a uma oitava e some a uma
+década. Para projeto, isso quase sempre basta. Para verificação final — margem de fase
+de uma malha de controle, por exemplo — usa-se a curva exata, e aí o computador faz a
+conta.
+
+## Um exemplo completo {#sec-035-exemplo}
+
+Um amplificador de áudio real tem ganho de 100 (40 dB) na faixa média, acoplamento
+capacitivo de entrada que corta em 100 Hz, e uma limitação de banda em 20 kHz. A função
+de transferência é o produto de três blocos:
+
+$$ \mathbf{H}(jf)
+   = \underbrace{100}_{\text{ganho}} \cdot
+     \underbrace{\frac{jf/100}{1 + jf/100}}_{\text{passa-altas em 100 Hz}} \cdot
+     \underbrace{\frac{1}{1 + jf/20000}}_{\text{passa-baixas em 20 kHz}}. $$
+
+Seguindo os seis passos, sem calculadora:
+
+1. Frequências de quebra: 100 Hz (zero + polo) e 20 kHz (polo).
+2. Em frequência muito baixa, o zero domina: a curva **sobe** a +20 dB/década.
+3. Em 100 Hz, o polo cancela a subida: a curva fica **horizontal em 40 dB**.
+4. Em 20 kHz, o segundo polo entra: a curva **desce** a −20 dB/década.
+5. Joelhos: −3 dB em 100 Hz e em 20 kHz, isto é, 37 dB nos dois pontos.
+6. Fase: +90° em frequência muito baixa, 0° na faixa média, −90° em frequência muito
+   alta; +45° em 100 Hz e −45° em 20 kHz.
+
+::: {#fig-035-exemplo}
+
+```{.tikz}
+%%| filename: 035-exemplo
+%%| alt: Dois gráficos empilhados com eixo horizontal logarítmico de um hertz a um megahertz. No de cima, o módulo em decibéis de um amplificador de áudio: a curva azul sobe da esquerda a vinte decibéis por década, alcança o patamar de quarenta decibéis em cem hertz, permanece plana até vinte quilohertz e depois desce a vinte decibéis por década. Retas cinzas tracejadas mostram as assíntotas. Dois pontos vermelhos marcam os trinta e sete decibéis nas duas frequências de quebra, e uma seta horizontal indica a largura de banda entre elas. No de baixo, a fase: parte de mais noventa graus, cruza mais quarenta e cinco graus em cem hertz, passa por zero na faixa média, cruza menos quarenta e cinco graus em vinte quilohertz e tende a menos noventa graus.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \pgfplotsset{
+    fatia/.style={
+      width=15.0cm,
+      xmin=1, xmax=1e6,
+      xtick={1,10,100,1000,10000,100000,1000000},
+      xticklabels={{1},{10},{100},{1 k},{10 k},{100 k},{1 M}},
+      grid=both, grid style={manualgray!22},
+      font=\footnotesize,
+    }
+  }
+
+  % ---------------- modulo ----------------
+  \begin{axis}[xmode=log, fatia, height=7.8cm, at={(0cm,0cm)}, anchor=north west,
+      ylabel={$|H|$ (dB)},
+      ymin=-16, ymax=52,
+      ytick={0,20,37,40},
+      yticklabels={{0},{$20$},{$37$},{$40$}},
+      xticklabels={}]
+
+    \addplot[auxiliar, domain=0:2, samples=2] ({10^x}, {40+20*(x-2)});
+    \addplot[auxiliar, domain=2:4.30103, samples=2] ({10^x}, {40});
+    \addplot[auxiliar, domain=4.30103:6, samples=2] ({10^x}, {40-20*(x-4.30103)});
+
+    \addplot[curva, domain=0:6, samples=400]
+      ({10^x},
+       {40+20*(x-2)-10*log10(1+10^(2*(x-2)))-10*log10(1+10^(2*(x-4.30103)))});
+
+    \addplot[manualred, only marks, mark=*, mark size=2pt]
+            coordinates {(100,37) (20000,37)};
+
+    \draw[<->, >=stealth, manualgreen, thick]
+         (axis cs:100,30) -- (axis cs:20000,30);
+    \node[manualgreen, anchor=south, font=\scriptsize] at (axis cs:1414,30.4)
+         {largura de banda: $100$ Hz a $20$ kHz};
+
+    \node[manualgray, anchor=west, font=\scriptsize] at (axis cs:1.3,32)
+         {$+20$ dB/déc};
+    \node[manualgray, anchor=east, font=\scriptsize] at (axis cs:9e5,27)
+         {$-20$ dB/déc};
+  \end{axis}
+
+  % ---------------- fase ----------------
+  \begin{axis}[xmode=log, fatia, height=6.0cm, at={(0cm,-8.5cm)}, anchor=north west,
+      xlabel={frequência (Hz)}, ylabel={$\phi$ (graus)},
+      ymin=-116, ymax=116,
+      ytick={90,45,0,-45,-90},
+      yticklabels={{$+90$},{$+45$},{0},{$-45$},{$-90$}}]
+
+    \addplot[curva, domain=0:6, samples=400]
+      ({10^x}, {90-atan(10^(x-2))-atan(10^(x-4.30103))});
+    \addplot[manualred, only marks, mark=*, mark size=2pt]
+            coordinates {(100,45) (20000,-45)};
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+O amplificador de áudio inteiro, traçado por soma de assíntotas. A curva azul é a
+expressão exata; as retas cinzas são o que se desenha à mão em trinta segundos. Nos dois
+joelhos, a diferença é de 3 dB.
+
+:::
+
+Repare no que aconteceu na faixa média: o zero e o polo de 100 Hz se cancelam
+mutuamente, e o polo de 20 kHz ainda não agiu. Sobra o ganho constante. **A faixa plana
+de qualquer amplificador é a região em que nenhum polo nem zero está atuando** — e a
+largura de banda é a distância entre a última quebra de baixa e a primeira de alta.
+
+A fase merece atenção separada. Em 1 kHz, no meio da faixa útil, ela não é exatamente
+zero: o polo de 100 Hz ainda contribui −5,7° e o de 20 kHz já contribui −2,9°. São
+−8,6° de desvio numa frequência em que o módulo está a 0,04 dB do valor nominal. De
+novo: **a fase estraga antes do módulo**.
+
+## Ler um Bode de folha de dados {#sec-035-datasheet}
+
+Diagramas de Bode aparecem em folhas de dados o tempo todo, e saber lê-los economiza
+horas.
+
+**Amplificador operacional em malha aberta.** A curva típica é um polo em alguns hertz
+seguido de uma reta de −20 dB/década que atravessa 0 dB em alguns megahertz. Essa reta
+única é o polo na origem da @fig-035-blocos, e o ponto onde ela cruza 0 dB é o **produto
+ganho-banda**. Como a reta cai 20 dB por década, ganho e banda são inversamente
+proporcionais: um amp-op com 1 MHz de produto ganho-banda configurado para ganho 100
+tem 10 kHz de banda. O @sec-cap-069 desenvolve isso.
+
+**Reguladores e fontes chaveadas.** A folha de dados mostra o ganho de malha, e o que
+interessa é onde a curva cruza 0 dB e qual a fase nesse ponto. A diferença entre essa
+fase e −180° é a **margem de fase**, e ela decide se a fonte é estável ou se oscila. É
+por isso que a compensação de uma fonte chaveada é feita acrescentando zeros — para
+levantar a fase perto do cruzamento. Volume 12.
+
+**Capacitores e ferrites.** Curvas de impedância contra frequência, como a
+@fig-022-impedancia, são diagramas de Bode do módulo de $\mathbf{Z}$. O V da
+auto-ressonância é a soma de um polo e um zero, e ler a inclinação de cada trecho diz
+qual elemento parasita está mandando ali.
+
+## 🧪 Laboratório {#sec-035-lab}
+
+**Levantar um diagrama de Bode à mão, com multímetro e papel monolog, e comparar com o
+traçado assintótico feito antes da medição.**
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala CA
+- 1 gerador de sinal: celular ou computador com aplicativo gerador de tom
+- 1 resistor de 1 kΩ e 1 de 10 kΩ, 1/4 W, medidos
+- 1 capacitor de 100 nF e 1 de 10 nF, poliéster
+- Papel monolog (uma folha impressa de escala logarítmica em $x$ e linear em $y$; há
+  modelos livres na internet, ou use papel comum e marque as décadas à mão)
+- Calculadora com $\log_{10}$
+- Protoboard e jumpers
+:::
+
+### Parte 1 — Traçar antes de medir
+
+Não ligue nada ainda.
+
+1. Com $R = 1$ kΩ e $C = 100$ nF, calcule $f_c = 1{,}59$ kHz.
+2. No papel monolog, marque o eixo de 100 Hz a 100 kHz — três décadas.
+3. Desenhe a assíntota de baixa frequência: horizontal em 0 dB.
+4. Desenhe a assíntota de alta: a partir de 1,59 kHz, descendo 20 dB por década. Em
+   16 kHz ela vale −20 dB; em 160 kHz, −40 dB. Duas marcas bastam para a reta.
+5. Marque o ponto de −3 dB em 1,59 kHz e arredonde o joelho à mão.
+
+Você acabou de desenhar a @fig-033-resposta em um minuto, sem calcular um único módulo.
+
+### Parte 2 — Medir e converter
+
+1. Monte o RC passa-baixas.
+2. Meça $v_{\mathrm{in}}$ e $v_{\mathrm{out}}$ em 100, 200, 500 Hz, 1, 2, 5, 10, 20, 50 e
+   100 kHz — dois ou três pontos por década, distribuídos em razão constante, não em
+   passos iguais. **Essa é a diferença entre medir para um Bode e medir para um gráfico
+   linear.**
+3. Converta cada razão para decibéis: $20\log_{10}(v_{\mathrm{out}}/v_{\mathrm{in}})$.
+4. Marque os pontos no mesmo papel da Parte 1.
+
+Os pontos devem cair sobre o traçado, com desvio maior perto do joelho — que é justamente
+onde a assíntota erra 3 dB.
+
+5. Verifique a inclinação diretamente: some 20 dB de queda entre duas frequências e
+   confira que elas estão numa razão de 10. Entre 10 kHz e 100 kHz, a queda medida deve
+   ser de 20 dB.
+
+Ressalva do @sec-cap-030: a escala CA de um multímetro comum é especificada até 1 kHz.
+Acima disso, espere leituras baixas demais. Se os pontos acima de 10 kHz caírem
+sistematicamente abaixo da reta, o culpado é o instrumento — e reconhecer isso é parte do
+exercício.
+
+### Parte 3 — Somar dois blocos
+
+1. Monte o passa-altas de 10 kΩ com 10 nF ($f_c = 1{,}59$ kHz). Levante três pontos por
+   década.
+2. No mesmo papel, desenhe as duas curvas: o passa-baixas da Parte 2 e este passa-altas.
+3. **Some ponto a ponto, em decibéis.** A soma deve dar, em toda frequência, algo
+   próximo de −6 dB — porque os dois filtros têm a mesma $f_c$ e o produto das duas
+   funções de transferência tem módulo... quase constante? Confira: em $f_c$, cada um
+   vale −3 dB e a soma dá −6 dB. Em 100 Hz, o passa-baixas vale 0 dB e o passa-altas
+   vale −24 dB: soma −24 dB.
+
+O exercício mostra o que a soma em decibéis significa fisicamente, e mostra também que a
+cascata de um passa-baixas com um passa-altas de **mesma** $f_c$ não é um passa-faixa
+útil: sobra um pico raso de −6 dB. Passa-faixa exige as duas frequências bem separadas,
+e isso é o @sec-cap-036.
+
+### Parte 4 — Medir fase sem osciloscópio de dois canais
+
+Há um truque clássico. Meça três tensões eficazes: $v_{\mathrm{in}}$,
+$v_{\mathrm{out}}$ e a **diferença** $v_{\mathrm{in}} - v_{\mathrm{out}}$ — que, no RC,
+é a tensão sobre o resistor, acessível com as duas pontas do multímetro entre os dois nós.
+
+Pela lei dos cossenos aplicada ao triângulo de fasores:
+
+$$ \cos\phi = \frac{v_{\mathrm{in}}^2 + v_{\mathrm{out}}^2 - v_{\Delta}^2}
+                   {2\,v_{\mathrm{in}}\,v_{\mathrm{out}}}. $$
+
+1. Meça as três tensões em 500 Hz, 1,6 kHz e 5 kHz.
+2. Calcule $\phi$ e compare com $-\arctan(f/f_c)$: −17,4°, −45,2° e −72,3°.
+
+Em 1,6 kHz o triângulo é retângulo e a conta fica trivial — é a @fig-033-circuito, com os
+números.
+
+**Variante simulada (plano B).** No ngspice, `.ac dec 20 10 1e6` seguido de
+`plot vdb(out)` e `plot 180/3.14159*ph(v(out))` produz os dois painéis de qualquer
+circuito deste capítulo, incluindo o exemplo de três blocos do @sec-035-exemplo. Vale
+montar o exemplo e conferir os 37 dB nas duas quebras.
+
+## 🔥 Onde Queima {#sec-035-queima}
+
+**Somar módulos em vez de decibéis.** Ganhos em cascata se multiplicam; decibéis é que
+se somam. Dois estágios de 20 dB dão 40 dB, que é ganho 100, não 40.
+
+**Usar 10 log em vez de 20 log para tensão.** $20\log_{10}$ para razão de tensões ou
+correntes, $10\log_{10}$ para razão de potências. Trocar dá metade do valor em dB.
+
+**Somar blocos que se carregam.** A regra do produto exige isolamento. Dois RC em
+cascata direta não têm as frequências de corte que cada um teria sozinho.
+
+**Medir em passos lineares de frequência.** Dez pontos igualmente espaçados de 0 a
+100 kHz dão nove pontos na última década e nenhum nas primeiras. Bode se mede em razão
+constante: 1, 2, 5, 10, 20, 50…
+
+**Esquecer a fase.** Módulo plano não significa sistema bem comportado. Em realimentação,
+é a fase no cruzamento de 0 dB que decide a estabilidade.
+
+**Confundir polo com zero no traçado.** Polo abaixa a inclinação em 20 dB/década e a fase
+em 90°; zero levanta as duas. Um erro de sinal inverte o gráfico inteiro.
+
+**Achar que a assíntota é a resposta.** Ela erra 3 dB na quebra. Para projeto, serve;
+para margem de fase, não.
+
+**Traçar a fase com quebra abrupta.** A fase de um polo começa a cair uma década
+**antes** da quebra e só termina uma década depois. Quem desenha a fase como degrau erra
+por até 45° a uma década de distância.
+
+**Ler produto ganho-banda como banda.** Um amp-op de 1 MHz não tem 1 MHz de banda no seu
+circuito: tem 1 MHz **dividido pelo ganho** que você configurou.
+
+**Ignorar polos e zeros fora da faixa desenhada.** Um polo em 1 MHz contribui −5,7° em
+100 kHz. Ele não aparece no módulo, mas aparece na fase — e é assim que malhas
+aparentemente seguras oscilam.
+
+**Confundir década com oitava.** 20 dB/década são 6 dB/oitava. Folhas de dados de áudio
+usam oitava; as de eletrônica, década.
+
+## O que fica deste capítulo {#sec-035-resumo}
+
+O diagrama de Bode é a resposta em frequência desenhada em duas escalas escolhidas de
+propósito: frequência em logaritmo, módulo em decibéis, fase em graus. A razão da escolha
+é que, nessas escalas, **blocos em cascata se somam** em vez de se multiplicarem — desde
+que estejam isolados uns dos outros.
+
+Decibel de tensão é $20\log_{10}|H|$. Uma década é fator 10 em frequência; uma oitava é
+fator 2; 20 dB/década são 6 dB/oitava.
+
+Toda função de transferência se fatora em quatro blocos: ganho constante, polo, zero e
+polo (ou zero) na origem. Cada polo tira 20 dB/década do módulo e 90° da fase; cada zero
+acrescenta os mesmos 20 dB/década e 90°.
+
+O traçado é: fatorar, marcar as quebras, começar pela assíntota de baixa frequência,
+somar inclinações da esquerda para a direita, corrigir 3 dB em cada joelho e desenhar a
+fase à parte, com transição de duas décadas por quebra.
+
+O erro da aproximação assintótica é sempre o mesmo: 3 dB na quebra, 1 dB a uma oitava,
+0,04 dB a uma década.
+
+Na faixa plana de um amplificador, nenhum polo ou zero está atuando; a largura de banda
+é a distância entre a última quebra de baixa e a primeira de alta. E a fase se afasta de
+zero muito antes de o módulo se afastar do patamar.
+
+Com essa ferramenta, é possível olhar para um filtro e dizer quanto ele atenua sem
+calcular nada. Falta o passo seguinte: **projetar** a atenuação. Um RC cai 20 dB por
+década, e existe aplicação que precisa de 60, de 80, de 100. Empilhar RCs parece a
+resposta óbvia, e o próximo capítulo mostra por que ela está errada do jeito ingênuo —
+e o que colocar no lugar. É o @sec-cap-036.
