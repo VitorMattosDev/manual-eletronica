@@ -1,3 +1,668 @@
 # Fasores e números complexos aplicados {#sec-cap-029}
 
-*(em elaboração)*
+A Parte 5 do laboratório do @sec-cap-027 deixou uma conta em aberto. Um resistor e um
+capacitor em série, alimentados por um gerador; mede-se a tensão em cada um e a
+tensão da fonte, e a soma **não fecha**. Numa montagem típica dá 6 V no resistor, 8 V
+no capacitor e 10 V na fonte.
+
+Seis mais oito não é dez. Mas seis, oito e dez são os lados de um triângulo retângulo,
+e essa não é uma coincidência: é o capítulo inteiro.
+
+A lei de Kirchhoff continua valendo — a cada instante, $v_R(t) + v_C(t) = v_s(t)$,
+exatamente. O que não vale é somar os **valores eficazes**, porque as duas tensões
+atingem o máximo em instantes diferentes. Quando $v_R$ está no pico, $v_C$ está
+passando por zero. Somar os picos de coisas que não acontecem juntas é somar maçãs de
+árvores diferentes.
+
+Este capítulo constrói a ferramenta que faz essa soma corretamente e, de quebra,
+elimina as equações diferenciais de toda a análise de CA. A ferramenta é o **fasor**, e
+ela é a razão de a Fase 2 ser mais fácil do que parece.
+
+## O problema, escrito por extenso {#sec-029-problema}
+
+Suponha que você queira somar dois sinais de mesma frequência:
+
+$$ v_1(t) = 6\cos(\omega t) \qquad\text{e}\qquad v_2(t) = 8\cos(\omega t - 90^{\circ}). $$
+
+Pela identidade da soma de cossenos, o resultado é uma senoide de mesma frequência —
+isso o @sec-cap-027 já garantiu. Mas descobrir **qual** senoide exige abrir os dois
+cossenos, agrupar os termos em $\cos\omega t$ e em $\operatorname{sen}\omega t$,
+recompor e extrair amplitude e fase. São seis linhas de trigonometria para somar dois
+sinais.
+
+Agora imagine uma malha com cinco elementos, ou a análise nodal do @sec-cap-015
+aplicada a um circuito com dois capacitores. Cada nó vira uma equação diferencial, e
+cada soma vira meia página de identidades trigonométricas. Não é difícil — é
+inviável.
+
+A saída está numa observação do @sec-cap-027: **num circuito linear excitado por uma
+única frequência, todos os sinais são senoides daquela mesma frequência**. Se a
+frequência é a mesma em todos os pontos, ela é informação redundante: não precisa ser
+carregada em cada linha da conta. Sobram dois números por sinal — amplitude e fase — e
+dois números são exatamente o conteúdo de um número complexo.
+
+## Números complexos: o mínimo necessário {#sec-029-complexos}
+
+Nada aqui exige teoria: só as quatro operações e as duas formas de escrever.
+
+Em eletrônica, a unidade imaginária se escreve **$j$**, não $i$, porque $i$ já é
+corrente. É a mesma coisa: $j^2 = -1$.
+
+Um número complexo tem duas representações equivalentes:
+
+$$ \underbrace{a + jb}_{\text{retangular}} \qquad\longleftrightarrow\qquad
+   \underbrace{M\,\angle\,\theta}_{\text{polar}} $$
+
+e a conversão entre elas é trigonometria de triângulo retângulo:
+
+$$ M = \sqrt{a^2 + b^2}, \qquad \theta = \operatorname{atan2}(b,\,a), $$
+$$ a = M\cos\theta, \qquad b = M\operatorname{sen}\theta. $$
+
+::: {#fig-029-plano}
+
+```{.tikz}
+%%| filename: 029-plano
+%%| alt: Dois painéis lado a lado. No painel esquerdo, um plano complexo com eixo real horizontal e eixo imaginário vertical, e um vetor da origem até o ponto de coordenadas três e quatro. Linhas tracejadas marcam a parte real três no eixo horizontal e a parte imaginária quatro no eixo vertical. O comprimento do vetor é cinco e o ângulo com o eixo real é cinquenta e três vírgula treze graus. No painel direito, um plano complexo com quatro vetores de mesmo comprimento apontando para leste, norte, oeste e sul, rotulados respectivamente como o número original, o número multiplicado por j, multiplicado por j ao quadrado e multiplicado por j ao cubo, com setas curvas de noventa graus entre eles.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= painel 1: retangular e polar =================
+  \begin{scope}[shift={(0,0)}]
+    \draw[eixo] (-0.9,0) -- (5.0,0) node[below right, font=\scriptsize] {Re};
+    \draw[eixo] (0,-0.9) -- (0,5.0) node[left, font=\scriptsize] {Im};
+
+    \foreach \xx in {1,2,3,4} {
+      \draw[manualgray, thin] (\xx,-0.09) -- (\xx,0.09);
+      \draw[manualgray, thin] (-0.09,\xx) -- (0.09,\xx);
+    }
+    \node[font=\tiny, anchor=north] at (3,-0.14) {3};
+    \node[font=\tiny, anchor=east]  at (-0.14,4) {4};
+
+    \draw[auxiliar] (3,0) -- (3,4) -- (0,4);
+    \draw[vetor, manualblue] (0,0) -- (3,4);
+    \node[ponto, manualblue] at (3,4) {};
+
+    \draw[manualred, thick, ->, >=stealth] (1.3,0) arc (0:53.13:1.3);
+    \node[manualred, font=\scriptsize] at (28:1.68) {$\theta$};
+
+    \node[manualblue, font=\scriptsize, anchor=south east, align=right]
+         at (2.5,4.05) {$M = 5$};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (2.1,-1.15)
+         {$3 + j4 \;=\; 5\,\angle\,53{,}13^{\circ}$};
+  \end{scope}
+
+  % ================= painel 2: multiplicar por j =================
+  \begin{scope}[shift={(10.2,2.0)}]
+    \draw[eixo] (-2.9,0) -- (2.9,0) node[below right, font=\scriptsize] {Re};
+    \draw[eixo] (0,-2.9) -- (0,2.9) node[left, font=\scriptsize] {Im};
+
+    \draw[vetor, manualblue]  (0,0) -- (2.2,0);
+    \draw[vetor, manualgreen] (0,0) -- (0,2.2);
+    \draw[vetor, manualred]   (0,0) -- (-2.2,0);
+    \draw[vetor, manualgray]  (0,0) -- (0,-2.2);
+
+    \node[manualblue,  font=\scriptsize, anchor=west]  at (2.3,0)   {$V$};
+    \node[manualgreen, font=\scriptsize, anchor=west]  at (0.15,2.2) {$jV$};
+    \node[manualred,   font=\scriptsize, anchor=east]  at (-2.3,0)  {$j^2V = -V$};
+    \node[manualgray,  font=\scriptsize, anchor=north] at (0,-2.3)  {$j^3V = -jV$};
+
+    \draw[manualyellow, thick, ->, >=stealth] (5:1.15) arc (5:85:1.15);
+    \draw[manualyellow, thick, ->, >=stealth] (95:1.15) arc (95:175:1.15);
+    \node[manualyellow, font=\scriptsize] at (45:1.45) {$90^{\circ}$};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (0,-3.15)
+         {multiplicar por $j$ \emph{é} girar $90^{\circ}$\\no sentido anti-horário};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O plano complexo, e a única propriedade de $j$ que importa em eletrônica. À esquerda,
+as duas escritas do mesmo ponto. À direita, o motivo de tudo funcionar: multiplicar por
+$j$ gira 90°, e 90° é exatamente a defasagem que um capacitor ou um indutor introduz.
+
+:::
+
+O painel da direita merece atenção: $j$ **não é um número misterioso, é um operador de
+rotação**. Multiplicar por $j$ gira 90° para a frente; dividir por $j$ — que é o mesmo
+que multiplicar por $-j$ — gira 90° para trás. Como capacitor e indutor defasam
+exatamente 90°, e como girar 90° é o que $j$ faz, os dois se encaixam sem sobra. Não é
+sorte: é a razão de os números complexos terem entrado na engenharia elétrica.
+
+As regras operacionais cabem numa tabela, e a única coisa a memorizar é **em qual forma
+fazer cada operação**:
+
+| Operação | Forma conveniente | Regra |
+|---|---|---|
+| Somar, subtrair | retangular | soma parte real com real, imaginária com imaginária |
+| Multiplicar | polar | multiplica os módulos, **soma** os ângulos |
+| Dividir | polar | divide os módulos, **subtrai** os ângulos |
+| Inverter ($1/z$) | polar | inverte o módulo, troca o sinal do ângulo |
+| Conjugar ($z^{*}$) | qualquer | troca o sinal da parte imaginária, ou do ângulo |
+
+: Aritmética complexa por conveniência. Somar em polar e multiplicar em retangular são
+possíveis, mas dão trabalho à toa. Toda calculadora científica tem as teclas
+`Pol(` e `Rec(` justamente para trocar de forma no meio da conta. {#tbl-029-aritmetica}
+
+Duas identidades que aparecem sempre e que economizam tempo:
+
+$$ \frac{1}{j} = -j, \qquad |z|^2 = z\,z^{*}. $$
+
+A primeira sai de multiplicar numerador e denominador por $j$; ela é a razão de a
+reatância capacitiva do @sec-cap-030 aparecer ora como $1/j\omega C$, ora como
+$-j/\omega C$ — são a mesma coisa.
+
+## A fórmula de Euler e a definição do fasor {#sec-029-euler}
+
+A ponte entre o plano complexo e a senoide é a fórmula de Euler:
+
+$$ e^{j\theta} = \cos\theta + j\operatorname{sen}\theta. $$
+
+Ela diz que $e^{j\theta}$ é o ponto do círculo de raio 1 no ângulo $\theta$ — o mesmo
+círculo do @fig-027-circulo, agora com endereço algébrico. E permite escrever uma
+senoide como a parte real de algo que gira:
+
+$$ v(t) = V_p\cos(\omega t + \phi)
+        = \operatorname{Re}\!\left\{ V_p\,e^{j(\omega t + \phi)} \right\}
+        = \operatorname{Re}\!\left\{ \underbrace{V_p\,e^{j\phi}}_{\text{não gira}}
+          \cdot \underbrace{e^{j\omega t}}_{\text{gira}} \right\}. $$
+
+O fator $e^{j\omega t}$ é o mesmo em **todos** os sinais do circuito — é a frequência
+comum. O que distingue um sinal do outro é só o primeiro fator. Esse fator é o
+**fasor**:
+
+$$ \boxed{\;\mathbf{V} = V\,\angle\,\phi\;} $$
+
+::: {.callout-warning}
+## Duas convenções deste livro, fixadas agora
+
+**Primeira: o fasor deste manual tem módulo igual ao valor eficaz**, não ao valor de
+pico. Um sinal de 10 V eficazes vira o fasor $\mathbf{V} = 10\,\angle\,0^{\circ}$, não
+$14{,}14\,\angle\,0^{\circ}$. Essa escolha faz o multímetro ler diretamente o módulo do
+fasor e faz a potência do @sec-cap-031 sair sem fator 1/2. Muitos livros usam pico —
+os resultados diferem por $\sqrt{2}$, e conferir qual convenção o texto adotou é a
+primeira coisa a fazer ao abrir qualquer referência de CA.
+
+**Segunda: o ângulo é medido a partir do cosseno.** A definição vem de
+$\operatorname{Re}\{e^{j\omega t}\}$, que é cosseno. Um sinal escrito em seno precisa
+ser convertido antes, pela identidade
+$\operatorname{sen}\theta = \cos(\theta - 90^{\circ})$. Assim,
+$10\operatorname{sen}(\omega t)$ tem fasor $7{,}07\,\angle\,{-90^{\circ}}$, e não
+$7{,}07\,\angle\,0^{\circ}$.
+:::
+
+Na prática de bancada a segunda convenção quase nunca incomoda, porque o que se mede é
+sempre **diferença** de fase entre dois sinais, e a referência comum se cancela. Ela
+incomoda muito ao comparar uma conta sua com um exemplo de livro.
+
+::: {#fig-029-girante}
+
+```{.tikz}
+%%| filename: 029-girante
+%%| alt: Painel esquerdo com um plano complexo contendo dois vetores girantes de comprimentos diferentes, separados por um ângulo fixo de sessenta graus, com uma seta curva indicando que os dois giram juntos à mesma velocidade angular. Painel direito com as duas senoides correspondentes no tempo, a maior adiantada e a menor atrasada, com uma seta indicando o mesmo intervalo de defasagem constante ao longo de todo o gráfico.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- plano girante ----------
+  \begin{scope}[shift={(0,0)}]
+    \draw[eixo] (-2.7,0) -- (2.7,0) node[below right, font=\scriptsize] {Re};
+    \draw[eixo] (0,-2.7) -- (0,2.7) node[right, font=\scriptsize] {Im};
+    \draw[manualgray, thin, dotted] (0,0) circle (2.1);
+    \draw[manualgray, thin, dotted] (0,0) circle (1.3);
+
+    \draw[vetor, manualblue] (0,0) -- (40:2.1);
+    \draw[vetor, manualred]  (0,0) -- (-20:1.3);
+
+    \draw[manualyellow, thick, ->, >=stealth] (-20:0.75) arc (-20:40:0.75);
+    \node[manualyellow, font=\tiny] at (10:1.0) {$60^{\circ}$};
+
+    \node[manualblue, font=\scriptsize, anchor=south west] at (40:2.2) {$\mathbf{V}$};
+    \node[manualred,  font=\scriptsize, anchor=north west] at (-20:1.4) {$\mathbf{I}$};
+
+    \draw[manualgreen, thick, ->, >=stealth] (108:2.45) arc (108:152:2.45);
+    \node[manualgreen, font=\scriptsize, anchor=south east] at (130:2.55) {$\omega$};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (0,-2.95)
+         {os dois giram juntos:\\o ângulo entre eles não muda};
+  \end{scope}
+
+  % ---------- senoides ----------
+  \begin{axis}[
+    at={(4.0cm,-2.6cm)}, anchor=south west,
+    width=11.4cm, height=6.4cm,
+    xlabel={$\omega t$ (graus)},
+    xmin=-15, xmax=760, ymin=-3.3, ymax=3.4,
+    axis lines=middle,
+    xtick={0,180,360,540,720},
+    ytick=\empty,
+    font=\footnotesize,
+  ]
+    \addplot[curva, domain=0:750, samples=350] {2.1*cos(x-40)};
+    \addplot[destaque, domain=0:750, samples=350] {1.3*cos(x+20)};
+
+    \draw[auxiliar] (axis cs:340,1.3) -- (axis cs:340,-2.9);
+    \draw[auxiliar] (axis cs:400,2.1) -- (axis cs:400,-2.9);
+    \draw[manualyellow, vetor] (axis cs:340,-2.75) -- (axis cs:400,-2.75);
+    \draw[manualyellow, vetor] (axis cs:400,-2.75) -- (axis cs:340,-2.75);
+    \node[manualyellow, font=\scriptsize, anchor=west] at (axis cs:412,-2.75)
+         {$60^{\circ}$, sempre};
+
+    \node[manualblue, font=\scriptsize, anchor=west] at (axis cs:410,2.9)
+         {$v(t)$};
+    \node[manualred, font=\scriptsize, anchor=west] at (axis cs:500,1.75)
+         {$i(t)$};
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+O fasor é uma fotografia. Os dois vetores giram a $\omega$ rad/s, mas giram **juntos**,
+e o ângulo entre eles é constante — então basta congelar o instante $t = 0$ e guardar
+comprimento e ângulo. Toda a informação do gráfico da direita está nos dois vetores da
+esquerda.
+
+:::
+
+## A troca que elimina o cálculo {#sec-029-derivada}
+
+Aqui está o teorema que faz o método valer a pena. Derive
+$v(t) = V_p\cos(\omega t + \phi)$:
+
+$$ \frac{dv}{dt} = -\omega V_p \operatorname{sen}(\omega t + \phi)
+                 = \omega V_p \cos(\omega t + \phi + 90^{\circ}). $$
+
+A derivada é uma senoide de mesma frequência, com amplitude multiplicada por $\omega$
+e fase adiantada de 90°. Ora — multiplicar o módulo por $\omega$ e adiantar 90° é
+exatamente **multiplicar o fasor por $j\omega$**. Logo:
+
+$$ \boxed{\;\frac{d}{dt} \;\longleftrightarrow\; \times\, j\omega,
+   \qquad \int dt \;\longleftrightarrow\; \div\, j\omega\;} $$
+
+::: {#fig-029-derivada}
+
+```{.tikz}
+%%| filename: 029-derivada
+%%| alt: Painel esquerdo com um gráfico no tempo mostrando em azul uma senoide e em vermelho a sua derivada, que atinge o máximo um quarto de período antes e tem amplitude maior. Painel direito com um plano complexo em que o fasor da senoide aponta para a direita sobre o eixo real e o fasor da derivada aponta para cima sobre o eixo imaginário, mais longo, com uma seta curva de noventa graus entre os dois e a anotação de que derivar é multiplicar por j ômega.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \begin{axis}[
+    at={(0cm,0cm)}, anchor=south west,
+    width=10.2cm, height=6.6cm,
+    xlabel={$\omega t$ (graus)},
+    xmin=-15, xmax=760, ymin=-2.5, ymax=2.9,
+    axis lines=middle,
+    xtick={0,180,360,540,720},
+    ytick=\empty,
+    font=\footnotesize,
+    legend style={at={(0.5,1.0)}, anchor=south, legend columns=2,
+                  font=\scriptsize, draw=manualgray!50},
+  ]
+    \addplot[curva, domain=0:750, samples=350] {1.3*cos(x)};
+    \addlegendentry{$v(t)$}
+    \addplot[destaque, domain=0:750, samples=350] {2.0*cos(x+90)};
+    \addlegendentry{$dv/dt$}
+
+    \draw[auxiliar] (axis cs:0,0) -- (axis cs:0,-2.2);
+    \draw[auxiliar] (axis cs:-90,0) -- (axis cs:-90,-2.2);
+  \end{axis}
+
+  % ---------- plano complexo ----------
+  \begin{scope}[shift={(13.0,3.3)}]
+    \draw[eixo] (-1.0,0) -- (2.6,0) node[below right, font=\scriptsize] {Re};
+    \draw[eixo] (0,-1.0) -- (0,2.9) node[left, font=\scriptsize] {Im};
+
+    \draw[vetor, manualblue] (0,0) -- (1.5,0);
+    \draw[vetor, manualred]  (0,0) -- (0,2.3);
+
+    \node[manualblue, font=\scriptsize, anchor=north] at (1.5,-0.12) {$\mathbf{V}$};
+    \node[manualred, font=\scriptsize, anchor=west] at (0.12,2.3)
+         {$j\omega\mathbf{V}$};
+
+    \draw[manualyellow, thick, ->, >=stealth] (5:0.8) arc (5:85:0.8);
+    \node[manualyellow, font=\tiny] at (45:1.05) {$90^{\circ}$};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (0.8,-1.25)
+         {derivar $=$ girar $90^{\circ}$\\e esticar por $\omega$};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+A derivada, nas duas linguagens. No tempo é uma curva adiantada de um quarto de período
+e com amplitude $\omega$ vezes maior; no plano complexo é uma multiplicação por
+$j\omega$. A segunda descrição é aritmética, e é por isso que a análise de CA dispensa
+equações diferenciais.
+
+:::
+
+A consequência é enorme e vale ser escrita devagar. Uma equação diferencial como
+
+$$ v_s(t) = R\,i(t) + \frac{1}{C}\int i(t)\,dt $$
+
+vira, em fasores,
+
+$$ \mathbf{V}_s = R\,\mathbf{I} + \frac{1}{j\omega C}\,\mathbf{I}
+                = \left(R + \frac{1}{j\omega C}\right)\mathbf{I}, $$
+
+que é a lei de Ohm com um número complexo no lugar da resistência. Esse número
+complexo é a **impedância**, e ele é o assunto inteiro do @sec-cap-030. Tudo o que o
+Volume 3 fez — divisor de tensão, análise nodal, análise de malhas, Thévenin,
+superposição — volta a funcionar palavra por palavra, trocando $R$ por $\mathbf{Z}$ e
+números reais por complexos.
+
+## A conta que não fechava {#sec-029-soma}
+
+De volta ao circuito do começo, agora com números completos.
+
+::: {#fig-029-soma}
+
+```{.tikz}
+%%| filename: 029-soma
+%%| alt: Painel esquerdo com o esquemático de um circuito série formado por uma fonte de tensão alternada, um resistor de um vírgula cinco quilo-ohm e um capacitor de cem nanofarads, com as tensões marcadas em cada componente e a corrente indicada no laço. Painel direito com um diagrama fasorial em que a tensão do resistor é um vetor horizontal de seis volts, a tensão do capacitor é um vetor vertical de oito volts apontando para baixo, e a soma dos dois é um vetor de dez volts inclinado de menos cinquenta e três vírgula treze graus, formando um triângulo retângulo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- circuito ----------
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,0) to[sV, l={$V_s = 10$ V}] (0,4.2);
+    \draw (0,4.2) -- (0.7,4.2);
+    \draw (0.7,4.2) to[R, l={$R = 1{,}5$ k$\Omega$},
+                       v_>={$\mathbf{V}_R$}] (4.1,4.2);
+    \draw (4.1,4.2) -- (4.8,4.2);
+    \draw (4.8,4.2) to[C, l={$C = 100$ nF},
+                       v_>={$\mathbf{V}_C$}] (4.8,0);
+    \draw (4.8,0) -- (0,0);
+    \draw (2.4,0) to[short, *-] (2.4,0) node[ground]{};
+
+    \draw[->, >=stealth, manualred, thick] (1.9,5.25) -- (2.9,5.25);
+    \node[manualred, font=\scriptsize, anchor=south] at (2.4,5.32)
+         {$\mathbf{I} = 4\,\angle\,0^{\circ}$ mA \ (referência de fase)};
+
+    \node[manualgray, font=\scriptsize, anchor=north] at (2.4,-1.35)
+         {$f = 796$ Hz};
+  \end{scope}
+
+  % ---------- diagrama fasorial ----------
+  \begin{scope}[shift={(9.4,3.4)}]
+    \draw[eixo] (-0.7,0) -- (4.2,0) node[below right, font=\scriptsize] {Re};
+    \draw[eixo] (0,-4.2) -- (0,1.0) node[left, font=\scriptsize] {Im};
+
+    \draw[vetor, manualblue]  (0,0) -- (3.0,0);
+    \draw[vetor, manualgreen] (3.0,0) -- (3.0,-4.0);
+    \draw[vetor, manualred]   (0,0) -- (3.0,-4.0);
+
+    \draw[auxiliar] (0,-4.0) -- (3.0,-4.0);
+
+    \node[manualblue, font=\scriptsize, anchor=south] at (1.5,0.1)
+         {$\mathbf{V}_R = 6\,\angle\,0^{\circ}$};
+    \node[manualgreen, font=\scriptsize, anchor=west] at (3.1,-2.0)
+         {$\mathbf{V}_C = 8\,\angle\,{-90^{\circ}}$};
+    \node[manualred, font=\scriptsize, anchor=north east, align=right] at (1.5,-2.35)
+         {$\mathbf{V}_s = 10\,\angle\,{-53{,}13^{\circ}}$};
+
+    \draw[manualyellow, thick, ->, >=stealth] (-5:1.05) arc (-5:-48:1.05);
+    \node[manualyellow, font=\tiny, anchor=west] at (-26:1.2) {$-53{,}13^{\circ}$};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O triângulo 6–8–10. A tensão do resistor está em fase com a corrente; a do capacitor
+está 90° atrasada em relação a ela. Somados como vetores, os 6 V e os 8 V dão 10 V —
+e é isso que o multímetro mede na fonte.
+
+:::
+
+A conta, passo a passo, é curta:
+
+1. A corrente é a mesma nos dois componentes (estão em série), então ela serve de
+   referência: $\mathbf{I} = I\,\angle\,0^{\circ}$.
+2. No resistor, tensão e corrente estão **em fase**: $\mathbf{V}_R = R\mathbf{I}$,
+   sem rotação. Módulo 6 V, ângulo 0°.
+3. No capacitor, a tensão está **90° atrasada** em relação à corrente. Módulo 8 V,
+   ângulo −90°, ou seja, $\mathbf{V}_C = -j\,8$.
+4. Soma em retangular: $\mathbf{V}_s = 6 + (-j8) = 6 - j8$.
+5. Converte para polar: $M = \sqrt{6^2 + 8^2} = 10$,
+   $\theta = \operatorname{atan2}(-8, 6) = -53{,}13^{\circ}$.
+
+E o multímetro na fonte mede 10 V. A lei de Kirchhoff nunca foi violada — ela é uma
+soma de fasores, não de módulos. O que o instrumento mostra é o módulo, e módulos de
+vetores não perpendiculares nem paralelos não se somam.
+
+O caso geral dessa soma é a **lei dos cossenos**, e vale a pena guardá-la para conferir
+resultados de cabeça:
+
+$$ |\mathbf{V}_1 + \mathbf{V}_2| =
+   \sqrt{V_1^2 + V_2^2 + 2V_1V_2\cos(\phi_1 - \phi_2)}. $$
+
+Em fase ($\Delta\phi = 0$), ela se reduz à soma aritmética. Em quadratura
+($\Delta\phi = 90^{\circ}$), ao teorema de Pitágoras — o caso da figura. Em oposição
+($\Delta\phi = 180^{\circ}$), à subtração. Todos os casos intermediários ficam entre
+$|V_1 - V_2|$ e $V_1 + V_2$, e **nunca fora disso** — o que é um teste de sanidade
+imediato para qualquer resultado de CA.
+
+## De volta ao domínio do tempo {#sec-029-volta}
+
+O caminho de volta é mecânico. Dado o fasor $\mathbf{V} = V\angle\phi$, com $V$ em
+valor eficaz e a convenção do cosseno:
+
+$$ v(t) = \sqrt{2}\,V\cos(\omega t + \phi). $$
+
+Para $\mathbf{V}_s = 10\angle{-53{,}13^{\circ}}$ V a 796 Hz:
+
+$$ v_s(t) = 14{,}14\cos(5003\,t - 53{,}13^{\circ})\ \text{V}, $$
+
+com $\omega = 2\pi \times 796 = 5003$ rad/s. Note que $\omega$ só reaparece **aqui** —
+durante toda a conta em fasores ele ficou escondido dentro da impedância. É por isso
+que a análise fasorial resolve o circuito para uma frequência de cada vez, e é por isso
+que o Volume 6 precisa refazer a conta em muitas frequências para desenhar um diagrama
+de Bode.
+
+## Onde o método não se aplica {#sec-029-cuidados}
+
+Fasores são poderosos justamente porque supõem muita coisa. Três limites, e todos os
+três derrubam contas de gente experiente:
+
+**Só uma frequência de cada vez.** Fasores de frequências diferentes não podem ser
+somados — o ângulo entre eles muda com o tempo, e o desenho da @fig-029-girante deixa
+de fazer sentido. Circuito com duas fontes de frequências diferentes se resolve por
+superposição (@sec-cap-017): uma frequência de cada vez, e só se somam os resultados
+**no domínio do tempo**, no fim.
+
+**Só regime permanente.** O fasor descreve o que sobra depois que o transitório
+morreu. Nos primeiros milissegundos depois de ligar a chave existe uma parcela que
+decai exponencialmente e que nenhum fasor representa. Para um circuito com constante
+de tempo de 0,15 ms alimentado em 796 Hz, "depois" significa alguns milissegundos — na
+prática, imediatamente. Para um motor de indução partindo, significa segundos.
+
+**Só circuitos lineares.** Diodo, transistor em corte, núcleo saturado e amplificador
+ceifando não são lineares: eles criam frequências que não estavam na entrada, e a
+premissa de que "tudo é senoide da mesma frequência" cai. É por isso que a análise de
+um retificador (Volume 8) não é feita com fasores.
+
+Um quarto cuidado, este numérico: **use $\operatorname{atan2}$, não $\arctan$**. A
+função $\arctan(b/a)$ perde o quadrante. Para $-6 + j8$ e para $6 - j8$ a razão $b/a$
+é a mesma, $-4/3$, e o arco-tangente devolve $-53{,}13^{\circ}$ nos dois casos — mas o
+primeiro fasor está no segundo quadrante, em $+126{,}87^{\circ}$. Erro de 180° em
+cálculo de fase é o clássico do capítulo, e ele passa despercebido porque o módulo sai
+certo.
+
+## 🧪 Laboratório {#sec-029-lab}
+
+**Fechar a conta que ficou aberta no @sec-cap-027: medir três tensões que não somam e
+provar que elas somam como vetores.** Este é o laboratório mais curto do volume e o
+mais convincente.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala CA
+- 1 gerador de sinal: celular ou computador com aplicativo gerador de tom, e cabo com
+  plugue P2 e pontas descascadas (ou um gerador de funções, se houver)
+- 1 resistor de 1,5 kΩ, 1/4 W
+- 1 resistor de 1 kΩ e 1 de 2,2 kΩ, 1/4 W (para a Parte 4)
+- 1 capacitor de 100 nF, poliéster (não eletrolítico)
+- 1 capacitor de 47 nF, poliéster
+- Protoboard e jumpers
+- Régua, transferidor e papel quadriculado
+- Calculadora científica com conversão retangular–polar (as teclas `Pol(` e `Rec(`)
+:::
+
+### Parte 1 — As três medidas
+
+1. Monte o resistor de 1,5 kΩ em série com o capacitor de 100 nF.
+2. Alimente o conjunto com o gerador em **796 Hz**, no volume máximo.
+3. Meça, na escala CA, a tensão **da fonte** ($V_s$), a **do resistor** ($V_R$) e a
+   **do capacitor** ($V_C$). Anote os três.
+4. Some $V_R + V_C$ aritmeticamente e compare com $V_s$. A soma dá bem mais.
+5. Agora calcule $\sqrt{V_R^2 + V_C^2}$ e compare com $V_s$.
+
+O passo 5 fecha dentro de poucos por cento, e é a @fig-029-soma medida. Se a sua fonte
+não entregar 10 V, os números não serão 6, 8 e 10 — mas a **razão** entre eles será a
+mesma, porque ela depende só de $R$, $C$ e $f$.
+
+Uma observação de método: o multímetro é um instrumento flutuante, então medir a tensão
+sobre o capacitor não exige nenhum cuidado especial de referência. Um osciloscópio com
+terra comum exigiria, e o @sec-cap-044 volta a esse ponto.
+
+### Parte 2 — Extrair a fase sem medir a fase
+
+Você não tem osciloscópio, mas mediu três lados de um triângulo retângulo — e isso
+determina os ângulos.
+
+1. Calcule $\phi = \arccos(V_R/V_s)$. Para 6 e 10, dá 53,13°.
+2. Confira por outro caminho: $\phi = \arcsin(V_C/V_s)$. Deve dar o mesmo.
+3. Confira por um terceiro: $\phi = \arctan(V_C/V_R)$.
+
+Três caminhos, um resultado. Quando os três **não** concordam, a causa quase sempre é a
+mesma: a soma quadrática da Parte 1 não fechou, e portanto os três valores medidos não
+formam um triângulo retângulo de verdade — sinal de que o instrumento está fora de
+faixa ou que a fonte está sendo carregada.
+
+### Parte 3 — O ponto em que os dois se igualam
+
+1. Mantendo o mesmo circuito, varra a frequência do gerador de 200 Hz a 5 kHz,
+   acompanhando $V_R$ e $V_C$.
+2. Encontre a frequência em que $V_R = V_C$. Anote.
+3. Nessa frequência, meça $V_s$ e confira se $V_s = V_R\sqrt{2}$.
+
+Essa frequência é 1061 Hz para 1,5 kΩ e 100 nF, e ela tem nome: **frequência de
+corte**. Nela a reatância do capacitor iguala a resistência, a defasagem é exatamente
+45°, e o Volume 6 inteiro gira em torno dela. Você acabou de medi-la sem saber a
+fórmula.
+
+### Parte 4 — O diagrama no papel
+
+1. Com $V_R$ e $V_C$ da Parte 1, desenhe no papel quadriculado: um segmento horizontal
+   de comprimento proporcional a $V_R$, e a partir da ponta dele um segmento vertical
+   **para baixo** proporcional a $V_C$.
+2. Ligue a origem à ponta final. Meça o comprimento com a régua e o ângulo com o
+   transferidor.
+3. Compare com $V_s$ medido e com o $\phi$ calculado na Parte 2.
+
+Fazer isso **uma vez** com régua e transferidor vale mais do que dez exercícios na
+calculadora, porque fixa o que um fasor é: um vetor, com as regras de soma de vetores.
+
+4. Repita a montagem trocando o capacitor por 47 nF e o resistor por 2,2 kΩ, meça de
+   novo e desenhe o novo triângulo por cima do anterior, na mesma folha. O ângulo muda,
+   e essa mudança é o que o Volume 6 chama de resposta em fase.
+
+### Parte 5 — A calculadora, treinada
+
+1. Localize as teclas `Pol(` e `Rec(` da sua calculadora (ou a função equivalente).
+2. Converta $6 - j8$ para polar. Deve dar $10\angle{-53{,}13^{\circ}}$.
+3. Converta $10\angle 30^{\circ}$ para retangular. Deve dar $8{,}66 + j5$.
+4. Calcule $(3+j4)(1-j2)$ das duas maneiras — em retangular, distribuindo, e em polar,
+   multiplicando módulos e somando ângulos. Confira que dá o mesmo: $11 - j2$.
+5. Calcule $1/(j\,2000\times 100\times 10^{-9})$ e confirme que dá $-j5000$.
+
+O passo 5 é a reatância capacitiva do próximo capítulo, calculada como número
+complexo. Se a sua calculadora não fizer aritmética complexa direta, o passo 4 mostra
+o caminho manual — e vale a pena saber fazê-lo, porque em prova e em campo nem sempre
+há a tecla.
+
+### Variante simulada (plano B)
+
+No ngspice, a análise `.ac` trabalha diretamente em fasores. Uma linha basta:
+
+```
+.ac lin 1 796 796
+```
+
+e `print vm(saida) vp(saida)` devolve módulo e fase. Refaça a Parte 1 no simulador e
+compare com a bancada: as diferenças que sobrarem são tolerância dos componentes
+(±5 % no resistor, ±10 % no capacitor de poliéster), e não erro de conta.
+
+Vale conferir também a advertência do @sec-029-cuidados: rode uma análise transiente
+com a chave fechando em $t = 0$ e observe que os primeiros ciclos **não** obedecem ao
+resultado fasorial. Só depois de umas cinco constantes de tempo a amplitude estabiliza
+no valor previsto.
+
+## 🔥 Onde Queima {#sec-029-queima}
+
+**Somar módulos de fasores.** Este é o erro do capítulo. $|A| + |B|$ só é
+$|A + B|$ quando os dois estão em fase. Some em retangular, sempre.
+
+**Usar $\arctan$ em vez de $\operatorname{atan2}$.** Perde o quadrante e produz erro de
+180° com módulo correto — o tipo de erro que sobrevive a toda conferência.
+
+**Misturar convenção de pico e de eficaz.** Este livro usa fasor com módulo eficaz.
+Metade da literatura usa pico. Um resultado $\sqrt{2}$ vezes maior ou menor que o
+esperado é quase sempre isso.
+
+**Misturar seno e cosseno como referência.** $\operatorname{sen}\theta =
+\cos(\theta - 90^{\circ})$. Ler um enunciado em seno e aplicar a definição do cosseno
+introduz 90° de erro em toda a resposta.
+
+**Somar fasores de frequências diferentes.** Não existe ângulo fixo entre eles. Se há
+duas frequências no circuito, use superposição e some no tempo.
+
+**Aplicar fasores durante o transitório.** O método descreve regime permanente. Ligar a
+chave e medir no primeiro ciclo mede outra coisa.
+
+**Aplicar fasores a circuito não linear.** Diodo, saturação e ceifamento criam
+harmônicos. A premissa "uma única frequência" cai, e com ela todo o método.
+
+**Esquecer que $1/j = -j$.** Trocar o sinal aqui inverte capacitivo com indutivo, e o
+circuito passa a ser descrito como o oposto do que é.
+
+**Deixar a calculadora em radianos ao converter para polar.** O ângulo sai em radianos
+e é lido como graus. Um $-0{,}927$ lido como grau em vez de radiano vira um erro de
+fase de 52°.
+
+**Achar que o multímetro mede o fasor.** Ele mede o **módulo**. A fase, sem
+osciloscópio, só se obtém indiretamente — como na Parte 2 do laboratório.
+
+## O que fica deste capítulo {#sec-029-resumo}
+
+Num circuito linear excitado por uma única frequência, todo sinal é uma senoide daquela
+frequência, e portanto se descreve por dois números: módulo e fase. Empacotar esses
+dois números num número complexo é o **fasor**, e a partir daí a análise de CA vira
+aritmética.
+
+Neste manual, o módulo do fasor é o **valor eficaz** e o ângulo é medido a partir do
+**cosseno**. Outras convenções existem e diferem por $\sqrt{2}$ ou por 90°; conferir
+qual está em uso é obrigatório ao cruzar fontes.
+
+A propriedade que faz o método funcionar é que $j$ é um operador de rotação de 90°, e
+que derivar no tempo equivale a multiplicar o fasor por $j\omega$. Isso converte cada
+equação diferencial do circuito numa equação algébrica, e devolve toda a caixa de
+ferramentas do Volume 3 — divisor, nodal, malhas, Thévenin, superposição — intacta,
+com números complexos no lugar de reais.
+
+A conta que não fechava fecha: 6 V no resistor e 8 V no capacitor dão 10 V na fonte,
+porque estão em quadratura. O caso geral é a lei dos cossenos, e o resultado de
+qualquer soma de dois fasores fica sempre entre $|V_1 - V_2|$ e $V_1 + V_2$.
+
+O método vale só para uma frequência de cada vez, só em regime permanente e só em
+circuito linear. Fora desses limites, o fasor não erra um pouco — ele descreve outra
+coisa.
+
+Falta dar nome ao número complexo que apareceu no meio da conta,
+$R + 1/j\omega C$. Ele é a **impedância**: a generalização da resistência para CA,
+com um módulo que diz quanto a corrente é limitada e um ângulo que diz de quanto ela é
+defasada. O @sec-cap-030 constrói esse número para os três componentes, mostra como ele
+depende da frequência e recupera, com ele, todas as regras de associação série e
+paralelo do @sec-cap-012.
