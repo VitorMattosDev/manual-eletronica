@@ -1,3 +1,617 @@
 # As Leis de Kirchhoff {#sec-cap-013}
 
-*(em elaboração)*
+Os cinco capítulos anteriores usaram, sem nomear, duas afirmações: que a corrente
+que entra num ponto é a que sai dele, e que as tensões ao longo de um caminho se
+somam. Gustav Kirchhoff enunciou as duas em 1845, com vinte e um anos, e elas se
+tornaram o alicerce sobre o qual toda a análise de circuitos é construída.
+
+O que as torna especiais não é a complexidade — cada uma cabe numa linha. É a
+**generalidade**. A associação série-paralelo do @sec-cap-012 falha na ponte de
+cinco resistores; as leis de Kirchhoff não falham em circuito nenhum. Elas
+resolvem qualquer rede, de qualquer topologia, com qualquer número de fontes, e
+continuam valendo quando os resistores viram capacitores, indutores, diodos e
+transistores. Todo método de análise dos próximos noventa capítulos — nodal,
+malhas, Thévenin, superposição, pequenos sinais — é uma forma organizada de
+aplicá-las.
+
+## Lei das Correntes: nada se acumula num nó {#sec-013-lkc}
+
+> **LKC.** A soma algébrica das correntes que entram em qualquer nó é zero.
+
+$$ \sum_{k} I_k = 0 \qquad \text{(entrando no nó)}, $$
+
+ou, na forma que se usa mentalmente na bancada: **o que entra é igual ao que
+sai**.
+
+A justificativa é a conservação da carga do @sec-cap-008. Um nó é um ponto de
+conexão sem volume, sem capacidade de guardar carga. Se entrasse mais carga do que
+saísse, o nó acumularia carga indefinidamente e o seu potencial iria ao infinito —
+o que não acontece.
+
+Duas observações que multiplicam o alcance da lei:
+
+**Vale para qualquer superfície fechada, não só para um ponto.** Se você desenhar
+uma linha fechada em volta de qualquer parte do circuito — dez componentes, cem
+componentes — a soma das correntes que atravessam essa fronteira é zero. É o mesmo
+argumento: aquele bloco não acumula carga. Esse é o conceito de **supernó**, que o
+Volume 3 usa para tratar fontes de tensão em análise nodal, e é o que permite
+dizer, sem abrir o gabinete, que a corrente que entra num aparelho pelo fio-fase é
+a que volta pelo neutro.
+
+**Ela justifica a associação em série.** Dois elementos que compartilham um nó
+exclusivo têm de conduzir a mesma corrente, porque não há terceiro caminho por
+onde a diferença pudesse escapar.
+
+::: {#fig-013-lkc}
+
+```{.tikz}
+%%| filename: 013-lkc
+%%| alt: À esquerda, um nó com quatro ramos, dois entrando com cinco e três miliampères e dois saindo com seis e dois miliampères, mostrando que a soma das entradas é igual à soma das saídas. À direita, uma superfície fechada tracejada envolvendo um bloco de circuito com três fios atravessando a fronteira, ilustrando que a mesma lei vale para qualquer fronteira fechada.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= no simples =================
+  \begin{scope}
+    \coordinate (N) at (0,0);
+    \draw[thick] (-2.4,0) -- (N) -- (2.4,0);
+    \draw[thick] (0,-2.0) -- (N) -- (0,2.0);
+    \node[ponto, minimum size=5pt] at (N) {};
+
+    % entrando
+    \draw[manualgreen!55!black, line width=1.6pt, -{Stealth[length=3mm]}]
+         (-2.1,0.35) -- (-0.7,0.35);
+    \node[manualgreen!55!black, anchor=south, font=\scriptsize\bfseries]
+         at (-1.4,0.42) {$I_1 = 5$ mA};
+    \draw[manualgreen!55!black, line width=1.6pt, -{Stealth[length=3mm]}]
+         (-0.35,-1.7) -- (-0.35,-0.5);
+    \node[manualgreen!55!black, anchor=east, font=\scriptsize\bfseries]
+         at (-0.45,-1.1) {$I_2 = 3$ mA};
+
+    % saindo
+    \draw[manualred, line width=1.6pt, -{Stealth[length=3mm]}]
+         (0.7,0.35) -- (2.1,0.35);
+    \node[manualred, anchor=south, font=\scriptsize\bfseries]
+         at (1.4,0.42) {$I_3 = 6$ mA};
+    \draw[manualred, line width=1.6pt, -{Stealth[length=3mm]}]
+         (-0.35,0.5) -- (-0.35,1.7);
+    \node[manualred, anchor=east, font=\scriptsize\bfseries]
+         at (-0.45,1.1) {$I_4 = 2$ mA};
+
+    \node[align=center, font=\scriptsize, anchor=north] at (0,-2.5)
+         {$\underbrace{5 + 3}_{\text{entra}} = \underbrace{6 + 2}_{\text{sai}}$};
+    \node[font=\scriptsize\bfseries, anchor=south] at (0,2.6) {um nó};
+  \end{scope}
+
+  % ================= superficie fechada =================
+  \begin{scope}[xshift=9.0cm]
+    \draw[manualblue, very thick, dashed, rounded corners=14pt]
+         (-1.7,-1.6) rectangle (1.7,1.6);
+    \node[manualgray, align=center, font=\scriptsize] at (0,0)
+         {circuito\\qualquer\\aqui dentro};
+
+    \draw[thick] (-3.4,0.9) -- (-1.7,0.9);
+    \draw[thick] (-3.4,-0.9) -- (-1.7,-0.9);
+    \draw[thick] (1.7,0) -- (3.4,0);
+
+    \draw[manualgreen!55!black, line width=1.6pt, -{Stealth[length=3mm]}]
+         (-3.2,1.25) -- (-2.0,1.25);
+    \node[manualgreen!55!black, anchor=south, font=\scriptsize\bfseries]
+         at (-2.6,1.32) {$I_a$};
+    \draw[manualgreen!55!black, line width=1.6pt, -{Stealth[length=3mm]}]
+         (-3.2,-0.55) -- (-2.0,-0.55);
+    \node[manualgreen!55!black, anchor=south, font=\scriptsize\bfseries]
+         at (-2.6,-0.48) {$I_b$};
+    \draw[manualred, line width=1.6pt, -{Stealth[length=3mm]}]
+         (2.0,0.35) -- (3.2,0.35);
+    \node[manualred, anchor=south, font=\scriptsize\bfseries]
+         at (2.6,0.42) {$I_c$};
+
+    \node[align=center, font=\scriptsize, anchor=north] at (0,-2.5)
+         {$I_a + I_b = I_c$, seja lá o que houver dentro};
+    \node[font=\scriptsize\bfseries, anchor=south] at (0,2.6)
+         {qualquer fronteira fechada};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+A LKC no ponto e na fronteira. A versão da direita é a mais poderosa das duas:
+ela permite tratar um bloco inteiro do circuito como caixa-preta, e é o que
+autoriza dizer que a corrente que sai de uma fonte pelo positivo é exatamente a
+que volta pelo negativo, sem saber nada do que há no meio.
+
+:::
+
+## Lei das Tensões: voltar ao ponto de partida custa zero {#sec-013-lkt}
+
+> **LKT.** A soma algébrica das tensões ao longo de qualquer caminho fechado é
+> zero.
+
+$$ \sum_{k} V_k = 0 \qquad \text{(percorrendo a malha)}. $$
+
+A justificativa é o @sec-cap-009: cada nó tem **um** potencial. Percorrer uma
+malha e voltar ao mesmo nó significa voltar ao mesmo potencial, e a soma de todas
+as subidas e descidas do caminho tem de dar zero. É a mesma razão pela qual uma
+caminhada circular numa montanha termina na altitude em que começou, por mais
+subidas e descidas que tenha.
+
+Isso equivale a dizer que o que a fonte eleva, os demais elementos derrubam —
+exatamente a leitura da @fig-009-escada.
+
+::: {#fig-013-lkt}
+
+```{.tikz}
+%%| filename: 013-lkt
+%%| alt: Malha única com uma fonte de doze volts e três resistores de um, dois vírgula dois e quatro vírgula sete kilo-ohms, com as polaridades marcadas em cada elemento e uma seta circular indicando o sentido de percurso horário, e a equação da soma das tensões igual a zero.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, l_={$12$ V}] (0,4.2);
+  \draw (0,4.2) to[R, l={$1\,\mathrm{k}\Omega$}] (4.6,4.2);
+  \draw (4.6,4.2) to[R, l={$2{,}2\,\mathrm{k}\Omega$}] (4.6,0);
+  \draw (4.6,0) to[R, l={$4{,}7\,\mathrm{k}\Omega$}] (0,0);
+
+  % polaridades
+  \node[font=\small] at (-0.42,0.7)  {$-$};
+  \node[font=\small] at (-0.42,3.5)  {$+$};
+  \node[font=\small] at (1.0,4.62)   {$+$};
+  \node[font=\small] at (3.6,4.62)   {$-$};
+  \node[font=\small] at (5.02,3.5)   {$+$};
+  \node[font=\small] at (5.02,0.7)   {$-$};
+  \node[font=\small] at (3.6,-0.42)  {$+$};
+  \node[font=\small] at (1.0,-0.42)  {$-$};
+
+  % sentido de percurso
+  \draw[manualred, very thick, -{Stealth[length=3mm]}]
+       (2.3,2.1) ++(120:1.0) arc (120:-150:1.0);
+  \node[manualred, font=\scriptsize\bfseries, align=center] at (2.3,2.1)
+       {sentido de\\percurso};
+
+  % valores
+  \node[manualblue, font=\scriptsize] at (2.3,5.15) {$1{,}52$ V};
+  \node[manualblue, font=\scriptsize, anchor=west] at (6.0,2.1) {$3{,}34$ V};
+  \node[manualblue, font=\scriptsize] at (2.3,-0.95) {$7{,}14$ V};
+
+  % equacao
+  \node[align=left, font=\scriptsize, anchor=north west] at (-1.6,-1.9)
+       {Percorrendo no sentido horário a partir do canto inferior esquerdo,
+        somando $+V$ ao\\
+        entrar pelo $-$ e $-V$ ao entrar pelo $+$:\\[3pt]
+        $\underbrace{+12{,}00}_{\text{fonte}}
+         \underbrace{-\,1{,}52}_{1\,\mathrm{k}}
+         \underbrace{-\,3{,}34}_{2{,}2\,\mathrm{k}}
+         \underbrace{-\,7{,}14}_{4{,}7\,\mathrm{k}} = 0$};
+
+\end{circuitikz}
+```
+
+A LKT numa malha simples. A fonte é a única subida; os três resistores são
+descidas. Repare que a polaridade de cada resistor **não é escolha** — ela é
+imposta pelo sentido da corrente, pela convenção de sinal passiva do
+@sec-cap-009.
+
+:::
+
+## A disciplina de sinais {#sec-013-sinais}
+
+A parte difícil de Kirchhoff não é conceitual, é contábil. Quase todo erro em
+análise de circuitos é erro de sinal, e a defesa é um procedimento fixo, aplicado
+sempre na mesma ordem:
+
+1. **Escolha um sentido para cada corrente desconhecida e desenhe a seta.** O
+   sentido é arbitrário. Escolha o que quiser, mas escolha antes de escrever
+   qualquer equação, e não mude depois.
+2. **Marque a polaridade de cada resistor pela convenção passiva:** o terminal por
+   onde a sua seta entra recebe o `+`. Isso não é opinião — decorre da seta que
+   você acabou de desenhar.
+3. **Escolha um sentido de percurso para cada malha** (horário, por exemplo) e
+   mantenha-o.
+4. **Ao percorrer, some $+V$ quando entrar pelo terminal `−` (você está subindo) e
+   $-V$ quando entrar pelo `+` (você está descendo).**
+5. **Nas fontes, use a polaridade física do símbolo**, e não a convenção passiva:
+   a fonte tem os seus sinais impressos no desenho.
+
+E a regra que dissolve a ansiedade:
+
+::: {.callout-tip}
+## Sinal negativo não é erro
+
+Se uma corrente sai negativa, significa apenas que a seta que você desenhou
+apontava para o lado contrário do fluxo real. O módulo está certo, as equações
+estão certas, e não há nada a corrigir. Reescolher o sentido e refazer a conta é
+trabalho jogado fora.
+
+Essa liberdade é o que torna o método utilizável: você **não precisa saber** para
+onde a corrente vai antes de calcular. Se precisasse, o método seria inútil
+exatamente nos casos difíceis.
+:::
+
+## Quantas equações, e quantas são independentes {#sec-013-contagem}
+
+Um circuito com $n$ nós e $b$ ramos tem $b$ correntes desconhecidas. Precisamos,
+portanto, de $b$ equações independentes — nem uma a menos, nem uma a mais.
+Kirchhoff entrega exatamente isso:
+
+| Fonte de equações | Quantidade independente |
+|---|---|
+| LKC nos nós | $n - 1$ |
+| LKT nas malhas | $b - n + 1$ |
+| **Total** | $\;b$ |
+
+: A contagem fecha sempre. Não é coincidência: é um resultado de teoria de grafos
+aplicado à topologia da rede. {#tbl-013-contagem}
+
+Por que $n-1$ e não $n$? Porque a LKC do último nó é a soma de todas as outras com
+o sinal trocado — ela não traz informação nova. Escrever as $n$ equações produz um
+sistema redundante, que não tem solução única. Na prática, **escolhe-se um nó como
+referência** — o terra do @sec-cap-009 — e escrevem-se as equações dos demais.
+
+Para redes planares (as que se desenham sem cruzamentos), as $b - n + 1$ malhas
+independentes são simplesmente as "janelas" do desenho, e a análise de malhas do
+Volume 3 explora isso diretamente.
+
+**Conferindo no circuito do @sec-cap-012**, a ponte de cinco resistores mais uma
+fonte: $b = 6$ ramos, $n = 4$ nós. LKC dá 3 equações, LKT dá $6 - 4 + 1 = 3$.
+Total 6, para 6 correntes. A associação série-paralelo falhava; Kirchhoff não.
+
+## Um circuito com duas fontes, resolvido inteiro {#sec-013-exemplo}
+
+::: {#fig-013-duas-fontes}
+
+```{.tikz}
+%%| filename: 013-duas-fontes
+%%| alt: Circuito com duas fontes de nove e cinco volts ligadas ao mesmo nó superior através de resistores de um e um vírgula cinco kilo-ohms, com um resistor de dois vírgula dois kilo-ohms desse nó para o terra. As correntes valem três vírgula dezenove miliampères, menos zero vírgula cinquenta e quatro miliampère e dois vírgula sessenta e quatro miliampères, e o nó está a cinco vírgula oitenta e um volts.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ramo da esquerda: 9 V + 1 k
+  \draw (0,0) to[battery1, l={$V_1 = 9$ V}] (0,4.0);
+  \draw (0,4.0) -- (0.7,4.0);
+  \draw (0.7,4.0) to[R, l_={$R_1 = 1\,\mathrm{k}$}] (2.7,4.0);
+  \draw (2.7,4.0) -- (3.5,4.0);
+
+  % ramo da direita: 5 V + 1,5 k
+  \draw (7.0,0) to[battery1, l_={$V_2 = 5$ V}] (7.0,4.0);
+  \draw (7.0,4.0) -- (6.3,4.0);
+  \draw (4.3,4.0) to[R, l_={$R_3 = 1{,}5\,\mathrm{k}$}] (6.3,4.0);
+  \draw (4.3,4.0) -- (3.5,4.0);
+
+  % ramo central
+  \draw (3.5,4.0) to[R, l={$R_2 = 2{,}2\,\mathrm{k}$}] (3.5,0);
+
+  % barramento inferior
+  \draw (0,0) -- (7.0,0);
+  \draw (3.5,0) -- (3.5,-0.55);
+  \node[ground] at (3.5,-0.55) {};
+  \node[ponto] at (3.5,4.0) {};
+  \node[ponto] at (3.5,0) {};
+
+  % rotulo do no
+  \node[manualblue, font=\scriptsize\bfseries, anchor=south] at (3.5,4.2)
+       {X\;:\; $V_X = 5{,}81$ V};
+
+  % setas de corrente
+  \draw[manualgreen!55!black, thick, -{Stealth[length=2.5mm]}] (1.2,5.25) -- (2.4,5.25);
+  \node[manualgreen!55!black, font=\scriptsize, anchor=south] at (1.8,5.32)
+       {$I_1 = +3{,}19$ mA};
+
+  \draw[manualred, thick, -{Stealth[length=2.5mm]}] (5.8,5.25) -- (4.6,5.25);
+  \node[manualred, font=\scriptsize, anchor=south] at (5.2,5.32)
+       {$I_3 = -0{,}54$ mA};
+
+  \draw[manualgreen!55!black, thick, -{Stealth[length=2.5mm]}] (3.05,2.7) -- (3.05,1.3);
+  \node[manualgreen!55!black, font=\scriptsize, anchor=east] at (2.95,2.0)
+       {$I_2 = +2{,}64$ mA};
+
+  % nota do sinal negativo
+  \node[manualred, font=\scriptsize, align=left, anchor=north west] at (8.4,4.6)
+       {$I_3$ negativa: a seta\\aponta para o lado errado.\\
+        A corrente real entra\\na fonte de 5 V ---\\ela está sendo
+        \textbf{carregada}.};
+
+\end{circuitikz}
+```
+
+O circuito completo com a solução anotada. As três setas foram desenhadas antes de
+qualquer conta, com sentidos escolhidos por conveniência; duas acertaram e uma
+errou, e o sinal de menos avisou.
+
+:::
+
+**Montando as equações.** Com as setas da figura ($I_1$ e $I_3$ entrando no nó X,
+$I_2$ saindo), temos três incógnitas. O circuito tem 3 ramos e 2 nós, logo
+$n - 1 = 1$ equação de LKC e $b - n + 1 = 2$ de LKT.
+
+**LKC no nó X:**
+
+$$ I_1 + I_3 = I_2. $$
+
+**LKT na malha esquerda** (fonte de 9 V, $R_1$, $R_2$):
+
+$$ 9 = 1000\,I_1 + 2200\,I_2. $$
+
+**LKT na malha direita** (fonte de 5 V, $R_3$, $R_2$):
+
+$$ 5 = 1500\,I_3 + 2200\,I_2. $$
+
+**Resolvendo.** Substituindo $I_1 = I_2 - I_3$ na primeira LKT:
+
+$$ 9 = 1000\,(I_2 - I_3) + 2200\,I_2 = 3200\,I_2 - 1000\,I_3. $$
+
+Da segunda LKT, $I_3 = (5 - 2200\,I_2)/1500$. Substituindo:
+
+$$ 9 = 3200\,I_2 - \frac{1000\,(5 - 2200\,I_2)}{1500}
+   \;\Longrightarrow\;
+   13500 = 4\,800\,000\,I_2 - 5000 + 2\,200\,000\,I_2, $$
+
+$$ I_2 = \frac{18\,500}{7\,000\,000} = 2{,}643\ \text{mA}. $$
+
+Voltando: $V_X = 2200 \times 0{,}002643 = 5{,}81$ V, e daí
+
+$$ I_3 = \frac{5 - 5{,}81}{1500} = -0{,}543\ \text{mA}, \qquad
+   I_1 = 2{,}643 + 0{,}543 = 3{,}186\ \text{mA}. $$
+
+**A leitura física do sinal negativo.** O nó X está a 5,81 V, acima dos 5 V da
+segunda fonte. Corrente não sobe potencial espontaneamente através de um resistor:
+ela desce. Logo a corrente vai de X **para** a fonte de 5 V, e não o contrário. A
+fonte de 9 V está alimentando o resistor de 2,2 kΩ **e** empurrando corrente para
+dentro da fonte de 5 V. Se essa segunda fonte fosse uma bateria recarregável, ela
+estaria sendo carregada. Se fosse uma pilha comum, isso seria um problema — veja
+"Onde Queima".
+
+**A conferência que fecha tudo.** O @sec-cap-011 prometeu que a soma das potências
+é zero. Vamos cobrar:
+
+| Elemento | Cálculo | Potência |
+|---|---|---|
+| Fonte de 9 V | $9 \times 3{,}186$ mA | $-28{,}67$ mW (fornece) |
+| Fonte de 5 V | $5 \times 0{,}543$ mA | $+2{,}71$ mW (absorve) |
+| $R_1$ | $(3{,}186\ \text{mA})^2 \times 1000$ | $+10{,}15$ mW |
+| $R_2$ | $(2{,}643\ \text{mA})^2 \times 2200$ | $+15{,}37$ mW |
+| $R_3$ | $(0{,}543\ \text{mA})^2 \times 1500$ | $+0{,}44$ mW |
+| **Soma** | | $\approx 0$ |
+
+: Balanço de potência do circuito. Os 28,67 mW fornecidos pela fonte de 9 V
+reaparecem integralmente distribuídos. {#tbl-013-balanco}
+
+Se o balanço não fechar, há erro na solução. É a melhor verificação que existe,
+porque ela usa **todos** os resultados de uma vez e é independente do caminho
+usado para obtê-los.
+
+## O que Kirchhoff supõe {#sec-013-limites}
+
+As duas leis são exatas dentro de uma hipótese chamada **aproximação de parâmetros
+concentrados**: o circuito é feito de elementos ideais ligados por fios ideais, e
+todo fenômeno eletromagnético está confinado dentro dos componentes.
+
+Nas duas há uma exigência escondida:
+
+**A LKC supõe que o nó não acumula carga.** Mas qualquer condutor tem capacitância
+em relação ao ambiente. Em corrente contínua e em baixa frequência, essa
+capacitância é irrelevante. Em alta frequência, ela conduz — e parte da corrente
+"desaparece" do nó, indo para o ar, para o plano de terra, para a trilha vizinha.
+A LKC continua verdadeira se você contar essa capacitância como um componente; ela
+falha se você fingir que ela não existe.
+
+**A LKT supõe que nenhum fluxo magnético variável atravessa a malha.** Mas pela lei
+de Faraday, um campo magnético variável induz tensão numa espira — e toda malha de
+circuito é uma espira. Perto de um transformador, de um motor ou de um circuito
+chaveado, a soma das tensões medidas ao longo de uma malha **não** dá zero, e a
+diferença é a tensão induzida. Também aqui, a lei é salva ao se modelar o
+acoplamento como um componente (indutância mútua, Volume 12).
+
+O critério prático: **as leis valem enquanto as dimensões do circuito forem
+pequenas em relação ao comprimento de onda do sinal mais rápido presente.**
+
+| Frequência | Comprimento de onda | Circuito "pequeno" até |
+|---|---|---|
+| 60 Hz | 5000 km | qualquer instalação predial |
+| 1 MHz | 300 m | qualquer placa |
+| 100 MHz | 3 m | placas até uns 30 cm |
+| 1 GHz | 30 cm | trilhas de poucos centímetros |
+
+: Onde a aproximação de parâmetros concentrados vale. Acima disso, o circuito
+vira uma linha de transmissão e a análise muda de natureza — assunto do Volume 14.
+{#tbl-013-lambda}
+
+Para tudo o que este manual faz até o Volume 13, Kirchhoff é exato para os fins
+práticos. Vale saber onde está a fronteira.
+
+## 🧪 Laboratório {#sec-013-lab}
+
+**Cobrar as duas leis com o multímetro.** É a primeira vez no manual em que um
+circuito é resolvido inteiro no papel antes de ser montado — e a comparação
+número a número é o que dá confiança no método para os noventa capítulos
+seguintes.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard e jumpers
+- 1 fonte de bancada ajustável (idealmente com duas saídas), ou 1 fonte de
+  bancada + 1 pilha de 9 V
+- 1 multímetro digital
+- 1 resistor de 1 kΩ, 1/4 W
+- 1 resistor de 1,5 kΩ, 1/4 W
+- 1 resistor de 2,2 kΩ, 1/4 W
+- 3 resistores adicionais: 470 Ω, 3,3 kΩ e 4,7 kΩ, 1/4 W
+- 1 resistor de 1 kΩ extra, para servir de carga de sangria (Parte 3)
+- Papel e lápis — este capítulo se faz mais no papel que na protoboard
+:::
+
+### Parte 1 — A LKC num nó de três ramos
+
+1. Monte três resistores — 1 kΩ, 2,2 kΩ e 4,7 kΩ — todos ligados por uma ponta ao
+   mesmo nó, e pela outra ao terra. Alimente o nó com 9,0 V através de um
+   resistor de 470 Ω.
+2. Meça a corrente que **entra** no nó (pelo resistor de 470 Ω).
+3. Meça, uma de cada vez, as três correntes que **saem**.
+4. Some as três saídas e compare com a entrada.
+
+A diferença deve ficar dentro da resolução do instrumento. Se der uma discrepância
+sistemática de alguns por cento, o culpado é a queda de inserção do amperímetro do
+@sec-cap-008: cada vez que você insere o instrumento, o circuito muda um pouco.
+Meça a queda sobre o amperímetro e verifique se ela explica a diferença.
+
+### Parte 2 — A LKT numa malha
+
+1. Monte a malha da @fig-013-lkt: 12 V em série com 1 kΩ, 2,2 kΩ e 4,7 kΩ.
+2. **Preveja** as três quedas por divisor de tensão.
+3. Meça as três, sempre com a ponta preta no lado por onde a corrente sai
+   (o terminal `−`), para que os três valores saiam positivos.
+4. Some as três quedas e compare com a tensão da fonte medida nos seus terminais
+   — não com o valor ajustado no mostrador da fonte.
+
+O passo 4 tem uma armadilha embutida e proposital: a tensão nos terminais da fonte
+sob carga não é exatamente a ajustada, por causa da resistência interna do
+@sec-cap-009. Se você somar as quedas e comparar com o valor do mostrador, sobra
+um resto — e esse resto é justamente o assunto do Volume 3.
+
+5. Agora repita a soma **percorrendo a malha com sinal**: comece no terra, ande
+   sempre no mesmo sentido, e some $+V$ quando subir e $-V$ quando descer,
+   incluindo a fonte. O total tem de ser zero.
+
+### Parte 3 — O circuito de duas fontes
+
+1. **No papel, antes de montar:** monte o circuito da @fig-013-duas-fontes com
+   9,0 V, 5,0 V, 1 kΩ, 1,5 kΩ e 2,2 kΩ. Escreva as três equações e resolva.
+   Anote as três correntes e $V_X$ previstos.
+2. Monte na protoboard. Ligue primeiro só a fonte de 9 V, confira, depois a de
+   5 V, com os dois negativos no **mesmo** trilho de terra.
+3. Meça $V_X$. Compare com a previsão.
+4. Meça as três correntes, uma de cada vez, prestando atenção **ao sinal**: mantenha
+   a ponta vermelha do amperímetro sempre do lado de onde a sua seta parte.
+5. Confirme que $I_3$ dá negativa e que $I_1 + I_3 = I_2$.
+
+::: {.callout-warning}
+## Se a sua fonte de 5 V não conseguir absorver corrente
+
+Quase nenhuma fonte de bancada comum absorve corrente: ela só fornece. Recebendo
+0,54 mA, a saída dela pode subir um pouco, e a medição sai errada.
+
+A solução é uma **carga de sangria**: ligue um resistor de 1 kΩ diretamente aos
+terminais da fonte de 5 V. Ele consome 5 mA, mais que o suficiente para que a
+fonte continue fornecendo no total, e — por estar diretamente sobre uma fonte de
+tensão — **não altera nenhuma das correntes do circuito**. Vale a pena entender
+por quê antes de aceitar: uma fonte de tensão ideal impõe a tensão dos seus
+terminais independentemente do que estiver em paralelo com ela.
+
+**Nunca** use uma pilha comum (não recarregável) como a fonte de 5 V neste
+experimento. Ela receberia corrente, e pilhas alcalinas sendo carregadas geram gás,
+vazam e podem romper.
+:::
+
+### Parte 4 — O balanço de potência
+
+1. Com os valores medidos na Parte 3, calcule a potência de cada um dos cinco
+   elementos, com sinal, usando a convenção passiva do @sec-cap-009.
+2. Some tudo.
+
+O resultado deve ser zero dentro do erro de medição. Se der uma sobra grande, ou
+alguma corrente está com o sinal trocado, ou uma das tensões foi medida com as
+pontas invertidas. O balanço não diz onde está o erro, mas diz, sem margem para
+dúvida, que existe um.
+
+### Parte 5 — Voltar à ponte
+
+1. Remonte a ponte de cinco resistores do @sec-cap-012, alimentada com 9,0 V
+   entre A e D.
+2. Escreva as equações de Kirchhoff: 3 de LKC e 3 de LKT, para as 6 correntes.
+3. Resolva. É trabalhoso e cabe numa folha.
+4. Meça todas as seis correntes e compare.
+
+Este é o momento em que a promessa do capítulo se cumpre. A associação
+série-paralelo não conseguia nem começar; Kirchhoff resolve o circuito inteiro,
+com a única desvantagem de exigir seis equações. O Volume 3 mostra como obter o
+mesmo resultado com duas.
+
+### Variante simulada (plano B)
+
+Todo simulador de circuitos é, por dentro, um resolvedor de equações de
+Kirchhoff — quase sempre por análise nodal modificada. Monte a Parte 3 no
+simulador e peça as correntes de ramo: elas virão com sinal, e o sinal
+corresponderá ao sentido em que você desenhou o componente. Vale especialmente
+para a Parte 5: o simulador resolve a ponte instantaneamente, e comparar com a sua
+folha de papel é a melhor conferência disponível. O que ele não reproduz é a
+Parte 1, porque no simulador o amperímetro é ideal e não tem queda de inserção —
+justamente o efeito que explica a discrepância na bancada.
+
+## 🔥 Onde Queima {#sec-013-queima}
+
+**Errar o sinal.** É a causa dominante de erro em análise de circuitos, e não tem
+cura elegante: só disciplina. Setas antes das equações, polaridade passiva a
+partir das setas, um único sentido de percurso por malha. Escrever a equação e
+"conferir depois se o sinal faz sentido" é o caminho mais rápido para um resultado
+errado que parece plausível.
+
+**Mudar o sentido de uma seta no meio do problema.** Se $I_3$ deu negativa, deixe
+negativa. Redesenhar a seta obriga a reescrever todas as equações em que ela
+aparece, e é onde se introduz o segundo erro de sinal, que cancela o primeiro em
+metade das contas.
+
+**Escrever LKC em todos os nós.** A última equação é combinação linear das outras
+e o sistema fica indeterminado. Um nó é referência; os demais dão equação.
+
+**Empurrar corrente para dentro de uma pilha não recarregável.** É o que o
+$I_3$ negativo significa fisicamente. Alcalinas e de zinco-carbono sendo
+carregadas geram hidrogênio, incham, vazam eletrólito cáustico e ocasionalmente
+rompem o invólucro. Se duas fontes de tensões diferentes compartilham um circuito,
+verifique **antes de ligar** o sentido da corrente em cada uma.
+
+**Ligar duas fontes com os terminais trocados.** Positivo com positivo ou
+negativo com negativo entre fontes distintas cria uma malha de baixa resistência
+com a soma ou a diferença das tensões. É o roteiro do @sec-cap-009, e é a razão de
+o passo 2 da Parte 3 mandar ligar uma fonte de cada vez.
+
+**Esquecer que os dois negativos precisam estar no mesmo nó.** Duas fontes com
+terras separados não formam circuito: não há caminho de retorno, as correntes não
+são as previstas, e o que se mede é acoplamento capacitivo. É o erro de
+referência do @sec-cap-009 na sua forma mais comum.
+
+**Confundir "mesmo trilho da protoboard" com "mesmo nó" — e o contrário.** As
+colunas de uma protoboard são nós; as linhas de alimentação costumam ser
+interrompidas no meio da placa. Um nó que você julga único e que na verdade são
+dois faz a LKC "falhar" de forma perfeitamente reprodutível.
+
+**Aplicar a LKC ignorando as capacitâncias parasitas em alta frequência.** Acima de
+alguns megahertz, parte da corrente sai do nó por caminhos que não estão no
+esquemático. A lei continua válida; o seu modelo do circuito é que ficou
+incompleto.
+
+**Aplicar a LKT dentro de um campo magnético variável.** Ao lado de um
+transformador, de uma bobina de relé ou de um conversor chaveado, a soma das
+tensões medidas numa malha não dá zero. E, pior: o valor medido depende de **por
+onde passam os cabos do instrumento**, porque eles também formam espira. Medições
+perto de circuitos chaveados exigem cabos curtos e trançados.
+
+**Não fechar o balanço de potência.** Não é exatamente um erro, é a recusa a usar
+a verificação mais barata que existe. Cinco minutos de aritmética que dizem, com
+certeza, se a solução está certa.
+
+## O que fica deste capítulo {#sec-013-resumo}
+
+A Lei das Correntes diz que a soma algébrica das correntes que entram num nó é
+zero, e vale igualmente para qualquer fronteira fechada — o que permite tratar
+blocos inteiros como caixas-pretas. Ela decorre da conservação da carga e é o que
+sustenta a associação em série.
+
+A Lei das Tensões diz que a soma algébrica das tensões ao longo de qualquer
+caminho fechado é zero. Ela decorre de cada nó ter um único potencial, e é a
+formalização de "o que a fonte eleva, os elementos derrubam".
+
+A parte prática é a contabilidade de sinais: setas arbitrárias mas fixas,
+polaridade passiva derivada delas, sentido único de percurso por malha. Um
+resultado negativo significa apenas que a seta apontava para o outro lado, e é
+essa liberdade que permite resolver sem saber a resposta de antemão.
+
+A contagem fecha sozinha: $n-1$ equações de LKC e $b-n+1$ de LKT dão exatamente as
+$b$ equações necessárias. E o balanço de potência, somando zero, confirma a
+solução inteira de uma vez.
+
+Por fim, as duas leis supõem que nada se acumula nos nós e que nenhum fluxo
+magnético variável atravessa as malhas — hipóteses excelentes até que as dimensões
+do circuito se aproximem do comprimento de onda do sinal.
+
+O próximo capítulo aplica tudo isso ao arranjo mais usado da eletrônica inteira: o
+divisor de tensão. Simples de calcular, e responsável por uma quantidade notável de
+projetos que não funcionam.
