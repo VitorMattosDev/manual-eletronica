@@ -1,3 +1,714 @@
 # Filtro RC passa-baixas e frequência de corte {#sec-cap-033}
 
-*(em elaboração)*
+O @sec-cap-030 terminou com uma frase que parecia inofensiva: com $\mathbf{Z}$ no lugar
+de $R$, todas as ferramentas do Volume 3 continuam valendo. Aplique-a ao divisor de
+tensão do @sec-cap-014 — o circuito mais simples do livro — e algo novo acontece.
+
+Em contínua, um divisor de tensão entrega uma fração fixa da entrada. Trocando o
+resistor de baixo por um capacitor, a fração deixa de ser fixa: ela depende da
+frequência. Em 10 Hz o circuito entrega quase tudo; em 100 kHz, quase nada. O mesmo
+circuito, os mesmos dois componentes, dois comportamentos opostos — e a única coisa que
+mudou foi o sinal aplicado.
+
+Um circuito que trata frequências de maneira diferente é um **filtro**. Este capítulo
+constrói o mais simples deles, o RC passa-baixas: dois componentes, uma fórmula, e uma
+quantidade desproporcional de consequências práticas. Ele aparece na saída de um PWM,
+na entrada de um conversor A/D, no debounce de um botão, no desacoplamento de uma fonte
+e, involuntariamente, em toda trilha longa de placa que tenha capacitância parasita.
+
+## O divisor que depende da frequência {#sec-033-divisor}
+
+O circuito é o divisor de tensão de sempre, com o resistor de baixo substituído por um
+capacitor.
+
+::: {#fig-033-circuito}
+
+```{.tikz}
+%%| filename: 033-circuito
+%%| alt: Painel esquerdo com o esquemático do filtro RC passa-baixas. Uma fonte de tensão senoidal alimenta um resistor R em série, e do nó de saída um capacitor C desce para o terra. A saída é tomada sobre o capacitor, entre dois terminais abertos à direita. Painel direito com o diagrama fasorial na frequência de corte, tendo a corrente como referência horizontal. A tensão sobre o resistor é um vetor horizontal, a tensão sobre o capacitor é um vetor de mesmo comprimento apontando para baixo, e a soma dos dois é a tensão de entrada, um vetor inclinado a menos quarenta e cinco graus e mais comprido por um fator raiz de dois.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- circuito ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,0) to[sV, l={$v_{\mathrm{in}}$}] (0,3.4);
+    \draw (0,3.4) to[R, l={$R$}] (3.2,3.4);
+    \draw (3.2,3.4) to[C, l_={$C$}] (3.2,0);
+    \draw (0,0) -- (3.2,0);
+
+    \draw (3.2,3.4) -- (4.8,3.4) node[ocirc]{};
+    \draw (3.2,0)   -- (4.8,0)   node[ocirc]{};
+    \draw[<->, >=stealth, manualgray] (5.05,0.2) -- (5.05,3.2);
+    \node[anchor=west, font=\scriptsize] at (5.15,1.7) {$v_{\mathrm{out}}$};
+
+    \draw[->, >=stealth, manualred, very thick] (0.9,4.35) -- (1.9,4.35);
+    \node[manualred, anchor=south, font=\scriptsize] at (1.4,4.45) {$\mathbf{I}$};
+  \end{scope}
+
+  % ---------------- fasores em f = fc ----------------
+  \begin{scope}[shift={(9.0,2.4)}]
+    \draw[eixo] (-0.4,0) -- (3.6,0);
+    \draw[eixo] (0,-3.4) -- (0,0.9);
+
+    \draw[vetor, manualblue] (0,0) -- (2.4,0);
+    \node[manualblue, anchor=south, font=\scriptsize] at (1.2,0.12)
+         {$\mathbf{V}_R$};
+
+    \draw[vetor, manualgreen] (2.4,0) -- (2.4,-2.4);
+    \node[manualgreen, anchor=west, font=\scriptsize] at (2.5,-1.2)
+         {$\mathbf{V}_C = \mathbf{V}_{\mathrm{out}}$};
+
+    \draw[vetor, manualred] (0,0) -- (2.4,-2.4);
+    \node[manualred, anchor=north east, font=\scriptsize] at (1.35,-1.25)
+         {$\mathbf{V}_{\mathrm{in}}$};
+
+    \node[manualgray, anchor=north west, font=\scriptsize] at (1.05,-0.22)
+         {$-45^{\circ}$};
+    \node[manualgray, anchor=south west, font=\scriptsize] at (0.0,0.95)
+         {corrente como referência};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O filtro RC passa-baixas e o seu diagrama fasorial na frequência de corte. Como
+$\mathbf{V}_R$ e $\mathbf{V}_C$ estão sempre a 90° um do outro, eles somam por
+Pitágoras — e quando os dois têm o mesmo módulo, a saída vale $1/\sqrt{2}$ da entrada e
+atrasa 45°.
+
+:::
+
+A saída é tomada sobre o capacitor. Aplicando o divisor com impedâncias:
+
+$$ \mathbf{V}_{\mathrm{out}}
+   = \mathbf{V}_{\mathrm{in}}\,
+     \frac{\mathbf{Z}_C}{\mathbf{Z}_R + \mathbf{Z}_C}
+   = \mathbf{V}_{\mathrm{in}}\,
+     \frac{1/j\omega C}{R + 1/j\omega C}. $$
+
+Multiplicando numerador e denominador por $j\omega C$:
+
+$$ \boxed{\;\mathbf{H}(j\omega)
+   = \frac{\mathbf{V}_{\mathrm{out}}}{\mathbf{V}_{\mathrm{in}}}
+   = \frac{1}{1 + j\omega RC}\;} $$
+
+Essa razão entre o fasor de saída e o de entrada tem nome: **função de transferência**.
+Ela é adimensional, é complexa, e — como toda grandeza complexa deste volume — carrega
+duas informações. O módulo diz **quanto** do sinal passa; o ângulo diz **quanto ele
+atrasa**.
+
+O comportamento nos dois extremos sai de olhar a fórmula, sem contas:
+
+- Em **$\omega \to 0$** (contínua), $\mathbf{H} \to 1$. O capacitor é um circuito aberto
+  (@sec-cap-030), não há corrente, não há queda em $R$, e a saída é igual à entrada.
+- Em **$\omega \to \infty$**, $\mathbf{H} \to 0$. O capacitor é um curto, e ele curto-
+  circuita a saída contra o terra.
+
+Baixas frequências passam, altas frequências não. Daí o nome.
+
+## Módulo e fase {#sec-033-modulo}
+
+Separando a função de transferência em módulo e ângulo — e vale lembrar que o módulo de
+uma fração é a fração dos módulos, e o ângulo é a diferença dos ângulos (@sec-cap-029):
+
+$$ |H| = \frac{1}{\sqrt{1 + (\omega RC)^2}},
+   \qquad
+   \phi = -\arctan(\omega RC). $$
+
+O produto $\omega RC$ é adimensional e governa tudo. Vale a pena dar um nome a ele. Como
+$RC$ é a constante de tempo $\tau$ do @sec-cap-025, e como $\omega RC = 1$ marca
+visivelmente a virada do comportamento, define-se a **frequência de corte**:
+
+$$ \boxed{\;f_c = \frac{1}{2\pi RC}\;}
+   \qquad\text{equivalente a}\qquad
+   \omega_c = \frac{1}{RC} = \frac{1}{\tau}. $$
+
+Com ela, as duas expressões ficam limpas:
+
+$$ |H| = \frac{1}{\sqrt{1 + (f/f_c)^2}},
+   \qquad
+   \phi = -\arctan\!\left(\frac{f}{f_c}\right). $$
+
+Note o que aconteceu: $R$ e $C$ desapareceram. O comportamento do filtro depende só da
+razão $f/f_c$. Um filtro de 1 kΩ com 100 nF e outro de 10 kΩ com 10 nF têm a mesma
+$f_c$ e se comportam **exatamente** igual — a diferença entre eles é a impedância que
+apresentam ao circuito, não a resposta em frequência. Isso será importante no
+@sec-033-real.
+
+### O que acontece exatamente em $f_c$
+
+Em $f = f_c$, $\omega RC = 1$ e as duas expressões dão:
+
+$$ |H| = \frac{1}{\sqrt{2}} = 0{,}707,
+   \qquad
+   \phi = -45^{\circ}. $$
+
+A saída cai a 70,7 % da entrada e atrasa 45°. Em termos de potência, como
+$P \propto V^2$, a potência entregue cai para **metade** — por isso $f_c$ também é
+chamada de **frequência de meia potência**. Em decibéis (assunto do Volume 7, mas o
+número já é útil aqui):
+
+$$ 20\log_{10}(0{,}707) = -3{,}01 \text{ dB}. $$
+
+Daí o apelido mais usado de todos: **ponto de −3 dB**. Sempre que uma folha de dados
+disser "largura de banda de 20 kHz", entenda "20 kHz é onde o sinal já caiu para 70,7 %".
+
+::: {.callout-note}
+## $f_c$ não é uma parede
+
+O erro conceitual mais comum sobre filtros é imaginar $f_c$ como uma fronteira: abaixo
+passa, acima não passa. Não é isso. Em $f_c$ o sinal já perdeu 29 % da amplitude, e uma
+oitava acima ainda passa 45 %. A transição é suave e larga — leva **décadas** de
+frequência, não hertz.
+
+Um filtro que precise deixar passar 1 kHz intacto e barrar 2 kHz não é este circuito.
+Isso pede ordem alta e é assunto do @sec-cap-036.
+:::
+
+O @tbl-033-valores é a tabela que vale decorar, porque ela resolve de cabeça noventa por
+cento das perguntas práticas sobre um RC.
+
+| $f/f_c$ | $|H|$ | $|H|$ em dB | $\phi$ |
+|---|---|---|---|
+| 0,1 | 0,995 | −0,04 | −5,7° |
+| 0,2 | 0,981 | −0,17 | −11,3° |
+| 0,5 | 0,894 | −0,97 | −26,6° |
+| 1 | 0,707 | −3,01 | −45,0° |
+| 2 | 0,447 | −6,99 | −63,4° |
+| 5 | 0,196 | −14,1 | −78,7° |
+| 10 | 0,0995 | −20,0 | −84,3° |
+| 100 | 0,0100 | −40,0 | −89,4° |
+
+: Resposta do RC passa-baixas em função da frequência normalizada. As três linhas que
+importam no dia a dia: uma década **abaixo** de $f_c$ o sinal passa praticamente
+inteiro; **em** $f_c$ perde 3 dB; uma década **acima** cai para um décimo.
+{#tbl-033-valores}
+
+## Assíntotas: os −20 dB por década {#sec-033-assintotas}
+
+Longe da frequência de corte, a expressão do módulo simplifica brutalmente.
+
+Para $f \ll f_c$, o termo $(f/f_c)^2$ é desprezível diante de 1 e $|H| \approx 1$: uma
+reta horizontal em 0 dB.
+
+Para $f \gg f_c$, o 1 é que some, e
+
+$$ |H| \approx \frac{f_c}{f}. $$
+
+Isto é: **a saída cai na razão inversa da frequência**. Dobrar a frequência divide a
+amplitude por dois (−6 dB por oitava); multiplicar por dez divide por dez (−20 dB por
+década). Em papel log-log, isso é uma reta de inclinação −1.
+
+As duas assíntotas se cruzam exatamente em $f_c$ — e é aí que está a utilidade delas.
+Traçar a resposta de um RC à mão são três traços: uma horizontal em 0 dB, uma reta
+descendente a partir de $f_c$, e uma correção de 3 dB no joelho. O erro máximo dessa
+aproximação é justamente esses 3 dB, e ele já sumiu a uma década de distância dos dois
+lados.
+
+::: {#fig-033-resposta}
+
+```{.tikz}
+%%| filename: 033-resposta
+%%| alt: Dois gráficos empilhados com o mesmo eixo horizontal logarítmico, indo de um centésimo da frequência de corte até cem vezes a frequência de corte. No de cima, o módulo da função de transferência em decibéis: a curva azul é plana em zero decibel nas frequências baixas, passa por menos três decibéis exatamente na frequência de corte, marcada por um ponto vermelho, e depois desce em linha reta perdendo vinte decibéis a cada década. Duas retas cinzas tracejadas mostram as assíntotas, uma horizontal em zero decibel e outra descendente, cruzando-se na frequência de corte. No de baixo, a fase em graus: a curva azul parte de zero, passa por menos quarenta e cinco graus na frequência de corte e tende a menos noventa graus. Uma poligonal cinza tracejada aproxima essa curva por três segmentos: zero grau até um décimo da frequência de corte, uma rampa de menos quarenta e cinco graus por década, e menos noventa graus a partir de dez vezes a frequência de corte.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \pgfplotsset{
+    fatia/.style={
+      width=15.0cm,
+      xmin=0.01, xmax=100,
+      xtick={0.01,0.1,1,10,100},
+      xticklabels={{$0{,}01\,f_c$},{$0{,}1\,f_c$},{$f_c$},{$10\,f_c$},{$100\,f_c$}},
+      grid=both, grid style={manualgray!22},
+      font=\footnotesize,
+    }
+  }
+
+  % ---------------- modulo ----------------
+  \begin{axis}[xmode=log, fatia, height=7.6cm, at={(0cm,0cm)}, anchor=north west,
+      ylabel={$|H|$ (dB)},
+      ymin=-46, ymax=9,
+      ytick={0,-3,-10,-20,-30,-40},
+      yticklabels={{0},{$-3$},{$-10$},{$-20$},{$-30$},{$-40$}},
+      xticklabels={}]
+
+    \addplot[auxiliar, domain=-2:0, samples=2] ({10^x}, {0});
+    \addplot[auxiliar, domain=0:2,  samples=2] ({10^x}, {-20*x});
+    \addplot[curva, domain=-2:2, samples=280] ({10^x}, {-10*log10(1+10^(2*x))});
+    \addplot[manualred, only marks, mark=*, mark size=2pt] coordinates {(1,-3.01)};
+
+    \draw[manualred, thin] (axis cs:0.98,-4.0) -- (axis cs:0.75,-11.5);
+    \node[manualred, anchor=east, font=\scriptsize] at (axis cs:0.70,-12.0)
+         {$-3$ dB em $f_c$};
+    \node[manualgray, anchor=east, font=\scriptsize, align=right]
+         at (axis cs:70,-19) {assíntota:\\$-20$ dB/década};
+  \end{axis}
+
+  % ---------------- fase ----------------
+  \begin{axis}[xmode=log, fatia, height=5.8cm, at={(0cm,-8.3cm)}, anchor=north west,
+      xlabel={frequência (escala logarítmica)},
+      ylabel={$\phi$ (graus)},
+      ymin=-104, ymax=14,
+      ytick={0,-45,-90},
+      yticklabels={{0},{$-45$},{$-90$}}]
+
+    \addplot[auxiliar, domain=-2:-1, samples=2] ({10^x}, {0});
+    \addplot[auxiliar, domain=-1:1,  samples=2] ({10^x}, {-45*(x+1)});
+    \addplot[auxiliar, domain=1:2,   samples=2] ({10^x}, {-90});
+    \addplot[curva, domain=-2:2, samples=280] ({10^x}, {-atan(10^x)});
+    \addplot[manualred, only marks, mark=*, mark size=2pt] coordinates {(1,-45)};
+
+    \node[manualred, anchor=west, font=\scriptsize] at (axis cs:1.35,-38)
+         {$-45^{\circ}$ em $f_c$};
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+Resposta em frequência do RC passa-baixas, em módulo e em fase, com as assíntotas em
+cinza. O eixo horizontal está normalizado por $f_c$: a curva é a mesma para qualquer
+par $R$–$C$. A construção completa dessas assíntotas é o @sec-cap-035.
+
+:::
+
+A fase tem a sua própria regra de assíntota, e ela é menos conhecida: a transição de 0°
+para −90° ocupa **duas décadas**, de $0{,}1\,f_c$ a $10\,f_c$, com inclinação de
+−45° por década. Fora dessa faixa, a fase já é praticamente 0° ou −90°.
+
+Isso significa uma coisa incômoda: um filtro que não atenua quase nada em $0{,}2\,f_c$
+— só 0,17 dB — ainda assim atrasa o sinal em 11°. **A fase estraga antes do módulo.**
+Em malha de realimentação isso é o que decide entre um amplificador estável e um
+oscilador (Volume 10), e é a razão de o diagrama de Bode ter sempre dois painéis.
+
+## O mesmo circuito no domínio do tempo {#sec-033-tempo}
+
+$f_c$ e $\tau$ são o mesmo parâmetro em duas linguagens:
+
+$$ f_c = \frac{1}{2\pi\tau} \qquad\Longleftrightarrow\qquad \tau = \frac{1}{2\pi f_c}. $$
+
+Um RC de 1 kΩ e 100 nF tem $\tau = 100$ µs e $f_c = 1{,}59$ kHz. Dizer que ele "demora
+100 µs para responder" e dizer que ele "corta acima de 1,59 kHz" são a mesma afirmação.
+
+A ponte mais útil entre os dois mundos é a relação com o **tempo de subida** — o tempo
+que a saída leva para ir de 10 % a 90 % diante de um degrau na entrada. O @sec-cap-025
+mostra que esse tempo vale $2{,}2\,\tau$. Substituindo:
+
+$$ \boxed{\;t_r \approx \frac{2{,}2}{2\pi f_c} = \frac{0{,}35}{f_c}\;} $$
+
+Essa fórmula é usada todos os dias em laboratório e quase nunca é demonstrada. Ela diz,
+por exemplo, que um osciloscópio de 100 MHz de banda não consegue mostrar uma borda mais
+rápida que 3,5 ns — ele próprio é um passa-baixas. É assunto do Volume 7, e a fórmula
+sai daqui.
+
+::: {#fig-033-quadrada}
+
+```{.tikz}
+%%| filename: 033-quadrada
+%%| alt: Três gráficos empilhados mostrando a resposta do filtro RC a uma onda quadrada, para três frequências diferentes. Em todos, a onda quadrada de entrada aparece em cinza tracejado, indo de menos um a mais um, e a saída aparece em azul. No painel de cima, com frequência igual a um quinto da frequência de corte, a saída acompanha a quadrada quase perfeitamente, com apenas os cantos arredondados. No painel do meio, com frequência igual à frequência de corte, a saída são arcos exponenciais nítidos que mal chegam a mais ou menos noventa e dois centésimos antes de inverter. No painel de baixo, com frequência dez vezes maior que a frequência de corte, a saída virou um triângulo de amplitude quinze centésimos, centrado em zero.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \pgfplotsset{
+    fatia/.style={
+      width=12.8cm, height=4.0cm,
+      xmin=0, xmax=3, ymin=-1.45, ymax=1.45,
+      axis lines=left,
+      xtick={0,1,2,3}, xticklabels={},
+      ytick={-1,0,1}, yticklabels={{$-1$},{0},{1}},
+      font=\footnotesize,
+      y axis line style={manualgray},
+      x axis line style={manualgray},
+    }
+  }
+
+  % ---------------- f = 0,2 fc ----------------
+  \begin{axis}[fatia, at={(0cm,0cm)}, anchor=north west,
+      declare function={
+        ta=0.0318;
+        sa(\t)=1-2*exp(-\t/ta);
+        ya(\t)=(mod(\t,1)<0.5)*sa(mod(\t,1))
+              -(mod(\t,1)>0.5)*sa(mod(\t,1)-0.5);}]
+    \addplot[auxiliar, domain=0:3, samples=1400]
+            {(mod(x,1)<0.5)*1-(mod(x,1)>0.5)*1};
+    \addplot[curva, domain=0:3, samples=1400] {ya(x)};
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (13.1,-2.0)
+       {$f = 0{,}2\,f_c$\\[2pt] passa quase\\inteira};
+
+  % ---------------- f = fc ----------------
+  \begin{axis}[fatia, at={(0cm,-4.4cm)}, anchor=north west,
+      declare function={
+        tb=0.1592;
+        sb(\t)=1-1.9172*exp(-\t/tb);
+        yb(\t)=(mod(\t,1)<0.5)*sb(mod(\t,1))
+              -(mod(\t,1)>0.5)*sb(mod(\t,1)-0.5);}]
+    \addplot[auxiliar, domain=0:3, samples=1400]
+            {(mod(x,1)<0.5)*1-(mod(x,1)>0.5)*1};
+    \addplot[curva, domain=0:3, samples=1400] {yb(x)};
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (13.1,-6.4)
+       {$f = f_c$\\[2pt] exponenciais\\nítidas, pico\\em $0{,}92$};
+
+  % ---------------- f = 10 fc ----------------
+  \begin{axis}[fatia, at={(0cm,-8.8cm)}, anchor=north west,
+      xtick={0,1,2,3}, xticklabels={{0},{$T$},{$2T$},{$3T$}},
+      declare function={
+        tc=1.5915;
+        sc(\t)=1-1.1558*exp(-\t/tc);
+        yc(\t)=(mod(\t,1)<0.5)*sc(mod(\t,1))
+              -(mod(\t,1)>0.5)*sc(mod(\t,1)-0.5);}]
+    \addplot[auxiliar, domain=0:3, samples=1400]
+            {(mod(x,1)<0.5)*1-(mod(x,1)>0.5)*1};
+    \addplot[curva, domain=0:3, samples=1400] {yc(x)};
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (13.1,-10.8)
+       {$f = 10\,f_c$\\[2pt] virou triângulo\\de $0{,}16$\\(o integrador)};
+
+\end{tikzpicture}
+```
+
+O mesmo filtro, a mesma onda quadrada, três frequências. Bem abaixo de $f_c$ o RC quase
+não age; bem acima, ele integra. A onda quadrada de entrada está em cinza tracejado.
+
+:::
+
+A @fig-033-quadrada mostra o terceiro comportamento, que é o mais explorado na prática:
+**muito acima de $f_c$, o RC passa-baixas é um integrador**. A saída é o valor médio da
+entrada, mais uma pequena ondulação triangular. Isso é o que transforma PWM em tensão
+contínua, e é o assunto da próxima seção.
+
+Vale ver a mesma coisa da ótica da frequência. Uma onda quadrada é a soma de uma
+fundamental e de harmônicos ímpares de amplitude decrescente (Volume 7). O RC atenua
+cada harmônico segundo a @tbl-033-valores. Se $f_c$ está acima de todos eles, nada muda
+e a quadrada sai quadrada. Se $f_c$ está abaixo de todos, sobra só a componente contínua
+e um resto da fundamental — que é exatamente o triângulo do painel de baixo.
+
+## Onde este circuito aparece {#sec-033-usos}
+
+### Transformar PWM em tensão contínua
+
+Um microcontrolador não tem saída analógica, mas tem PWM: uma onda quadrada de
+frequência fixa e largura de pulso variável. O valor médio dela é $D \cdot V_{cc}$, onde
+$D$ é o ciclo de trabalho. Um passa-baixas com $f_c$ bem abaixo da frequência do PWM
+extrai esse valor médio e entrega uma tensão contínua ajustável.
+
+A ondulação residual, para $\tau \gg T$, é aproximadamente
+
+$$ \Delta v_{pp} \approx V_{cc}\,D\,(1-D)\,\frac{T}{\tau}, $$
+
+máxima em $D = 0{,}5$. Com $V_{cc} = 5$ V, PWM de 1 kHz ($T = 1$ ms) e um RC de 10 kΩ
+com 1 µF ($\tau = 10$ ms):
+
+$$ \Delta v_{pp} \approx 5 \times 0{,}25 \times 0{,}1 = 125 \text{ mV}. $$
+
+São 2,5 % de ondulação. Para reduzir a 12,5 mV bastaria multiplicar $\tau$ por dez — e
+aí aparece o preço, que é o motivo desta subseção existir:
+
+> Reduzir a ondulação por dez multiplica por dez o tempo de acomodação.
+
+Com $\tau = 100$ ms, a saída leva $5\tau = 0{,}5$ s para acompanhar uma mudança de ciclo
+de trabalho. Meio segundo é inaceitável para controlar a velocidade de um motor e
+irrelevante para ajustar o brilho de uma luz de ambiente. **Não existe escolha de $f_c$
+certa em abstrato** — existe a que equilibra ondulação e velocidade para aquela
+aplicação. Aumentar a frequência do PWM, quando o hardware permite, é o caminho que
+melhora os dois lados ao mesmo tempo.
+
+### Debounce de botão
+
+O contato mecânico de uma chave bate várias vezes antes de assentar, produzindo uma
+rajada de pulsos de dezenas de microssegundos ao longo de alguns milissegundos. Um RC
+com $\tau$ de uns 10 ms ($f_c \approx 16$ Hz) integra a rajada e entrega uma transição
+única e lenta. Na entrada digital, essa transição lenta precisa ser reconstituída por um
+gatilho de Schmitt (@sec-cap-070) — um RC sozinho na entrada de uma porta lógica comum
+troca um problema por outro, e o @sec-033-queima volta a isso.
+
+### Antialiasing e limitação de banda
+
+Todo conversor A/D precisa de um passa-baixas na entrada para eliminar componentes acima
+de metade da taxa de amostragem; sem ele, essas componentes reaparecem disfarçadas de
+sinal de baixa frequência. É o filtro antialiasing, assunto do Volume 13. Um RC simples
+serve quando a margem entre a banda útil e a taxa de amostragem é grande — e não serve
+quando é apertada, justamente pela transição suave da @fig-033-resposta.
+
+### O passa-baixas que você não pediu
+
+Toda trilha de placa tem resistência; todo par de condutores tem capacitância; toda
+entrada de circuito integrado tem alguns picofarads. Um sensor com 100 kΩ de impedância
+de saída ligado a um cabo de 1 m com 100 pF/m forma um RC com $f_c = 16$ kHz — sem que
+ninguém tenha colocado um filtro ali. Essa é a razão de tantos projetos perderem borda
+rápida ou banda sem explicação aparente. Filtro parasita é assunto recorrente do
+Volume 14; a conta é a deste capítulo.
+
+## O filtro real: fonte, carga e componente {#sec-033-real}
+
+Todas as fórmulas acima supõem fonte ideal e saída em aberto. Nenhuma das duas coisas
+existe.
+
+::: {#fig-033-fonte}
+
+```{.tikz}
+%%| filename: 033-fonte
+%%| alt: Dois esquemáticos lado a lado. No da esquerda, uma fonte senoidal com uma resistência interna R subscrito s em série, seguida do resistor R do filtro e do capacitor C para o terra. Uma anotação abaixo indica que a frequência de corte passa a ser um sobre dois pi vezes a soma de R subscrito s com R vezes C. No da direita, o mesmo filtro RC com um resistor de carga R subscrito L em paralelo com o capacitor. Uma anotação abaixo indica que o ganho em baixa frequência deixa de ser um e passa a ser R subscrito L dividido pela soma de R com R subscrito L, e que a frequência de corte sobe porque o paralelo de R com R subscrito L é menor que R.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- fonte com resistencia interna ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,0) to[sV, l={$v_s$}] (0,3.2);
+    \draw (0,3.2) to[R, l={$R_s$}] (2.1,3.2) to[R, l={$R$}] (4.2,3.2);
+    \draw (4.2,3.2) to[C, l_={$C$}] (4.2,0);
+    \draw (0,0) -- (4.2,0);
+    \draw (4.2,3.2) -- (5.0,3.2) node[ocirc]{};
+    \draw (4.2,0)   -- (5.0,0)   node[ocirc]{};
+
+    \node[anchor=north, font=\scriptsize, align=center] at (2.4,-0.7)
+         {a fonte entra no filtro\\[2pt]
+          $f_c = \dfrac{1}{2\pi (R_s + R)\,C}$};
+  \end{scope}
+
+  % ---------------- carga em paralelo ----------------
+  \begin{scope}[shift={(8.6,0)}]
+    \draw (0,0) to[sV, l={$v_{\mathrm{in}}$}] (0,3.2);
+    \draw (0,3.2) to[R, l={$R$}] (2.6,3.2);
+    \draw (2.6,3.2) to[C, l_={$C$}] (2.6,0);
+    \draw (2.6,3.2) -- (4.2,3.2);
+    \draw (4.2,3.2) to[R, l={$R_L$}] (4.2,0);
+    \draw (0,0) -- (4.2,0);
+
+    \node[anchor=north, font=\scriptsize, align=center] at (2.4,-0.7)
+         {a carga entra no filtro\\[2pt]
+          $H_0 = \dfrac{R_L}{R + R_L}$, \quad
+          $f_c = \dfrac{1}{2\pi (R \parallel R_L)\,C}$};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+As duas correções que transformam a fórmula do livro no filtro da bancada. À esquerda,
+a resistência interna da fonte soma-se a $R$ e **abaixa** $f_c$. À direita, a carga
+forma um divisor com $R$, o que **reduz o ganho** e, por baixar a resistência vista pelo
+capacitor, **eleva** $f_c$.
+
+:::
+
+**A resistência da fonte soma.** A rigor, $R$ na fórmula é toda a resistência entre a
+fonte de sinal e o nó de saída: $R + R_s$ (@sec-cap-020). Com $R = 100\ \Omega$ e uma
+fonte de 50 Ω, $f_c$ cai 33 % em relação ao previsto. Com $R = 10$ kΩ, a mesma fonte é
+irrelevante. Regra: escolher $R$ pelo menos dez vezes maior que a impedância da fonte.
+
+**A carga divide e desloca.** Um $R_L$ em paralelo com o capacitor faz duas coisas ao
+mesmo tempo. Em contínua, o ganho deixa de ser 1 e vira $R_L/(R + R_L)$. E, como o
+capacitor passa a "ver" $R \parallel R_L$, a frequência de corte **sobe**. Um filtro de
+10 kΩ e 10 nF ($f_c = 1{,}59$ kHz) carregado com 10 kΩ passa a ter ganho 0,5 e
+$f_c = 3{,}18$ kHz — projeto inteiramente diferente do desenhado. Regra simétrica:
+escolher $R$ pelo menos dez vezes **menor** que a carga.
+
+As duas regras se apertam por lados opostos, e o que sobra entre elas é a faixa de $R$
+utilizável. Fora dessa faixa, a solução é isolar o filtro com um seguidor de tensão
+(@sec-cap-065) — que é uma das razões de o amp-op existir.
+
+**O capacitor não é ideal.** A ESR e a ESL do @sec-cap-022 aparecem em frequência alta.
+Um eletrolítico de 10 µF com 1 Ω de ESR não atenua além de $R/(R + 1\ \Omega)$, por
+maior que seja a frequência: a curva da @fig-033-resposta desce, achata e para. Se o
+filtro precisa atenuar muito em alta frequência, o capacitor tem de ser cerâmico ou de
+filme.
+
+**A tolerância manda no resultado.** Resistor de 5 % com capacitor de 10 % dá $f_c$ com
+até 15 % de incerteza. Se o projeto exige $f_c$ precisa, o componente a apertar é o
+capacitor — que é o pior dos dois, e o mais caro de melhorar.
+
+## 🧪 Laboratório {#sec-033-lab}
+
+**Levantar a resposta em frequência de um RC ponto a ponto, achar $f_c$ medindo, e ver a
+onda quadrada virar triângulo.** Tudo com multímetro; o osciloscópio, quando houver,
+entra só na Parte 4.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala CA
+- 1 gerador de sinal: celular ou computador com aplicativo gerador de tom, e cabo com
+  plugue P2 e pontas descascadas
+- 1 resistor de 1 kΩ, 1/4 W, **medido** com o ohmímetro e anotado
+- 1 resistor de 10 kΩ, 1/4 W
+- 1 capacitor de 100 nF, poliéster ou cerâmico
+- 1 capacitor de 1 µF, poliéster (ou eletrolítico, com a ressalva da Parte 5)
+- 1 LED vermelho e 1 resistor de 1 kΩ (Parte 5)
+- Protoboard, jumpers, papel quadriculado ou milimetrado
+:::
+
+### Parte 1 — Calcular antes de medir
+
+1. Meça $R$ com o ohmímetro. Anote o valor real.
+2. Calcule $\tau = RC$ e $f_c = 1/(2\pi RC)$ com o valor **medido** de $R$ e o valor
+   **nominal** de $C$. Para 1 kΩ e 100 nF, $f_c = 1{,}59$ kHz.
+3. Escreva na folha, antes de ligar nada, a tensão de saída esperada em
+   $f_c/10$, $f_c/2$, $f_c$, $2f_c$ e $10f_c$, usando a @tbl-033-valores e a amplitude
+   que o seu gerador entrega.
+
+Prever antes de medir é o hábito que separa medição de tentativa. Quando o número medido
+discordar do previsto, você já sabe **de quanto** discordou.
+
+### Parte 2 — A curva, ponto a ponto
+
+1. Monte o RC: resistor entre a saída do gerador e o nó de saída, capacitor do nó de
+   saída ao terra do gerador.
+2. Ajuste o gerador para 100 Hz. Meça $v_{\mathrm{in}}$ **na própria entrada do filtro**
+   e $v_{\mathrm{out}}$ sobre o capacitor. Anote os dois.
+3. Repita em 200, 500, 800 Hz, 1, 1,6, 2, 3, 5, 8, 10 e 16 kHz.
+4. Para cada linha, calcule a razão $v_{\mathrm{out}}/v_{\mathrm{in}}$.
+
+| $f$ | $v_{\mathrm{in}}$ | $v_{\mathrm{out}}$ | razão | previsto |
+|---|---|---|---|---|
+| 100 Hz | | | | 0,998 |
+| 500 Hz | | | | 0,954 |
+| 1,0 kHz | | | | 0,846 |
+| 1,6 kHz | | | | 0,705 |
+| 3,0 kHz | | | | 0,468 |
+| 5,0 kHz | | | | 0,303 |
+| 10 kHz | | | | 0,157 |
+| 16 kHz | | | | 0,099 |
+
+: Tabela da Parte 2, para $R = 1$ kΩ e $C = 100$ nF. A coluna "previsto" usa
+$1/\sqrt{1+(f/1591)^2}$. {#tbl-033-lab}
+
+Medir $v_{\mathrm{in}}$ **em toda linha** não é preciosismo: muitas saídas de fone de
+ouvido perdem amplitude conforme a carga e a frequência, e a razão entre os dois valores
+cancela esse erro. É por isso que a coluna que importa é a razão, não a tensão de saída.
+
+### Parte 3 — Achar $f_c$ pela medida
+
+1. Anote $v_{\mathrm{out}}$ em 100 Hz. Chame-a de $V_0$.
+2. Calcule $0{,}707\,V_0$.
+3. Varra a frequência devagar procurando o ponto em que $v_{\mathrm{out}}$ atinge esse
+   valor. Anote.
+4. Compare com $f_c$ calculado na Parte 1.
+
+Discordância de até 10 % é o esperado, e a culpa é quase sempre do capacitor. Se a
+discordância for maior que 20 %, meça de novo $v_{\mathrm{in}}$: o gerador provavelmente
+está caindo.
+
+5. Troque $C$ por 1 µF. A frequência de corte deve cair para um décimo, 159 Hz. Confirme
+   com três pontos: 50, 160 e 500 Hz.
+6. Volte para 100 nF e troque $R$ por 10 kΩ. De novo $f_c$ cai dez vezes. Confirme.
+
+Essas duas trocas provam a fórmula inteira: $f_c$ é inversamente proporcional ao produto,
+e não importa qual dos dois fatores mudou.
+
+### Parte 4 — A quadrada virando triângulo (com osciloscópio)
+
+1. Troque o tom senoidal por uma onda quadrada no aplicativo gerador.
+2. Com $R = 1$ kΩ e $C = 100$ nF ($f_c = 1{,}59$ kHz), observe a saída em 150 Hz, em
+   1,6 kHz e em 16 kHz.
+
+São os três painéis da @fig-033-quadrada, na tela. Em 16 kHz, meça a amplitude
+pico a pico do triângulo: deve ficar perto de 30 % da amplitude da quadrada de entrada.
+
+3. Meça o tempo de subida da borda em 150 Hz, entre 10 % e 90 % da excursão. Deve dar
+   perto de $2{,}2\,\tau = 220$ µs. Confira contra $0{,}35/f_c$.
+
+**Variante simulada (plano B).** Sem osciloscópio, o Falstad reproduz esta parte em um
+minuto: fonte de onda quadrada, resistor, capacitor, dois osciloscópios virtuais. No
+ngspice, `.tran 1u 5m` com `PULSE` na fonte dá o mesmo, e `.ac dec 30 10 1e6` seguido de
+`plot vdb(out)` desenha a @fig-033-resposta inteira, incluindo a assíntota.
+
+### Parte 5 — O PWM que vira brilho
+
+Se você tem um microcontrolador na bancada, esta parte fecha o capítulo com a aplicação
+mais comum de todas. Sem ele, pule — as Partes 1 a 4 já dão o capítulo inteiro.
+
+1. Programe uma saída PWM de 1 kHz e ciclo de trabalho ajustável.
+2. Ligue-a ao RC de 10 kΩ com 1 µF ($\tau = 10$ ms).
+3. Meça a saída em CC com o multímetro para $D = 0$, 25 %, 50 %, 75 % e 100 %. Deve dar
+   uma reta: $V_{\mathrm{out}} = D \cdot V_{cc}$.
+4. Se tiver osciloscópio, meça a ondulação em $D = 50$ %. Compare com os 125 mV
+   previstos no @sec-033-usos.
+5. Troque $C$ por 100 nF e repita o passo 4. A ondulação deve subir dez vezes — e a
+   resposta a uma mudança de $D$ fica dez vezes mais rápida. Esse é o compromisso,
+   medido.
+
+Ressalva sobre o eletrolítico: se usar um no lugar do capacitor de filme, respeite a
+polaridade e não estranhe uma tolerância de −20 %/+80 %. Para esta parte serve; para
+definir $f_c$ com precisão, não.
+
+## 🔥 Onde Queima {#sec-033-queima}
+
+**Tratar $f_c$ como uma parede.** Em $f_c$ o sinal já perdeu 29 %, e uma oitava acima
+ainda passa 45 %. A transição de um RC leva décadas de frequência. Projeto que precisa
+de corte abrupto precisa de ordem alta (@sec-cap-036).
+
+**Esquecer a resistência da fonte.** $R$ na fórmula é $R + R_s$. Com $R$ pequeno diante
+da impedância do gerador, $f_c$ medida sai bem abaixo da calculada — e a culpa parece ser
+do capacitor.
+
+**Esquecer a carga.** Um $R_L$ em paralelo com $C$ reduz o ganho para
+$R_L/(R+R_L)$ e **eleva** $f_c$, porque o capacitor passa a ver $R \parallel R_L$. Os
+dois efeitos juntos deixam o filtro irreconhecível.
+
+**Escolher $R$ sem faixa.** $R$ tem de ser dez vezes maior que a impedância da fonte e
+dez vezes menor que a carga. Quando as duas condições não cabem juntas, o filtro precisa
+de um buffer, não de outro valor de $R$.
+
+**Ligar a saída do RC direto numa porta lógica comum.** A borda lenta atravessa a região
+proibida devagar, e a porta oscila na transição. Debounce por RC exige gatilho de Schmitt
+(@sec-cap-070) — a versão sem ele funciona na bancada e falha em campo.
+
+**Achar que o RC elimina o ruído.** Ele atenua o que está acima de $f_c$. Ruído dentro da
+banda do sinal passa inteiro, exatamente como o sinal. Filtro não separa ruído de sinal;
+separa frequência de frequência.
+
+**Reduzir a ondulação sem olhar o tempo de acomodação.** Dividir a ondulação por dez
+multiplica por dez o tempo de resposta. Quando isso não cabe, o caminho é subir a
+frequência do PWM.
+
+**Confundir $\omega_c$ com $f_c$.** $\omega_c = 1/RC$ e $f_c = 1/2\pi RC$. Errar entre os
+dois é um fator 6,28, e é o erro mais comum de todo o volume.
+
+**Usar eletrolítico onde a frequência de corte importa.** Tolerância de −20 %/+80 %, ESR
+alta e envelhecimento. Para $f_c$ definida, filme ou cerâmico C0G.
+
+**Ignorar a ESR em atenuação alta.** Um capacitor com ESR de 1 Ω num filtro de 100 Ω não
+atenua além de −40 dB, por maior que fique a frequência. A curva desce, achata e para.
+
+**Deixar de somar a capacitância parasita.** Cabo, trilha e entrada do integrado somam
+dezenas a centenas de picofarads. Em filtro de alta impedância, isso desloca $f_c$
+sozinho.
+
+**Esquecer que a fase estraga antes do módulo.** Em $0{,}2\,f_c$ a atenuação é de 0,17 dB
+e o atraso já é de 11°. Em malha de realimentação, é a fase que decide a estabilidade.
+
+## O que fica deste capítulo {#sec-033-resumo}
+
+Um divisor de tensão com um capacitor no lugar do resistor de baixo é um filtro
+passa-baixas, com função de transferência
+
+$$ \mathbf{H}(j\omega) = \frac{1}{1 + j\omega RC},
+   \qquad
+   |H| = \frac{1}{\sqrt{1+(f/f_c)^2}},
+   \qquad
+   \phi = -\arctan(f/f_c). $$
+
+A **frequência de corte** $f_c = 1/(2\pi RC)$ é onde o módulo cai para $1/\sqrt{2}$, a
+potência cai à metade e a fase chega a −45°. É o ponto de −3 dB.
+
+O comportamento depende só de $f/f_c$: qualquer par $R$–$C$ com o mesmo produto tem a
+mesma curva. Longe do joelho, as assíntotas são uma horizontal em 0 dB e uma reta de
+**−20 dB por década**; a fase transita de 0° a −90° ao longo de duas décadas, a
+−45° por década.
+
+$f_c$ e $\tau$ são o mesmo parâmetro: $f_c = 1/2\pi\tau$. Daí sai $t_r \approx 0{,}35/f_c$,
+a fórmula que liga banda a tempo de subida e que reaparece em todo o restante do manual.
+
+Muito acima de $f_c$, o RC integra: onda quadrada entra e triângulo sai. É o que
+transforma PWM em tensão contínua, com o compromisso permanente entre ondulação e tempo
+de acomodação.
+
+Na bancada, três coisas deformam a fórmula: a resistência da fonte soma a $R$, a carga
+divide o ganho e eleva $f_c$, e a ESR do capacitor achata a atenuação em frequência
+alta.
+
+Falta o espelho deste circuito. Trocando as posições do resistor e do capacitor, tudo se
+inverte: a contínua é bloqueada e as altas frequências passam. Esse arranjo é o
+passa-altas, e ele resolve um problema que aparece em todo amplificador de múltiplos
+estágios — como levar o sinal adiante sem levar junto a tensão de polarização. É o
+@sec-cap-034.

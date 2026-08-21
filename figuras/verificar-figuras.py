@@ -91,10 +91,11 @@ def main():
     import fitz  # PyMuPDF
 
     doc = fitz.open(pdf)
-    destino = os.path.join(workdir, "verif.png")
-    doc[0].get_pixmap(dpi=170).save(destino)
     print("PNG para conferencia visual:")
-    print("   ", destino)
+    for i in range(doc.page_count):
+        destino = os.path.join(workdir, "verif-%d.png" % (i + 1))
+        doc[i].get_pixmap(dpi=170).save(destino)
+        print("   ", destino)
 
 
 if __name__ == "__main__":

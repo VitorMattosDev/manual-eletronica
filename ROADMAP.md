@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 30/104**
+**Progresso: 31/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -71,7 +71,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ### Volume 6 — Filtros e Resposta em Frequência
 
-- [ ] 033 — Filtro RC passa-baixas e frequência de corte — `capitulos/033-filtro-rc-passa-baixas-e-frequencia-de-corte.qmd`
+- [x] 033 — Filtro RC passa-baixas e frequência de corte — `capitulos/033-filtro-rc-passa-baixas-e-frequencia-de-corte.qmd`
 - [ ] 034 — Filtro RC passa-altas e acoplamento — `capitulos/034-filtro-rc-passa-altas-e-acoplamento.qmd`
 - [ ] 035 — Diagramas de Bode: ganho e fase — `capitulos/035-diagramas-de-bode-ganho-e-fase.qmd`
 - [ ] 036 — Filtros LC e ordem do filtro — `capitulos/036-filtros-lc-e-ordem-do-filtro.qmd`
