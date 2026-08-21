@@ -1,3 +1,530 @@
 # Esquemáticos: como ler, como desenhar, como não se perder {#sec-cap-007}
 
-*(em elaboração)*
+O esquemático é a língua franca da eletrônica. Um circuito bem desenhado pode ser
+lido por alguém que não fala o seu idioma, não conhece o seu projeto e nasceu em
+outro continente — e é a única forma de documentação que sobrevive ao esquecimento
+de quem projetou.
+
+E ele é uma língua com gramática. Existe uma forma certa de indicar que dois fios
+se ligam, uma convenção sobre o que fica em cima e o que fica embaixo, e um
+conjunto de erros de escrita que produzem diagramas ambíguos — que é o pior
+defeito possível num documento cuja função é eliminar ambiguidade.
+
+## O esquemático é um mapa de ligações, não de posições {#sec-007-topologia}
+
+A primeira coisa a desaprender: **o esquemático não descreve onde os componentes
+ficam**. Ele descreve o que está ligado a quê, e mais nada.
+
+Dois resistores desenhados lado a lado podem estar em cantos opostos da placa.
+Um fio que atravessa o desenho inteiro pode ser uma trilha de 3 mm. A ordem dos
+componentes numa linha não tem significado físico. O que o desenho carrega é a
+**topologia** — quais terminais compartilham um nó elétrico —, e por isso o mesmo
+circuito admite infinitos desenhos corretos, uns muito mais legíveis que outros.
+
+O documento que descreve posição é outro, o **layout** da placa, e ele é gerado a
+partir do esquemático — assunto do Volume 14. Manter os dois papéis separados é o
+que permite redesenhar a placa sem tocar no circuito, e vice-versa.
+
+## Os símbolos {#sec-007-simbolos}
+
+::: {#fig-simbolos}
+
+```{.tikz}
+%%| filename: 007-simbolos
+%%| alt: Prancha com dezesseis símbolos esquemáticos identificados: resistor americano e europeu, capacitor, capacitor eletrolítico, indutor, diodo, LED, diodo zener, fonte de tensão, fonte de corrente, chave, fusível, terra, transistor bipolar NPN, MOSFET canal N e amplificador operacional.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  % ---------- linha 1 ----------
+  \draw (0,0)   to[R] ++(1.6,0);
+  \node[align=center, anchor=north] at (0.8,-0.75) {resistor\\(americano)};
+  \draw (3.9,0) to[european resistor] ++(1.6,0);
+  \node[align=center, anchor=north] at (4.7,-0.75) {resistor\\(europeu, IEC)};
+  \draw (7.8,0) to[C] ++(1.6,0);
+  \node[align=center, anchor=north] at (8.6,-0.75) {capacitor};
+  \draw (11.7,0) to[eC] ++(1.6,0);
+  \node[align=center, anchor=north] at (12.5,-0.75) {capacitor\\eletrolítico};
+
+  % ---------- linha 2 ----------
+  \draw (0,-2.6)   to[cute inductor] ++(1.6,0);
+  \node[align=center, anchor=north] at (0.8,-3.35) {indutor};
+  \draw (3.9,-2.6) to[D] ++(1.6,0);
+  \node[align=center, anchor=north] at (4.7,-3.35) {diodo\\(barra = catodo)};
+  \draw (7.8,-2.6) to[leD] ++(1.6,0);
+  \node[align=center, anchor=north] at (8.6,-3.35) {LED};
+  \draw (11.7,-2.6) to[zD] ++(1.6,0);
+  \node[align=center, anchor=north] at (12.5,-3.35) {diodo zener};
+
+  % ---------- linha 3 ----------
+  \draw (0,-5.2)   to[battery1] ++(1.6,0);
+  \node[align=center, anchor=north] at (0.8,-5.95) {fonte de tensão\\contínua};
+  \draw (3.9,-5.2) to[I] ++(1.6,0);
+  \node[align=center, anchor=north] at (4.7,-5.95) {fonte de\\corrente};
+  \draw (7.8,-5.2) to[nos] ++(1.6,0);
+  \node[align=center, anchor=north] at (8.6,-5.95) {chave\\(normalmente aberta)};
+  \draw (11.7,-5.2) to[fuse] ++(1.6,0);
+  \node[align=center, anchor=north] at (12.5,-5.95) {fusível};
+
+  % ---------- linha 4 ----------
+  \draw (0.8,-7.4) -- (0.8,-8.0);
+  \node[ground] at (0.8,-8.0) {};
+  \node[align=center, anchor=north] at (0.8,-9.15) {terra\\(referência)};
+
+  \node[npn] (q) at (4.7,-8.0) {};
+  \draw (q.base) -- ++(-0.5,0);
+  \draw (q.collector) -- ++(0,0.4);
+  \draw (q.emitter) -- ++(0,-0.4);
+  \node[align=center, anchor=north] at (4.7,-9.15) {transistor\\bipolar NPN};
+
+  \node[nmos] (m) at (8.6,-8.0) {};
+  \draw (m.gate) -- ++(-0.4,0);
+  \draw (m.drain) -- ++(0,0.4);
+  \draw (m.source) -- ++(0,-0.4);
+  \node[align=center, anchor=north] at (8.6,-9.15) {MOSFET\\canal N};
+
+  \node[op amp] (oa) at (12.5,-8.0) {};
+  \draw (oa.-) -- ++(-0.4,0);
+  \draw (oa.+) -- ++(-0.4,0);
+  \draw (oa.out) -- ++(0.4,0);
+  \node[align=center, anchor=north] at (12.5,-9.35) {amplificador\\operacional};
+
+\end{circuitikz}
+```
+
+Os símbolos que cobrem a maior parte deste manual. As duas primeiras células
+mostram o mesmo componente em duas escolas de desenho: o zigue-zague americano
+(ANSI) e o retângulo europeu (IEC). Este livro usa o americano, mas ambos são
+correntes e você vai encontrar os dois.
+
+:::
+
+Três leituras merecem destaque nessa prancha:
+
+**A barra do diodo é o catodo.** A seta aponta o sentido em que a corrente
+convencional passa, e ela para na barra — que corresponde à faixa impressa no
+corpo do componente real. Mesmo símbolo, mesma orientação, mesma faixa: essa
+correspondência é o que permite montar sem consultar nada.
+
+**O capacitor eletrolítico tem uma placa curva.** A placa reta com o sinal de
+mais é o terminal positivo; a curva é o negativo. Confundir os dois no papel
+significa montar invertido na placa, com o resultado descrito no @sec-cap-006.
+
+**Fonte de tensão e fonte de corrente são símbolos diferentes** porque são coisas
+diferentes, como o modo CV e o modo CC do @sec-cap-005 já mostraram na bancada.
+
+## Junções, cruzamentos e a regra dos quatro fios {#sec-007-juncoes}
+
+Este é o ponto em que esquemáticos mal desenhados viram armadilha. Duas linhas
+que se cruzam no papel podem significar duas coisas opostas, e a diferença é um
+ponto de meio milímetro.
+
+::: {#fig-juncoes}
+
+```{.tikz}
+%%| filename: 007-juncoes
+%%| alt: Três painéis comparando convenções de ligação: cruzamento com ponto significa ligado, cruzamento sem ponto significa não ligado, e a junção de quatro fios com ponto deve ser substituída por duas junções em T deslocadas.
+
+\begin{tikzpicture}[font=\footnotesize, thick]
+
+% ---------- painel 1: com ponto ----------
+\begin{scope}
+  \draw (0,0) -- (1.9,0);
+  \draw (0.95,-0.95) -- (0.95,0.95);
+  \fill (0.95,0) circle (2.4pt);
+  \node[manualgreen!60!black, font=\small\bfseries, anchor=north] at (0.95,-1.3) {ligados};
+  \node[font=\scriptsize, align=center, anchor=north] at (0.95,-1.85)
+       {o ponto é obrigatório\\e tem de ser visível};
+\end{scope}
+
+% ---------- painel 2: sem ponto ----------
+\begin{scope}[xshift=4.3cm]
+  \draw (0,0) -- (1.9,0);
+  \draw (0.95,-0.95) -- (0.95,0.95);
+  \node[manualred, font=\small\bfseries, anchor=north] at (0.95,-1.3) {não ligados};
+  \node[font=\scriptsize, align=center, anchor=north] at (0.95,-1.85)
+       {dois fios que apenas\\se cruzam no papel};
+\end{scope}
+
+% ---------- painel 3: quatro fios ----------
+\begin{scope}[xshift=8.6cm]
+  \draw (0,0) -- (1.9,0);
+  \draw (0.95,-0.95) -- (0.95,0.95);
+  \fill (0.95,0) circle (2.4pt);
+  \draw[manualred, line width=1.8pt] (0.95,0) circle (0.62);
+  \draw[manualred, line width=1.8pt] (0.51,0.44) -- (1.39,-0.44);
+  \node[manualred, font=\small\bfseries, anchor=north] at (0.95,-1.3) {nunca};
+  \node[font=\scriptsize, align=center, anchor=north] at (0.95,-1.85)
+       {um ponto perdido troca\\o circuito inteiro};
+\end{scope}
+
+% ---------- painel 4: forma correta ----------
+\begin{scope}[xshift=12.9cm]
+  \draw[manualgreen!55!black] (0,0.3) -- (1.9,0.3);
+  \draw[manualgreen!55!black] (0.6,0.3) -- (0.6,0.95);
+  \draw[manualgreen!55!black] (1.3,0.3) -- (1.3,-0.95);
+  \fill[manualgreen!55!black] (0.6,0.3) circle (2.4pt);
+  \fill[manualgreen!55!black] (1.3,0.3) circle (2.4pt);
+  \node[manualgreen!60!black, font=\small\bfseries, anchor=north] at (0.95,-1.3) {assim};
+  \node[font=\scriptsize, align=center, anchor=north] at (0.95,-1.85)
+       {duas junções em T,\\deslocadas};
+\end{scope}
+
+\end{tikzpicture}
+```
+
+A convenção moderna e a razão da regra dos quatro fios. Com um ponto no meio de
+um cruzamento, tudo depende de uma mancha de tinta: se ela some numa cópia, o
+circuito lido é outro, e continua parecendo perfeitamente válido. Deslocar as
+junções torna a informação **redundante** — o desenho fica correto mesmo sem o
+ponto.
+
+:::
+
+Na convenção antiga, um cruzamento sem ligação era desenhado com um pequeno arco
+("saltando" o outro fio) e um cruzamento com ligação era desenhado plano. Você
+vai encontrar isso em livros e esquemáticos antigos, e o arco é inequívoco. A
+convenção atual abandonou o arco e usa o ponto — mais rápido de desenhar, mais
+frágil de reproduzir. Daí a regra: **nunca uma junção de quatro fios**.
+
+## Rótulos, designadores e alimentação {#sec-007-rotulos}
+
+Num circuito de trinta componentes, ligar tudo com fios desenhados vira um
+emaranhado. A saída é o **rótulo de rede**: dois pontos do desenho que recebem o
+mesmo nome estão eletricamente ligados, mesmo sem nenhuma linha entre eles.
+
+Os símbolos de alimentação — `+5V`, `VCC`, `VDD`, e o símbolo de terra — são
+exatamente isso: rótulos de rede com aparência especial. Todo terra do desenho é
+o **mesmo nó**, e é por isso que ninguém desenha o fio de retorno: ele existiria
+em todo lugar e não informaria nada.
+
+::: {.callout-warning}
+## No papel, todo terra é o mesmo nó. Na placa, não é.
+
+Essa é a maior mentira útil do esquemático. Terra é um condutor real, com
+resistência e indutância, e correntes diferentes circulando por ele produzem
+tensões diferentes entre dois pontos que o desenho jura serem idênticos. O
+assunto tem capítulo próprio no Volume 14; até lá, basta guardar que a
+identidade é do desenho, não do cobre.
+:::
+
+Cada componente recebe um **designador de referência**, que é o nome dele no
+projeto inteiro — no esquemático, na serigrafia da placa e na lista de materiais:
+
+| Prefixo | Componente | Prefixo | Componente |
+|---|---|---|---|
+| R | resistor | Q | transistor |
+| C | capacitor | U | circuito integrado |
+| L | indutor | J, P | conector |
+| D | diodo, LED | SW | chave |
+| F | fusível | T | transformador |
+| Y | cristal | TP | ponto de teste |
+
+: Prefixos de designador. `R7` é sempre o mesmo resistor, em qualquer documento
+do projeto. {#tbl-007-designadores}
+
+Ao lado do designador vai o **valor** (470 Ω, 100 nF) ou o **código de peça**
+(1N4148, LM358). A regra: valor para passivos, código de peça para tudo o que
+tem folha de dados própria.
+
+::: {#fig-esquematico-anotado}
+
+```{.tikz}
+%%| filename: 007-esquematico-anotado
+%%| alt: Esquemático anotado de um circuito simples com alimentação de nove volts, capacitor de desacoplamento, resistor limitador e LED, com setas identificando o rótulo de rede, o designador, o valor, o ponto de junção e o símbolo de terra.
+
+\begin{circuitikz}[american, font=\small]
+  % trilho de alimentacao
+  \draw (0,3.2) -- (5.6,3.2);
+  \draw (0,3.2) -- (0,3.7);
+  \node[anchor=south, font=\footnotesize] at (0,3.75) {$+9\,\mathrm{V}$};
+  \draw[thick] (-0.28,3.7) -- (0.28,3.7);
+
+  % capacitor de desacoplamento
+  \draw (1.3,3.2) to[C, l=$100\,\mathrm{n}$, name=c1] (1.3,0.6);
+
+  % ramo do LED
+  \draw (4.2,3.2) to[R, l=$470\,\Omega$, name=r1] (4.2,1.9)
+        to[leD, l=vermelho, name=d1] (4.2,0.6);
+
+  % barramento de terra
+  \draw (1.3,0.6) -- (4.2,0.6);
+  \draw (2.75,0.6) -- (2.75,0.15);
+  \node[ground] at (2.75,0.15) {};
+  \fill (1.3,3.2) circle (2pt);
+  \fill (4.2,3.2) circle (2pt);
+  \fill (2.75,0.6) circle (2pt);
+
+  % designadores
+  \node[anchor=east, font=\footnotesize] at (0.95,1.9) {C1};
+  \node[anchor=east, font=\footnotesize] at (3.85,2.55) {R1};
+  \node[anchor=east, font=\footnotesize] at (3.85,1.25) {D1};
+
+  % anotacoes
+  \draw[manualred, thin, -{Stealth[length=2mm]}] (-2.4,4.3) -- (-0.35,3.8);
+  \node[manualred, font=\scriptsize, align=right, anchor=east] at (-2.5,4.3)
+       {rótulo de rede:\\onde este nome reaparecer,\\é o mesmo nó};
+
+  \draw[manualred, thin, -{Stealth[length=2mm]}] (-2.4,1.9) -- (0.4,1.9);
+  \node[manualred, font=\scriptsize, align=right, anchor=east] at (-2.5,1.9)
+       {designador};
+
+  \draw[manualred, thin, -{Stealth[length=2mm]}] (7.6,2.55) -- (5.4,2.55);
+  \node[manualred, font=\scriptsize, align=left, anchor=west] at (7.7,2.55)
+       {valor};
+
+  \draw[manualred, thin, -{Stealth[length=2mm]}] (7.6,3.2) -- (4.35,3.2);
+  \node[manualred, font=\scriptsize, align=left, anchor=west] at (7.7,3.2)
+       {ponto de junção:\\três fios, um nó};
+
+  \draw[manualred, thin, -{Stealth[length=2mm]}] (5.3,0.0) -- (3.05,0.1);
+  \node[manualred, font=\scriptsize, align=left, anchor=west] at (5.4,0.0)
+       {terra: a referência\\de todas as tensões};
+
+  \node[manualblue, font=\scriptsize, anchor=north, align=center] at (2.75,-1.0)
+       {alimentação em cima, terra embaixo, sinal da esquerda para a direita};
+\end{circuitikz}
+```
+
+Um circuito de três componentes com todos os elementos de leitura identificados.
+Note o que **não** está desenhado: o fio de retorno do terra. Ele existe na
+placa; no papel, os dois símbolos de terra já dizem que os pontos são o mesmo nó.
+
+:::
+
+## As convenções de arrumação {#sec-007-convencoes}
+
+Existem quatro hábitos que fazem um esquemático ser compreendido em segundos em
+vez de minutos. Nenhum é obrigatório, e todos são universais:
+
+1. **Alimentação positiva em cima, terra embaixo.** O olho aprende a procurar a
+   energia no topo e a referência na base.
+2. **Sinal da esquerda para a direita.** Entrada à esquerda, saída à direita, e o
+   caminho do sinal atravessando o desenho como um texto.
+3. **Realimentação da direita para a esquerda.** Quando um sinal volta de um
+   estágio posterior para um anterior, ele é desenhado por cima ou por baixo,
+   contra o fluxo — e essa inversão é a pista visual de que existe realimentação
+   ali, conceito central do Volume 11.
+4. **Sem fios diagonais, sem fios sobre símbolos.** Linhas horizontais e
+   verticais, sobre uma grade. Diagonal esconde junção; fio passando sobre um
+   componente esconde tudo.
+
+Vale acrescentar uma quinta, que não é de desenho e sim de honestidade: **um
+bloco funcional por região do papel**. Alimentação num canto, entrada em outro,
+saída em outro. Um esquemático de cinquenta componentes desenhado como uma massa
+uniforme é tecnicamente correto e praticamente ilegível.
+
+## Como ler um esquemático que você nunca viu {#sec-007-ler}
+
+Diante de um diagrama denso, o instinto é começar pelo canto superior esquerdo e
+seguir fio a fio. É o método mais lento que existe. O caminho eficiente tem cinco
+passos:
+
+**1. Ache a alimentação e o terra.** Quantos trilhos existem? Só `+5V`? Há um
+`+12V` e um `−12V`? Quantos terras diferentes? Isso já divide o circuito em
+regiões e revela se há partes isoladas entre si.
+
+**2. Ache a entrada e a saída.** Conectores, bornes, antenas, sensores,
+alto-falantes. São eles que definem o sentido do sinal, e todo o resto do desenho
+se organiza entre esses dois pontos.
+
+**3. Divida em blocos.** Quase todo circuito é uma cadeia: entrada →
+condicionamento → processamento → potência → saída, com alimentação alimentando
+tudo. Circule os blocos a lápis. Um circuito integrado costuma ser o centro de um
+bloco, e os passivos ao redor dele são a periferia daquele bloco.
+
+**4. Siga o caminho do sinal, ignorando a periferia.** Capacitores de
+desacoplamento, resistores de *pull-up* e diodos de proteção são infraestrutura:
+eles não fazem parte do que o circuito faz, e olhar para eles na primeira
+passagem só atrapalha.
+
+**5. Anote as tensões de nó.** A lápis, sobre o desenho. Esse é o momento em que
+o esquemático deixa de ser um diagrama e vira um modelo: divisores que você
+consegue calcular, quedas que você consegue prever, e depois medir.
+
+E há um atalho que economiza horas: **o circuito de aplicação típica da folha de
+dados**. Todo fabricante publica, junto com o componente, o esquemático mínimo
+para fazê-lo funcionar. Quase todo circuito real é esse desenho com pequenas
+modificações — e comparar o circuito que você está lendo com a aplicação típica
+mostra imediatamente o que o projetista mudou, que é justamente onde mora a
+intenção do projeto.
+
+## Esquemático não é pinagem {#sec-007-pinagem}
+
+Uma armadilha específica de circuitos integrados: **o símbolo é organizado por
+função; o encapsulamento, por geometria**. No símbolo de um amplificador
+operacional, as entradas ficam à esquerda e a saída à direita, porque isso torna
+o desenho legível. No encapsulamento DIP-8 real, a entrada inversora é o pino 2 e
+a saída é o pino 1 — e os dois estão em cantos opostos daquele lado.
+
+Por isso, todo símbolo de CI traz o número do pino ao lado de cada terminal, e
+por isso o esquemático **não** serve para montar sem consultar a pinagem da folha
+de dados. Na peça física, o pino 1 é marcado por um ponto em baixo relevo ou pelo
+chanfro do encapsulamento — com o chanfro à esquerda, o pino 1 é o inferior
+esquerdo, e a numeração segue no sentido anti-horário.
+
+## 🧪 Laboratório {#sec-007-lab}
+
+**Do circuito para o papel e de volta.** O exercício deste capítulo é uma via de
+mão dupla: desenhar o esquemático de um circuito montado e depois usar esse
+desenho para depurar a montagem, que é exatamente o que se faz em bancada
+profissional.
+
+### Material
+
+::: {.lab-material}
+- 1 protoboard com o circuito do @sec-cap-001 montado (pilha de 9 V, resistor de
+  470 Ω, LED)
+- 1 capacitor cerâmico de 100 nF
+- 1 resistor de 10 kΩ e 1 de 22 kΩ, 1/4 W
+- 1 multímetro digital
+- Papel quadriculado e lápis (a grade importa: ela é o que mantém os fios retos)
+- Borracha — parte do método
+:::
+
+### Parte 1 — Engenharia reversa da protoboard
+
+1. Monte, além do circuito do @sec-cap-001, um divisor com o resistor de 10 kΩ em
+   cima e o de 22 kΩ embaixo, ligado aos mesmos 9 V, e o capacitor de 100 nF
+   entre os trilhos de alimentação.
+2. **Sem olhar para nenhum esquemático**, desenhe o circuito no papel
+   quadriculado, obedecendo às quatro convenções da @sec-007-convencoes:
+   alimentação em cima, terra embaixo, sinal da esquerda para a direita, sem
+   diagonais.
+3. Numere os nós que você identificar: cada grupo de furos interligados que
+   participa do circuito é um nó. Dê nomes: `+9V`, `GND`, `MEIO`.
+4. Coloque designadores (R1, R2, R3, C1, D1) e valores em todos os componentes.
+
+Compare o seu desenho com a montagem. A pergunta a fazer é sempre: *todo nó do
+papel corresponde a um grupo de furos, e todo grupo de furos usado aparece no
+papel?*
+
+### Parte 2 — Verificar a montagem contra o desenho
+
+Este é o método real de depuração, e ele funciona ao contrário do que a intuição
+sugere: em vez de olhar para a montagem e tentar lembrar do circuito, você **lê o
+esquemático e cobra dele da placa**.
+
+1. Desligue a alimentação.
+2. Multímetro em continuidade. Para **cada nó do desenho**, encoste uma ponta num
+   componente que deveria estar nesse nó e a outra em todos os demais que
+   deveriam estar no mesmo nó. Todos devem apitar.
+3. Para cada **par de nós diferentes**, verifique que **não** apita. É aqui que
+   aparecem os curtos por fio descascado demais e por coluna vizinha.
+4. Marque no desenho, a lápis, cada nó já verificado.
+
+Um circuito de cinco componentes leva dois minutos. Um de cinquenta leva vinte —
+e é tempo bem menor do que o de procurar um curto por tentativa e erro.
+
+### Parte 3 — Anotar as tensões previstas e as medidas
+
+1. **Antes de ligar**, calcule e escreva no desenho a tensão prevista de cada nó
+   em relação ao terra. Para o divisor:
+   $$ V_\text{MEIO} = 9{,}0 \times \frac{22}{10 + 22} = 6{,}2\ \text{V}. $$
+   Para o ramo do LED: 2,0 V no catodo do LED (a tensão direta suposta) e 9,0 V
+   no topo do resistor.
+2. Ligue e meça cada nó, anotando o valor medido **ao lado** do previsto.
+3. Onde previsto e medido divergirem mais que a tolerância dos componentes, você
+   tem ou um erro de conta, ou uma suposição errada (a $V_F$ do LED, a tensão da
+   pilha sob carga), ou um defeito de montagem. Nessa ordem de probabilidade.
+
+Repare no que esse desenho anotado se tornou: não é mais um diagrama, é um
+**registro de medição**. Guardado junto ao projeto, ele responde daqui a seis
+meses à pergunta "quanto deveria dar aqui?", que é a pergunta mais cara de
+responder de novo do zero.
+
+### Parte 4 — Ler um esquemático que você não desenhou
+
+Escolha a folha de dados de um componente comum — o regulador 7805 e o
+temporizador 555 são os candidatos clássicos — e localize a seção de aplicação
+típica. Depois:
+
+1. Identifique os trilhos de alimentação e o terra.
+2. Identifique entrada e saída.
+3. Circule cada bloco funcional.
+4. Separe os componentes de sinal dos componentes de infraestrutura
+   (desacoplamento, *pull-up*, proteção).
+5. Escreva, em uma frase, o que o circuito faz.
+
+Os dois componentes citados aparecem neste manual — o 7805 no Volume 13, o 555 no
+Volume 12 —, e não é preciso entendê-los agora. O exercício é de **leitura**, e
+ele vale exatamente porque você ainda não sabe o que o circuito faz: é assim que
+se lê todo esquemático novo pelo resto da vida profissional.
+
+### Variante simulada (plano B)
+
+O Falstad, o LTspice e o KiCad servem igualmente bem para as Partes 1, 3 e 4 —
+desenhar o esquemático numa ferramenta ensina as convenções mais depressa, porque
+o programa recusa junções ambíguas e numera os nós sozinho. A Parte 2 não tem
+equivalente: verificar nó por nó com o multímetro é uma técnica de bancada, e é a
+que encontra o curto que nenhum simulador tem.
+
+## 🔥 Onde Queima {#sec-007-queima}
+
+**Ponto de junção ausente, apagado ou pequeno demais.** É o defeito que
+transforma um documento em duas leituras possíveis. Numa cópia ruim, num PDF
+comprimido ou numa impressão de baixa resolução, o ponto desaparece e o circuito
+muda. Desenhe pontos grandes, e prefira desviar um fio a criar um cruzamento.
+
+**Junção de quatro fios.** Mesmo com o ponto perfeitamente visível, ela concentra
+toda a informação num único símbolo frágil. Duas junções em T deslocadas dizem a
+mesma coisa de forma redundante, e é por isso que toda ferramenta séria de
+desenho recusa a versão de quatro.
+
+**Acreditar que todo terra é o mesmo ponto.** No papel é; no cobre não. Correntes
+diferentes circulando pelo mesmo condutor de retorno criam diferenças de
+potencial entre pontos que o desenho declara idênticos — e é assim que nasce a
+maior parte dos problemas de ruído. O tratamento completo está no Volume 14.
+
+**Trocar VCC por VDD, ou `Vcc` por `VCC`.** Rótulo de rede é comparado como
+texto: dois nomes diferentes são dois nós diferentes, mesmo que a intenção fosse
+a mesma. O sintoma é uma parte do circuito sem alimentação nenhuma, com o
+esquemático parecendo perfeito.
+
+**Montar pelo símbolo, ignorando a pinagem.** O símbolo é organizado por função e
+o encapsulamento por geometria. Sem o número de pino ao lado de cada terminal e
+sem a folha de dados aberta, a montagem é chute. E lembre do pino 1: chanfro à
+esquerda, canto inferior esquerdo, numeração anti-horária.
+
+**Inverter catodo e anodo no desenho.** A barra do diodo é o catodo, e
+corresponde à faixa do componente real. A placa curva do eletrolítico é o
+negativo. São dois detalhes gráficos que valem um componente destruído cada.
+
+**Esquemático sem designadores ou sem valores.** Sem designador não há lista de
+materiais, não há serigrafia, não há como conversar sobre "aquele resistor ali".
+Sem valor não há como montar. Um desenho topologicamente perfeito e anônimo é
+inútil.
+
+**Fio desenhado por cima de um símbolo.** Esconde terminais, esconde junções e
+gera ambiguidade em toda cópia. Contorne.
+
+**Copiar esquemático de fórum sem conferir contra a folha de dados.** Circuitos
+que circulam na internet acumulam erros de transcrição, e o mais comum é
+justamente o ponto de junção perdido. A aplicação típica do fabricante é a
+referência; qualquer diferença em relação a ela deve ter explicação.
+
+**Esquemático desatualizado.** A última correção do projeto quase sempre existe
+só como um fio verde soldado por cima da placa. Se ela não voltar para o desenho
+no mesmo dia, o desenho passa a mentir — e alguém, daqui a um ano, vai depurar um
+circuito que não existe. Corrigir o esquemático faz parte de corrigir o circuito.
+
+## O que fica deste capítulo {#sec-007-resumo}
+
+O esquemático descreve ligações, não posições, e por isso o mesmo circuito admite
+muitos desenhos corretos — dos quais poucos são legíveis. A legibilidade vem de
+convenções: alimentação em cima, terra embaixo, sinal da esquerda para a direita,
+realimentação em sentido contrário, sem diagonais e sem junções de quatro fios.
+
+Rótulos de rede substituem fios longos, símbolos de alimentação e terra são
+rótulos disfarçados, e designadores ligam o desenho à lista de materiais e à
+placa. O símbolo de um CI mostra função; a pinagem, geometria — e montar exige as
+duas.
+
+E ler um esquemático desconhecido é um procedimento, não um talento: achar
+alimentação e terra, achar entrada e saída, dividir em blocos, seguir o sinal
+ignorando a infraestrutura, e anotar as tensões de nó a lápis.
+
+Com este capítulo o **Volume 1** se fecha. A bancada está montada, o multímetro é
+conhecido nos seus limites, os componentes são legíveis e o desenho é
+compreensível. O Volume 2 começa a construir a física do ofício a partir do
+começo: carga, corrente, tensão, resistência, potência, e as leis que ligam tudo
+isso — as ferramentas com que todo o resto do manual será calculado.
