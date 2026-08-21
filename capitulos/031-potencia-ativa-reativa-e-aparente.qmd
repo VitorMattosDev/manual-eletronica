@@ -1,3 +1,620 @@
 # Potência ativa, reativa e aparente {#sec-cap-031}
 
-*(em elaboração)*
+O @sec-cap-030 deixou uma afirmação estranha no ar: uma reatância de 100 Ω limita a
+corrente com a mesma força que um resistor de 100 Ω e **não esquenta**.
+
+Se ela não esquenta, para onde vai a energia? A corrente existe — o amperímetro mede,
+o fio aquece, o disjuntor conta. Mas o componente fica frio. Ou a energia sumiu, o que
+seria uma novidade para a física, ou ela está fazendo algo que a palavra "consumo" não
+descreve.
+
+Está. A energia vai para o campo elétrico ou magnético durante um quarto de ciclo e
+**volta para a fonte** no quarto seguinte. Ida e volta, sessenta vezes por segundo, sem
+saldo. Enquanto isso, o fio que a transporta na ida e na volta aquece nas duas vezes, e
+o transformador que a entrega precisa ser dimensionado para ela.
+
+Este capítulo separa esse vaivém do consumo real, dá um nome e uma unidade a cada
+parcela, e explica por que a companhia elétrica cobra da indústria uma grandeza que o
+consumidor residencial nunca vê na conta.
+
+## A potência instantânea {#sec-031-instantanea}
+
+Comece pelo que não tem ambiguidade. A cada instante, a potência entregue a um
+componente é o produto da tensão pela corrente naquele instante:
+
+$$ p(t) = v(t)\,i(t). $$
+
+Com $v(t) = V_p\cos(\omega t)$ e $i(t) = I_p\cos(\omega t - \theta)$, e usando a
+identidade $\cos A\cos B = \frac{1}{2}[\cos(A-B) + \cos(A+B)]$:
+
+$$ p(t) = \frac{V_p I_p}{2}\Big[\cos\theta + \cos(2\omega t - \theta)\Big]. $$
+
+Trocando os picos por valores eficazes ($V_p = \sqrt{2}V$, $I_p = \sqrt{2}I$), o fator
+$1/2$ desaparece:
+
+$$ \boxed{\;p(t) = \underbrace{VI\cos\theta}_{\text{constante}}
+   \;+\; \underbrace{VI\cos(2\omega t - \theta)}_{\text{oscila ao dobro da frequência}}\;} $$
+
+Duas parcelas, e elas são a chave do capítulo inteiro:
+
+- A primeira **não depende do tempo**. É um valor fixo, e é exatamente a média de
+  $p(t)$, porque a segunda parcela — sendo um cosseno completo — tem média zero.
+- A segunda oscila ao **dobro** da frequência da rede. Ela é o vaivém: energia que
+  entra e sai, sem saldo ao fim do período.
+
+::: {#fig-031-instantanea}
+
+```{.tikz}
+%%| filename: 031-instantanea
+%%| alt: Três gráficos empilhados da potência instantânea contra o ângulo, de zero a setecentos e vinte graus. No de cima, com carga resistiva, a curva da potência é sempre positiva, oscila entre zero e o dobro do valor médio, e a linha tracejada da média está no meio. No do meio, com carga reativa pura, a curva da potência é simétrica em torno do zero, passando metade do tempo positiva e metade negativa, e a linha da média coincide com o eixo zero. No de baixo, com carga intermediária de sessenta graus, a curva é positiva na maior parte do ciclo mas mergulha abaixo de zero em dois trechos curtos, e a linha da média está acima do zero mas mais baixa que no primeiro caso.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \pgfplotsset{
+    fatia/.style={
+      width=13.6cm, height=4.6cm,
+      xmin=-20, xmax=780, ymin=-1.25, ymax=1.35,
+      axis lines=middle,
+      xtick={0,180,360,540,720},
+      ytick={0},
+      yticklabels={{0}},
+      font=\footnotesize,
+      x axis line style={manualgray},
+      y axis line style={manualgray},
+    }
+  }
+
+  % ---------------- resistivo: theta = 0 ----------------
+  \begin{axis}[fatia, at={(0cm,0cm)}, anchor=north west, xticklabels={}]
+    \addplot[draw=none, fill=manualyellow!16, domain=0:770, samples=320,
+             forget plot] {0.5+0.5*cos(2*x)} \closedcycle;
+    \addplot[manualblue, thin, domain=0:770, samples=320] {0.95*cos(x)};
+    \addplot[manualred, thin, domain=0:770, samples=320] {0.75*cos(x)};
+    \addplot[manualyellow, very thick, domain=0:770, samples=320]
+            {0.5+0.5*cos(2*x)};
+    \draw[manualgreen, thick, dashed] (axis cs:-20,0.5) -- (axis cs:770,0.5);
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (13.9,-2.3)
+       {\textbf{resistivo}\\$\theta = 0^{\circ}$\\[2pt]
+        $p$ nunca é negativa:\\nada volta\\[2pt]
+        $P = VI$};
+
+  % ---------------- reativo puro: theta = 90 ----------------
+  \begin{axis}[fatia, at={(0cm,-5.0cm)}, anchor=north west, xticklabels={}]
+    \addplot[draw=none, fill=manualyellow!16, domain=0:770, samples=320,
+             forget plot] {0.5*cos(2*x-90)} \closedcycle;
+    \addplot[manualblue, thin, domain=0:770, samples=320] {0.95*cos(x)};
+    \addplot[manualred, thin, domain=0:770, samples=320] {0.75*cos(x-90)};
+    \addplot[manualyellow, very thick, domain=0:770, samples=320]
+            {0.5*cos(2*x-90)};
+    \draw[manualgreen, thick, dashed] (axis cs:-20,0) -- (axis cs:770,0);
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (13.9,-7.3)
+       {\textbf{reativo puro}\\$\theta = 90^{\circ}$\\[2pt]
+        metade positiva,\\metade negativa\\[2pt]
+        $P = 0$};
+
+  % ---------------- intermediario: theta = 60 ----------------
+  \begin{axis}[fatia, at={(0cm,-10.0cm)}, anchor=north west]
+    \addplot[draw=none, fill=manualyellow!16, domain=0:770, samples=320,
+             forget plot] {0.25+0.5*cos(2*x-60)} \closedcycle;
+    \addplot[manualblue, thin, domain=0:770, samples=320] {0.95*cos(x)};
+    \addplot[manualred, thin, domain=0:770, samples=320] {0.75*cos(x-60)};
+    \addplot[manualyellow, very thick, domain=0:770, samples=320]
+            {0.25+0.5*cos(2*x-60)};
+    \draw[manualgreen, thick, dashed] (axis cs:-20,0.25) -- (axis cs:770,0.25);
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (13.9,-12.3)
+       {\textbf{intermediário}\\$\theta = 60^{\circ}$\\[2pt]
+        mergulha abaixo\\de zero duas vezes\\por ciclo\\[2pt]
+        $P = 0{,}5\,VI$};
+
+  \node[manualblue, anchor=west, font=\scriptsize] at (0.5,0.6) {$v(t)$};
+  \node[manualred,  anchor=west, font=\scriptsize] at (1.9,0.6) {$i(t)$};
+  \node[manualyellow, anchor=west, font=\scriptsize] at (3.3,0.6) {$p(t)$};
+  \node[manualgreen, anchor=west, font=\scriptsize] at (4.8,0.6) {média de $p$};
+
+  \node[anchor=north, font=\footnotesize] at (6.4,-14.5) {$\omega t$ (graus)};
+
+\end{tikzpicture}
+```
+
+Potência instantânea em três casos. A curva grossa é $p(t) = v\,i$, e o tracejado verde
+é a média dela. Note que $p$ oscila sempre ao **dobro** da frequência, e que o trecho
+abaixo de zero é energia **devolvida** à fonte. No reativo puro, tudo o que entra volta:
+média zero.
+
+:::
+
+O painel do meio é o que resolve o mistério da abertura. Com $\theta = 90^{\circ}$, a
+potência instantânea é uma senoide simétrica em torno do zero: durante um quarto de
+ciclo a energia entra no campo, no quarto seguinte ela sai. O componente troca energia
+com a fonte o tempo todo e **não consome nada**. Um capacitor de 10 µF ligado à rede
+tem corrente, tem tensão, tem $p(t)$ com amplitude respeitável — e fica frio.
+
+## As três potências {#sec-031-tres}
+
+Da decomposição de $p(t)$ saem naturalmente três grandezas.
+
+### Potência ativa, $P$ — o que realmente é consumido
+
+$$ \boxed{\;P = VI\cos\theta\;} \qquad [\,P\,] = \text{W (watt)}. $$
+
+É a média de $p(t)$: a energia que atravessa o componente e **não volta**. É o que
+aquece, o que gira o eixo do motor, o que ilumina, o que aparece no medidor da
+concessionária. É a única das três que corresponde a trabalho.
+
+O fator $\cos\theta$ tem nome próprio: **fator de potência**. Ele vale 1 numa carga
+resistiva e 0 numa reatância pura, e o @sec-cap-032 é dedicado inteiro a ele.
+
+### Potência reativa, $Q$ — a amplitude do vaivém
+
+$$ \boxed{\;Q = VI\operatorname{sen}\theta\;}
+   \qquad [\,Q\,] = \text{var (volt-ampere reativo)}. $$
+
+Mede quanta energia vai e volta a cada ciclo. Não é consumo, mas também não é ficção:
+essa energia ocupa o fio, ocupa o transformador e provoca queda de tensão na linha.
+
+O sinal segue o de $\theta$, e a convenção é universal:
+
+- **Carga indutiva** ($\theta > 0$, tensão adiantada): $Q > 0$. Diz-se que ela
+  **absorve** reativos. Motores, transformadores, reatores, solenoides.
+- **Carga capacitiva** ($\theta < 0$): $Q < 0$. Diz-se que ela **fornece** reativos.
+  Capacitores, cabos longos, bancos de correção.
+
+Essa oposição de sinais é a base de toda a correção do @sec-cap-032: um capacitor
+fornece exatamente o que um motor absorve, e os dois se cancelam.
+
+### Potência aparente, $S$ — o que o fio precisa aguentar
+
+$$ \boxed{\;S = VI\;} \qquad [\,S\,] = \text{VA (volt-ampere)}. $$
+
+É o produto direto do que os dois multímetros mostram, sem nenhuma correção de fase.
+Não é potência no sentido físico — é a **medida do dimensionamento**. Fio,
+transformador, disjuntor, gerador e chave são escolhidos por $S$, porque o que aquece o
+condutor é a corrente total, indiferente à fase dela.
+
+## O triângulo de potências {#sec-031-triangulo}
+
+As três se relacionam por Pitágoras, e a razão é a mesma do @sec-cap-029: $P$ e $Q$ são
+projeções ortogonais de $S$.
+
+$$ S^2 = P^2 + Q^2, \qquad
+   \cos\theta = \frac{P}{S}, \qquad
+   \tan\theta = \frac{Q}{P}. $$
+
+::: {#fig-031-triangulo}
+
+```{.tikz}
+%%| filename: 031-triangulo
+%%| alt: Dois triângulos retângulos semelhantes lado a lado, ambos com o cateto vertical para cima, correspondendo a uma carga indutiva. À esquerda, o triângulo de impedância, com cateto horizontal R igual a mil e quinhentos ohms, cateto vertical de reatância indutiva igual a dois mil ohms e hipotenusa de módulo de impedância igual a dois mil e quinhentos ohms. À direita, o triângulo de potências, com cateto horizontal P em watts, cateto vertical Q em var e hipotenusa S em volt-ampere, com o mesmo ângulo. Uma seta entre os dois indica que basta multiplicar por I ao quadrado para passar de um ao outro.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- triangulo de impedancia ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw[vetor, manualblue]  (0,0) -- (3.0,0);
+    \draw[vetor, manualgreen] (3.0,0) -- (3.0,4.0);
+    \draw[vetor, manualred]   (0,0) -- (3.0,4.0);
+
+    \node[manualblue, font=\scriptsize, anchor=north] at (1.5,-0.1)
+         {$R = 1{,}5$ k$\Omega$};
+    \node[manualgreen, font=\scriptsize, anchor=west] at (3.1,2.0)
+         {$X_L = 2$ k$\Omega$};
+    \node[manualred, font=\scriptsize, anchor=south east, align=right]
+         at (1.6,2.3) {$|Z| = 2{,}5$ k$\Omega$};
+
+    \draw[manualyellow, thick, ->, >=stealth] (5:0.95) arc (5:48:0.95);
+    \node[manualyellow, font=\tiny, anchor=west] at (26:1.1) {$\theta$};
+
+    \node[anchor=north, font=\scriptsize\bfseries] at (1.6,-0.75)
+         {triângulo de impedância};
+  \end{scope}
+
+  % ---------------- seta de conversao ----------------
+  \draw[manualgray, ultra thick, ->, >=stealth] (4.9,2.0) -- (7.1,2.0);
+  \node[manualgray, anchor=south, font=\scriptsize, align=center] at (6.0,2.15)
+       {$\times\, I^2$};
+  \node[manualgray, anchor=north, font=\scriptsize, align=center] at (6.0,1.85)
+       {mesmos ângulos,\\mesmas proporções};
+
+  % ---------------- triangulo de potencias ----------------
+  \begin{scope}[shift={(8.6,0)}]
+    \draw[vetor, manualblue]  (0,0) -- (3.0,0);
+    \draw[vetor, manualgreen] (3.0,0) -- (3.0,4.0);
+    \draw[vetor, manualred]   (0,0) -- (3.0,4.0);
+
+    \node[manualblue, font=\scriptsize, anchor=north, align=center] at (1.5,-0.1)
+         {$P = VI\cos\theta$\\(W)};
+    \node[manualgreen, font=\scriptsize, anchor=west, align=left] at (3.1,2.0)
+         {$Q = VI\,\mathrm{sen}\,\theta$\\(var)};
+    \node[manualred, font=\scriptsize, anchor=south east, align=right]
+         at (1.6,2.3) {$S = VI$\\(VA)};
+
+    \draw[manualyellow, thick, ->, >=stealth] (5:0.95) arc (5:48:0.95);
+    \node[manualyellow, font=\tiny, anchor=west] at (26:1.1) {$\theta$};
+
+    \node[anchor=north, font=\scriptsize\bfseries] at (1.6,-0.95)
+         {triângulo de potências};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+Os dois triângulos são semelhantes, e por um motivo simples: num circuito série,
+$P = I^2R$, $Q = I^2X$ e $S = I^2|Z|$. Multiplicar os três lados do triângulo de
+impedância por $I^2$ dá o triângulo de potências, com o **mesmo ângulo**. Os dois estão
+desenhados aqui para uma carga **indutiva**, que é o caso da esmagadora maioria das
+instalações; numa carga capacitiva os dois catetos verticais apontam para baixo, como
+no @fig-030-plano.
+
+:::
+
+Essa semelhança é a ferramenta de cálculo mais rápida do capítulo. Sabendo o ângulo da
+impedância, você já sabe o fator de potência; sabendo o triângulo de tensões do
+@sec-cap-029, já sabe os dois outros. É sempre o mesmo triângulo, medido em unidades
+diferentes.
+
+### Potência complexa
+
+Para fechar formalmente, define-se a **potência complexa**
+
+$$ \mathbf{S} = \mathbf{V}\,\mathbf{I}^{*} = P + jQ, $$
+
+onde $\mathbf{I}^{*}$ é o conjugado do fasor de corrente. O conjugado não é enfeite:
+sem ele, o ângulo resultante seria $\phi_v + \phi_i$, que não tem significado nenhum.
+Com ele, o ângulo é $\phi_v - \phi_i = \theta$, que é exatamente a defasagem — e as
+partes real e imaginária caem certas em $P$ e $Q$.
+
+Com essa definição, a potência complexa **se conserva**: a soma das potências
+complexas de todos os elementos de um circuito é igual à fornecida pelas fontes. Isso
+vale separadamente para $P$ e para $Q$, e é a base do balanço de potências de qualquer
+instalação.
+
+## Três unidades para a mesma dimensão {#sec-031-unidades}
+
+Watt, var e volt-ampere têm todas a dimensão de volt vezes ampere. Elas existem
+separadas por uma razão prática: são grandezas que **não podem ser somadas entre si**,
+e usar unidades distintas impede o erro.
+
+| Grandeza | Símbolo | Unidade | O que descreve | Quem se importa |
+|---|---|---|---|---|
+| Ativa | $P$ | W | energia consumida, vira calor ou trabalho | conta de luz, dissipação |
+| Reativa | $Q$ | var | energia que vai e volta ao campo | concessionária, multa de FP |
+| Aparente | $S$ | VA | total transportado pelo fio | fio, disjuntor, trafo, gerador |
+
+: As três potências. A regra de ouro: **W com W, var com var, VA nunca com nada** —
+$S$ só se obtém depois, por Pitágoras. {#tbl-031-tres}
+
+A última coluna explica a nomenclatura comercial que confunde todo mundo na primeira
+compra:
+
+- **Transformador é vendido em VA**, não em W. Um trafo de 500 VA entrega 500 W para
+  carga resistiva e 350 W para uma carga com FP 0,7 — o enrolamento aguenta a
+  **corrente**, e a corrente depende de $S$.
+- **Nobreak é vendido em VA**, com o valor em W bem menor no rodapé. Um nobreak de
+  1200 VA costuma entregar 600 a 700 W. Comprar pelo número grande e ligar 900 W de
+  carga é o erro clássico.
+- **Motor é vendido em W** (ou em cv) de saída no eixo, com o fator de potência e o
+  rendimento na plaqueta. A corrente da linha sai de $S = P_{\text{entrada}}/\cos\theta$,
+  e $P_{\text{entrada}} = P_{\text{eixo}}/\eta$.
+- **Gerador é vendido em kVA**, pelo mesmo motivo do transformador.
+
+## Um exemplo inteiro {#sec-031-exemplo}
+
+Um motor monofásico de indução ligado em 220 V puxa 5,0 A, com fator de potência 0,70
+indutivo. A alimentação é feita por um cabo cuja resistência total, ida e volta, é
+0,5 Ω.
+
+$$ S = VI = 220 \times 5{,}0 = 1100\ \text{VA}, $$
+$$ P = S\cos\theta = 1100 \times 0{,}70 = 770\ \text{W}, $$
+$$ Q = \sqrt{S^2 - P^2} = \sqrt{1100^2 - 770^2} = 785\ \text{var (indutivo)}, $$
+$$ \theta = \arccos 0{,}70 = 45{,}6^{\circ}. $$
+
+Agora a parte que importa. As perdas no cabo dependem da corrente **total**, não da
+parcela útil:
+
+$$ P_{\text{cabo}} = I^2 R_{\text{cabo}} = 5{,}0^2 \times 0{,}5 = 12{,}5\ \text{W}. $$
+
+Se a mesma carga de 770 W tivesse fator de potência 1, a corrente seria
+$770/220 = 3{,}5$ A, e a perda no cabo cairia para
+$3{,}5^2 \times 0{,}5 = 6{,}1$ W — pouco mais da metade.
+
+::: {#fig-031-motor}
+
+```{.tikz}
+%%| filename: 031-motor
+%%| alt: Diagrama de uma linha de alimentação. À esquerda uma fonte de duzentos e vinte volts, ligada por um cabo com resistência de zero vírgula cinco ohm a um motor à direita. Acima do cabo, uma seta indica a corrente de cinco ampères e a potência aparente de mil e cem volt-ampères. Abaixo, três anotações separam as parcelas: setecentos e setenta watts de potência ativa que atravessam e viram trabalho, setecentos e oitenta e cinco var de potência reativa que vão e voltam, e doze vírgula cinco watts perdidos no cabo. Um quadro comparativo indica que com fator de potência unitário a mesma potência ativa exigiria apenas três vírgula cinco ampères e perderia seis vírgula um watts no cabo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- linha ----------
+  \draw (0,0) to[sV, l={220 V}] (0,3.2);
+  \draw (0,3.2) to[R, l={cabo: $0{,}5\ \Omega$}] (5.4,3.2);
+  \draw (5.4,3.2) -- (6.6,3.2);
+  \draw (6.6,3.2) -- (6.6,2.6);
+  \draw[thick] (5.6,0.6) rectangle (7.6,2.6);
+  \node[align=center, font=\scriptsize] at (6.6,1.6) {motor\\FP $=0{,}70$};
+  \draw (6.6,0.6) -- (6.6,0);
+  \draw (6.6,0) -- (0,0);
+
+  % ---------- corrente ----------
+  \draw[->, >=stealth, manualred, very thick] (2.0,4.0) -- (3.6,4.0);
+  \node[manualred, anchor=south, font=\scriptsize] at (2.8,4.1)
+       {$I = 5{,}0$ A \quad $S = 1100$ VA};
+
+  % ---------- parcelas ----------
+  \node[manualblue, anchor=north west, font=\scriptsize, align=left]
+       at (-0.4,-0.45)
+       {$P = 770$ W\\atravessa e vira trabalho};
+  \node[manualgreen, anchor=north west, font=\scriptsize, align=left]
+       at (4.1,-0.45)
+       {$Q = 785$ var\\vai e volta, não consome};
+  \node[manualyellow, anchor=north west, font=\scriptsize, align=left]
+       at (8.9,-0.45)
+       {$P_{\text{cabo}} = 12{,}5$ W\\perdido no caminho};
+
+  % ---------- comparativo ----------
+  \node[anchor=north west, font=\scriptsize, align=left, draw=manualgray!60,
+        rounded corners=2pt, inner sep=6pt]
+       at (8.9,3.9)
+       {\textbf{a mesma carga, com FP $=1$}\\[2pt]
+        $P = 770$ W (igual)\\
+        $I = 3{,}5$ A \ (em vez de 5,0 A)\\
+        $P_{\text{cabo}} = 6{,}1$ W \ (em vez de 12,5 W)\\[2pt]
+        mesmo trabalho, metade da perda};
+
+\end{tikzpicture}
+```
+
+A conta que a concessionária faz. A potência ativa é a mesma nos dois casos; o que muda
+é a corrente necessária para entregá-la e, com o quadrado dela, a perda no caminho. Todo
+o @sec-cap-032 é sobre reduzir os 5,0 A para 3,5 A sem tocar no motor.
+
+:::
+
+## Medir potência não é multiplicar dois displays {#sec-031-medindo}
+
+Um erro cotidiano e caro: pegar o multímetro, medir 220 V, medir 5 A, multiplicar e
+anunciar "1100 W". Esse produto é $S$, em VA. A potência ativa é 770 W, e a diferença
+de 30 % não aparece em lugar nenhum do procedimento.
+
+A razão é que os dois instrumentos medem **módulos**, e módulos não carregam fase.
+Recuperar $P$ exige medir as duas grandezas **ao mesmo tempo**, multiplicá-las instante
+a instante e tirar a média — que é literalmente a definição de $P$. É isso que um
+wattímetro faz, e é por isso que ele tem quatro terminais em vez de dois.
+
+Três caminhos práticos, do mais barato ao mais caro:
+
+1. **Medidor de tomada** (aqueles de 30 a 100 reais). Mostra W, VA, V, A e FP
+   diretamente. Para qualquer carga de 127 V ou 220 V, é a ferramenta certa e a mais
+   segura, porque não exige abrir nada nem tocar em condutor vivo.
+2. **Método das três tensões**, que é o do laboratório deste capítulo: num circuito
+   série, medir $V_s$, $V_R$ e $V_X$ com um resistor conhecido permite reconstruir todo
+   o triângulo sem nenhum instrumento de fase.
+3. **Osciloscópio de dois canais** com função de multiplicação, ou wattímetro de
+   bancada. É o Volume 7.
+
+## 🧪 Laboratório {#sec-031-lab}
+
+**Separar as três potências num circuito de bancada e provar, com o dedo, que a
+reativa não aquece.** O experimento térmico da Parte 3 é o que fixa o conceito.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escalas CA de tensão e de corrente
+- 1 fonte de tomada de saída **em corrente alternada**, 9 a 12 V CA, com pelo menos
+  300 mA
+- 1 resistor de 100 Ω, **2 W** (não use 1/4 W: ele vai aquecer de verdade)
+- 1 resistor de 220 Ω, 2 W
+- 1 capacitor **não polarizado** de 22 µF, 50 V (de divisor de alto-falante). Na falta
+  dele, 2 eletrolíticos de 47 µF, 25 V — ver a Parte 2
+- 1 medidor de consumo de tomada, se você tiver ou puder pegar emprestado (opcional,
+  mas transforma a Parte 5)
+- Protoboard com terminais parafusados ou barra de conexão (a corrente aqui é alta
+  demais para jumper fino de protoboard)
+- Papel para a tabela
+:::
+
+::: {.callout-warning}
+## Baixa tensão, e um resistor que esquenta
+
+Todo o roteiro é feito na saída de 12 V da fonte de tomada. O resistor de 100 Ω vai
+dissipar cerca de 0,6 W e ficar **quente ao toque** — é esse o ponto do experimento,
+mas toque com o dorso do dedo e por um instante, não segure. A Parte 5 é apenas
+observacional: nada de abrir tomada nem inserir amperímetro em circuito de rede.
+:::
+
+### Parte 1 — O circuito, e as três medidas
+
+1. Monte o resistor de 100 Ω em série com o capacitor de 22 µF, alimentado pela saída
+   CA de 12 V.
+2. Meça $V_s$ (fonte), $V_R$ (resistor) e $V_C$ (capacitor). Anote os três.
+3. Confira o Pitágoras: $\sqrt{V_R^2 + V_C^2}$ deve dar $V_s$.
+4. Calcule a corrente: $I = V_R/R$.
+
+Com 12 V, 100 Ω e 22 µF em 60 Hz ($X_C = 121$ Ω), espere algo em torno de
+$V_R = 7{,}6$ V, $V_C = 9{,}2$ V e $I = 76$ mA.
+
+5. Agora calcule as três potências:
+
+$$ S = V_s\,I, \qquad P = V_R\,I = \frac{V_R^2}{R}, \qquad Q = V_C\,I. $$
+
+6. Confira: $S^2 = P^2 + Q^2$, e $\cos\theta = V_R/V_s = P/S$.
+
+Repare no que aconteceu no passo 5: **a potência ativa é toda do resistor**. O
+capacitor contribui só com $Q$. Não foi preciso medir fase nenhuma — a geometria do
+triângulo entregou tudo.
+
+### Parte 2 — O capacitor não polarizado improvisado
+
+Se você não tiver um capacitor não polarizado, dois eletrolíticos iguais ligados em
+**antissérie** (negativo com negativo, os dois positivos para fora) se comportam
+aproximadamente como um não polarizado de metade do valor: dois de 47 µF dão cerca de
+23 µF.
+
+O truque funciona porque, em cada semiciclo, um dos dois fica polarizado corretamente e
+o outro é curto-circuitado pelo próprio diodo interno de fuga. É uma solução de
+bancada, não de projeto: a fuga é maior, o componente aquece mais do que um bipolar
+verdadeiro, e não serve para corrente de ondulação alta nem para uso contínuo. Para
+este experimento, a 12 V e 80 mA, é seguro.
+
+Meça a temperatura dos dois eletrolíticos ao fim de cinco minutos. Eles ficam
+**mornos** — mais do que um capacitor bipolar ficaria, e isso é a fuga aparecendo como
+potência ativa parasita. Anote: nem o capacitor real é perfeitamente reativo.
+
+### Parte 3 — A prova térmica
+
+Esta é a parte que vale o capítulo.
+
+1. Deixe o circuito da Parte 1 ligado por cinco minutos.
+2. Toque, com o dorso do dedo, o **resistor**. Ele está claramente quente.
+3. Toque o **capacitor**. Ele está na temperatura ambiente.
+4. Confirme com o multímetro que a corrente é a mesma nos dois — eles estão em série,
+   não há como não ser.
+
+Mesma corrente, mesmo circuito, mesma ordem de grandeza de tensão sobre cada um: um
+esquenta, o outro não. Os 0,6 W do resistor são potência **ativa**; os 0,7 var do
+capacitor são potência **reativa**, e ela não tem para onde virar calor. Essa é a
+diferença entre W e var, sentida com o dedo.
+
+5. Para reforçar: troque o capacitor pelo resistor de 220 Ω, de modo que o circuito
+   fique com dois resistores em série. Ligue cinco minutos e toque os dois. Agora os
+   **dois** esquentam, e o de 220 Ω esquenta mais, porque dissipa mais
+   ($P = I^2R$, mesma corrente).
+
+### Parte 4 — O erro de multiplicar os displays
+
+1. Do circuito da Parte 1, anote $V_s$ e $I$.
+2. Multiplique: esse é o valor que a maioria das pessoas chamaria de "potência".
+3. Compare com o $P$ que você calculou no passo 5 da Parte 1.
+
+A diferença é de 30 a 40 %, e ela é inteira. Você acabou de medir $S$ achando que
+media $P$ — o erro mais comum de bancada em CA, e o motivo de o wattímetro existir.
+
+4. Calcule o fator de potência deste circuito: $\cos\theta = P/S$. Deve dar algo em
+   torno de 0,64.
+
+### Parte 5 — Cargas reais (com medidor de tomada)
+
+Se você conseguir um medidor de consumo de tomada, esta parte é rápida e reveladora.
+Ligue nele, um de cada vez, e anote W, VA e FP:
+
+| Carga | W | VA | FP |
+|---|---|---|---|
+| Lâmpada incandescente ou aquecedor | | | espere ~1,00 |
+| Carregador de celular carregando | | | espere 0,5 a 0,7 |
+| Lâmpada de LED barata | | | espere 0,4 a 0,6 |
+| Ventilador ou motor pequeno | | | espere 0,6 a 0,8 |
+| Fonte de computador em uso | | | espere 0,95 a 0,99 (tem correção ativa) |
+| Micro-ondas | | | espere 0,6 a 0,9 |
+
+: Tabela da Parte 5. A coluna VA é sempre maior ou igual à W; quando as duas são iguais,
+a carga é resistiva. {#tbl-031-cargas}
+
+A última linha merece atenção: fontes de computador modernas trazem **correção ativa de
+fator de potência** por exigência normativa, e chegam a 0,99. A lâmpada de LED barata
+da linha anterior não traz, e é justamente por isso que ela é barata. Substituir cem
+lâmpadas incandescentes por cem LEDs baratos reduz muito o $P$ e piora bastante o FP da
+instalação.
+
+::: {.callout-warning}
+## Só observe
+
+Esta parte é feita **exclusivamente** com o medidor de tomada, plugado na parede e com
+a carga plugada nele. Não se abre equipamento, não se insere amperímetro em série com a
+rede, não se mede corrente de tomada com multímetro. As regras do @sec-cap-002 valem.
+:::
+
+### Variante simulada (plano B)
+
+No ngspice, o balanço de potências sai de uma análise transiente com medidas
+integradas:
+
+```
+.meas TRAN pmed AVG (V(a,b)*I(Vsense)) FROM=100m TO=200m
+```
+
+Isso calcula literalmente a média de $v\,i$ — a definição de $P$ — e é o wattímetro
+que você não tem.
+
+Três verificações que valem o tempo:
+
+- Meça a potência média num resistor puro e confirme que dá $V_{\text{rms}}^2/R$.
+- Meça a potência média num capacitor puro. Deve dar **zero** (algo como $10^{-14}$,
+  que é o zero numérico do simulador). Essa é a demonstração mais limpa de que reativo
+  não consome.
+- Monte o RC da Parte 1 e confirme que a potência média do circuito inteiro é igual à
+  do resistor sozinho.
+
+Uma armadilha: a janela `FROM`/`TO` precisa ser um número inteiro de períodos **e**
+começar depois do transitório inicial. Começar em zero mistura a resposta transitória
+na média e produz um número que muda toda vez que você muda a janela.
+
+## 🔥 Onde Queima {#sec-031-queima}
+
+**Multiplicar a leitura de tensão pela de corrente e chamar de watt.** Isso é VA. Em
+carga com FP 0,7, o erro é de 43 %.
+
+**Somar W com var.** As duas são ortogonais. Só se somam em quadratura, e o resultado
+é VA.
+
+**Dimensionar transformador ou nobreak por watt.** O enrolamento aguenta corrente,
+portanto VA. Um nobreak de 1200 VA não entrega 1200 W.
+
+**Achar que potência reativa é gratuita.** Ela não consome energia na carga, mas
+consome no **cabo**: a perda $I^2R$ da linha responde à corrente total. Foram 12,5 W
+contra 6,1 W no exemplo do motor.
+
+**Esquecer o conjugado em $\mathbf{S} = \mathbf{V}\mathbf{I}^{*}$.** Sem ele o ângulo
+sai errado e $Q$ troca de sinal.
+
+**Trocar o sinal de $Q$ entre indutivo e capacitivo.** Indutivo absorve ($Q>0$),
+capacitivo fornece ($Q<0$). Inverter isso faz a correção do @sec-cap-032 piorar em vez
+de melhorar.
+
+**Dimensionar cabo pela potência ativa.** O cabo vê corrente, e a corrente sai de $S$.
+Uma carga de 770 W com FP 0,7 exige cabo de 5 A, não de 3,5 A.
+
+**Supor que a potência de pico é a potência média.** O pico de $p(t)$ numa carga
+resistiva é o **dobro** da média, e é ele que o componente vê instantaneamente. Importa
+para semicondutor, não para o medidor da concessionária.
+
+**Confundir o fator de potência com o rendimento.** FP é uma relação de fase; o
+rendimento é uma relação de energia útil sobre energia consumida. Um motor pode ter FP
+0,9 e rendimento 0,75, ou o contrário.
+
+**Aplicar $P = VI\cos\theta$ a corrente não senoidal.** A fórmula supõe senoide. Numa
+carga com corrente pulsada — fonte chaveada sem correção — existe um fator de potência
+adicional, de distorção, que o @sec-cap-032 trata.
+
+**Achar que um capacitor "gera" energia porque $Q<0$.** Ele não gera nada; devolve o
+que recebeu meio ciclo antes. O sinal negativo é convenção de referência, não de fonte.
+
+## O que fica deste capítulo {#sec-031-resumo}
+
+A potência instantânea $p(t) = v\,i$ tem duas parcelas: uma constante, igual a
+$VI\cos\theta$, e uma que oscila ao dobro da frequência com média zero. A primeira é o
+consumo real; a segunda é energia que vai e volta.
+
+Daí saem as três potências: **ativa** $P = VI\cos\theta$ em watt, que aquece e
+trabalha; **reativa** $Q = VI\operatorname{sen}\theta$ em var, que só vai e volta; e
+**aparente** $S = VI$ em volt-ampere, que é o que o fio, o disjuntor, o transformador e
+o gerador precisam aguentar.
+
+As três formam um triângulo retângulo, $S^2 = P^2 + Q^2$, semelhante ao triângulo de
+impedância do @sec-cap-030 — basta multiplicar os lados daquele por $I^2$. O ângulo é o
+mesmo nos dois, e o seu cosseno é o fator de potência.
+
+$Q$ é positiva em carga indutiva e negativa em capacitiva, e essa oposição de sinais é
+o que torna a correção possível. A potência complexa $\mathbf{S} = \mathbf{V}\mathbf{I}^{*}$
+reúne as duas parcelas e se conserva na rede inteira.
+
+Potência reativa não é consumida, mas custa: ela ocupa o cabo, e a perda no cabo cresce
+com o quadrado da corrente total. Foi a diferença entre 12,5 W e 6,1 W no exemplo do
+motor, para exatamente o mesmo trabalho realizado.
+
+Falta agora a pergunta prática: como reduzir aquela corrente de 5,0 A para 3,5 A sem
+alterar o motor, quanto isso custa, quanto capacitor é preciso, e por que a
+concessionária multa quem não faz isso. É o @sec-cap-032, e ele fecha o Volume 5.
