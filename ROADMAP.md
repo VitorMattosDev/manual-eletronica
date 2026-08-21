@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 29/104**
+**Progresso: 30/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -66,7 +66,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 - [x] 029 — Fasores e números complexos aplicados — `capitulos/029-fasores-e-numeros-complexos-aplicados.qmd`
 - [x] 030 — Reatância e impedância — `capitulos/030-reatancia-e-impedancia.qmd`
 - [x] 031 — Potência ativa, reativa e aparente — `capitulos/031-potencia-ativa-reativa-e-aparente.qmd`
-- [ ] 032 — Fator de potência e correção — `capitulos/032-fator-de-potencia-e-correcao.qmd`
+- [x] 032 — Fator de potência e correção — `capitulos/032-fator-de-potencia-e-correcao.qmd`
 
 
 ### Volume 6 — Filtros e Resposta em Frequência

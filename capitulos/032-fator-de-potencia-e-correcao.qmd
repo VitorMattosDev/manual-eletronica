@@ -1,3 +1,762 @@
 # Fator de potência e correção {#sec-cap-032}
 
-*(em elaboração)*
+O @sec-cap-031 terminou com um problema bem definido e uma promessa. O motor consome
+770 W, puxa 5,0 A da linha e desperdiça 12,5 W no cabo. Se o fator de potência fosse 1,
+a mesma potência exigiria 3,5 A e desperdiçaria 6,1 W — mesmo trabalho, quase metade
+da perda.
+
+A promessa é que dá para chegar perto disso **sem tocar no motor**. Não trocando o
+motor, não mexendo na carga mecânica, não regulando nada: apenas ligando um capacitor
+em paralelo com ele. E o custo dessa operação é um componente de vinte reais que não
+consome energia nenhuma.
+
+Este capítulo mostra como calcular esse capacitor, onde instalá-lo, quanto se ganha,
+por que a concessionária cobra de quem não faz isso, e — a parte que quase nenhum texto
+introdutório diz — em que caso o capacitor não resolve nada e ainda piora o problema.
+
+## O que o fator de potência é {#sec-032-oquee}
+
+$$ \boxed{\;\text{FP} = \frac{P}{S}\;} $$
+
+A razão entre o que é consumido e o que é transportado. Sendo $P \le S$ sempre, o fator
+de potência fica entre 0 e 1, e é adimensional. Quanto mais perto de 1, mais eficiente
+é o transporte.
+
+Para corrente **senoidal**, e só nesse caso, ele coincide com o cosseno do ângulo de
+defasagem:
+
+$$ \text{FP} = \cos\theta \qquad (\text{corrente senoidal}). $$
+
+Essa ressalva não é academicismo: metade das cargas de uma casa moderna não tem corrente
+senoidal, e para elas $\cos\theta$ e FP são números diferentes. A @sec-032-distorcao
+trata disso.
+
+Duas palavras que sempre acompanham o número:
+
+- **Atrasado** (*lagging*): a corrente atrasa em relação à tensão. Carga indutiva,
+  $Q > 0$. É o caso de praticamente toda instalação industrial.
+- **Adiantado** (*leading*): a corrente adianta. Carga capacitiva, $Q < 0$. Aparece em
+  linhas longas com pouca carga e em instalações **sobrecorrigidas**.
+
+Um FP de 0,80 atrasado e um de 0,80 adiantado dão a mesma corrente e a mesma perda no
+cabo, mas exigem correções opostas. Dizer só "0,80" é informação incompleta.
+
+::: {.callout-warning}
+## Fator de potência não é rendimento
+
+São duas coisas completamente diferentes, e confundi-las leva a decisões erradas de
+compra.
+
+**Rendimento** ($\eta$) é energia útil dividida por energia consumida — uma relação
+entre watts e watts. Um motor de $\eta = 0{,}85$ transforma 85 % dos watts que entram
+em trabalho no eixo e 15 % em calor.
+
+**Fator de potência** é uma relação de fase entre watts e volt-ampères. Ele não diz
+nada sobre desperdício **dentro** do equipamento; diz respeito ao transporte até ele.
+
+Um motor pode ter rendimento 0,90 e FP 0,60. Corrigir o FP não faz o motor consumir
+menos watts — faz a linha transportar menos ampères.
+:::
+
+## De onde vem o fator de potência baixo {#sec-032-origem}
+
+Sempre da mesma origem física: alguma coisa precisa de um **campo magnético** para
+funcionar, e estabelecer esse campo exige corrente que não realiza trabalho.
+
+| Carga | FP típico | Por quê |
+|---|---|---|
+| Resistência de aquecimento, lâmpada incandescente | 1,00 | não há campo a manter |
+| Motor de indução a plena carga | 0,80 a 0,88 | corrente de magnetização |
+| Motor de indução em vazio | 0,15 a 0,30 | mesma magnetização, sem trabalho |
+| Transformador em vazio | 0,10 a 0,20 | só corrente de magnetização |
+| Reator de lâmpada fluorescente | 0,40 a 0,60 | é um indutor, por projeto |
+| Máquina de solda a transformador | 0,30 a 0,60 | reatância de dispersão elevada |
+| Fonte chaveada sem correção | 0,50 a 0,70 | distorção, não defasagem |
+| Fonte chaveada com PFC ativo | 0,95 a 0,99 | corrigida eletronicamente |
+
+: Fatores de potência típicos. As duas linhas de motor merecem atenção: é a **mesma
+máquina**, e o FP despenca quando ela trabalha aliviada. {#tbl-032-tipicos}
+
+A segunda e a terceira linha explicam sozinhas metade dos casos reais de FP ruim numa
+indústria. A corrente de magnetização de um motor de indução é praticamente **constante**
+— ela depende da tensão e do ferro, não da carga mecânica. A corrente ativa, essa sim,
+acompanha a carga. Um motor superdimensionado, girando a 20 % da capacidade, tem a
+mesma parcela reativa de sempre e uma parcela ativa pequena: FP péssimo.
+
+Daí a primeira regra de correção, que não custa nada e quase nunca é lembrada:
+**dimensionar o motor para a carga real**. Trocar um motor de 10 cv que aciona uma
+carga de 3 cv por um de 4 cv melhora o FP mais do que qualquer banco de capacitores, e
+melhora também o rendimento.
+
+## Deslocamento e distorção {#sec-032-distorcao}
+
+Aqui está o ponto que separa um texto atual de um texto dos anos 1970. Quando a carga
+é não linear — fonte chaveada, LED barato, inversor, dimmer —, a corrente **não é
+senoidal**, e nesse caso o fator de potência tem duas causas independentes:
+
+$$ \text{FP} = \underbrace{\cos\theta_1}_{\text{deslocamento}} \times
+   \underbrace{\frac{1}{\sqrt{1 + \text{THD}^2}}}_{\text{distorção}}. $$
+
+::: {#fig-032-distorcao}
+
+```{.tikz}
+%%| filename: 032-distorcao
+%%| alt: Dois painéis empilhados. No de cima, uma tensão senoidal em azul e uma corrente senoidal em vermelho atrasada em relação a ela, representando uma carga indutiva com fator de potência de deslocamento. No de baixo, a mesma tensão senoidal em azul e uma corrente em vermelho formada por pulsos altos e estreitos que ocorrem apenas perto dos picos da tensão, representando a corrente de entrada de uma fonte chaveada sem correção. Anotações indicam que no primeiro caso o problema é a defasagem e no segundo é a forma de onda, e que só o primeiro se corrige com capacitor.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \pgfplotsset{
+    fatia/.style={
+      width=12.4cm, height=5.0cm,
+      xmin=-20, xmax=760, ymin=-1.5, ymax=1.5,
+      axis lines=middle,
+      xtick={0,180,360,540,720},
+      ytick=\empty,
+      font=\footnotesize,
+      x axis line style={manualgray},
+      y axis line style={manualgray},
+    }
+  }
+
+  % ---------- carga indutiva classica ----------
+  \begin{axis}[fatia, at={(0cm,0cm)}, anchor=north west, xticklabels={}]
+    \addplot[manualblue, thick, domain=0:750, samples=320] {1.2*cos(x)};
+    \addplot[manualred, very thick, domain=0:750, samples=320] {0.9*cos(x-45)};
+  \end{axis}
+  \node[anchor=west, font=\scriptsize, align=left] at (12.7,-2.5)
+       {\textbf{carga indutiva}\\corrente senoidal,\\atrasada\\[3pt]
+        FP de \emph{deslocamento}\\[3pt]
+        \textcolor{manualgreen}{\textbf{corrige com}}\\
+        \textcolor{manualgreen}{\textbf{capacitor}}};
+
+  % ---------- carga nao linear ----------
+  \begin{axis}[fatia, at={(0cm,-5.6cm)}, anchor=north west]
+    \addplot[manualblue, thick, domain=0:750, samples=320] {1.2*cos(x)};
+    % corrente em pulsos estreitos, centrados nos picos da tensao
+    \addplot[manualred, very thick, domain=0:750, samples=900]
+            {1.38*cos(x)*exp(-26*(1-abs(cos(x))))};
+  \end{axis}
+
+  \node[anchor=west, font=\scriptsize, align=left] at (12.7,-8.1)
+       {\textbf{fonte chaveada}\\\textbf{sem correção}\\
+        corrente em pulsos,\\em fase com o pico\\[3pt]
+        FP de \emph{distorção}\\[3pt]
+        \textcolor{manualred}{\textbf{capacitor não}}\\
+        \textcolor{manualred}{\textbf{resolve}}};
+
+  \node[manualblue, anchor=west, font=\scriptsize] at (0.5,0.7) {$v(t)$};
+  \node[manualred,  anchor=west, font=\scriptsize] at (2.0,0.7) {$i(t)$};
+
+\end{tikzpicture}
+```
+
+Duas causas de FP baixo, com remédios diferentes. Em cima, a corrente é senoidal e está
+atrasada: o problema é o ângulo, e um capacitor o corrige. Embaixo, a corrente está **em
+fase** com a tensão — o ângulo é quase zero — e ainda assim o FP é ruim, porque a forma
+de onda é pulsada. Nenhum capacitor conserta isso.
+
+:::
+
+O painel de baixo é a situação de qualquer carregador, televisor, fonte de LED ou
+computador barato. O retificador só conduz quando a tensão da rede supera a do capacitor
+de filtro, o que acontece perto do pico e dura poucos milissegundos. O resultado é uma
+corrente com fator de crista de 2 a 5 (@sec-cap-028), rica em harmônicos ímpares, e com
+FP de 0,5 a 0,7 apesar de estar praticamente em fase.
+
+A THD (*total harmonic distortion*) mede quanto da corrente eficaz está fora da
+frequência fundamental. Uma fonte chaveada típica sem correção tem THD de 100 % a
+150 %, o que sozinho já limita o FP a
+
+$$ \frac{1}{\sqrt{1 + 1{,}0^2}} = 0{,}71
+   \qquad\text{ou}\qquad
+   \frac{1}{\sqrt{1 + 1{,}5^2}} = 0{,}55. $$
+
+A correção aqui não é capacitiva: é um circuito **PFC ativo** — um conversor
+elevador que força a corrente de entrada a seguir a forma da tensão. Ele é obrigatório
+por norma acima de certa potência, é o motivo de uma fonte de computador ter FP 0,99, e
+é assunto do Volume 12. Instalar capacitor para "corrigir" uma carga distorcida não
+melhora o FP e ainda arrisca ressonância com os harmônicos, como a
+@sec-032-sobrecorrecao explica.
+
+## A correção capacitiva {#sec-032-correcao}
+
+Para a parcela de deslocamento — motores, transformadores, reatores — a solução é
+direta e barata.
+
+A ideia em uma frase: **o motor precisa de energia reativa e o capacitor tem energia
+reativa para dar**. Ligados em paralelo, um empresta ao outro localmente, e a
+concessionária deixa de precisar mandar essa energia pelo cabo, 120 vezes por segundo,
+desde a subestação.
+
+::: {#fig-032-capacitor}
+
+```{.tikz}
+%%| filename: 032-capacitor
+%%| alt: Painel esquerdo com o esquemático de uma fonte de duzentos e vinte volts alimentando, em paralelo, um motor e um capacitor de vinte e cinco microfarads. Setas indicam a corrente total de três vírgula oito ampères vindo da linha, a corrente do motor de cinco ampères e a corrente do capacitor de dois vírgula zero oito ampères. Painel direito com o diagrama fasorial das correntes, tendo a tensão como referência horizontal. A corrente do motor é um vetor de cinco ampères inclinado para baixo em menos quarenta e cinco vírgula seis graus, a corrente do capacitor é um vetor de dois vírgula zero oito ampères apontando para cima, e a soma dos dois é um vetor de três vírgula oito ampères inclinado apenas menos vinte e três graus.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- circuito ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,0) to[sV, l={220 V}] (0,4.4);
+    \draw (0,4.4) -- (5.6,4.4);
+    \draw (0,0) -- (5.6,0);
+
+    % capacitor em paralelo
+    \draw (2.6,4.4) to[C, l={$25\ \mu$F}] (2.6,0);
+
+    % motor
+    \draw (5.0,4.4) -- (5.0,3.2);
+    \draw[thick] (4.1,1.2) rectangle (5.9,3.2);
+    \node[align=center, font=\scriptsize] at (5.0,2.2) {motor\\770 W};
+    \draw (5.0,1.2) -- (5.0,0);
+
+    % correntes
+    \draw[->, >=stealth, manualred, very thick] (0.7,4.75) -- (1.7,4.75);
+    \node[manualred, anchor=south, font=\scriptsize] at (1.2,4.85)
+         {$I = 3{,}8$ A};
+    \draw[->, >=stealth, manualgreen, very thick] (2.95,3.3) -- (2.95,2.5);
+    \node[manualgreen, anchor=west, font=\scriptsize] at (3.05,2.9)
+         {$2{,}08$ A};
+    \draw[->, >=stealth, manualblue, very thick] (3.6,4.75) -- (4.6,4.75);
+    \node[manualblue, anchor=south, font=\scriptsize] at (4.1,4.85)
+         {$5{,}0$ A};
+  \end{scope}
+
+  % ---------------- diagrama fasorial ----------------
+  \begin{scope}[shift={(9.6,1.6)}]
+    \draw[eixo] (-0.5,0) -- (4.6,0);
+    \draw[eixo] (0,-3.2) -- (0,2.4);
+    \node[manualgray, font=\scriptsize, anchor=south west] at (3.9,0.08)
+         {$\mathbf{V}$ (referência)};
+
+    % I do motor: 5 A a -45.57 graus, escala 0.62 cm/A
+    \draw[vetor, manualblue] (0,0) -- (-45.57:3.1);
+    \node[manualblue, font=\scriptsize, anchor=north west] at (-45.57:3.2)
+         {$\mathbf{I}_{\text{motor}} = 5{,}0$ A};
+
+    % I do capacitor: 2.08 A a +90
+    \draw[vetor, manualgreen] (0,0) -- (0,1.29);
+    \node[manualgreen, font=\scriptsize, anchor=east] at (-0.1,0.95)
+         {$\mathbf{I}_C = 2{,}08$ A};
+
+    % soma
+    \draw[vetor, manualred] (0,0) -- (-23.07:2.36);
+    \node[manualred, font=\scriptsize, anchor=west] at (-23.07:2.5)
+         {$\mathbf{I}_{\text{total}} = 3{,}80$ A};
+
+    % construcao
+    \draw[auxiliar] (-45.57:3.1) -- ($(-45.57:3.1)+(0,1.29)$);
+    \draw[auxiliar] ($(-45.57:3.1)+(0,1.29)$) -- (-23.07:2.36);
+
+    \node[anchor=north, align=center, font=\scriptsize] at (1.9,-3.5)
+         {o capacitor sobe a ponta do vetor\\e encurta a resultante};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+A correção, vista pelas correntes. O capacitor puxa 2,08 A adiantados de 90°, que
+cancelam parte dos 3,57 A reativos do motor. A componente **ativa** — a projeção
+horizontal, 3,50 A — não muda: o motor continua fazendo o mesmo trabalho. O que encurta
+é a resultante, de 5,0 A para 3,80 A.
+
+:::
+
+### A fórmula
+
+Corrigir de um fator $\cos\theta_1$ para outro $\cos\theta_2$, mantendo $P$ constante,
+exige que o capacitor forneça a diferença entre as duas potências reativas:
+
+$$ \boxed{\;Q_C = P\,(\tan\theta_1 - \tan\theta_2)\;} $$
+
+e a capacitância que produz esse $Q_C$ na tensão $V$ e frequência $f$ é
+
+$$ \boxed{\;C = \frac{Q_C}{2\pi f\,V^2}\;} $$
+
+porque $Q_C = V^2/X_C = V^2\omega C$.
+
+### O exemplo, resolvido
+
+Retomando o motor do @sec-cap-031: 770 W, 220 V, 60 Hz, FP 0,70 atrasado. Meta: 0,92 —
+o valor de referência da regulamentação brasileira.
+
+$$ \theta_1 = \arccos 0{,}70 = 45{,}57^{\circ}, \qquad \tan\theta_1 = 1{,}020, $$
+$$ \theta_2 = \arccos 0{,}92 = 23{,}07^{\circ}, \qquad \tan\theta_2 = 0{,}426, $$
+$$ Q_C = 770\,(1{,}020 - 0{,}426) = 458\ \text{var}, $$
+$$ C = \frac{458}{2\pi \times 60 \times 220^2}
+     = \frac{458}{1{,}825\times 10^{7}} = 25{,}1\ \mu\text{F}. $$
+
+E 25 µF é um valor comercial corrente de capacitor de regime permanente para motor
+(*motor run*), vendido em 400 ou 450 V CA. Não é preciso arredondar nada.
+
+O resultado:
+
+| | Antes | Depois |
+|---|---|---|
+| $P$ | 770 W | 770 W |
+| $Q$ | 785 var | 328 var |
+| $S$ | 1100 VA | 837 VA |
+| $I$ da linha | 5,00 A | 3,80 A |
+| FP | 0,70 | 0,92 |
+| Perda no cabo (0,5 Ω) | 12,5 W | 7,2 W |
+
+: O antes e o depois. A potência ativa é rigorosamente a mesma; a corrente cai 24 % e a
+perda no cabo cai 42 %, porque ela vai com o **quadrado** da
+corrente. {#tbl-032-antes-depois}
+
+::: {#fig-032-triangulo}
+
+```{.tikz}
+%%| filename: 032-triangulo
+%%| alt: Um triângulo de potências mostrando a correção. O cateto horizontal, de setecentos e setenta watts de potência ativa, é o mesmo antes e depois. O cateto vertical original, de setecentos e oitenta e cinco var, é encurtado para trezentos e vinte e oito var por uma seta descendente de quatrocentos e cinquenta e oito var que representa o capacitor. A hipotenusa original, de mil e cem volt-ampères com ângulo de quarenta e cinco vírgula seis graus, é substituída por uma nova hipotenusa de oitocentos e trinta e sete volt-ampères com ângulo de vinte e três graus.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % P = 770 -> 4.81 cm ; Q1 = 785 -> 4.91 cm ; Q2 = 328 -> 2.05 cm
+  \draw[eixo] (-0.6,0) -- (6.2,0) node[below right, font=\scriptsize] {$P$ (W)};
+  \draw[eixo] (0,-0.6) -- (0,5.9) node[left, font=\scriptsize] {$Q$ (var)};
+
+  \draw[vetor, manualblue] (0,0) -- (4.81,0);
+  \node[manualblue, font=\scriptsize, anchor=north] at (2.4,-0.12)
+       {$P = 770$ W \ (não muda)};
+
+  % Q original
+  \draw[manualgray, thick] (4.81,0) -- (4.81,4.91);
+  \node[manualgray, font=\scriptsize, anchor=west] at (4.9,4.55)
+       {$Q_1 = 785$ var};
+
+  % Q corrigido
+  \draw[vetor, manualgreen] (4.81,0) -- (4.81,2.05);
+  \node[manualgreen, font=\scriptsize, anchor=west] at (4.9,1.1)
+       {$Q_2 = 328$ var};
+
+  % o capacitor
+  \draw[vetor, manualyellow] (5.55,4.91) -- (5.55,2.05);
+  \node[manualyellow, font=\scriptsize, anchor=west, align=left] at (5.65,3.5)
+       {$Q_C = 458$ var\\fornecidos pelo\\capacitor de 25 $\mu$F};
+  \draw[auxiliar] (4.81,4.91) -- (5.55,4.91);
+  \draw[auxiliar] (4.81,2.05) -- (5.55,2.05);
+
+  % hipotenusas
+  \draw[manualgray, thick, dashed] (0,0) -- (4.81,4.91);
+  \node[manualgray, font=\scriptsize, anchor=south east, align=right]
+       at (2.9,3.15) {$S_1 = 1100$ VA\\FP $=0{,}70$};
+
+  \draw[vetor, manualred] (0,0) -- (4.81,2.05);
+  \node[manualred, font=\scriptsize, anchor=north west, align=left]
+       at (2.35,1.15) {$S_2 = 837$ VA\\FP $=0{,}92$};
+
+  \draw[manualgray, thin, ->, >=stealth] (1.5,0) arc (0:45.57:1.5);
+  \node[manualgray, font=\tiny, anchor=south west] at (57:1.5)
+       {$45{,}6^{\circ}$};
+  \draw[manualred, thin, ->, >=stealth] (1.05,0) arc (0:23.07:1.05);
+  \node[manualred, font=\tiny, anchor=west] at (11:1.2) {$23{,}1^{\circ}$};
+
+\end{tikzpicture}
+```
+
+A correção no triângulo de potências. O cateto horizontal é intocado — o trabalho é o
+mesmo. O capacitor apenas subtrai 458 var do cateto vertical, e com isso a hipotenusa
+encolhe de 1100 para 837 VA.
+
+:::
+
+## Onde instalar {#sec-032-onde}
+
+Corrigir "quanto" é aritmética. Corrigir "onde" é engenharia, porque o trecho de cabo
+que fica **entre** o capacitor e a carga continua carregando a corrente reativa inteira.
+
+::: {#fig-032-instalacao}
+
+```{.tikz}
+%%| filename: 032-instalacao
+%%| alt: Diagrama unifilar de uma instalação. Da esquerda para a direita, a entrada com o medidor, um quadro geral, dois quadros de distribuição e, no fim, quatro motores. Três posições possíveis para o banco de capacitores estão marcadas: na entrada, chamada correção global; nos quadros de distribuição, chamada correção por grupo; e junto de cada motor, chamada correção individual. Anotações indicam que quanto mais perto da carga, maior o trecho de cabo aliviado, e que quanto mais perto da entrada, menor o custo total.
+
+\begin{tikzpicture}[font=\footnotesize,
+  cx/.style={draw, thick, minimum width=1.15cm, minimum height=0.75cm,
+             align=center, font=\tiny, fill=white},
+  mt/.style={draw, thick, circle, minimum size=0.72cm, font=\tiny},
+]
+
+  % ----- barramento principal -----
+  \node[cx, fill=manualgray!12] (med) at (0,0) {medidor\\entrada};
+  \node[cx] (qg) at (3.0,0) {quadro\\geral};
+  \node[cx] (qd1) at (6.4,1.5) {quadro 1};
+  \node[cx] (qd2) at (6.4,-1.5) {quadro 2};
+
+  \node[mt] (m1) at (9.8,2.4) {M};
+  \node[mt] (m2) at (9.8,0.9) {M};
+  \node[mt] (m3) at (9.8,-0.9) {M};
+  \node[mt] (m4) at (9.8,-2.4) {M};
+
+  \draw[thick] (med) -- (qg);
+  \draw[thick] (qg) -- (4.7,0) -- (4.7,1.5) -- (qd1);
+  \draw[thick] (4.7,0) -- (4.7,-1.5) -- (qd2);
+  \draw[thick] (qd1) -- (8.2,1.5) -- (8.2,2.4) -- (m1);
+  \draw[thick] (8.2,1.5) -- (8.2,0.9) -- (m2);
+  \draw[thick] (qd2) -- (8.2,-1.5) -- (8.2,-0.9) -- (m3);
+  \draw[thick] (8.2,-1.5) -- (8.2,-2.4) -- (m4);
+
+  % ----- posicoes de correcao -----
+  \draw[manualblue, very thick, ->, >=stealth] (1.5,-1.9) -- (1.5,-0.45);
+  \node[manualblue, anchor=north, align=center, font=\scriptsize] at (1.5,-2.0)
+       {\textbf{global}\\banco na entrada};
+
+  \draw[manualgreen, very thick, ->, >=stealth] (6.4,3.5) -- (6.4,2.0);
+  \node[manualgreen, anchor=south, align=center, font=\scriptsize] at (6.4,3.6)
+       {\textbf{por grupo}\\banco no quadro};
+
+  \draw[manualyellow, very thick, ->, >=stealth] (11.6,2.4) -- (10.4,2.4);
+  \node[manualyellow, anchor=west, align=left, font=\scriptsize] at (11.7,2.4)
+       {\textbf{individual}\\junto do motor};
+
+  % ----- trechos aliviados -----
+  \draw[manualblue, line width=3pt, opacity=0.45] (-0.2,-4.0) -- (1.5,-4.0);
+  \node[manualblue, anchor=west, font=\tiny] at (1.7,-4.0) {global};
+  \draw[manualgreen, line width=3pt, opacity=0.45] (-0.2,-4.45) -- (6.4,-4.45);
+  \node[manualgreen, anchor=west, font=\tiny] at (6.6,-4.45) {por grupo};
+  \draw[manualyellow, line width=3pt, opacity=0.45] (-0.2,-4.9) -- (9.6,-4.9);
+  \node[manualyellow, anchor=west, font=\tiny] at (9.8,-4.9) {individual};
+
+  \node[manualgray, anchor=north west, align=left, font=\scriptsize]
+       at (-0.2,-5.35)
+       {as barras mostram o trecho de cabo \emph{aliviado} por cada opção:\\
+        quanto mais perto da carga, mais cabo se beneficia — e mais capacitores
+        são necessários};
+
+\end{tikzpicture}
+```
+
+As três estratégias. A correção global satisfaz a concessionária com um único banco e é
+a mais barata; a individual alivia a instalação inteira, inclusive os cabos internos, e
+é a mais cara. A escolha real quase sempre é uma mistura das três.
+
+:::
+
+| Estratégia | Vantagem | Desvantagem |
+|---|---|---|
+| **Individual** — um capacitor por motor | alivia todo o cabo; liga e desliga com o motor, sem controle | muitos capacitores; risco de auto-excitação em motor com inércia |
+| **Por grupo** — banco no quadro de distribuição | compromisso razoável; menos unidades | não alivia os ramais finais |
+| **Global** — banco automático na entrada | mais barato por kvar; controlador ajusta em degraus | não alivia nada da instalação interna |
+
+: Onde instalar o banco de capacitores. A correção individual em motores exige atenção:
+ver a @sec-032-sobrecorrecao. {#tbl-032-onde}
+
+## Sobrecorreção e os seus perigos {#sec-032-sobrecorrecao}
+
+Corrigir demais é pior do que não corrigir, e por quatro motivos distintos.
+
+**O FP volta a cair, agora adiantado.** Se $Q_C > Q_1$, a resultante passa para o lado
+capacitivo e a corrente volta a crescer. O gráfico de corrente contra capacitância é uma
+curva em V: desce até o mínimo em $Q_C = Q_1$ e sobe depois. A Parte 3 do laboratório
+mede exatamente essa curva.
+
+**Sobretensão.** Um capacitor em paralelo com a indutância da linha forma um divisor
+que **eleva** a tensão no ponto de instalação, especialmente em horário de carga leve.
+Instalações sobrecorrigidas costumam apresentar tensão alta de madrugada, e isso queima
+lâmpadas e reduz a vida de equipamento eletrônico.
+
+**Ressonância com harmônicos.** Este é o risco mais sério em instalação moderna. O banco
+de capacitores e a indutância de dispersão do transformador formam um circuito
+ressonante paralelo. Se a frequência de ressonância cair perto de um harmônico presente
+na instalação — tipicamente o 5.º (300 Hz) ou o 7.º (420 Hz), gerados por fontes
+chaveadas e inversores —, a corrente harmônica é **amplificada**, e o resultado é
+capacitor estufando, fusível abrindo sem motivo e transformador zumbindo. A solução é
+um banco **dessintonizado**, com reator em série que desloca a ressonância para longe
+dos harmônicos. Isso é projeto de instalação, e o Volume 12 volta ao assunto pelo lado
+do equipamento.
+
+**Auto-excitação de motor.** Um motor de indução desligado da rede mas ainda girando por
+inércia, com um capacitor grande ligado aos seus terminais, pode continuar se excitando
+sozinho e gerar tensão — às vezes acima da nominal. Se a chave religar nesse instante,
+fora de fase, o pico de corrente é destrutivo. Por isso, na correção individual, o
+capacitor é dimensionado abaixo da corrente de magnetização em vazio do motor
+(tipicamente 90 % dela), e nunca ligado ao lado do motor de um conversor de frequência.
+
+::: {.callout-warning}
+## Capacitor de correção guarda energia, e ele guarda muita
+
+Um capacitor de 25 µF carregado ao pico de 311 V armazena
+$\frac{1}{2}CV^2 = 1{,}2$ J. Isso é suficiente para um choque violento e para soldar a
+ponta de uma chave de fenda. Todo capacitor de correção traz **resistores de descarga**
+internos ou externos, dimensionados para levar a tensão a menos de 50 V em até um
+minuto após o desligamento.
+
+Antes de tocar em qualquer terminal, desligue, espere o tempo especificado e **meça**.
+As regras do @sec-cap-002 sobre capacitores carregados valem integralmente, e um banco
+de correção é o exemplo doméstico mais próximo daquele capítulo.
+:::
+
+## O lado regulatório {#sec-032-regulatorio}
+
+No Brasil, o fator de potência de referência é **0,92**, definido pela regulamentação
+da ANEEL, e ele se aplica aos consumidores do **grupo A** — atendidos em média e alta
+tensão, tipicamente indústria e comércio de porte.
+
+Como funciona, em resumo:
+
+- O FP é apurado **hora a hora**, não em média mensal. Uma hora ruim é cobrada mesmo que
+  o mês inteiro esteja bom.
+- Abaixo de 0,92 **indutivo**, a concessionária fatura o excedente de reativo. Na
+  prática, cobra-se como se a demanda e o consumo tivessem sido aqueles necessários para
+  atingir 0,92.
+- Existe também limite para FP **capacitivo**, apurado na madrugada, justamente para
+  penalizar instalações sobrecorrigidas que deixam o banco ligado com a fábrica parada.
+
+Para o **grupo B** — residências e pequenos comércios em baixa tensão —, a fatura é por
+energia ativa (kWh) e não há cobrança de reativo. Isso não significa que o problema não
+exista: significa que ele é rateado no custo do sistema em vez de individualizado.
+
+Vale registrar a consequência prática dessa assimetria: numa casa, corrigir o fator de
+potência **não reduz a conta de luz**. O medidor residencial conta kWh, que é potência
+ativa, e a potência ativa não muda com a correção. Produtos vendidos como "economizador
+de energia" que consistem em um capacitor numa tomada não economizam nada — e são
+vendidos exatamente por explorar essa confusão.
+
+## O que o capacitor não resolve {#sec-032-naocorrige}
+
+Fechando com a lista das situações em que a resposta certa é outra:
+
+- **Corrente distorcida** (fontes chaveadas, LEDs, inversores): a solução é PFC ativo ou
+  filtro de harmônicos. Capacitor não corrige e pode ressonar.
+- **Motor superdimensionado**: a solução é trocar o motor, ou usar partida suave e
+  redução de tensão em vazio.
+- **Rendimento baixo**: capacitor não mexe em watts. A solução é equipamento melhor.
+- **Queda de tensão por cabo subdimensionado**: a correção ajuda um pouco, ao reduzir a
+  corrente, mas o problema é o cabo.
+- **Consumo alto**: correção não reduz kWh. Reduz kVA e ampères.
+
+## 🧪 Laboratório {#sec-032-lab}
+
+**Medir um fator de potência ruim de verdade, calcular o capacitor que o corrige, e
+ver a corrente da linha cair — e depois subir de novo, quando se exagera.** Tudo em
+12 V.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala CA de tensão **e** escala CA de corrente (mA)
+- 1 fonte de tomada de saída **em corrente alternada**, 9 a 12 V CA
+- 1 transformador pequeno de rede, do tipo 127 V para 12 V, 300 mA a 500 mA, com os
+  quatro terminais acessíveis (de sucata serve, e é o melhor uso possível para ele)
+- 1 resistor de 100 Ω, 1/4 W (sensor de corrente)
+- Capacitores não polarizados: 1 de 1 µF, 2 de 2,2 µF e 1 de 4,7 µF, 50 V ou mais
+  (poliéster ou de divisor de alto-falante)
+- Protoboard, jumpers e papel para a tabela
+:::
+
+::: {.callout-warning}
+## O transformador só pode ser alimentado pelo lado de ALTA
+
+Neste roteiro, os 12 V da fonte entram no enrolamento de **127 V** do transformador, e
+o enrolamento de 12 V fica **aberto**, com cerca de 1,1 V nos terminais. Isso é seguro.
+
+Ligar ao contrário — 12 V no enrolamento de 12 V — produz **127 V** no outro
+enrolamento, exposto na protoboard. Isso é perigoso e já causou acidente em bancada de
+laboratório escolar.
+
+Antes de energizar, confirme com o ohmímetro qual enrolamento é qual: o de 127 V tem
+resistência muito maior (centenas de ohms) que o de 12 V (poucas dezenas). Identifique,
+marque com fita, e só então ligue.
+:::
+
+### Parte 1 — Uma carga com FP horrível
+
+Um transformador em vazio é quase uma indutância pura: ele consome corrente de
+magnetização e quase nenhuma potência ativa. É o pior FP que se encontra facilmente.
+
+1. Monte: fonte 12 V CA → resistor de 100 Ω → enrolamento de 127 V do transformador →
+   volta à fonte. O enrolamento de 12 V fica aberto, sem nada ligado.
+2. Meça $V_s$ (fonte), $V_R$ (resistor) e $V_T$ (transformador).
+3. Calcule $I = V_R/100$.
+4. Calcule o fator de potência do transformador.
+
+Aqui não dá para usar $\cos\theta = V_R/V_s$: aquela fórmula do @sec-cap-029 valia
+porque o outro elemento era um capacitor ideal, com exatos 90° de defasagem. O
+transformador não tem 90°: ele tem perdas no cobre e no ferro, e o triângulo de tensões
+é obtusângulo, não retângulo.
+
+O caminho exato é a lei dos cossenos aplicada ao triângulo cujos lados são $V_R$ e
+$V_T$ e cuja resultante é $V_s$. Como o ângulo entre $\mathbf{V}_R$ e $\mathbf{V}_T$ é
+justamente $\theta_T$ — a defasagem entre tensão e corrente no transformador, já que
+$\mathbf{V}_R$ está em fase com a corrente:
+
+$$ V_s^2 = V_R^2 + V_T^2 + 2\,V_R V_T \cos\theta_T
+   \quad\Longrightarrow\quad
+   \cos\theta_T = \frac{V_s^2 - V_R^2 - V_T^2}{2\,V_R V_T}. $$
+
+Espere um valor entre 0,1 e 0,4 — o fator de potência sofrível de um transformador em
+vazio, que é a razão de existir a linha correspondente na @tbl-032-tipicos.
+
+5. Anote também a corrente total $I$ medindo direto com o multímetro em série, na escala
+   mA CA, e confira contra $V_R/100$.
+
+### Parte 2 — Calcular e instalar o capacitor
+
+1. Com $V_T$, $I$ e $\cos\theta_T$ da Parte 1, calcule:
+   $S_T = V_T I$, $P_T = S_T\cos\theta_T$, $Q_T = \sqrt{S_T^2 - P_T^2}$.
+2. Calcule a capacitância que fornece exatamente $Q_T$ em 60 Hz:
+   $C = Q_T/(2\pi f\,V_T^2)$.
+3. Escolha, entre os capacitores disponíveis, a combinação mais próxima (lembre que
+   capacitores em paralelo **somam**).
+4. Ligue esse capacitor **em paralelo com o transformador** — não com o resistor.
+5. Meça de novo a corrente total.
+
+Ela cai. Numa montagem típica, de 8 mA para 3 mA. Você acabou de fazer, em 12 V, a
+mesma operação que uma indústria faz em 13,8 kV.
+
+### Parte 3 — A curva em V da sobrecorreção
+
+Esta é a parte que ninguém esquece.
+
+1. Comece sem capacitor e anote a corrente total.
+2. Vá acrescentando capacitância em paralelo, um capacitor de cada vez, anotando a
+   corrente a cada passo: 1 µF, 2,2 µF, 3,2 µF, 4,4 µF, 6,6 µF, 8,8 µF, 10 µF.
+3. Faça o gráfico corrente × capacitância no papel quadriculado.
+
+| $C$ (µF) | $I$ total (mA) | comentário |
+|---|---|---|
+| 0 | | indutivo, FP ruim |
+| ... | | corrente caindo |
+| $C_{\text{ótimo}}$ | | **mínimo**: FP $\approx 1$ |
+| ... | | capacitivo, corrente subindo |
+
+: Tabela da Parte 3. O ponto de mínimo é o FP unitário; à direita dele a instalação está
+sobrecorrigida e a corrente volta a crescer. {#tbl-032-lab}
+
+O gráfico é um V. À esquerda do mínimo o circuito é indutivo, à direita é capacitivo, e
+nos dois casos a corrente é maior do que o necessário. Esse V é o argumento inteiro
+contra a sobrecorreção, desenhado com sete medidas.
+
+4. Compare o $C$ do ponto de mínimo com o que você calculou na Parte 2. Devem ficar
+   próximos, e a diferença que sobrar vem da tolerância dos capacitores (±10 % em
+   poliéster) e da resistência do enrolamento, que não é desprezível.
+
+### Parte 4 — A soma que não é soma
+
+1. No ponto de correção ótima, meça separadamente: a corrente do transformador, a
+   corrente do capacitor e a corrente total da linha.
+2. Some as duas primeiras aritmeticamente e compare com a terceira.
+
+A soma dá muito mais que a corrente total — porque as duas estão quase em oposição de
+fase. É a lei de Kirchhoff em fasores do @sec-cap-029, medida com um amperímetro. Se a
+correção estivesse perfeita e as perdas fossem nulas, a corrente da linha seria apenas a
+componente ativa, menor que qualquer uma das duas parcelas.
+
+### Parte 5 — Ler um capacitor de motor
+
+1. Consiga um capacitor de motor de sucata — de ar-condicionado, de bomba d'água, de
+   máquina de lavar. Eles trazem a capacitância e a tensão impressas.
+2. Para um de 25 µF, 440 V CA, calcule a potência reativa que ele fornece em 220 V,
+   60 Hz: $Q = 2\pi f C V^2$.
+3. Calcule quanto de potência ativa esse capacitor consegue "descarregar" da linha, ou
+   seja, para que potência de motor ele foi dimensionado, supondo correção de 0,70 para
+   0,92.
+4. Verifique se há resistor de descarga em paralelo com ele, e meça o valor.
+
+O passo 2 dá 458 var, e o passo 3 dá 770 W — os números deste capítulo, lidos de um
+componente real. O passo 4 costuma revelar um resistor de 1 a 5 MΩ: é ele que evita que
+o capacitor guarde 1,2 J esperando um dedo.
+
+### Variante simulada (plano B)
+
+No ngspice, monte a fonte de 220 V eficazes ($311$ V de pico) alimentando um ramo série
+$R = 30{,}8\ \Omega$ com $L = 83{,}4$ mH — que dá exatamente 770 W com FP 0,70 — e faça
+uma varredura de capacitância em paralelo:
+
+```
+.step param Cval 5u 65u 2u
+.meas TRAN irms RMS I(Vfonte) FROM=100m TO=200m
+```
+
+O gráfico de `irms` contra `Cval` é a curva em V da Parte 3. O mínimo cai em 43,1 µF,
+que é o ponto de FP **unitário**: ali $Q_C$ cancela exatamente os 786 var do ramo RL, e
+a corrente da linha se reduz à componente ativa de 3,50 A. Os 25 µF calculados no texto
+correspondem a FP 0,92, e ficam **antes** do mínimo — 3,80 A em vez de 3,50 A.
+
+Vale entender por que o projeto para antes do fundo do V em vez de mirar o mínimo. A
+carga real varia: um motor que alivia reduz o seu $Q$, e a correção que era exata passa
+a ser excessiva, jogando a instalação para o lado capacitivo. Mirar 0,92 deixa uma
+margem deliberada contra isso.
+
+## 🔥 Onde Queima {#sec-032-queima}
+
+**Corrigir carga distorcida com capacitor.** Fonte chaveada, LED e inversor têm FP baixo
+por forma de onda, não por fase. Capacitor não melhora e pode ressonar com o 5.º
+harmônico, estufando o próprio banco.
+
+**Sobrecorrigir.** Passar do ponto faz a corrente voltar a subir, eleva a tensão em
+carga leve e pode ressonar. A curva é um V, não uma rampa.
+
+**Deixar o banco ligado com a fábrica parada.** A regulamentação apura FP capacitivo de
+madrugada exatamente por isso. Banco automático existe para desligar degraus.
+
+**Ligar capacitor no lado do motor de um inversor de frequência.** O inversor entrega
+tensão chaveada; o capacitor vira um curto para as componentes de alta frequência e
+destrói a saída. Capacitor vai antes do inversor, nunca depois.
+
+**Correção individual sem verificar a auto-excitação.** Capacitor grande demais nos
+terminais de um motor que continua girando por inércia gera tensão, e o religamento fora
+de fase quebra eixo e queima enrolamento. Limite a 90 % da corrente em vazio.
+
+**Tocar em capacitor de correção sem medir.** 25 µF a 311 V guardam 1,2 J. O resistor de
+descarga leva até um minuto para agir — e pode estar aberto.
+
+**Achar que corrigir o FP reduz a conta de luz residencial.** O medidor conta kWh, que
+não muda. "Economizador" de tomada com capacitor dentro não economiza nada.
+
+**Confundir FP com rendimento.** Um é fase, o outro é energia. Corrigir FP não faz o
+motor consumir menos watts.
+
+**Dimensionar o capacitor pela potência aparente em vez da ativa.** A fórmula é
+$Q_C = P(\tan\theta_1 - \tan\theta_2)$, com $P$ em watts. Usar $S$ superestima e leva
+direto à sobrecorreção.
+
+**Usar capacitor comum de eletrônica em correção de rede.** Capacitor de correção é
+específico: dielétrico autorregenerativo, tensão CA nominal, resistor de descarga,
+capacidade de suportar surto de ligação. Um capacitor de 400 V CC não é um capacitor de
+400 V CA.
+
+**Esquecer que a corrente de ligação de um banco é enorme.** Ligar um capacitor
+descarregado na rede produz um pico de dezenas de vezes a corrente nominal, limitado
+apenas pela impedância da linha. Contatores de banco de capacitores têm resistores de
+pré-carga por essa razão.
+
+## O que fica deste capítulo {#sec-032-resumo}
+
+Fator de potência é $P/S$, entre 0 e 1, e vale $\cos\theta$ **somente** para corrente
+senoidal. Ele não é rendimento: descreve o transporte, não o aproveitamento.
+
+FP baixo vem de duas causas independentes. **Deslocamento**, quando a corrente é
+senoidal mas defasada — motores, transformadores, reatores —, e se corrige com
+capacitor. **Distorção**, quando a corrente não é senoidal — fontes chaveadas, LEDs,
+inversores —, e se corrige com PFC ativo ou filtro. Capacitor na segunda causa não
+ajuda e pode ressonar.
+
+A correção capacitiva sai de duas fórmulas: $Q_C = P(\tan\theta_1 - \tan\theta_2)$ e
+$C = Q_C/(2\pi f V^2)$. No exemplo do volume, corrigir 770 W de 0,70 para 0,92 exige
+25 µF, derruba a corrente de 5,00 A para 3,80 A e a perda no cabo de 12,5 W para 7,2 W.
+
+Corrigir demais é pior do que não corrigir: a corrente volta a subir, a tensão sobe em
+carga leve, e o banco pode ressonar com harmônicos. A curva de corrente contra
+capacitância é um V, e o projeto para deliberadamente antes do fundo dele.
+
+No Brasil o valor de referência é 0,92, apurado hora a hora, e a cobrança de excedente
+de reativo atinge o grupo A. Em residência não há cobrança de reativo — e, portanto,
+corrigir o FP de uma casa não reduz a conta.
+
+---
+
+Com este capítulo fecha-se o **Volume 5**. O caminho foi curto e denso: a senoide e os
+seus três parâmetros; o valor eficaz e o que o multímetro realmente mede; o fasor, que
+transforma equações diferenciais em aritmética complexa; a impedância, que devolve
+intacta toda a caixa de ferramentas do Volume 3; e as três potências, que separam o que
+é consumido do que apenas vai e volta.
+
+O que se ganhou com isso é uma capacidade nova: resolver qualquer circuito linear **numa
+frequência**. O Volume 6 faz a pergunta seguinte, e ela muda tudo — o que acontece quando
+se varre a frequência inteira? A resposta é que o mesmo divisor de tensão do
+@sec-cap-014, com um capacitor no lugar de um resistor, passa a **selecionar**
+frequências. É o filtro, é a frequência de corte que o laboratório do @sec-cap-029 já
+mediu sem saber o nome, e é o começo do Volume 6.
