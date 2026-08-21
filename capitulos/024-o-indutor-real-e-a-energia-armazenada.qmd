@@ -1,3 +1,654 @@
 # O indutor real e a energia armazenada {#sec-cap-024}
 
-*(em elaboração)*
+O @sec-cap-022 fez com o capacitor o que este capítulo faz com o indutor: trocar o
+componente da equação pelo componente da gaveta. A estrutura do problema é a mesma —
+resistência em série, capacitância parasita, auto-ressonância, perdas — e a
+dualidade do @sec-cap-023 leva metade do trabalho pronto.
+
+Só que há um item sem paralelo no capacitor, e ele é o mais importante de todos: a
+**saturação**. Um capacitor de 100 nF continua sendo 100 nF na tensão de trabalho.
+Um indutor de 100 µH pode virar 12 µH quando a corrente sobe — não gradualmente, mas
+num joelho abrupto, e justamente no pico em que o circuito mais precisa dele. Fontes
+chaveadas morrem disso.
+
+O outro item é a consequência prática do $\frac{1}{2}LI^2$: como impedir que a
+energia armazenada destrua o circuito quando a corrente é interrompida. Este capítulo
+termina com o componente que resolve isso em uma linha de esquemático — o diodo de
+roda livre — e com a razão de ele não ser de graça.
+
+## O modelo do indutor real {#sec-024-modelo}
+
+::: {#fig-024-modelo}
+
+```{.tikz}
+%%| filename: 024-modelo
+%%| alt: Modelo elétrico do indutor real. Entre os dois terminais há a indutância ideal em série com a resistência do fio chamada DCR. Em paralelo com esse conjunto há a capacitância entre espiras e uma resistência que representa as perdas no núcleo. Anotações indicam que a DCR aquece o componente, que a capacitância entre espiras produz a auto-ressonância, e que a resistência de perdas do núcleo cresce com a frequência.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) node[left, font=\scriptsize] {terminal} -- (0.6,0);
+  \node[ponto] at (0,0) {};
+  \draw (0.6,0) to[L, l={$L$}] (3.4,0);
+  \draw (3.4,0) to[R, l={DCR}] (6.2,0);
+  \draw (6.2,0) -- (7.0,0) node[right, font=\scriptsize] {terminal};
+  \node[ponto] at (7.0,0) {};
+
+  % capacitancia entre espiras
+  \draw (0.6,0) -- (0.6,1.7);
+  \draw (0.6,1.7) to[C, l={$C_{\text{esp}}$}] (6.2,1.7);
+  \draw (6.2,1.7) -- (6.2,0);
+
+  % perdas no nucleo
+  \draw (0.6,0) -- (0.6,-1.7);
+  \draw (0.6,-1.7) to[R, l_={$R_{\text{núcleo}}$}] (6.2,-1.7);
+  \draw (6.2,-1.7) -- (6.2,0);
+
+  \node[manualblue, font=\scriptsize, anchor=west, align=left]
+       at (9.2,1.7) {capacitância entre espiras:\\define a auto-ressonância};
+  \node[manualred, font=\scriptsize, anchor=west, align=left]
+       at (9.2,0) {resistência do fio:\\aquece o componente};
+  \node[manualgray, font=\scriptsize, anchor=west, align=left]
+       at (9.2,-1.7) {histerese e correntes parasitas:\\pioram com a frequência};
+
+\end{circuitikz}
+```
+
+O indutor real. A DCR está em série e manda em CC e em corrente alta; a capacitância
+entre espiras está em paralelo e manda em alta frequência; as perdas no núcleo são o
+preço do $\mu_r$. Nenhum desses três elementos aparece na equação
+$v = L\,di/dt$.
+
+:::
+
+## DCR: a resistência que vem de graça {#sec-024-dcr}
+
+O indutor é feito de fio, e fio tem resistência (@sec-cap-010). A **DCR**
+(*DC resistance*) é a primeira especificação de qualquer indutor de potência, e ela
+dissipa
+
+$$ P = I^{2}\,\text{DCR} $$
+
+de forma contínua, dentro do componente. Um indutor de 100 µH com 0,1 Ω conduzindo
+2 A dissipa 0,4 W — sem dissipador, num corpo do tamanho de uma unha.
+
+E existe um conflito estrutural aqui: para aumentar $L$ é preciso mais espiras, e
+mais espiras é mais fio, portanto mais DCR. Para reduzir a DCR é preciso fio mais
+grosso, e fio mais grosso não cabe na mesma janela do núcleo. Todo indutor comercial
+é um ponto de equilíbrio entre indutância, DCR e volume — e é por isso que "o mesmo
+valor" existe em cinco tamanhos e cinco preços.
+
+Em alta frequência, a coisa piora: o **efeito pelicular** empurra a corrente para a
+superfície do fio e a resistência efetiva cresce com $\sqrt{f}$. Um fio que tem
+0,1 Ω em CC pode ter 0,4 Ω em 1 MHz. Daí o fio Litz (muitos fios finos isolados entre
+si) em enrolamentos de alta frequência.
+
+A qualidade da bobina se resume num número, o **fator de qualidade**:
+
+$$ Q = \frac{2\pi f L}{R_{\text{efetiva}}}, $$
+
+a razão entre a reatância e a perda. Um indutor de RF bom tem $Q$ entre 50 e 200; um
+indutor de potência barato tem $Q$ de 10 a 30. O Volume 6 desenvolve o que $Q$
+significa num circuito ressonante; aqui ele é só um índice de mérito do componente.
+
+## Capacitância entre espiras e auto-ressonância {#sec-024-srf}
+
+Duas espiras vizinhas são duas placas separadas por esmalte: existe capacitância
+entre elas. Somada ao longo do enrolamento, ela aparece em paralelo com $L$ — e o
+conjunto é um circuito ressonante.
+
+Abaixo da **frequência de auto-ressonância** (SRF), o componente é indutor: a
+impedância sobe com a frequência. **Acima dela, o indutor é um capacitor**, e a
+impedância cai. É o espelho exato do @fig-022-impedancia.
+
+::: {#fig-024-impedancia}
+
+```{.tikz}
+%%| filename: 024-impedancia
+%%| alt: Gráfico log-log do módulo da impedância contra a frequência, de um quilohertz a um gigahertz, para três indutores. O de um milihenry sobe até um pico agudo perto de um vírgula seis megahertz e depois desce. O de cem microhenries sobe até um pico perto de sete megahertz e desce. O de dez microhenries sobe até um pico perto de vinte e nove megahertz e desce. Cada curva tem forma de pico invertido em relação às curvas do capacitor: sobe como indutor, atinge o máximo na auto-ressonância e desce como capacitor.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=15.0cm, height=8.0cm,
+  xmode=log, ymode=log,
+  xlabel={frequência (Hz)}, ylabel={$|Z|$ ($\Omega$)},
+  xmin=1e3, xmax=1e9, ymin=5e-2, ymax=2e5,
+  grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  legend style={at={(0.98,0.03)}, anchor=south east, font=\scriptsize,
+                draw=manualgray!50},
+]
+  % 1 mH, Cesp 10 pF, Rp 50 k
+  \addplot[manualred, very thick, domain=3:9, samples=400]
+    ({10^x}, {0.6 + 1/sqrt((1/5e4)^2
+      + (1/(2*pi*(10^x)*1e-3) - 2*pi*(10^x)*10e-12)^2)});
+  \addlegendentry{$1$ mH (SRF $\approx 1{,}6$ MHz)}
+
+  % 100 uH, Cesp 5 pF, Rp 30 k
+  \addplot[curva, domain=3:9, samples=400]
+    ({10^x}, {0.15 + 1/sqrt((1/3e4)^2
+      + (1/(2*pi*(10^x)*100e-6) - 2*pi*(10^x)*5e-12)^2)});
+  \addlegendentry{$100\ \mu$H (SRF $\approx 7$ MHz)}
+
+  % 10 uH, Cesp 3 pF, Rp 10 k
+  \addplot[manualgreen!55!black, very thick, domain=3:9, samples=400]
+    ({10^x}, {0.06 + 1/sqrt((1/1e4)^2
+      + (1/(2*pi*(10^x)*10e-6) - 2*pi*(10^x)*3e-12)^2)});
+  \addlegendentry{$10\ \mu$H (SRF $\approx 29$ MHz)}
+
+  \node[font=\scriptsize, anchor=north west, align=left]
+       at (axis cs:1.3e3,1.2e5)
+       {abaixo da SRF: indutor\\(impedância sobe)};
+  \node[font=\scriptsize, anchor=north east, align=right]
+       at (axis cs:8e8,1.2e5)
+       {acima da SRF: \textbf{capacitor}\\(impedância cai)};
+  \node[font=\scriptsize, anchor=west]
+       at (axis cs:1.3e3,1.2e-1) {o piso é a DCR};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A impedância real de um indutor. Cada componente só é indutor à esquerda do seu pico.
+Repare também na regra prática que a figura contém: **quanto maior a indutância,
+menor a SRF** — um choque de 1 mH é inútil acima de 1 MHz, e é por isso que filtros
+de RF usam valores pequenos.
+
+:::
+
+## Saturação {#sec-024-saturacao}
+
+Aqui está o item sem paralelo no capacitor.
+
+O núcleo multiplica a indutância porque os domínios magnéticos do material se
+alinham com o campo aplicado. Quando **todos** estão alinhados, não há mais o que
+alinhar: o material satura. A partir daí, aumentar a corrente não aumenta mais o
+fluxo na proporção anterior, e como $L = N\Phi/I$, a indutância **cai**.
+
+O joelho é abrupto em ferrite e suave em pó de ferro, e a diferença entre os dois é
+uma decisão de projeto, não um detalhe de fabricação.
+
+::: {#fig-024-saturacao}
+
+```{.tikz}
+%%| filename: 024-saturacao
+%%| alt: À esquerda, gráfico da indutância contra a corrente para três indutores. O de ferrite sem entreferro mantém cem microhenries até cerca de um ampère e depois despenca a menos de vinte microhenries. O de ferrite com entreferro mantém quarenta microhenries até cerca de dois vírgula cinco ampères e cai suavemente depois. O de pó de ferro parte de sessenta microhenries e cai gradualmente desde o início, sem joelho. À direita, o desenho de um núcleo magnético em forma de anel retangular com um entreferro no braço superior e um enrolamento no braço esquerdo, com a anotação de que quase toda a energia fica armazenada no entreferro.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+\begin{axis}[
+  name=ax1,
+  width=9.4cm, height=7.4cm,
+  xlabel={corrente CC (A)}, ylabel={$L$ ($\mu$H)},
+  xmin=0, xmax=4.2, ymin=0, ymax=118,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  xtick={0,1,2,3,4},
+  legend style={at={(0.98,0.98)}, anchor=north east, font=\scriptsize,
+                draw=manualgray!50},
+]
+  \addplot[destaque, very thick] coordinates
+    {(0,100) (0.5,100) (0.8,98) (1.0,92) (1.2,70) (1.4,42) (1.6,25)
+     (2.0,12) (3.0,7) (4.0,5)};
+  \addlegendentry{ferrite sem entreferro}
+  \addplot[curva, very thick] coordinates
+    {(0,40) (1.0,40) (2.0,39) (2.5,37) (3.0,32) (3.5,24) (4.0,16)};
+  \addlegendentry{ferrite com entreferro}
+  \addplot[manualgreen!55!black, very thick, dashed] coordinates
+    {(0,60) (0.5,58) (1.0,55) (1.5,51) (2.0,46) (2.5,41) (3.0,36)
+     (3.5,31) (4.0,27)};
+  \addlegendentry{pó de ferro}
+
+  \node[manualred, font=\scriptsize, anchor=west] at (axis cs:1.75,62)
+       {joelho};
+  \draw[manualred, thin, ->, >=stealth]
+       (axis cs:1.7,62) -- (axis cs:1.32,58);
+\end{axis}
+
+% ---------------- nucleo com entreferro ----------------
+\begin{scope}[xshift=10.6cm, yshift=0.9cm]
+  \fill[manualgray!22] (0,0) rectangle (4.4,3.4);
+  \fill[white] (1.1,0.9) rectangle (3.3,2.5);
+  \draw[thick] (0,0) rectangle (4.4,3.4);
+  \draw[thick] (1.1,0.9) rectangle (3.3,2.5);
+
+  % entreferro
+  \fill[white] (2.1,2.5) rectangle (2.35,3.4);
+  \draw[manualred, very thick] (2.1,2.5) -- (2.1,3.4);
+  \draw[manualred, very thick] (2.35,2.5) -- (2.35,3.4);
+
+  % enrolamento
+  \foreach \yc in {0.35,0.7,...,3.1}{
+    \draw[manualblue, very thick] (-0.28,\yc) -- (1.38,\yc);
+  }
+
+  \node[manualblue, font=\scriptsize, anchor=east] at (-0.4,1.7)
+       {$N$ espiras};
+  \node[manualred, font=\scriptsize, anchor=south, align=center]
+       at (2.2,3.65) {entreferro};
+  \node[manualred, font=\scriptsize, anchor=north west, align=left]
+       at (-0.9,-0.35)
+       {Quase toda a energia fica\\
+        \textbf{no entreferro}: com o mesmo\\
+        campo, um volume de ar guarda\\
+        milhares de vezes mais energia\\
+        por metro cúbico que o mesmo\\
+        volume de ferrite.};
+\end{scope}
+
+\end{tikzpicture}
+```
+
+Saturação e a função do entreferro. Cortar o núcleo custa indutância (de 100 para
+40 µH) e compra corrente (de 1 para 2,5 A). O pó de ferro é um núcleo com entreferro
+**distribuído**: os grãos são separados por ligante isolante, o que dá uma saturação
+sem joelho, mais fácil de tolerar.
+
+:::
+
+### Por que a energia fica no entreferro
+
+A densidade de energia num material magnético é $u = B^{2}/(2\mu_0\mu_r)$. Note o
+$\mu_r$ no **denominador**: quanto melhor o material conduz fluxo, **menos** energia
+ele armazena para o mesmo $B$.
+
+Ponha números com $B = 0{,}3$ T:
+
+- Em ferrite com $\mu_r = 2000$: $u = 0{,}09/(2 \times 1{,}257\times10^{-6}
+  \times 2000) \approx 18$ J/m³.
+- No ar do entreferro, $\mu_r = 1$: $u \approx 35\,800$ J/m³.
+
+**Duas mil vezes mais.** Um entreferro de 1 mm num núcleo de 10 cm de caminho
+magnético armazena praticamente toda a energia do componente, embora ocupe 1 % do
+volume. Por isso todo indutor de potência tem entreferro, e todo transformador — que
+não deve armazenar energia, e sim transferi-la — **não** tem.
+
+E é por isso que armazenar energia em campo magnético é caro: mesmo os 35,8 kJ/m³ do
+entreferro são pouco. Um indutor que guarde 1 J na saturação precisa de dezenas de
+centímetros cúbicos de entreferro. Isso é a razão física de fontes chaveadas
+operarem em frequências altas: **em vez de guardar muita energia, guarda-se pouca
+energia muitas vezes por segundo.**
+
+## Perdas no núcleo {#sec-024-perdas}
+
+Duas perdas distintas, com dependências diferentes com a frequência.
+
+**Histerese.** Reorientar os domínios magnéticos consome energia, e a energia
+perdida por ciclo é a área do laço B–H do material. Como se perde por ciclo, a
+potência é proporcional à frequência.
+
+**Correntes parasitas** (*eddy currents*). O núcleo é atravessado por fluxo variável
+e, se for condutor, ele mesmo é uma espira em curto. As correntes induzidas
+circulam e aquecem. A potência cresce com $f^{2}B^{2}t^{2}$, em que $t$ é a espessura
+do material perpendicular ao fluxo.
+
+As duas se combinam na equação empírica de Steinmetz, $P \approx k\,f^{a}B^{b}$, com
+$a$ entre 1,2 e 1,7 e $b$ entre 2 e 3. O que interessa reter é a estrutura: **as
+perdas crescem mais que proporcionalmente com a frequência e muito mais que
+proporcionalmente com a densidade de fluxo**. Reduzir $B$ pela metade reduz as perdas
+por um fator de 4 a 8.
+
+E a estrutura explica os materiais:
+
+- **Laminação.** Cortar o núcleo em chapas finas isoladas entre si reduz $t$ e mata
+  a corrente parasita. É por isso que o transformador de 60 Hz é feito de chapas
+  empilhadas, e não de um bloco maciço.
+- **Ferrite.** Cerâmica de óxido de ferro, com resistividade um milhão de vezes
+  maior que a do ferro. Não há corrente parasita porque não há condução — e é por
+  isso que a ferrite domina de 20 kHz a alguns MHz, onde a laminação já não basta.
+- **Pó de ferro.** Grãos de ferro isolados por ligante: entreferro distribuído,
+  saturação suave, perdas maiores que a ferrite.
+
+| Material | $B_{\text{sat}}$ típica | Faixa útil | Uso característico |
+|---|---|---|---|
+| Ar (sem núcleo) | não satura | qualquer | RF acima de 10 MHz, alta corrente |
+| Ferrite Ni-Zn | 0,2 a 0,3 T | 1 MHz a 500 MHz | filtros de EMI, contas de ferrite |
+| Ferrite Mn-Zn | 0,4 a 0,5 T | 10 kHz a 2 MHz | fontes chaveadas, transformadores |
+| Pó de ferro | 1,0 a 1,5 T | 100 Hz a 1 MHz | choques de potência, correção de FP |
+| Ferro-silício laminado | 1,5 a 2,0 T | 50 Hz a 1 kHz | transformadores de rede |
+| Permalloy / mumetal | 0,7 a 0,8 T | baixa | blindagem magnética, instrumentação |
+
+: Materiais de núcleo. Note que $B_{\text{sat}}$ e faixa de frequência útil andam em
+sentidos opostos — não existe o material que faz as duas
+coisas. {#tbl-024-materiais}
+
+Um detalhe que derruba projetos: **$B_{\text{sat}}$ cai com a temperatura.** Uma
+ferrite que satura em 0,45 T a 25 °C satura em torno de 0,32 T a 100 °C. O indutor
+que passou no ensaio de bancada satura dentro do gabinete fechado, em agosto.
+
+## As duas correntes nominais {#sec-024-correntes}
+
+Todo indutor de potência tem **duas** correntes especificadas, e confundi-las é erro
+comum:
+
+- $I_{\text{sat}}$: a corrente em que a indutância cai um percentual acordado
+  (geralmente 20 % ou 30 %). É um limite **magnético**, instantâneo. Ultrapassá-lo
+  não danifica nada — apenas faz o indutor deixar de ser indutor, o que
+  frequentemente danifica o resto.
+- $I_{\text{rms}}$ (ou $I_{\text{temp}}$): a corrente eficaz que eleva a temperatura
+  do componente em 40 °C acima do ambiente, por causa da DCR. É um limite
+  **térmico**, de longo prazo.
+
+Qual dos dois manda depende da aplicação. Num conversor buck, a corrente tem um
+valor médio (térmico) e um pico de ondulação (magnético): é preciso verificar os
+dois. Escolher o indutor só por $I_{\text{rms}}$ produz o defeito clássico — funciona
+em carga leve e o transistor de chaveamento morre no degrau de carga, porque o
+indutor saturou e a corrente disparou sem nada para limitá-la.
+
+## Famílias e encapsulamentos {#sec-024-familias}
+
+- **Axial com corpo de resina** — parece um resistor, valores de µH, uso geral e
+  baixa corrente. Código de cores, como no @sec-cap-006.
+- **Radial "tambor" (drum)** — o mais comum em fontes; existe blindado e não
+  blindado. O **não blindado** irradia campo e acopla com tudo à sua volta.
+- **SMD blindado** — o padrão em fontes chaveadas modernas.
+- **Toroide** — o campo fica quase todo dentro do anel, o que o torna o
+  encapsulamento com menor irradiação. Difícil de enrolar em máquina, portanto caro.
+- **Conta de ferrite (*ferrite bead*)** — o caso especial que confunde todo mundo.
+  Ela não é especificada em henries, e sim em **ohms a 100 MHz**, porque a sua função
+  não é armazenar energia e devolvê-la, e sim **dissipá-la**. É um indutor
+  propositalmente ruim, feito de ferrite de alta perda, que transforma ruído de alta
+  frequência em calor. Em CC ela é um pedaço de fio (DCR de miliohms), e é por isso
+  que se pode pô-la em série com uma alimentação sem penalidade.
+
+## Domando a energia: o diodo de roda livre {#sec-024-rodalivre}
+
+O problema do @sec-cap-023 tem uma solução de uma linha: dar à corrente um caminho
+para continuar circulando enquanto a energia se dissipa.
+
+::: {#fig-024-flyback}
+
+```{.tikz}
+%%| filename: 024-flyback
+%%| alt: À esquerda, circuito com fonte de doze volts, bobina de relé e uma chave, com um diodo ligado em paralelo com a bobina em polaridade invertida em relação à fonte. À direita, gráfico da tensão sobre a chave em função do tempo. Sem o diodo, no instante da abertura a tensão salta para cerca de trezentos volts e cai depois de alguns décimos de milissegundo. Com o diodo, a tensão sobe apenas até doze vírgula sete volts e permanece nesse patamar por cerca de dois vírgula cinco milissegundos, enquanto a corrente decai.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+\begin{scope}[yshift=0.6cm]
+  \draw[thick] (0,0) to[battery1, invert, l={$12$ V}] (0,3.2);
+  \draw[thick] (0,3.2) -- (2.0,3.2);
+  \draw[thick] (2.0,3.2) to[L, l_={bobina}, i>^={$i$}] (2.0,0);
+  \draw[thick] (2.0,0) to[cute open switch, l_={chave}] (0,0);
+
+  \draw[thick, manualgreen!55!black] (2.0,3.2) -- (4.0,3.2);
+  \draw[thick, manualgreen!55!black] (4.0,3.2) to[D, invert, l={$D$}] (4.0,0);
+  \draw[thick, manualgreen!55!black] (4.0,0) -- (2.0,0);
+  \node[ponto] at (2.0,3.2) {};
+  \node[ponto] at (2.0,0) {};
+
+  \node[manualgreen!55!black, font=\scriptsize, anchor=north west,
+        align=left] at (-0.9,-0.8)
+       {O diodo está \textbf{cortado} com a chave fechada.\\
+        Na abertura, a bobina inverte a polaridade,\\
+        o diodo conduz e a corrente continua\\
+        circulando na malha bobina--diodo.};
+\end{scope}
+
+\begin{axis}[
+  at={(7.4cm,0cm)}, anchor=south west,
+  width=9.4cm, height=7.4cm,
+  xlabel={$t$ (ms), abertura em $t=0$},
+  ylabel={tensão sobre a chave (V)},
+  xmin=-0.6, xmax=4.2, ymin=0, ymax=330,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  ytick={12,100,200,300},
+  yticklabels={{12},{100},{200},{300}},
+]
+  \addplot[destaque, very thick] coordinates
+    {(-0.6,0) (0,0) (0.02,300) (0.10,120) (0.22,40) (0.4,12) (4.2,12)};
+  \addplot[curva, very thick] coordinates
+    {(-0.6,0) (0,0) (0.02,12.7) (2.5,12.7) (2.6,12) (4.2,12)};
+
+  \node[manualred, font=\scriptsize, anchor=north west, align=left]
+       at (axis cs:0.28,305)
+       {\textbf{sem diodo:} $\approx 300$ V,\\
+        $25\times$ a alimentação};
+  \node[manualblue, font=\scriptsize, anchor=south west, align=left]
+       at (axis cs:0.9,26)
+       {\textbf{com diodo:} $12{,}7$ V,\\
+        mas a corrente leva\\
+        $\approx 2{,}5$ ms para zerar};
+\end{axis}
+
+\end{tikzpicture}
+```
+
+O diodo de roda livre e o que ele custa. Ele troca um pico destrutivo de 300 V por
+uma queda de 0,7 V — e, em troca, prolonga o decaimento da corrente, o que atrasa a
+liberação do relé.
+
+:::
+
+Com o diodo, a tensão sobre a chave fica limitada a $V_{cc} + 0{,}7$ V. A corrente
+decai com constante de tempo $\tau = L/R$, em que $R$ é a resistência da malha —
+essencialmente a DCR da bobina mais a queda do diodo. Para uma bobina de relé de 1 H
+e 400 Ω, isso dá $\tau = 2{,}5$ ms.
+
+**E esse atraso é o preço.** O relé só solta depois de a corrente cair abaixo do
+valor de manutenção da armadura, e com o diodo simples isso demora de cinco a dez
+vezes mais que sem ele. Um relé que solta devagar mantém o arco por mais tempo nos
+seus próprios contatos de saída, o que reduz a vida útil deles. A troca é real, e
+existem três posições intermediárias:
+
+| Grampo | Tensão de abertura | Tempo de liberação | Quando usar |
+|---|---|---|---|
+| Nada | 100 a 1000 V | mínimo | nunca, em circuito eletrônico |
+| Diodo simples | $V_{cc} + 0{,}7$ V | máximo | relés lentos, custo mínimo |
+| Diodo + resistor em série | $V_{cc} + R\,I$ | intermediário | ajuste fino |
+| Diodo + zener em série | $V_{cc} + V_{Z}$ | curto | relés rápidos, o mais usado |
+| Varistor / TVS | tensão de grampo | curto | cargas CA, solenoides grandes |
+
+: Opções de grampo para carga indutiva. A energia armazenada é a mesma em todos os
+casos; o que muda é em quanto tempo e a que tensão ela é
+dissipada. {#tbl-024-grampos}
+
+A física por trás da tabela: a energia $\frac{1}{2}LI^2$ é fixa. Dissipá-la
+depressa exige potência alta, e potência alta com corrente fixa significa tensão
+alta. **Não se pode ter grampo baixo e liberação rápida ao mesmo tempo** — só se pode
+escolher onde ficar entre os dois.
+
+Um detalhe que só aparece em circuito chaveado rápido: o diodo precisa ser
+**rápido**. Um 1N4007, de recuperação lenta, funciona bem num relé comutado uma vez
+por minuto e é péssimo num conversor a 100 kHz, porque durante a sua recuperação
+reversa ele conduz para trás. Para isso existem os diodos Schottky e os *ultrafast* —
+assunto dos Volumes 8 e 12.
+
+## 🧪 Laboratório {#sec-024-lab}
+
+**Medir o que se pode medir num indutor com um multímetro, e ver o diodo de roda
+livre funcionar.** A Parte 2 é a continuação direta do laboratório do @sec-cap-023 —
+e é a que mais rende.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital
+- A bobina de 100 espiras do @sec-cap-023, o prego de aço e o bastão de ferrite
+- 1 relé de 12 V com bobina acessível (e, se possível, mais um de 5 V)
+- 3 indutores comerciais de valores variados (10 µH, 100 µH, 1 mH), se houver
+- 2 ou 3 contas de ferrite (de cabo de monitor ou fonte de sucata)
+- 1 diodo 1N4148 e 1 diodo 1N4007
+- 1 diodo zener de 24 V, 1/2 W (opcional)
+- 1 resistor de 100 Ω, 1 de 1 kΩ e 1 de 10 Ω, 1/4 W
+- 1 LED vermelho
+- 1 fonte de bancada com limite de corrente e amperímetro, ou bateria de 9 V
+- Clipes de papel
+- Protoboard e jumpers
+:::
+
+::: {.callout-warning}
+## Nada de carga indutiva ligada à rede
+
+Todo este roteiro é feito com fonte de bancada ou bateria, em tensões abaixo de 15 V.
+Reproduzir o experimento do pico de abertura com um motor, uma bomba ou um reator de
+lâmpada ligados à rede é outra coisa completamente diferente: a energia envolvida é
+milhares de vezes maior, o arco é sustentado e as regras do @sec-cap-002 valem
+integralmente.
+:::
+
+### Parte 1 — DCR, e o que ela custa
+
+1. Meça a resistência de cada indutor comercial, da bobina caseira e da bobina do
+   relé. Anote.
+2. Para o relé de 12 V, calcule a corrente nominal $I = 12/R_{\text{bobina}}$ e a
+   potência dissipada. Um relé típico dá 30 mA e 0,36 W.
+3. Alimente o relé e, depois de dois minutos, toque a bobina. Ela está morna — e
+   aquela é a potência que você calculou.
+4. Para cada indutor comercial, procure no catálogo (ou estime) a corrente nominal e
+   calcule $I^2 R$. Compare a dissipação entre eles.
+
+O passo 4 mostra a troca estrutural: entre dois indutores de 100 µH, o maior tem
+menos DCR. Não existe indutor pequeno **e** de baixa perda.
+
+### Parte 2 — O diodo de roda livre, com LED indicador
+
+1. Refaça a montagem da @fig-023-lenz: fonte de 9 a 12 V, chave, bobina do relé, e o
+   LED em **polaridade invertida** em paralelo com a bobina. Confirme que ele pisca
+   ao abrir.
+2. Agora ligue o diodo 1N4148 em paralelo com a bobina, com o cátodo (faixa) no lado
+   **positivo**. Abra a chave de novo.
+3. O LED **não pisca mais**. Explique por quê antes de continuar.
+4. Ouça o relé. Compare o intervalo entre a abertura da chave e o clique da armadura,
+   com e sem o diodo. Com o diodo ele é perceptivelmente mais lento.
+5. Ponha um resistor de 100 Ω em série com o diodo e repita. O clique volta a ficar
+   rápido — e o LED volta a piscar fraquinho, porque agora a tensão de grampo é
+   $12 + 0{,}7 + 100 \times I$.
+6. Se tiver o zener de 24 V, ligue-o em série com o diodo, em oposição, e repita.
+
+Esta parte é a @tbl-024-grampos verificada com as próprias mãos e um ouvido. O
+passo 3 tem uma resposta exata: o diodo conduz a partir de 0,7 V e mantém a tensão
+sobre a bobina nesse valor, então nunca sobra tensão suficiente para acender um LED
+que precisa de 1,8 V.
+
+### Parte 3 — Ver a saturação com clipes de papel
+
+1. Monte a bobina de 100 espiras com o prego de aço dentro, alimentada pela fonte com
+   limite de corrente e amperímetro.
+2. Comece em 50 mA e conte quantos clipes a ponta levanta.
+3. Suba para 100, 200, 400 e 800 mA, contando a cada passo. Faça rápido: a bobina
+   aquece.
+4. Faça a tabela corrente × clipes e olhe para ela.
+
+Nas primeiras faixas, dobrar a corrente quase dobra o número de clipes. A partir de
+certo ponto, dobrar a corrente acrescenta quase nada — o núcleo saturou. É o joelho
+da @fig-024-saturacao, medido com material de papelaria. Repita com o bastão de
+ferrite: o joelho aparece **mais cedo**, porque $B_{\text{sat}}$ da ferrite é bem
+menor que a do aço.
+
+### Parte 4 — A conta de ferrite
+
+1. Meça a resistência de uma conta de ferrite com o ohmímetro. Ela marca zero.
+2. Meça a continuidade do fio que a atravessa. Também zero.
+3. Procure o datasheet de uma conta comum (por exemplo, uma de 600 Ω a 100 MHz) e
+   localize a curva de impedância contra frequência.
+4. Leia a impedância em 1 MHz, 100 MHz e 1 GHz.
+
+Uma conta que é um curto em CC e 600 Ω em 100 MHz é a definição de filtro de modo
+comum bem-comportado: ela não atrapalha a alimentação e mata o ruído. E a curva
+mostra que a impedância é **resistiva**, não reativa — ela dissipa, não reflete.
+
+### Parte 5 — Ler um datasheet de indutor de potência
+
+1. Escolha um indutor de fonte chaveada de catálogo, por exemplo 10 µH em
+   encapsulamento SMD.
+2. Anote: $L$ nominal e tolerância, DCR, $I_{\text{sat}}$, $I_{\text{rms}}$, SRF.
+3. Localize o gráfico de $L$ contra corrente e leia a indutância em
+   $0{,}5\,I_{\text{sat}}$ e em $I_{\text{sat}}$.
+4. Suponha um conversor que precise de 8 µH mínimos com pico de 3 A. Esse indutor
+   serve? E se a temperatura for 85 °C?
+
+O passo 4 é o exercício que separa quem escolhe indutor de quem copia indutor. Quase
+sempre a resposta muda entre 25 °C e 85 °C.
+
+### Variante simulada (plano B)
+
+O modelo do @fig-024-modelo cabe em qualquer simulador: $L$ em série com a DCR, tudo
+em paralelo com $C_{\text{esp}}$. Uma varredura CA reproduz a curva do
+@fig-024-impedancia e mostra a SRF se deslocar quando você muda $C_{\text{esp}}$.
+
+O flyback da Parte 2 sai em transiente: chave ideal, indutor de 1 H com 400 Ω, e
+mede-se a tensão na chave com e sem o diodo. Ponha um resistor de 1 MΩ em paralelo
+com a chave para o simulador convergir — sem ele, a tensão de abertura é
+literalmente infinita, e o que aparece na tela é o número que o algoritmo aguentou.
+
+O que nenhum simulador entrega sem um modelo especial: saturação. Indutor de
+simulador é linear até o infinito, e é por isso que a Parte 3 é feita com clipes.
+
+## 🔥 Onde Queima {#sec-024-queima}
+
+**Chavear carga indutiva sem grampo.** É o item que mais destrói componentes em
+projetos iniciantes. Relé, solenoide, motor, válvula, cabeçote — todos precisam de
+diodo, TVS ou varistor. Não há exceção.
+
+**Grampear com diodo lento num circuito rápido.** Um 1N4007 num conversor de 100 kHz
+conduz para trás durante a recuperação reversa e dissipa no transistor. Use Schottky
+ou ultrafast.
+
+**Escolher o indutor só por $I_{\text{rms}}$.** O limite que quebra o circuito no
+degrau de carga é $I_{\text{sat}}$, e ele é instantâneo. Verifique os dois, sempre.
+
+**Esquecer que $B_{\text{sat}}$ cai com a temperatura.** Um projeto que satura em
+3 A a 25 °C satura em 2,2 A a 100 °C. Ensaie no pior caso, dentro do gabinete
+fechado.
+
+**Usar indutor acima da sua SRF.** Acima dela o componente é capacitor, e o filtro
+que você desenhou faz o contrário do previsto. Confira a SRF antes de escolher o
+valor.
+
+**Usar indutor não blindado perto de circuito sensível.** O campo disperso de um
+"drum" não blindado acopla com trilhas, com outros indutores e com a entrada de
+amplificadores. Prefira blindado ou toroide onde houver sinal pequeno por perto.
+
+**Ignorar a DCR na conta de rendimento.** $I^2R$ dentro do indutor é perda pura, e
+num conversor de 3 A ela costuma ser comparável à do transistor de chaveamento.
+
+**Substituir um indutor queimado por "outro do mesmo valor".** Valor igual, DCR
+diferente, $I_{\text{sat}}$ diferente, núcleo diferente. Só o valor é o que o
+componente tem de menos específico.
+
+**Aplicar componente CC num núcleo sem entreferro.** A corrente contínua consome
+sozinha a capacidade de fluxo do núcleo, e o sinal satura sobre ela. Núcleo com
+entreferro existe para isso.
+
+**Medir a bobina com o ohmímetro e concluir que está em curto.** Em CC ela é fio.
+Leia o @sec-cap-023 de novo.
+
+**Confiar na escala de indutância do multímetro para indutor de potência.** Ela mede
+em frequência fixa e com corrente desprezível — exatamente as duas condições em que
+a saturação e as perdas não aparecem.
+
+**Enrolar indutor de potência com fio fino "porque cabe".** A DCR sobe com o quadrado
+do encolhimento do diâmetro, e a bobina esquenta até o esmalte falhar. Falha de
+esmalte é curto entre espiras, e curto entre espiras é uma espira em curto dentro de
+um transformador — o modo de falha mais destrutivo que existe em magnéticos.
+
+## O que fica deste capítulo {#sec-024-resumo}
+
+O indutor real é a indutância ideal com DCR em série (que aquece), capacitância entre
+espiras em paralelo (que define a auto-ressonância) e perdas de núcleo (que crescem
+com a frequência e com a densidade de fluxo). Abaixo da SRF ele é indutor; acima
+dela, capacitor.
+
+A saturação é o item sem paralelo no capacitor: acima de certa corrente, a indutância
+cai num joelho, e o circuito perde justamente o componente de que dependia. O
+entreferro desloca esse joelho, custando indutância e comprando corrente; o pó de
+ferro faz o mesmo de forma distribuída, com joelho suave.
+
+Quase toda a energia de um indutor com núcleo fica armazenada **no entreferro**,
+porque a densidade de energia é inversamente proporcional a $\mu_r$. Ainda assim, o
+armazenamento magnético é caro em volume — e a saída da engenharia foi guardar pouca
+energia muitas vezes por segundo, que é o princípio das fontes chaveadas.
+
+Todo indutor de potência tem duas correntes nominais: $I_{\text{sat}}$, limite
+magnético e instantâneo, e $I_{\text{rms}}$, limite térmico e de longo prazo. Os dois
+precisam ser verificados, e $B_{\text{sat}}$ ainda piora com a temperatura.
+
+E a energia $\frac{1}{2}LI^2$ tem de sair por algum lugar quando a corrente é
+interrompida. O diodo de roda livre dá a ela um caminho, ao custo de 0,7 V de grampo
+e de um decaimento lento; zener, resistor ou TVS em série ajustam essa troca. Não
+existe grampo baixo com liberação rápida.
+
+Com os quatro componentes passivos completos — resistor, capacitor, indutor, e os
+seus parasitas —, faltam as **equações no tempo**. O @sec-cap-025 junta resistor e
+capacitor num circuito e resolve a primeira equação diferencial do manual, com um
+resultado que vale para todo circuito de primeira ordem que aparecer daqui em diante.
