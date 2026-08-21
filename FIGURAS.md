@@ -105,7 +105,37 @@ instalado só como dependência do `circuitikz` e **não é usado** no corpo do 
   quebrado. Ancorar a exponencial no valor máximo:
   `{50*exp((x-0.75)/0.0435)}` em vez de `{1e-6*(exp(x/0.02585)-1)*1000}`.
 - **Nada de heredoc do Bash para escrever figura.** O heredoc converte `\\` em
-  `\` em silêncio. Usar a ferramenta Write ou script Python em arquivo.
+  `\` em silêncio. Usar a ferramenta Write ou script Python em arquivo. Vale
+  também para o *script Python passado por heredoc*: um `str.replace` cujo padrão
+  contenha `\\` chega ao Python já corrompido e a substituição falha sem explicar
+  por quê. Script com `\\` vai por arquivo, ou usa-se a ferramenta Edit.
+- **Nomes de variável de `\foreach` colidem com primitivas do TeX.** `\ht` (altura
+  de caixa) e `\lg` (logaritmo) são os piores: não dão erro claro, produzem
+  `! You can't use 'the character 0' after \the` seguido de uma chuva de
+  `Illegal unit of measure`, e o texto do rótulo sai com lixo do tipo
+  `0.54E0.54.54E` no meio. Evitar também `\dim`, `\wd`, `\dp`, `\sf`, `\it`, `\tt`.
+  Nomes seguros já usados: `\cmp`, `\esp`, `\dsc`, `\pot`, `\yc`, `\xx`, `\ii`.
+- **Vírgula decimal dentro de `xticklabels`/`yticklabels` do `pgfplots` é
+  separador de lista.** `yticklabels={0, 1, 2, 3, 4, 4,5}` vira sete rótulos e o
+  eixo sai com um `4` no lugar do `4,5`. Chavear cada rótulo:
+  `yticklabels={{0},{1},{2},{3},{4},{4,5}}`. Como este livro usa vírgula decimal
+  em tudo, a armadilha é permanente.
+- **`xmode=log` amostra linearmente.** `domain=0.1:1000, samples=200` põe quase
+  todos os pontos na década de cima e desenha a curva como uma poligonal grosseira
+  à esquerda. Plotar em forma paramétrica sobre o expoente:
+  `\addplot[domain=-1:3, samples=240] ({10^x}, {f(10^x)});`
+- **Lado do rótulo em componente vertical do `circuitikz`.** Para um caminho
+  desenhado **de cima para baixo**, `l=` cai a **leste** e `l_=` a **oeste**; num
+  caminho de baixo para cima é o inverso. Consequência prática: rótulo de fonte
+  desenhada para cima com `l_=` vai parar **dentro** da malha, em cima das setas
+  de corrente. Conferir sempre no PNG do `verificar-figuras.py`.
+
+## Largura das figuras
+
+O PNG de conferência é montado com `varwidth=17cm`: o que passar disso aparece
+**cortado no PNG** e sai largo demais na página do livro. Figura de três ou quatro
+painéis não cabe numa linha — dispor em **duas linhas de dois** (`xshift` +
+`yshift`), como na redução da rede escada do capítulo 012.
 
 ## Smoke test obrigatório
 
