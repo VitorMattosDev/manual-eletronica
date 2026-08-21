@@ -3,9 +3,603 @@
 ::: {.callout-warning}
 ## Tensão perigosa
 
-Este capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve
-ser executado depois de ler integralmente o Capítulo 2. *(texto de aviso a
-escrever)*
+Este capítulo trata de tensões capazes de matar. Nada do que está descrito aqui
+autoriza trabalhar com a rede elétrica energizada: o laboratório do fim do
+capítulo é executado **inteiro** com pilha de 9 V e com o quadro de distribuição
+intacto. Se em algum momento você se pegar pensando "é rapidinho, dá para medir
+com a chave ligada", este é o capítulo para reler.
 :::
 
-*(em elaboração)*
+Existe uma assimetria cruel na eletrônica de bancada: 95 % do que você vai montar
+opera com tensões incapazes de causar qualquer dano, e os 5 % restantes podem
+matar em menos de um segundo. Pior: os dois grupos são montados na mesma mesa,
+com as mesmas mãos e o mesmo grau de atenção. Este capítulo existe para instalar,
+antes de qualquer circuito, a distinção entre eles.
+
+## Não é a tensão que mata; é a corrente, e o caminho dela {#sec-002-corrente}
+
+O corpo humano não tem sensor de tensão. Ele responde a **corrente atravessando
+tecido**, e o que essa corrente faz depende de três coisas: quanto vale, por onde
+passa e por quanto tempo.
+
+A corrente que atravessa uma pessoa obedece à mesma lei de Ohm de qualquer outro
+circuito:
+
+$$
+I = \frac{V}{R_\text{corpo}} .
+$$
+
+O termo perigoso dessa equação não é $V$ — é $R_\text{corpo}$, porque ele varia
+por um fator de mil conforme a situação:
+
+| Situação | Resistência mão a mão (aprox.) |
+|---|---|
+| Pele seca, contato leve com ponta de dedo | 100 kΩ a 1 MΩ |
+| Pele seca, punho fechado em torno do condutor | 5 kΩ a 15 kΩ |
+| Pele úmida de suor | 1 kΩ a 3 kΩ |
+| Mãos molhadas, corpo em piso úmido | 500 Ω a 1 kΩ |
+| Pele perfurada (terminal pontudo, corte no dedo) | 300 Ω a 500 Ω |
+
+: Faixas típicas de resistência do corpo humano de mão a mão. A pele responde por
+quase tudo; o interior do corpo — sangue, músculo, órgãos — vale sozinho algo
+entre 300 Ω e 1 kΩ, e essa parcela **não muda**. {#tbl-002-resistencia}
+
+O número que interessa está na última linha: a resistência interna é o piso
+absoluto. Quando a pele deixa de proteger — porque está molhada, porque o contato
+foi firme e prolongado, porque a tensão foi alta o bastante para romper a camada
+córnea —, sobram algumas centenas de ohms entre a rede e o coração.
+
+Aplique isso a uma tomada de 127 V. Com pele seca e contato leve, 200 kΩ dão
+0,64 mA: você sente um formigamento e solta. Com a mão suada segurando o fio,
+2 kΩ dão **63 mA** — corrente na faixa em que a fibrilação ventricular é o
+desfecho provável. A tensão foi exatamente a mesma. A diferença entre um susto e
+um óbito foi a umidade da palma da mão.
+
+::: {#fig-corrente-corpo}
+
+```{.tikz}
+%%| filename: 002-corrente-corpo
+%%| alt: Escala logarítmica de corrente pelo corpo humano em 60 Hz, de 0,1 mA a 10 A, com faixas coloridas indicando percepção, tetanização, parada respiratória, fibrilação e queimadura.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13.5cm, height=5.6cm,
+  xmode=log, xmin=0.1, xmax=10000,
+  ymin=0, ymax=1,
+  axis y line=none,
+  axis x line*=bottom,
+  xlabel={corrente pelo corpo, 60 Hz (mA)},
+  xtick={0.1,1,10,30,100,1000,10000},
+  xticklabels={$0{,}1$,$1$,$10$,$30$,$100$,$1000$,$10\,000$},
+  x tick label style={font=\footnotesize},
+  xlabel style={font=\footnotesize},
+  clip=false,
+]
+  \addplot[draw=none, fill=manualgreen!30, forget plot]
+    coordinates {(0.1,0) (1,0) (1,1) (0.1,1)} \closedcycle;
+  \addplot[draw=none, fill=manualyellow!25, forget plot]
+    coordinates {(1,0) (10,0) (10,1) (1,1)} \closedcycle;
+  \addplot[draw=none, fill=manualyellow!55, forget plot]
+    coordinates {(10,0) (30,0) (30,1) (10,1)} \closedcycle;
+  \addplot[draw=none, fill=manualred!35, forget plot]
+    coordinates {(30,0) (100,0) (100,1) (30,1)} \closedcycle;
+  \addplot[draw=none, fill=manualred!60, forget plot]
+    coordinates {(100,0) (1000,0) (1000,1) (100,1)} \closedcycle;
+  \addplot[draw=none, fill=manualred!85, forget plot]
+    coordinates {(1000,0) (10000,0) (10000,1) (1000,1)} \closedcycle;
+
+  \node[rotate=90, anchor=west, font=\scriptsize, align=left]
+    at (axis cs:0.3,0.06) {nada se sente};
+  \node[rotate=90, anchor=west, font=\scriptsize, align=left]
+    at (axis cs:3,0.06) {percepção,\\dor crescente};
+  \node[rotate=90, anchor=west, font=\scriptsize, align=left]
+    at (axis cs:17,0.06) {tetanização:\\não se solta};
+  \node[rotate=90, anchor=west, font=\scriptsize, align=left]
+    at (axis cs:55,0.06) {parada\\respiratória};
+  \node[rotate=90, anchor=west, font=\scriptsize, align=left, text=white]
+    at (axis cs:320,0.06) {fibrilação\\ventricular};
+  \node[rotate=90, anchor=west, font=\scriptsize, align=left, text=white]
+    at (axis cs:3200,0.06) {queimadura\\profunda};
+
+  \draw[manualblue, very thick, -{Stealth[length=2.5mm]}]
+    (axis cs:30,1.42) -- (axis cs:30,1.02);
+  \node[manualblue, above, font=\scriptsize, align=center] at (axis cs:30,1.42)
+    {limite do disjuntor DR};
+\end{axis}
+\end{tikzpicture}
+```
+
+Efeito da corrente alternada de 60 Hz atravessando o tórax, em escala
+logarítmica. As fronteiras não são linhas nítidas — dependem da duração, do
+caminho e da pessoa —, mas a ordem de grandeza é sólida. Note onde fica o limite
+de 30 mA do dispositivo DR: logo depois da faixa em que a vítima já não consegue
+soltar o condutor.
+
+:::
+
+Três marcos merecem nome próprio:
+
+**1 mA — limiar de percepção.** Abaixo disso, nada. É por isso que você encosta
+em circuitos de 5 V o dia inteiro sem sentir coisa alguma.
+
+**10 mA a 16 mA — limiar de largar** (*let-go current*). Acima dessa faixa, a
+corrente alternada tetaniza a musculatura do antebraço. Os flexores são mais
+fortes que os extensores, e a mão **fecha** sobre o condutor em vez de abrir. A
+vítima está consciente, entende perfeitamente o que está acontecendo e não
+consegue soltar. É o cenário que transforma um choque de meio segundo em um
+choque de meio minuto — e o tempo é justamente o terceiro fator do dano.
+
+**30 mA a 100 mA — fibrilação ventricular.** O músculo cardíaco perde a
+sincronia e passa a tremer em vez de bombear. Sem desfibrilador, é fatal em
+minutos. Essa é a razão do número 30 mA estampado no dispositivo DR do quadro de
+distribuição.
+
+Acima de alguns ampères, paradoxalmente, a fibrilação fica menos provável — a
+corrente é tão alta que contrai o coração inteiro de uma vez, e ele às vezes
+volta a bater sozinho quando o circuito abre. Em compensação, o dano térmico é
+devastador: a corrente cozinha o tecido no caminho. Ninguém escolhe entre os
+dois; ambos são catastróficos.
+
+## A regra de uma mão {#sec-002-caminho}
+
+Corrente não passa "pelo corpo"; passa por um **caminho** dentro dele, e o dano
+depende de o coração estar ou não nesse caminho.
+
+Da mão esquerda ao pé esquerdo, ou de uma mão à outra, o trajeto atravessa a
+caixa torácica em cheio. Do dedo ao cotovelo da mesma mão, não chega perto do
+coração — dói, queima, mas não fibrila. A diferença entre um caminho e outro vale
+um fator de dez em risco cardíaco para a mesma corrente.
+
+Daí a regra mais barata da eletrônica: **quando houver qualquer chance de tensão
+perigosa, use uma mão só.** A outra fica no bolso, atrás das costas, em qualquer
+lugar que não seja a bancada. Assim, no pior caso, a corrente entra e sai pela
+mesma mão em vez de cruzar o peito.
+
+Ela vem com três companheiras que custam igualmente nada:
+
+- **Nada de metal no corpo.** Anel, pulseira, relógio e corrente de pescoço são
+  condutores de resistência quase nula, presos ao corpo, impossíveis de largar.
+  Um anel em curto num barramento de bateria vira um aquecedor de 50 W preso ao
+  dedo em dois segundos.
+- **Pés isolados e secos.** Sapato de sola de borracha, piso seco. Piso molhado
+  põe você em paralelo com o terra da instalação inteira.
+- **Nunca sozinho.** Quem sofre tetanização não consegue chamar ajuda nem se
+  soltar. Trabalho com a rede exige outra pessoa por perto que saiba onde fica a
+  chave geral.
+
+## O que existe atrás da tomada {#sec-002-rede}
+
+A instalação residencial brasileira trabalha em 60 Hz, com tensão de 127 V ou
+220 V entre fase e neutro conforme a região, e 220 V ou 380 V entre fases. Da
+tomada saem três condutores, e confundi-los é o começo de quase todo acidente
+doméstico:
+
+- **Fase (F)** — o condutor vivo, com tensão em relação ao terra. É ele que
+  morde.
+- **Neutro (N)** — o retorno da corrente, aterrado na entrada da instalação.
+  Está *próximo* do potencial de terra, mas **não** é terra: com corrente
+  circulando, a queda no condutor põe alguns volts ali, e uma instalação com
+  neutro rompido põe a tensão inteira.
+- **Terra (PE)** — condutor de proteção, que não conduz corrente em operação
+  normal. Existe só para dar um caminho de baixa resistência à corrente de falta
+  e para manter as carcaças metálicas no potencial do solo.
+
+Sobre esses três condutores atuam dois dispositivos com funções que muita gente
+troca:
+
+**O disjuntor protege o *fio*.** Ele desarma quando a corrente ultrapassa a
+capacidade do condutor — 10 A, 16 A, 20 A — para que o cabo não aqueça e incendeie
+a parede. Uma pessoa atravessada por 100 mA representa 0,1 A para um disjuntor de
+16 A: rigorosamente nada. Ele não vai desarmar. Ele não foi feito para isso.
+
+**O DR protege a *pessoa*.** O dispositivo diferencial residual compara a corrente
+que sai pela fase com a que volta pelo neutro. Em operação normal, são iguais.
+Se parte da corrente está indo embora por outro caminho — pelo terra, ou por uma
+pessoa —, aparece uma diferença, e o DR de 30 mA abre o circuito em menos de
+30 ms. É o único dispositivo do quadro que existe para salvar vidas.
+
+::: {#fig-dr-fuga}
+
+```{.tikz}
+%%| filename: 002-dr-fuga
+%%| alt: Diagrama do quadro de distribuição com disjuntor e DR alimentando uma tomada; uma corrente de fuga pelo corpo de uma pessoa retorna pelo terra, desequilibrando o DR.
+
+\begin{tikzpicture}[font=\footnotesize, >={Stealth[length=2.2mm]}]
+  % quadro
+  \draw[thick, rounded corners=2pt, fill=manualgray!8] (-0.6,-2.6) rectangle (2.6,1.4);
+  \node[anchor=south west, font=\scriptsize, manualgray] at (-0.6,1.5) {quadro de distribuição};
+
+  % blocos
+  \draw[thick, fill=white, rounded corners=2pt] (0.0,0.35) rectangle (2.2,1.05);
+  \node[font=\scriptsize, align=center] at (1.1,0.7) {disjuntor 16 A\\\emph{protege o fio}};
+  \draw[thick, fill=white, rounded corners=2pt] (0.0,-1.35) rectangle (2.2,-0.5);
+  \node[font=\scriptsize, align=center] at (1.1,-0.92) {DR 30 mA\\\emph{protege a pessoa}};
+
+  % condutores fase/neutro atravessando
+  \draw[manualred, thick] (0.55,1.05) -- (0.55,-0.5);
+  \draw[manualblue, thick] (1.65,1.05) -- (1.65,-0.5);
+  \draw[manualred, thick] (0.55,-1.35) -- (0.55,-2.2) -- (5.55,-2.2);
+  \draw[manualblue, thick] (1.65,-1.35) -- (1.65,-1.85) -- (6.05,-1.85);
+
+  \node[manualred, left, font=\scriptsize] at (0.5,1.25) {F};
+  \node[manualblue, right, font=\scriptsize] at (1.7,1.25) {N};
+
+  % terra
+  \draw[manualgreen!60!black, thick] (3.1,-2.6) -- (3.1,-1.5) -- (6.55,-1.5);
+  \node[manualgreen!60!black, font=\scriptsize, anchor=west] at (3.2,-2.35) {PE};
+  \draw[thick] (2.85,-2.62) -- (3.35,-2.62);
+  \draw[thick] (2.95,-2.78) -- (3.25,-2.78);
+  \draw[thick] (3.05,-2.94) -- (3.15,-2.94);
+
+  % tomada
+  \draw[thick, fill=white, rounded corners=2pt] (5.2,-2.55) rectangle (7.0,-1.15);
+  \node[circle, draw, thick, minimum size=4pt, inner sep=0pt, fill=manualred!25] (tf) at (5.55,-2.2) {};
+  \node[circle, draw, thick, minimum size=4pt, inner sep=0pt, fill=manualblue!25] (tn) at (6.05,-1.85) {};
+  \node[circle, draw, thick, minimum size=4pt, inner sep=0pt, fill=manualgreen!25] (tt) at (6.55,-1.5) {};
+  \node[font=\scriptsize, anchor=north] at (6.1,-2.6) {tomada};
+
+  % pessoa (esquematica)
+  \draw[thick] (8.6,0.9) circle (0.28);
+  \draw[thick] (8.6,0.62) -- (8.6,-0.35);
+  \draw[thick] (8.6,0.35) -- (7.7,-0.05);
+  \draw[thick] (8.6,0.35) -- (9.3,0.1);
+  \draw[thick] (8.6,-0.35) -- (8.25,-1.35);
+  \draw[thick] (8.6,-0.35) -- (8.95,-1.35);
+  \draw[thick] (8.05,-1.4) -- (8.45,-1.4);
+  \draw[thick] (8.75,-1.4) -- (9.15,-1.4);
+
+  % corrente de fuga: da fase ate a mao, pelo corpo, ate o piso/terra
+  \draw[manualred, very thick, ->] (5.55,-2.2) .. controls (6.6,-2.9) and (7.6,-1.2) .. (7.66,-0.12);
+  \draw[manualred, very thick, dashed, ->] (8.6,0.1) -- (8.6,-1.55);
+  \draw[manualred, very thick, ->] (8.6,-1.62) -- (6.45,-1.62) -- (6.45,-1.52);
+  \node[manualred, font=\scriptsize, align=center, anchor=west] at (9.35,-0.6)
+    {corrente de fuga\\pelo corpo};
+
+  % piso
+  \draw[manualgray, thick] (7.4,-1.55) -- (9.9,-1.55);
+
+  \node[align=left, font=\scriptsize, anchor=north west] at (-0.6,-3.3)
+    {$I_\mathrm{F} \neq I_\mathrm{N}$ em mais de 30 mA $\Rightarrow$ o DR abre em menos de 30 ms.};
+\end{tikzpicture}
+```
+
+Por que o disjuntor não salva ninguém e o DR salva. O disjuntor mede a corrente
+**total**; o DR mede a **diferença** entre ida e volta. Só a segunda medida
+enxerga uma pessoa.
+
+:::
+
+Duas consequências práticas para a bancada:
+
+1. **Teste o DR.** Ele tem um botão marcado **T**. Apertar uma vez por mês
+   desarma o dispositivo e prova que o mecanismo ainda funciona — DR travado por
+   anos sem uso é um problema real. Se não desarmar, chame um eletricista. E note
+   o que o botão *não* testa: a existência e a qualidade do aterramento.
+2. **Não confie na etiqueta do quadro.** "Desliguei o disjuntor da sala"
+   frequentemente significa "desliguei o disjuntor de outra coisa". Depois de
+   desligar, **meça** com o multímetro no ponto em que vai trabalhar, e antes
+   disso meça um ponto que você sabe estar vivo, para provar que o multímetro
+   está funcionando. Desligar, medir, e só então tocar.
+
+## Baixa tensão não dá choque — dá arco {#sec-002-arco}
+
+Uma bateria de 12 V não atravessa a sua pele: 12 V sobre 5 kΩ dão 2,4 mA,
+imperceptíveis a incômodos. Isso leva muita gente a tratar bateria como
+brinquedo, e é um erro de categoria — o perigo mudou de forma, não desapareceu.
+
+Uma fonte de tensão perigosa por **choque** é caracterizada pela tensão. Uma
+fonte perigosa por **energia** é caracterizada pela corrente de curto-circuito, e
+aí a conta é outra:
+
+- Uma pilha alcalina de 9 V entrega uns 0,5 A em curto. Esquenta e acaba.
+- Uma célula de lítio 18650 de boa qualidade entrega 20 A a 30 A, com 4,2 V. São
+  mais de 100 W numa peça do tamanho de um dedo. O fio de curto fica vermelho, a
+  célula ventila gás inflamável e, com sorte, só isso.
+- Uma bateria de carro chumbo-ácido entrega **centenas de ampères**. Uma chave de
+  fenda caída entre os terminais vira uma solda: o metal derrete, respinga, e o
+  hidrogênio acumulado sobre as células pode explodir.
+
+O nome disso é **arco elétrico**, e o dano é térmico e mecânico: queimadura de
+terceiro grau, respingo de metal fundido nos olhos, projeção de estilhaços. Não
+existe DR contra arco, porque não há fuga para o terra — é curto legítimo dentro
+do circuito. As defesas são outras: óculos, ferramenta isolada, nada de metal no
+corpo, fusível dimensionado no positivo da bateria e **desconectar antes de
+mexer**.
+
+## Capacitores guardam o susto para depois {#sec-002-capacitores}
+
+Um capacitor carregado é uma fonte de tensão sem nada por perto que indique isso.
+O aparelho está desligado da tomada há dez minutos, o LED apagou, e o capacitor
+do barramento continua com 300 V nos terminais. É o modo de falha que mais pega
+gente experiente, exatamente porque exige lembrar de algo invisível.
+
+A energia armazenada é
+
+$$
+W = \tfrac{1}{2}\,C\,V^{2},
+$$
+
+e o expoente 2 é a parte que importa. Um capacitor de 100 µF a 12 V guarda
+7,2 mJ — um estalo. O **mesmo** capacitor a 400 V, tensão típica do barramento de
+uma fonte chaveada ligada em 220 V, guarda
+
+$$
+W = \tfrac{1}{2} \times 100 \times 10^{-6} \times 400^{2} = 8{,}0\ \text{J}.
+$$
+
+Mil vezes mais, pela mesma capacitância. Como referência grosseira: acima de
+**1 J** em tensão acima de 60 V, a descarga por um corpo é potencialmente letal,
+e mesmo abaixo disso é violenta o bastante para provocar queimadura no ponto de
+contato e uma reação involuntária que arremessa a mão contra o resto do circuito
+— frequentemente o dano maior.
+
+::: {#fig-bleeder}
+
+```{.tikz}
+%%| filename: 002-bleeder
+%%| alt: Barramento de corrente contínua com capacitor de 100 microfarads em 400 volts, resistor de descarga permanente de 220 kilo-ohms em paralelo, e um bastão de descarga com resistor de 1 kilo-ohm e chave.
+
+\begin{circuitikz}[american, font=\small]
+  % barramento
+  \draw (0,3.2) node[anchor=south east, font=\footnotesize] {$+$} -- (5.6,3.2);
+  \draw (0,0)   node[anchor=north east, font=\footnotesize] {$-$} -- (5.6,0);
+  \node[font=\footnotesize, manualgray, anchor=south west] at (0,3.3)
+       {barramento CC, $400\,\mathrm{V}$};
+
+  % capacitor de barramento
+  \draw (1.1,3.2) to[eC, l=$100\,\mu\mathrm{F}$] (1.1,0);
+
+  % bleeder permanente
+  \draw (3.2,3.2) to[R, l=$220\,\mathrm{k}\Omega$] (3.2,0);
+  \node[font=\scriptsize, manualgray, anchor=west] at (3.45,1.15) {$2\,\mathrm{W}$};
+
+  % bastao de descarga
+  \draw[dashed, manualred, thick, rounded corners=3pt] (4.55,-0.45) rectangle (6.75,3.65);
+  \draw (5.6,3.2) -- (5.85,3.2) to[R, l=$1\,\mathrm{k}\Omega$] (5.85,1.9)
+        to[nos] (5.85,0.6) -- (5.85,0) -- (5.6,0);
+  \node[manualred, font=\scriptsize, align=center, anchor=north] at (5.65,-0.55)
+       {bastão de descarga\\(manual, momentâneo)};
+
+  \node[manualgray, font=\scriptsize, align=left, anchor=north west] at (0,-1.7)
+       {$W = \tfrac{1}{2}CV^{2} = 8{,}0\ \mathrm{J}$ \quad
+        $\tau_\mathrm{bleeder} = RC = 22\ \mathrm{s}$ \quad
+        descarga $\approx 5\tau \approx 110\ \mathrm{s}$};
+\end{circuitikz}
+```
+
+Duas linhas de defesa contra o capacitor carregado. O resistor de descarga
+permanente (*bleeder*) drena o barramento sozinho em cerca de dois minutos; o
+bastão de descarga faz o serviço em segundos quando não há tempo — ou quando o
+*bleeder* está aberto e ninguém percebeu.
+
+:::
+
+Duas defesas, e as duas são necessárias:
+
+**O resistor de descarga permanente**, o *bleeder*, fica em paralelo com o
+capacitor drenando a carga assim que a alimentação some. Com 220 kΩ sobre 100 µF,
+a constante de tempo é $\tau = RC = 22$ s, e depois de $5\tau \approx 110$ s
+sobra menos de 1 % da tensão inicial — abaixo de 3 V. O preço é dissipação
+permanente enquanto o equipamento está ligado:
+
+$$
+P = \frac{V^{2}}{R} = \frac{400^{2}}{220\,000} = 0{,}73\ \text{W},
+$$
+
+o que pede um resistor de **2 W**, e não o de 1/4 W do fundo da gaveta. Se o
+projetista escolher 470 kΩ para gastar menos, a dissipação cai para 0,34 W mas a
+descarga passa a levar quase quatro minutos. Esse é exatamente o tipo de troca
+que o livro inteiro vai repetir: segurança, custo e desempenho puxando o mesmo
+valor para lados diferentes.
+
+**O bastão de descarga** é a defesa ativa: um resistor de alguns quilo-ohms com
+potência de pulso adequada, ligado a duas pontas isoladas, que você encosta nos
+terminais do capacitor e **segura por dez segundos**. Com 1 kΩ sobre 100 µF a
+constante de tempo é 0,1 s, e o pico inicial de corrente é 400 mA — dentro do que
+o resistor tolera por um instante.
+
+E agora a parte que quase ninguém conta: **capacitor descarregado se recarrega
+sozinho**. O fenômeno se chama absorção dielétrica. Parte da carga fica presa em
+dipolos do dielétrico, migra de volta depois da descarga rápida e reaparece nos
+terminais — um eletrolítico de barramento descarregado a zero pode marcar
+20 V a 60 V alguns minutos depois. Por isso, em equipamento de alta tensão, o
+procedimento correto é descarregar, **medir**, aguardar, **medir de novo**, e
+deixar um curto físico (um jumper com garra) nos terminais enquanto se trabalha.
+
+E a regra final desta seção: **capacitor não se descarrega com chave de fenda.**
+O curto direto entrega toda a energia em microssegundos, com pico de corrente de
+centenas de ampères. Isso solda a ponta da chave ao terminal, arranca material do
+capacitor, respinga metal, e — o pior — pode danificar internamente o capacitor
+de um jeito que só vai aparecer meses depois, quando ele falhar em serviço.
+
+## O resto da bancada também machuca {#sec-002-outros}
+
+Choque é o risco espetacular; os riscos rotineiros são outros e acontecem com
+muito mais frequência:
+
+- **O ferro de solda opera entre 300 °C e 400 °C.** Ele não parece quente, não
+  muda de cor e o cabo pode enganar quanto ao lado. Suporte sempre, na mesma
+  posição, do mesmo lado da mesa, todos os dias. Nunca sacudir para tirar excesso
+  de solda: a gota voa.
+- **Fumaça de solda é fluxo vaporizado, não chumbo.** O chumbo só volatiliza
+  muito acima da temperatura de trabalho; o que sobe é colofônia, irritante
+  respiratório de verdade. Ventilação ou exaustor. O chumbo entra pelas mãos:
+  não comer na bancada, lavar as mãos ao terminar.
+- **Óculos de proteção ao cortar terminais.** O pedaço de perna de resistor
+  cortado sai a alta velocidade e em direção imprevisível. É o acidente de olho
+  mais comum em bancada de eletrônica, e o mais evitável.
+- **Eletrolítico invertido ou sobre tensão explode.** O encapsulamento tem um
+  entalhe em cruz no topo justamente para arrebentar por ali em vez de virar
+  estilhaço, mas ele expele eletrólito quente. Toda primeira energização de um
+  circuito novo com eletrolíticos se faz de lado, nunca com o rosto sobre a
+  placa.
+- **Álcool isopropílico é inflamável.** Limpar fluxo com IPA perto de ferro de
+  solda quente é uma combinação a evitar. Guarde longe, use pouco, deixe secar.
+
+## Se acontecer {#sec-002-acidente}
+
+Escrito aqui para ser lido **antes** e não durante:
+
+1. **Não toque na vítima.** Alguém em contato com a rede é parte do circuito, e
+   quem toca vira a segunda vítima.
+2. **Corte a energia.** Chave geral do quadro, ou o plugue arrancado da tomada.
+   Se for impossível, afaste a pessoa com material isolante e seco — cabo de
+   vassoura de madeira, jamais nada metálico ou úmido.
+3. **Chame socorro:** SAMU **192**, bombeiros **193**.
+4. **Todo choque que atravessou o tórax vai para o hospital**, mesmo que a pessoa
+   diga que está bem. Arritmias induzidas por choque elétrico podem aparecer
+   horas depois, e queimaduras elétricas são muito mais profundas do que o
+   pequeno ponto visível na pele sugere.
+
+## 🧪 Laboratório {#sec-002-lab}
+
+**Medir os números que este capítulo usou.** Três experimentos, todos com pilha
+de 9 V e multímetro, nenhum com a rede. O objetivo é transformar as faixas
+tabeladas em números seus: a resistência do seu corpo, a corrente que a tomada
+da sua casa faria passar por ele, e a diferença entre um capacitor que descarrega
+e um que fica esperando.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escalas de resistência e tensão contínua
+- 1 pilha de 9 V com clipe
+- 1 capacitor eletrolítico de 470 µF / 25 V
+- 1 resistor de 10 kΩ, 1/4 W
+- 1 resistor de 100 kΩ, 1/4 W
+- 1 protoboard e fios jumper
+- 1 copo com água e uma pitada de sal (para a parte 1)
+- Acesso ao quadro de distribuição, apenas para apertar o botão **T** do DR
+- Cronômetro (o do celular serve)
+:::
+
+### Parte 1 — A sua resistência, e o que ela implica
+
+1. Multímetro na escala de resistência mais alta (2 MΩ ou 20 MΩ). Segure uma
+   ponta de prova em cada mão, **pelas pontas metálicas**, com pressão leve.
+   Anote. Valores entre 300 kΩ e 2 MΩ são normais com pele seca.
+2. Aperte as pontas com força, envolvendo o metal com o dedo inteiro. O valor
+   cai — mais área de contato, menos resistência. Anote.
+3. Molhe as pontas dos dedos na água salgada, seque o excesso e repita. Espere
+   uma queda para dezenas ou poucas centenas de quilo-ohms. Anote os três
+   valores.
+4. Para cada um, calcule a corrente que 127 V produziriam:
+   $$ I = \frac{127\ \text{V}}{R_\text{medido}} . $$
+   Depois refaça para 220 V. Localize cada resultado em @fig-corrente-corpo.
+
+Com 1,5 MΩ dá 85 µA: nada. Com 150 kΩ, 0,85 mA: o limiar da percepção. Com
+15 kΩ — punho fechado, mão suada —, 8,5 mA: você já não solta. E o ohmímetro
+mede com menos de 1 V, o que **superestima** a sua resistência: a pele é não
+linear e tem a rigidez rompida em tensões altas, de modo que a resistência real
+sob 127 V é bem menor do que a que você acabou de medir. O número medido é o
+melhor caso, não o caso provável.
+
+### Parte 2 — A energia que fica no capacitor
+
+1. Monte na protoboard: pilha de 9 V, em série com o resistor de 100 kΩ, até o
+   capacitor de 470 µF. **Respeite a polaridade** — a faixa clara do capacitor
+   com o traço de menos vai para o negativo da pilha.
+2. Espere dez segundos e meça a tensão nos terminais do capacitor. Deve estar
+   perto da tensão da pilha.
+3. Desconecte a pilha e **não** toque em mais nada. Meça a tensão do capacitor a
+   cada 30 s, por três minutos. Ela cai devagar — o que descarrega é a corrente
+   de fuga do próprio capacitor mais a impedância de 10 MΩ do voltímetro. Anote
+   quanto sobrou depois de três minutos.
+4. Calcule a energia armazenada no instante inicial:
+   $$ W = \tfrac{1}{2} \times 470 \times 10^{-6} \times 9{,}0^{2} = 19\ \text{mJ}. $$
+   Agora repita a conta trocando 9,0 V por 400 V, mantendo os mesmos 470 µF:
+   dá **37,6 J**, dois mil vezes mais. Nada mudou no componente. Só a tensão.
+5. Agora ligue o resistor de 10 kΩ em paralelo com o capacitor: é o *bleeder*.
+   Recarregue, desconecte a pilha e cronometre. A constante de tempo prevista é
+   $\tau = 10\,\text{k}\Omega \times 470\,\mu\text{F} = 4{,}7$ s; em $5\tau = 23{,}5$ s
+   a tensão deve estar abaixo de 0,1 V. Confira com o multímetro. A matemática
+   por trás dessa curva é assunto do Volume 4; aqui interessa só que o resistor
+   existe, custa centavos, e é o que separa um equipamento seguro de uma
+   armadilha.
+
+### Parte 3 — O botão que quase ninguém aperta
+
+Vá ao quadro de distribuição, localize o dispositivo DR (é o módulo mais largo,
+com um botão marcado **T** ou **TEST**) e aperte. O circuito deve cair
+imediatamente. Religue a alavanca.
+
+Se não desarmar, o DR está travado ou defeituoso — chame um eletricista, porque a
+proteção contra choque da casa inteira está inoperante. Se não houver DR nenhum no
+quadro, essa é a informação mais importante deste capítulo para você: nenhuma
+falha de isolação da sua bancada será interrompida por proteção alguma.
+
+E anote o que este teste **não** prova: que existe aterramento, que o terra chega
+às tomadas, e que fase e neutro não estão invertidos. Verificações que exigem
+instrumento próprio e, no caso do aterramento, um eletricista.
+
+### Variante simulada (plano B)
+
+Sem capacitor à mão, a Parte 2 pode ser feita no Falstad com fonte de 9 V,
+resistor de 10 kΩ e capacitor de 470 µF, observando a curva de descarga e o
+leitor de energia armazenada. A Parte 1 não tem equivalente simulado — e é a mais
+importante, porque o número que interessa é o **seu**.
+
+## 🔥 Onde Queima {#sec-002-queima}
+
+**"São só 12 V, não dá choque."** Verdade quanto ao choque, irrelevante quanto ao
+risco. A bateria de 12 V de um carro entrega centenas de ampères em curto, e uma
+chave de fenda entre os terminais vira metal fundido. Tensão prevê choque;
+corrente de curto-circuito prevê arco e queimadura. São perguntas diferentes, e
+uma resposta tranquilizadora para a primeira não diz nada sobre a segunda.
+
+**Medir "rapidinho" com a rede ligada.** A pressa é o fator de risco, não a
+tensão. Desligar, medir para confirmar que está morto, trabalhar. Se a medição
+exigir o circuito energizado — e às vezes exige —, então: uma mão só, ponta de
+prova fixada antes de energizar, e ninguém encostando na bancada.
+
+**Descarregar capacitor com chave de fenda.** Pico de centenas de ampères, ponta
+soldada ao terminal, metal respingado e o capacitor internamente danificado de
+forma invisível. Use resistor: 1 kΩ com potência de pulso adequada, encostado por
+dez segundos, e depois meça.
+
+**Achar que capacitor descarregado permanece descarregado.** Absorção dielétrica
+traz a tensão de volta em minutos. Descarregar, medir, esperar, medir de novo, e
+deixar um curto físico enquanto se trabalha.
+
+**Contar com o disjuntor para proteger a pessoa.** Um disjuntor de 16 A não
+enxerga os 100 mA que estão fibrilando um coração. Só o DR enxerga. Se o quadro
+não tem DR, a instalação não tem proteção contra choque — e isso é um fato sobre
+a casa, não sobre o circuito que você está montando.
+
+**Confiar na etiqueta do quadro.** Quadros são etiquetados por quem instalou e
+alterados por quem veio depois. Depois de desligar o disjuntor, confirme com o
+multímetro no ponto de trabalho, tendo antes confirmado que o multímetro
+funciona medindo um ponto vivo conhecido. Instrumento com fusível aberto na
+escala de tensão indica zero em qualquer lugar — inclusive num condutor a 220 V.
+
+**Usar multímetro de categoria inadequada na rede.** As categorias CAT II, III e
+IV descrevem a capacidade do instrumento de sobreviver a transientes de tensão
+sem virar arco na sua mão. Multímetro barato sem marcação de categoria é para
+pilhas e protoboard; não vai ao quadro de distribuição.
+
+**Aterrar o osciloscópio num circuito ligado direto à rede.** A garra de terra da
+ponta de prova é ligada ao terra da tomada. Prendê-la a um ponto que não está no
+potencial de terra — como o "negativo" de uma fonte chaveada sem isolação — cria
+um curto pela malha do cabo, que vaporiza a garra e destrói a entrada do
+instrumento. O assunto tem tratamento próprio no Volume 7, junto com o
+osciloscópio; a regra até lá é: circuito ligado à rede sem transformador isolador
+não recebe ponta de prova.
+
+**Anel, pulseira e relógio na bancada.** Metal fechado em volta de um dedo,
+impossível de tirar depressa, com resistência de miliohms. É o caminho mais
+curto conhecido entre "encostei sem querer" e queimadura de terceiro grau.
+
+## O que fica deste capítulo {#sec-002-resumo}
+
+O corpo responde à corrente, não à tensão, e a corrente depende de uma
+resistência que muda por um fator de mil entre a mão seca e a mão molhada. A
+faixa perigosa começa em 10 mA — onde a vítima já não consegue soltar — e a
+proteção que enxerga essa faixa é o DR de 30 mA, não o disjuntor.
+
+Baixa tensão troca o risco de choque pelo risco de arco. Capacitor guarda a
+tensão depois de tudo desligado, com energia proporcional ao **quadrado** da
+tensão, e se recarrega sozinho depois de descarregado.
+
+Com a bancada segura, o próximo capítulo trata da linguagem comum a todos os
+cálculos que vêm depois: grandezas, unidades e a arte de saber, antes de medir,
+qual é a ordem de grandeza esperada.
