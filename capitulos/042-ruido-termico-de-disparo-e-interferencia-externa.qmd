@@ -1,3 +1,796 @@
 # Ruído: térmico, de disparo e interferência externa {#sec-cap-042}
 
-*(em elaboração)*
+O @sec-cap-041 terminou apontando para um piso. Faixa dinâmica é a razão entre o teto e o
+piso; sensibilidade de receptor é a distância até o piso; a regra dos 10 dB só faz sentido
+porque existe algo embaixo. Falta dizer o que é esse algo.
+
+E ele tem duas naturezas completamente diferentes, que a bancada teima em confundir.
+
+**Ruído** é aleatório, intrínseco e inevitável. Ele existe num circuito perfeito, montado
+com componentes perfeitos, alimentado por uma fonte perfeita, sem sinal nenhum na entrada e
+sem nada ligado por perto. Vem da agitação térmica dos elétrons e da natureza granular da
+carga. Não se elimina; projeta-se em torno dele.
+
+**Interferência** é determinística, externa e, em princípio, evitável. Ela é o sinal de
+alguém — o zumbido da rede, o clock do processador ao lado, a chave do compressor da
+geladeira, a estação de rádio a três quilômetros. Não é ruído no sentido físico: é sinal no
+lugar errado. Some quando a causa some.
+
+Distinguir uma da outra é o primeiro passo de qualquer diagnóstico, porque as soluções são
+disjuntas. Trocar o resistor por um de metal-filme não resolve zumbido de 60 Hz; blindar a
+caixa não baixa o ruído térmico em um decibel sequer. Este capítulo trata das duas, nessa
+ordem, e termina com o critério para separá-las.
+
+## Ruído térmico {#sec-042-termico}
+
+Num resistor a temperatura acima do zero absoluto, os elétrons se agitam. Essa agitação é
+aleatória e não tem direção preferencial, de modo que o valor médio da tensão nos terminais
+é zero. Mas o valor **eficaz** não é. John Johnson mediu isso nos Laboratórios Bell em 1926,
+e Harry Nyquist deduziu a fórmula no ano seguinte a partir da termodinâmica:
+
+$$ \boxed{\;V_n = \sqrt{4kTRB}\;} $$
+
+- $k = 1{,}381\times10^{-23}$ J/K, a constante de Boltzmann;
+- $T$, a temperatura **absoluta**, em kelvin;
+- $R$, a resistência em ohms;
+- $B$, a **largura de banda** de medição em hertz.
+
+Três consequências, e todas são contraintuitivas na primeira leitura.
+
+**O ruído não depende da frequência, só da largura de banda.** Um filtro de 1 kHz de banda
+centrado em 100 Hz e outro de 1 kHz centrado em 10 MHz entregam o mesmo ruído térmico. Por
+isso o ruído térmico é chamado de **branco**: potência igual em toda faixa de igual largura.
+E por isso a primeira pergunta ao ver uma especificação de ruído é *em que banda?*
+
+**A grandeza que se tabela é a densidade, não a tensão.** Dividindo por $\sqrt{B}$, sobra
+uma quantidade que caracteriza o resistor sozinho:
+
+$$ e_n = \sqrt{4kTR} \quad \left[\frac{\text{V}}{\sqrt{\text{Hz}}}\right],
+   \qquad\text{e a } 20\ ^\circ\text{C: } \;
+   e_n \approx 0{,}127\sqrt{R}\ \ \frac{\text{nV}}{\sqrt{\text{Hz}}}
+   \;\;(R \text{ em } \Omega). $$
+
+A unidade nanovolt por raiz de hertz é estranha na primeira vez e é a moeda corrente das
+folhas de dados de amplificador.
+
+**O ruído depende do valor do resistor, não do material nem da potência.** Um resistor de
+carbono e um de metal-filme de mesmo valor têm o mesmo ruído **térmico**. O de carbono tem
+mais ruído de excesso quando percorrido por corrente, e é por isso que se prefere
+metal-filme em entrada de baixo ruído — mas o piso térmico é o mesmo.
+
+| $R$ | $e_n$ (nV/$\sqrt{\text{Hz}}$) | Em 20 kHz (áudio) | Em 1 MHz |
+|---|---|---|---|
+| 50 Ω | 0,90 | 0,13 µV | 0,90 µV |
+| 1 kΩ | 4,0 | 0,57 µV | 4,0 µV |
+| 10 kΩ | 12,7 | 1,8 µV | 12,7 µV |
+| 100 kΩ | 40,0 | 5,7 µV | 40 µV |
+| 1 MΩ | 127 | 17,9 µV | 127 µV |
+| 10 MΩ | 400 | 57 µV | 400 µV |
+
+: Ruído térmico a 20 °C. A coluna de 20 kHz é a que decide projeto de áudio; a de 1 MHz, a
+de instrumentação rápida. {#tbl-042-termico}
+
+A tabela contém o critério mais útil deste capítulo: **impedância alta é ruído**. Um divisor
+de tensão feito com resistores de 1 MΩ injeta 18 µV de ruído na banda de áudio, o que num
+sistema de 1 V de fundo de escala é −95 dB. Se o conversor for de 16 bits (98 dB de faixa
+dinâmica), o resistor sozinho já comeu a resolução inteira. Trocar para 10 kΩ baixa isso
+para 1,8 µV, dez vezes menos.
+
+::: {.callout-note}
+## A potência de ruído disponível não depende de $R$
+
+Se o resistor ruidoso for casado com uma carga de mesmo valor, a potência entregue é
+
+$$ P_n = kTB, $$
+
+**sem o $R$**. A 20 °C isso vale $4{,}0\times10^{-21}$ W por hertz, ou
+
+$$ -174\ \text{dBm/Hz}. $$
+
+Este é um dos números mais usados de toda a engenharia de RF. Em 1 MHz de banda, o piso é
+$-174 + 60 = -114$ dBm; num canal de 200 kHz, $-121$ dBm. Um receptor com sensibilidade
+declarada de −107 dBm em 200 kHz está, portanto, operando 14 dB acima do piso térmico — e
+esses 14 dB são o que o próprio receptor acrescenta, o que o @sec-042-snr chama de figura de
+ruído.
+:::
+
+**Resistores associados.** Como as fontes de ruído são independentes, elas somam em
+potência, isto é, em quadratura. Para dois resistores em **série**, isso dá exatamente o
+esperado:
+
+$$ V_n = \sqrt{4kT(R_1 + R_2)B}, $$
+
+que é o ruído da resistência total. Para dois em **paralelo**, o resultado também é o ruído
+da resistência equivalente — o que é reconfortante, e não óbvio. A regra geral, que serve
+para qualquer rede: **o ruído térmico de uma rede passiva é o da parte real da sua impedância
+vista pelos terminais.** É a resistência de Thévenin do @sec-cap-018, e nada mais.
+
+## Ruído de disparo {#sec-042-disparo}
+
+O segundo ruído fundamental não vem do calor, mas da granularidade da carga. Corrente é
+elétron a elétron atravessando uma barreira — uma junção PN, um vácuo, uma interface —, e a
+chegada deles é um processo de Poisson. O resultado é uma flutuação em torno do valor médio:
+
+$$ \boxed{\;I_n = \sqrt{2qIB}\;} $$
+
+com $q = 1{,}602\times10^{-19}$ C e $I$ a corrente contínua que atravessa a barreira. Em
+densidade,
+
+$$ i_n = \sqrt{2qI}, \qquad
+   i_n \approx 0{,}566\sqrt{I}\ \ \frac{\text{pA}}{\sqrt{\text{Hz}}}
+   \;\;(I \text{ em } \mu\text{A}). $$
+
+| $I$ | $i_n$ | Em 1 MHz | Como fração de $I$ |
+|---|---|---|---|
+| 1 nA | 0,018 pA/$\sqrt{\text{Hz}}$ | 18 pA | 1,8 % |
+| 1 µA | 0,57 pA/$\sqrt{\text{Hz}}$ | 0,57 nA | 0,057 % |
+| 1 mA | 17,9 pA/$\sqrt{\text{Hz}}$ | 17,9 nA | 18 ppm |
+| 1 A | 566 pA/$\sqrt{\text{Hz}}$ | 0,57 µA | 0,57 ppm |
+
+: Ruído de disparo. A última coluna mostra por que ele é irrelevante em corrente alta e
+dominante em corrente muito baixa. {#tbl-042-disparo}
+
+Duas observações que evitam erro.
+
+**Um resistor comum não tem ruído de disparo.** A condução num metal não é um conjunto de
+eventos independentes: o gás de elétrons é fortemente correlacionado, e as flutuações se
+cancelam. Ruído de disparo exige uma **barreira** — junção de diodo ou de transistor,
+fotodiodo, tubo. É por isso que ele aparece no Volume 8 e não aqui.
+
+**Ele domina onde a corrente é minúscula.** Fotodiodo medindo luz fraca, eletrômetro,
+amplificador de instrumentação com corrente de polarização de picoampères. Nesses casos o
+projeto inteiro é organizado em torno de $\sqrt{2qI}$.
+
+## Ruído 1/f e a frequência de canto {#sec-042-flicker}
+
+Os dois ruídos anteriores são brancos. O terceiro não é.
+
+O **ruído 1/f**, também chamado *flicker* ou ruído rosa, tem densidade de potência
+inversamente proporcional à frequência: dobra a cada oitava para baixo. Em tensão, a
+densidade cai com $1/\sqrt{f}$, isto é, 10 dB por década. A origem é a captura e liberação
+de portadores em armadilhas na superfície do semicondutor, e por isso ele depende
+fortemente da tecnologia do componente.
+
+::: {#fig-042-densidade}
+
+```{.tikz}
+%%| filename: 042-densidade
+%%| alt: Gráfico com eixo horizontal logarítmico de frequência de zero vírgula um hertz a cem quilohertz e eixo vertical logarítmico de densidade de ruído em nanovolts por raiz de hertz, de um a mil. Duas curvas descendentes que se achatam. A curva azul, de um amplificador bipolar de baixo ruído, desce com dez decibéis por década até se achatar em três nanovolts por raiz de hertz a partir de cerca de dez hertz. A curva vermelha, de um amplificador CMOS, desce da mesma forma mas se achata mais alto, em vinte nanovolts por raiz de hertz, e só a partir de cerca de dez quilohertz, de modo que a região de ruído um sobre f é muito mais larga. Uma linha horizontal cinza tracejada marca o ruído térmico de um resistor de mil ohms, em quatro nanovolts por raiz de hertz, para comparação. Duas marcas verticais indicam as frequências de canto de cada curva.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log, ymode=log,
+  width=15.4cm, height=8.8cm,
+  xmin=0.1, xmax=1e5, ymin=1, ymax=2e4,
+  xlabel={frequência (Hz)},
+  ylabel={densidade de ruído $e_n$ (nV/$\sqrt{\mathrm{Hz}}$)},
+  xtick={0.1,1,10,100,1000,1e4,1e5},
+  xticklabels={{$0{,}1$},{1},{10},{100},{1 k},{10 k},{100 k}},
+  ytick={1,3,10,20,100,1000,1e4},
+  yticklabels={{1},{3},{10},{20},{100},{1000},{$10^{4}$}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.97,0.97)}, anchor=north east, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    dens(\f,\piso,\canto) = \piso*sqrt(1 + \canto/\f);},
+]
+  \addplot[manualblue, very thick, domain=-1:5, samples=280]
+    ({10^x}, {dens(10^x, 3, 10)});
+  \addlegendentry{bipolar de baixo ruído \quad piso 3 nV, canto 10 Hz}
+
+  \addplot[manualred, very thick, domain=-1:5, samples=280]
+    ({10^x}, {dens(10^x, 20, 1e4)});
+  \addlegendentry{CMOS \quad piso 20 nV, canto 10 kHz}
+
+  \addplot[manualgray, thick, dashed, domain=-1:5, samples=2, forget plot]
+    ({10^x}, {4});
+  \node[manualgray, anchor=south east, font=\scriptsize]
+       at (axis cs:9e4,4.3) {ruído térmico de 1 k$\Omega$};
+
+  \addplot[auxiliar, forget plot] coordinates {(10,1) (10,4.25)};
+  \addplot[auxiliar, forget plot] coordinates {(1e4,1) (1e4,28.3)};
+  \node[manualblue, anchor=north, font=\scriptsize] at (axis cs:10,2.6)
+       {$f_{\text{canto}}$};
+  \node[manualred, anchor=north, font=\scriptsize] at (axis cs:1e4,2.6)
+       {$f_{\text{canto}}$};
+
+  \node[manualgray, anchor=south west, font=\scriptsize, align=left]
+       at (axis cs:0.115,1.08) {$1/f$: $-10$ dB/década};
+\end{axis}
+\end{tikzpicture}
+```
+
+Densidade espectral de ruído de dois amplificadores. À esquerda da frequência de canto
+domina o $1/f$; à direita, o piso branco. Escolher o componente é escolher onde o canto
+fica em relação à banda do sinal.
+
+:::
+
+A **frequência de canto** é onde as duas contribuições se igualam, e ela é o número que se
+procura na folha de dados. Abaixo dela, o ruído cresce ao descer em frequência; acima, é
+branco.
+
+- Amplificadores bipolares de baixo ruído: canto entre 1 e 100 Hz.
+- Amplificadores JFET: entre 10 Hz e 1 kHz.
+- Amplificadores CMOS: entre 1 kHz e 100 kHz.
+
+Daí uma consequência de projeto que aparece o tempo todo: **medir sinal contínuo ou muito
+lento é o pior caso possível para ruído**, porque toda a banda de interesse está dentro da
+região $1/f$. A solução clássica é não medir em contínua: modula-se o sinal para uma
+frequência acima do canto, amplifica-se ali e desmodula-se depois. É o princípio do
+amplificador *chopper*, do amplificador *lock-in* e dos amplificadores de auto-zero
+modernos — assunto do Volume 11.
+
+Existem ainda dois ruídos com nome próprio que merecem reconhecimento: o **ruído de
+avalanche**, de diodos zener operando por avalanche, que é alto e é a razão de um zener
+ruim ser um péssimo componente de referência; e o **ruído *popcorn*** ou de rajada, que são
+saltos discretos e aleatórios de nível, defeito de fabricação que não aparece em nenhuma
+folha de dados e que se descobre com o circuito montado.
+
+## Somar ruído, e a banda que conta {#sec-042-somar}
+
+**Fontes de ruído independentes somam em quadratura**, como o @sec-cap-041 já estabeleceu:
+
+$$ V_{n,\text{total}} = \sqrt{V_{n,1}^2 + V_{n,2}^2 + V_{n,3}^2 + \cdots} $$
+
+A consequência prática é a de sempre: quem estiver 10 dB abaixo contribui com 0,4 dB; quem
+estiver 20 dB abaixo não existe. **Em orçamento de ruído, ache o dominante e trate só
+dele.** Reduzir pela metade uma fonte que está 15 dB abaixo da principal melhora o total em
+0,04 dB, e nenhum instrumento de bancada consegue medir isso.
+
+**A banda equivalente de ruído.** A fórmula $V_n = e_n\sqrt{B}$ supõe um filtro
+retangular ideal — banda plana até $B$ e zero depois. Filtro real tem transição suave e
+deixa passar ruído acima do corte. Para um passa-baixas de um polo, a integral da resposta
+dá
+
+$$ \boxed{\;B_{\text{eq}} = \frac{\pi}{2}f_c = 1{,}571\,f_c\;} $$
+
+Ignorar esse fator subestima a tensão de ruído em 25 %, o que é 1,9 dB. Para filtros de
+ordem mais alta o fator se aproxima de 1: 1,22 para dois polos, 1,15 para três, 1,03 para
+uma resposta de corte abrupto.
+
+**O que se vê na tela.** Ruído térmico tem distribuição gaussiana, o que significa que não
+tem valor de pico definido: qualquer amplitude é possível, só fica cada vez menos provável.
+Na prática, o que se observa numa tela de osciloscópio é aproximadamente
+
+$$ V_{pp} \approx 6{,}6\,V_{\text{ef}}, $$
+
+que é a faixa excedida em 0,1 % do tempo. Olhando por mais tempo, vê-se mais. Esse é o
+fator de crista de que o @sec-cap-039 falava, aplicado ao caso mais desagradável possível:
+**o valor eficaz do ruído é o número que importa, e o valor de pico é uma questão de
+paciência.**
+
+## Relação sinal-ruído e figura de ruído {#sec-042-snr}
+
+A grandeza que resume tudo é a **relação sinal-ruído**:
+
+$$ \text{SNR (dB)} = 20\log_{10}\frac{V_{\text{sinal,ef}}}{V_{\text{ruído,ef}}}
+   = 10\log_{10}\frac{P_{\text{sinal}}}{P_{\text{ruído}}}. $$
+
+::: {#fig-042-snr}
+
+```{.tikz}
+%%| filename: 042-snr
+%%| alt: Quatro gráficos de tensão contra tempo dispostos em duas colunas e duas linhas, cada um mostrando três períodos da mesma senoide com quantidades crescentes de ruído somado. No primeiro, com quarenta decibéis de relação sinal-ruído, a senoide parece perfeitamente limpa e o ruído é imperceptível. No segundo, com vinte decibéis, a senoide continua clara mas a linha ficou visivelmente áspera. No terceiro, com dez decibéis, a forma senoidal ainda é reconhecível mas fortemente contaminada. No quarto, com zero decibel, isto é, sinal e ruído de mesma potência, a senoide está quase perdida e só se adivinha o período olhando com atenção.
+
+\begin{tikzpicture}[font=\footnotesize]
+\pgfmathsetseed{20260822}
+
+  % ---------------- 40 dB ----------------
+  \begin{axis}[
+      at={(0cm,0cm)}, anchor=north west,
+      width=7.6cm, height=4.6cm,
+      xmin=0, xmax=3, ymin=-3.4, ymax=3.4,
+      title={SNR $= 40$ dB}, title style={font=\scriptsize},
+      xtick={0,1,2,3}, xticklabels={{0},{$T$},{$2T$},{$3T$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualblue, thick, domain=0:3, samples=600]
+      {sin(360*x) + 0.00707*(rand+rand+rand)};
+  \end{axis}
+
+  % ---------------- 20 dB ----------------
+  \begin{axis}[
+      at={(8.9cm,0cm)}, anchor=north west,
+      width=7.6cm, height=4.6cm,
+      xmin=0, xmax=3, ymin=-3.4, ymax=3.4,
+      title={SNR $= 20$ dB}, title style={font=\scriptsize},
+      xtick={0,1,2,3}, xticklabels={{0},{$T$},{$2T$},{$3T$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualblue, thick, domain=0:3, samples=600]
+      {sin(360*x) + 0.0707*(rand+rand+rand)};
+  \end{axis}
+
+  % ---------------- 10 dB ----------------
+  \begin{axis}[
+      at={(0cm,-5.9cm)}, anchor=north west,
+      width=7.6cm, height=4.6cm,
+      xmin=0, xmax=3, ymin=-3.4, ymax=3.4,
+      title={SNR $= 10$ dB}, title style={font=\scriptsize},
+      xtick={0,1,2,3}, xticklabels={{0},{$T$},{$2T$},{$3T$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualblue, thick, domain=0:3, samples=600]
+      {sin(360*x) + 0.2236*(rand+rand+rand)};
+  \end{axis}
+
+  % ---------------- 0 dB ----------------
+  \begin{axis}[
+      at={(8.9cm,-5.9cm)}, anchor=north west,
+      width=7.6cm, height=4.6cm,
+      xmin=0, xmax=3, ymin=-3.4, ymax=3.4,
+      title={SNR $= 0$ dB}, title style={font=\scriptsize},
+      xtick={0,1,2,3}, xticklabels={{0},{$T$},{$2T$},{$3T$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualblue, thick, domain=0:3, samples=600]
+      {sin(360*x) + 0.7071*(rand+rand+rand)};
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+A mesma senoide, quatro relações sinal-ruído. Vinte decibéis já é claramente visível numa
+tela; dez ainda permite medir o período; zero exige processamento — e é aí que técnicas
+como a média coerente do @sec-cap-043 deixam de ser luxo.
+
+:::
+
+Valores de referência para calibrar:
+
+- Áudio de alta qualidade: SNR acima de 90 dB.
+- Rádio FM comercial recebido bem: 50 a 60 dB.
+- Sinal de sensor industrial num cabo mal roteado: 20 a 40 dB.
+- Comunicação digital moderna: opera confortavelmente abaixo de 10 dB, com codificação.
+
+**Figura de ruído.** Todo estágio degrada a SNR, porque acrescenta o próprio ruído. O
+**fator de ruído** mede essa degradação:
+
+$$ F = \frac{\text{SNR}_{\text{entrada}}}{\text{SNR}_{\text{saída}}},
+   \qquad
+   \text{NF (dB)} = 10\log_{10}F. $$
+
+Um bloco perfeito tem $F = 1$, ou NF $= 0$ dB. Um atenuador passivo de $L$ dB tem NF
+exatamente igual a $L$ — atenuar sinal é degradar SNR na mesma proporção, porque o ruído
+térmico do próprio atenuador repõe o que ele tirou.
+
+Para uma cadeia, vale a **fórmula de Friis**:
+
+$$ \boxed{\;F_{\text{total}} = F_1 + \frac{F_2 - 1}{G_1}
+   + \frac{F_3 - 1}{G_1G_2} + \cdots\;} $$
+
+com os ganhos $G$ em razão de potência, não em dB. O que ela diz é a coisa mais importante
+de todo o capítulo: **o primeiro estágio domina**. Se $G_1$ for grande, todos os termos
+seguintes ficam divididos por um número grande e somem.
+
+Um exemplo numérico fecha a ideia. Cadeia de três blocos:
+
+| Bloco | Ganho | NF | $F$ | $G$ |
+|---|---|---|---|---|
+| 1 — pré-amplificador | +20 dB | 2 dB | 1,585 | 100 |
+| 2 — filtro passivo | −3 dB | 3 dB | 2,000 | 0,501 |
+| 3 — amplificador principal | +30 dB | 8 dB | 6,310 | 1000 |
+
+: Cadeia da fórmula de Friis. {#tbl-042-friis}
+
+$$ F_{\text{total}} = 1{,}585 + \frac{2{,}000-1}{100}
+   + \frac{6{,}310-1}{100\times0{,}501} = 1{,}585 + 0{,}010 + 0{,}106 = 1{,}701, $$
+
+isto é, NF total de 2,31 dB. O amplificador principal, com seus 8 dB de figura de ruído,
+contribuiu com 0,3 dB. **Trocá-lo por um de 4 dB melhoraria o conjunto em 0,15 dB; trocar o
+primeiro por um de 1 dB melhoraria em quase 1 dB inteiro.** Se a ordem fosse invertida — o
+ruidoso primeiro —, a NF total seria 8,1 dB.
+
+Isso justifica uma prática que parece exagero: pôr o pré-amplificador junto do sensor, no
+alto da torre, dentro do microfone, colado ao fotodiodo. O cabo é um atenuador, e atenuador
+antes do primeiro ganho é figura de ruído somada diretamente.
+
+## Interferência: o ruído que não é ruído {#sec-042-emi}
+
+Tudo acima é física e não negocia. Agora entra a parte que se resolve com layout, cabo e
+paciência.
+
+Interferência precisa de três coisas: uma **fonte**, um **caminho de acoplamento** e uma
+**vítima**. Atacar qualquer uma das três resolve; na prática, o caminho é quase sempre o
+mais fácil.
+
+::: {#fig-042-acoplamento}
+
+```{.tikz}
+%%| filename: 042-acoplamento
+%%| alt: Quatro diagramas dispostos em duas colunas e duas linhas mostrando os quatro caminhos de acoplamento de interferência. No primeiro, acoplamento capacitivo: dois condutores paralelos próximos, com um capacitor tracejado entre eles representando a capacitância parasita, uma fonte agressora de tensão alta e rápida à esquerda e um circuito vítima de alta impedância à direita. No segundo, acoplamento indutivo: dois laços de fio próximos, com o laço agressor conduzindo uma corrente grande e o laço vítima colhendo tensão pelo campo magnético, representado por uma seta curva entre eles, sendo a área do laço vítima o que determina quanto ele colhe. No terceiro, acoplamento por impedância comum: dois circuitos que compartilham o mesmo fio de retorno ao terra, de modo que a corrente grande do primeiro produz queda de tensão nesse fio, queda essa que aparece somada ao sinal do segundo. No quarto, laço de terra: dois equipamentos ligados à rede em tomadas distantes, unidos por um cabo de sinal cuja malha fecha um laço grande com o condutor de proteção, e uma diferença de potencial entre os dois pontos de terra empurra corrente por esse laço.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- capacitivo ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw[manualred, very thick] (0,2.0) -- (5.6,2.0);
+    \node[manualred, anchor=south, font=\scriptsize] at (2.8,2.15)
+         {agressor: $dv/dt$ alto};
+    \draw[manualblue, very thick] (0,0.6) -- (5.6,0.6);
+    \node[manualblue, anchor=north, font=\scriptsize] at (2.8,0.45)
+         {vítima: alta impedância};
+    \foreach \xx in {1.4,2.8,4.2}{
+      \draw[manualgray, dashed] (\xx,2.0) -- (\xx,1.42);
+      \draw[manualgray, thick] (\xx-0.22,1.42) -- (\xx+0.22,1.42);
+      \draw[manualgray, thick] (\xx-0.22,1.18) -- (\xx+0.22,1.18);
+      \draw[manualgray, dashed] (\xx,1.18) -- (\xx,0.6);
+    }
+    \node[manualgray, anchor=west, font=\scriptsize] at (4.55,1.30) {$C_p$};
+    \node[anchor=north, font=\scriptsize] at (2.8,-0.15)
+         {\textbf{capacitivo} — campo elétrico};
+  \end{scope}
+
+  % ---------------- indutivo ----------------
+  \begin{scope}[shift={(8.9,0)}]
+    \draw[manualred, very thick] (0.2,0.6) rectangle (2.3,2.0);
+    \node[manualred, anchor=south, font=\scriptsize] at (1.25,2.15)
+         {agressor: $di/dt$ alto};
+    \draw[manualblue, very thick] (3.3,0.6) rectangle (5.4,2.0);
+    \node[manualblue, anchor=south, font=\scriptsize] at (4.35,2.15)
+         {vítima: área do laço};
+    \draw[manualgray, thick, ->] (2.45,1.3) to[bend left=35] (3.15,1.3);
+    \node[manualgray, anchor=south, font=\scriptsize] at (2.8,1.55) {$B$};
+    \node[anchor=north, font=\scriptsize] at (2.8,-0.15)
+         {\textbf{indutivo} — campo magnético};
+  \end{scope}
+
+  % ---------------- impedancia comum ----------------
+  \begin{scope}[shift={(0,-4.6)}]
+    \draw[manualred, very thick] (0.2,2.4) rectangle (1.9,3.0);
+    \node[manualred, font=\scriptsize] at (1.05,2.7) {carga pesada};
+    \draw[manualred, very thick] (1.9,2.7) -- (3.4,2.7) -- (3.4,0.8);
+
+    \draw[manualblue, very thick] (0.2,1.4) rectangle (1.9,2.0);
+    \node[manualblue, font=\scriptsize] at (1.05,1.7) {sinal pequeno};
+    \draw[manualblue, very thick] (1.9,1.7) -- (2.6,1.7) -- (2.6,0.8);
+
+    \draw[very thick] (2.3,0.8) -- (3.9,0.8);
+    \draw (3.9,0.8) to[R, l={$Z_{\text{comum}}$}] (5.7,0.8);
+    \node[ground] at (5.7,0.8) {};
+    \draw[manualred, thick, ->] (4.1,1.75) -- (5.3,1.75);
+    \node[manualred, anchor=south, font=\scriptsize] at (4.7,1.79) {$I$};
+    \node[manualgray, anchor=north, font=\scriptsize, align=center]
+         at (3.6,0.5) {a queda $I\,Z$ entra no sinal};
+    \node[anchor=north, font=\scriptsize] at (2.9,-0.05)
+         {\textbf{impedância comum} — retorno partilhado};
+  \end{scope}
+
+  % ---------------- laco de terra ----------------
+  \begin{scope}[shift={(8.9,-4.6)}]
+    \draw[very thick] (0.3,1.4) rectangle (1.9,2.4);
+    \node[font=\scriptsize] at (1.1,1.9) {equip.\ A};
+    \draw[very thick] (4.1,1.4) rectangle (5.7,2.4);
+    \node[font=\scriptsize] at (4.9,1.9) {equip.\ B};
+    \draw[manualblue, very thick] (1.9,2.1) -- (4.1,2.1);
+    \node[manualblue, anchor=south, font=\scriptsize] at (3.0,2.62)
+         {cabo de sinal (malha)};
+    \draw[very thick] (1.1,1.4) -- (1.1,0.5);
+    \draw[very thick] (4.9,1.4) -- (4.9,0.5);
+    \draw[manualred, very thick] (1.1,0.5) -- (4.9,0.5);
+    \node[manualred, anchor=north, font=\scriptsize] at (3.0,0.4)
+         {condutor de proteção};
+    \draw[manualred, thick, ->] (2.4,0.72) -- (3.6,0.72);
+    \node[manualred, anchor=south, font=\scriptsize] at (3.0,0.76)
+         {$I_{\text{laço}}$};
+    \node[ground] at (1.1,0.5) {};
+    \node[ground] at (4.9,0.5) {};
+    \node[anchor=north, font=\scriptsize] at (2.9,-0.05)
+         {\textbf{laço de terra}};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+Os quatro caminhos pelos quais a interferência chega. Cada um tem um remédio próprio, e usar
+o remédio errado é a causa mais comum de horas perdidas na bancada.
+
+:::
+
+**Acoplamento capacitivo.** O agressor e a vítima formam um capacitor parasita, e a corrente
+injetada é $i = C_p \,dv/dt$. Depende da **tensão** do agressor e da **impedância** da
+vítima: circuito de alta impedância é vítima fácil. Remédios: afastar, reduzir a impedância
+da vítima, interpor um condutor aterrado (blindagem eletrostática). É o acoplamento que
+domina quando o agressor é um cabo de rede, um driver de porta MOSFET ou um transformador
+de alta tensão.
+
+**Acoplamento indutivo.** O agressor gera campo magnético, e a vítima colhe tensão
+proporcional à **área do laço** que ela forma e ao $di/dt$ do agressor. Não depende de
+impedância. Remédios: reduzir a área do laço — e o **par trançado** é exatamente isso,
+porque a cada meia volta o sinal induzido inverte e se cancela. Blindagem eletrostática não
+serve; campo magnético só é barrado por material de alta permeabilidade ou por corrente
+oposta. É o acoplamento que domina perto de transformadores, motores e cabos de corrente
+alta.
+
+**Impedância comum.** Dois circuitos partilham um condutor de retorno. A corrente do
+primeiro produz queda de tensão nesse condutor, e essa queda aparece somada ao sinal do
+segundo. Não há campo nenhum envolvido: é a lei de Ohm no fio de terra, e é o mecanismo
+mais subestimado dos quatro. Remédio: topologia de terra em **estrela**, com um único ponto
+de encontro, e retorno separado para sinal e para potência.
+
+**Laço de terra.** Caso particular e especialmente teimoso do anterior. Dois equipamentos
+aterrados em pontos diferentes da instalação, unidos por um cabo de sinal, fecham um laço
+que pode ter metros quadrados de área. Qualquer diferença de potencial entre os dois pontos
+de terra — e ela existe sempre, porque o condutor de proteção conduz corrente de fuga —
+empurra corrente por esse laço, e ela aparece na malha do cabo. É a causa clássica do
+zumbido em áudio e vídeo. Remédios: alimentar tudo da mesma tomada, usar entrada
+diferencial, interpor transformador de isolação ou acoplador óptico, ou aterrar a malha em
+uma ponta só.
+
+### O zumbido de 60 Hz e como identificá-lo {#sec-042-hum}
+
+No Brasil, a rede é de 60 Hz — 50 Hz em boa parte do mundo —, e a interferência que ela
+produz é tão comum que vale um método de diagnóstico próprio.
+
+**Se o incômodo tem componente forte em 60 Hz e nos harmônicos ímpares**, a origem é
+provavelmente acoplamento capacitivo ou indutivo direto da rede. Aproximar a mão do circuito
+muda o nível: o corpo é uma antena e um capacitor.
+
+**Se o componente forte é em 120 Hz** — o dobro —, a origem é a fonte de alimentação: a
+ondulação após a retificação de onda completa está em $2f$, assunto do Volume 8. O problema
+está dentro do equipamento, não fora.
+
+**Se o zumbido some ao desligar o cabo de sinal e não some ao curto-circuitar a entrada**, o
+caminho é o cabo. Se some ao curto-circuitar a entrada, o caminho é a própria entrada.
+
+**Se o zumbido muda ao mover o cabo**, é indutivo — a área do laço mudou. Se muda ao
+aproximar a mão sem tocar, é capacitivo. Esse par de testes resolve a maioria dos casos em
+dois minutos.
+
+## Como diminuir {#sec-042-remedio}
+
+Para o **ruído** (intrínseco), há quatro alavancas e nada mais:
+
+1. **Reduzir a impedância.** $e_n \propto \sqrt{R}$. Dividir a impedância por 100 divide o
+   ruído por 10.
+2. **Reduzir a banda.** $V_n \propto \sqrt{B}$. Filtrar tudo o que estiver fora da banda do
+   sinal é ganho grátis, e é a razão de existir filtro antialiasing e filtro de saída.
+3. **Escolher o componente certo, e pô-lo primeiro.** Friis manda: o primeiro estágio
+   domina. Ganho antes de tudo o mais.
+4. **Esfriar.** $V_n \propto \sqrt{T}$. Raro fora de radioastronomia e de sensores
+   criogênicos, mas é o que resta quando as três anteriores acabaram.
+
+Para a **interferência**, a lista é de layout:
+
+- **Área de laço mínima.** Ida e volta juntas, sempre. Par trançado no cabo, plano de terra
+  na placa.
+- **Terra em estrela.** Um único ponto de encontro; retorno de sinal separado do retorno de
+  potência.
+- **Desacoplamento local.** Um capacitor de 100 nF junto a cada circuito integrado, o mais
+  perto possível dos pinos de alimentação, fecha o laço de corrente rápida localmente.
+- **Blindagem, aterrada em uma ponta.** A malha protege contra campo elétrico. Aterrada nas
+  duas pontas, ela vira um laço de terra — o que resolve um problema e cria outro.
+- **Sinal diferencial.** O receptor mede a diferença entre dois condutores; tudo o que
+  aparecer igual nos dois é rejeitado. É a solução mais robusta que existe, e é a razão de
+  o áudio profissional, o RS-485, o CAN e o USB serem diferenciais.
+- **Separação física.** Cabo de potência e cabo de sinal não andam juntos; se tiverem de se
+  cruzar, que seja em ângulo reto.
+- **Filtrar na entrada da caixa.** Interferência que entrou é interferência que vai circular.
+
+## 🧪 Laboratório {#sec-042-lab}
+
+**Medir a interferência de 60 Hz colhida por um fio solto e derrubá-la em 40 dB só mudando o
+cabo; depois, medir ruído térmico de verdade usando a entrada de áudio do computador.**
+
+::: {.callout-warning}
+## Nenhuma parte deste roteiro toca na rede
+
+Todos os experimentos de interferência são feitos **perto** de um cabo de rede energizado,
+nunca em contato com ele. Não abra tomada, não desencape cabo de alimentação, não conecte
+nada a 127 V ou 220 V. A interferência atravessa o ar e o isolamento — é justamente esse o
+ponto do experimento. Vale tudo o que o @sec-cap-002 estabeleceu.
+:::
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala CA (200 mV ou 2 V de fundo de escala)
+- 1 computador com entrada de microfone ou de linha e um programa de gravação e análise
+  espectral (Audacity é gratuito e serve)
+- 1 cabo com plugue P2 (3,5 mm) para ligar ao computador, com as pontas descascadas
+- Fio rígido comum, uns 2 m
+- 1 par de fios para trançar (ou um pedaço de cabo de rede Ethernet, que já vem trançado)
+- 1 pedaço de papel-alumínio de uns 30 cm, para blindagem improvisada
+- Resistores 1/4 W: 100 Ω, 1 kΩ, 10 kΩ, 100 kΩ, 1 MΩ, 10 MΩ (metal-filme de preferência)
+- 1 extensão elétrica comum, energizada, com o cabo esticado sobre a bancada
+- Protoboard, jumpers, fita crepe
+:::
+
+### Parte 1 — A antena involuntária
+
+1. Ponha o multímetro em CA, na menor escala.
+2. Ligue a ponta preta ao terra do seu circuito (ou simplesmente segure-a) e deixe a ponta
+   vermelha **solta no ar**, com uns 20 cm de fio.
+3. Leia.
+
+A leitura típica fica entre 0,1 e 2 V eficazes, dependendo da impedância de entrada do
+instrumento e de quão perto está a fiação. **Não há nenhuma fonte ligada**: isso é a rede
+elétrica acoplada capacitivamente ao fio.
+
+4. Aproxime o fio solto do cabo da extensão energizada. A leitura sobe.
+5. Aproxime a mão do fio, sem tocar. A leitura muda — o corpo é uma antena.
+6. Toque o fio com o dedo. A leitura muda de novo, e agora você faz parte do circuito.
+
+### Parte 2 — Quatro cabos, quarenta decibéis
+
+Aqui o experimento fica quantitativo. Monte uma "vítima" com impedância definida: um resistor
+de 100 kΩ do fio de sinal ao terra, medido com o multímetro em paralelo.
+
+1. **Fio solto de 2 m**, esticado paralelo ao cabo da extensão, a uns 5 cm dele. Meça e
+   anote.
+2. **Par trançado**: use um par do cabo Ethernet, com um condutor levando o sinal e o outro
+   ligado ao terra, na mesma posição. Meça.
+3. **Fio blindado improvisado**: enrole o papel-alumínio em torno do fio solto, ligue o
+   alumínio ao terra **em uma ponta só**. Meça.
+4. **Fio curto**: 10 cm em vez de 2 m, mesma posição. Meça.
+
+| Configuração | Previsão qualitativa | Medido | dB relativos ao (1) |
+|---|---|---|---|
+| 1. Fio solto de 2 m | referência | | 0 |
+| 2. Par trançado | queda grande | | |
+| 3. Blindado, terra em 1 ponta | queda muito grande | | |
+| 4. Fio curto de 10 cm | queda proporcional ao comprimento | | |
+
+: Tabela da Parte 2. A coluna de dB é o resultado do experimento: converta com
+$20\log_{10}(V/V_1)$. {#tbl-042-lab}
+
+5. Agora repita a medida (1) trocando o resistor de 100 kΩ por **1 kΩ**.
+
+A queda é dramática, e ela é a assinatura do acoplamento **capacitivo**: a corrente
+injetada é fixa, e a tensão que ela produz é proporcional à impedância da vítima. **Baixar
+a impedância da vítima em 40 dB baixa a interferência capacitiva em 40 dB.** Se a queda
+tivesse sido pequena, o acoplamento seria indutivo.
+
+6. Volte a 100 kΩ e enrole o fio da vítima em uma volta grande, de uns 30 cm de diâmetro,
+   perto do cabo de rede. Compare com o fio esticado. O que subiu foi a área do laço, e o
+   que aumentou foi o acoplamento **indutivo**.
+
+### Parte 3 — Ruído térmico de verdade
+
+A entrada de microfone de um computador é um amplificador com ganho alto e ruído próprio
+baixo o bastante para que o ruído térmico de um resistor grande fique visível. É o
+experimento de Johnson, com material de casa.
+
+1. Ligue o cabo P2 na entrada de microfone. Abra o Audacity (ou equivalente), ajuste a taxa
+   para 48 kHz e o ganho de entrada num valor fixo. **Não mexa mais no ganho.**
+2. **Curto-circuite** a entrada (fio de sinal no terra). Grave 10 segundos. Meça o nível
+   eficaz — no Audacity, `Analisar` $\to$ `Contraste` ou a régua de RMS. Anote em dBFS.
+   Este é o **piso do próprio instrumento**.
+3. Substitua o curto por um resistor de **1 kΩ**. Grave e meça.
+4. Repita com 10 kΩ, 100 kΩ, 1 MΩ e 10 MΩ.
+5. Marque o nível medido (em dB) contra $\log_{10}R$.
+
+A previsão: acima do piso do instrumento, o nível deve subir **10 dB por década de
+resistência**, porque $V_n \propto \sqrt{R}$ e $20\log_{10}\sqrt{10} = 10$ dB. Os pontos de
+baixa resistência ficam achatados no piso do instrumento; os de alta caem na reta.
+
+6. Estime a banda: se a taxa é 48 kHz, a banda é 24 kHz, e o ruído previsto para 1 MΩ é
+   $127\ \text{nV}/\sqrt{\text{Hz}} \times \sqrt{24000} = 19{,}7$ µV. Confira contra a
+   sensibilidade declarada da sua entrada, se ela existir.
+
+::: {.callout-note}
+## O que pode dar errado nesta parte
+
+Se todos os valores derem iguais, o ganho da entrada tem controle automático — desligue-o
+nas preferências do sistema. Se aparecer uma raia forte em 60 Hz, você está medindo
+interferência, não ruído: blinde o resistor com o papel-alumínio aterrado, ou faça a medida
+com o notebook desligado da tomada, na bateria. **Esse é, aliás, o teste definitivo do
+capítulo:** ruído térmico é uma faixa contínua e larga no espectro; interferência é uma raia
+estreita numa frequência determinada.
+:::
+
+### Parte 4 — Ver a diferença no espectro
+
+1. Com o resistor de 1 MΩ ainda ligado, use a função de análise de espectro do programa.
+2. O ruído térmico aparece como um **tapete plano** cobrindo toda a faixa, sem estrutura.
+3. Aproxime o cabo do resistor de uma lâmpada acesa ou do carregador do notebook. Aparecem
+   **raias** em 60 Hz, 120 Hz, 180 Hz e talvez em frequências altas, se o carregador for
+   chaveado.
+
+Tapete contínuo é ruído. Raia é interferência. **É esse o critério, e ele é visual.**
+
+### Parte 5 — Um laço de terra caseiro
+
+1. Se houver duas tomadas distantes na sala, ligue o notebook em uma e um aparelho de som (ou
+   outro computador) na outra.
+2. Ligue os dois por um cabo de áudio P2.
+3. Escute e meça o zumbido.
+4. Agora ligue os dois na **mesma** tomada, ou na mesma régua. Meça de novo.
+
+A queda costuma ser de 20 a 40 dB, e o que mudou não foi cabo nem circuito: foi a área do
+laço de terra. **Este é o remédio mais barato de toda a eletrônica prática, e ele é
+frequentemente o último a ser tentado.**
+
+**Variante simulada (plano B).** Sem entrada de áudio disponível, a Parte 3 se faz em
+planilha: calcule $V_n$ para cada resistor e cada banda e monte o gráfico previsto. O
+ngspice tem análise `.noise`, que integra a densidade de ruído de um circuito inteiro sobre
+a banda pedida e imprime a contribuição de cada componente — é o orçamento de ruído
+automático, e vale rodá-lo sobre o divisor de tensão de 1 MΩ para ver o resultado da
+@tbl-042-termico saindo sozinho.
+
+## 🔥 Onde Queima {#sec-042-queima}
+
+**Tratar interferência com remédio de ruído, e vice-versa.** Trocar resistor de carbono por
+metal-filme não tira zumbido de 60 Hz. Blindar a caixa não baixa o piso térmico.
+
+**Especificar ruído sem dizer a banda.** "Ruído de 10 µV" não significa nada. Ruído é
+sempre densidade vezes raiz da banda.
+
+**Esquecer o fator $\pi/2$ da banda equivalente.** Um passa-baixas de um polo com corte em
+$f_c$ deixa passar ruído de $1{,}57f_c$. Ignorar isso subestima em 1,9 dB.
+
+**Usar impedância alta em entrada sensível.** $e_n \propto \sqrt{R}$, e alta impedância é
+também vítima fácil de acoplamento capacitivo. Os dois problemas pioram juntos.
+
+**Pôr o atenuador antes do ganho.** Todo dB de atenuação antes do primeiro estágio é um dB
+somado direto à figura de ruído. Amplifique primeiro, atenue depois.
+
+**Otimizar o último estágio.** Friis divide a contribuição dele pelo ganho acumulado. Melhorar
+o amplificador final quando o pré-amplificador é ruim é dinheiro jogado fora.
+
+**Somar ruídos linearmente.** Somam em quadratura. Duas fontes iguais dão +3 dB, não +6 dB.
+
+**Perseguir contribuições que estão 20 dB abaixo.** Elas valem 0,04 dB. Ache o dominante.
+
+**Aterrar a malha do cabo nas duas pontas por reflexo.** Resolve o campo elétrico e cria um
+laço de terra. Em áudio, aterrar em uma ponta é a regra; em RF, o contrário — e saber por
+que a regra difere é saber se o problema é de baixa ou de alta frequência.
+
+**Confundir 60 Hz com 120 Hz no diagnóstico.** Sessenta é acoplamento externo; cento e vinte
+é ondulação da própria fonte. São problemas diferentes com soluções diferentes.
+
+**Achar que ruído gaussiano tem valor de pico.** Não tem. Observando mais tempo, aparecem
+picos maiores. Use o valor eficaz e a regra dos 6,6 vezes para estimar o que se vê.
+
+**Esquecer o desacoplamento local.** Um capacitor de 100 nF por circuito integrado, junto
+aos pinos, é a diferença entre um circuito que funciona e um que oscila. Ele fecha o laço da
+corrente rápida onde ela nasce.
+
+**Medir ruído com o instrumento errado.** Um multímetro em CA tem banda de alguns kHz e mede
+valor médio ou eficaz de tudo o que entrar — inclusive interferência. Separar ruído de
+interferência exige olhar o **espectro**, e é isso que o @sec-cap-043 finalmente permite
+fazer direito.
+
+## O que fica deste capítulo {#sec-042-resumo}
+
+**Ruído** é aleatório e intrínseco; **interferência** é determinística e externa. Os remédios
+são disjuntos, e o diagnóstico começa por separá-los — tapete contínuo no espectro é ruído,
+raia estreita é interferência.
+
+O **ruído térmico** de qualquer resistência vale $V_n = \sqrt{4kTRB}$, ou cerca de
+$0{,}127\sqrt{R}$ nV/$\sqrt{\text{Hz}}$ a 20 °C. Ele é branco: depende da largura da banda,
+nunca da frequência. A potência disponível é $kTB$, ou **−174 dBm/Hz**, independente de $R$.
+O ruído de uma rede passiva é o da parte real da sua impedância de Thévenin.
+
+O **ruído de disparo**, $I_n = \sqrt{2qIB}$, exige uma barreira — junção, fotodiodo — e
+domina em corrente muito baixa. Resistor comum não o tem.
+
+O **ruído 1/f** cresce ao descer em frequência, 10 dB por década em tensão, até a
+**frequência de canto**. Medir em contínua é o pior caso; modular para acima do canto é a
+solução clássica.
+
+Ruídos independentes somam em **quadratura**, e o que estiver 10 dB abaixo não conta. A banda
+equivalente de um polo é $1{,}57f_c$, e o que se vê na tela é $V_{pp} \approx 6{,}6V_{\text{ef}}$.
+
+$$ \text{SNR} = 20\log_{10}\frac{V_s}{V_n},
+   \qquad
+   F_{\text{total}} = F_1 + \frac{F_2-1}{G_1} + \frac{F_3-1}{G_1G_2} + \cdots $$
+
+**O primeiro estágio domina.** Ganho perto do sensor, atenuação depois — nunca antes.
+
+Interferência chega por quatro caminhos: **capacitivo** (campo elétrico, depende da tensão do
+agressor e da impedância da vítima), **indutivo** (campo magnético, depende da área do laço),
+**impedância comum** (retorno partilhado) e **laço de terra**. Área de laço mínima, terra em
+estrela, desacoplamento local, blindagem aterrada em uma ponta e sinal diferencial são a
+lista de remédios, nessa ordem de importância.
+
+Tudo neste capítulo tem uma limitação em comum: nada disso pôde ser **visto**. O multímetro
+entrega um número por vez; o critério que separa ruído de interferência é visual e exige
+espectro; e as bordas, sobressinais e tempos de subida do @sec-cap-039 continuam sem
+verificação experimental. Chegou a hora do instrumento que resolve tudo isso de uma vez, e
+que muda a natureza da bancada: o **osciloscópio**, o @sec-cap-043.
