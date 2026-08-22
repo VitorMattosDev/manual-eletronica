@@ -68,6 +68,53 @@ Vale para todos os manuais da série. Entradas novas vão no fim da seção corr
     Queima", só com um espaço a mais. Comportamento **aceito**: não vale trocar a
     toolchain para lualatex por causa disso.
 
+11. **A emenda entre sessões engole capítulos, e nenhuma validação pega.**
+    Custou quatro capítulos neste manual — 025, 026 (fim do Volume 4) e 037, 038
+    (fim do Volume 6) —, descobertos só quando o Volume 7 já estava publicado.
+
+    O histórico mostra a mesma forma duas vezes: a sessão escreveu 021→024 e
+    acabou; a seguinte começou em **027**, o primeiro capítulo do Volume 5. A
+    sessão escreveu 033→036 e acabou; a seguinte começou em **039**, o primeiro
+    capítulo do Volume 7. O Volume 5 (027→032) foi o único que coube inteiro numa
+    sessão, e é o único sem buraco. **Toda lacuna caiu numa emenda de sessão, e
+    toda retomada reancorou numa fronteira de volume — número redondo — em vez do
+    próximo capítulo pendente.**
+
+    Quatro coisas falharam juntas, e nenhuma delas é sobre eletrônica:
+
+    - O `/clear` obrigatório entre capítulos faz toda sessão começar fria.
+    - O passe de bastão existia, mas só em prosa, no último parágrafo do capítulo
+      anterior ("o @sec-cap-025 junta resistor e capacitor..."). Ninguém lê o
+      rodapé do capítulo anterior ao abrir sessão.
+    - `**Progresso: 41/104**` é **contagem, não fronteira**: lê-se igual com os 41
+      contíguos ou esburacados.
+    - **O checklist era cego.** Ele caça `?@` — referência não resolvida. Mas
+      referência a capítulo-stub *resolve*, porque o stub carrega o rótulo
+      `{#sec-cap-NNN}`. Render limpo, `grep` zero, buracos intactos, e o leitor
+      clicando para cair numa página "(em elaboração)".
+
+    É a lição 9 noutro eixo: contar `<svg>` prova que a figura saiu, não que ela
+    está certa; `?@` zero prova que a referência resolve, não que ela leva a
+    conteúdo. **Toda validação que confirma forma precisa de uma irmã que confirme
+    substância.**
+
+    O que fica, e vale para qualquer manual da série:
+
+    - **Abrir sessão pelo menor `[ ]` da fila**, nunca pelo primeiro capítulo do
+      volume que o usuário nomeou. Se o usuário pedir um volume com lacuna atrás,
+      dizer **antes** de escrever — a decisão de pular é dele.
+    - **O ROADMAP declara fronteira, não só contagem**: contíguos até, lacunas
+      abertas, próximo capítulo. Sessão que termina no meio de um volume atualiza
+      esse bloco antes de encerrar.
+    - **`ferramentas/verificar-lacunas.py`** mecaniza a checagem: acha todo
+      capítulo-stub numerado abaixo do maior escrito, lista os **contratos** —
+      cada `@sec-` de texto já publicado que promete aquele conteúdo — e falha com
+      código 1. Entrou no checklist de push.
+    - Corolário achado pelo próprio script: `@sec-` apontando para capítulo
+      **futuro** tem o mesmo sintoma para o leitor (link que resolve numa página
+      vazia) e viola a regra de referência cruzada. É defeito de outra natureza —
+      o script reporta como aviso, separado das lacunas.
+
 ---
 
 ## CI / GitHub Actions (`publish.yml`)
@@ -158,7 +205,15 @@ Vale para todos os manuais da série. Entradas novas vão no fim da seção corr
 - **Avisos inofensivos, nunca investigar:** `LF will be replaced by CRLF` (git no
   Windows) e "Node.js 20 is deprecated" (Actions).
 - **Emoji em `print()` de Python:** quebra na codificação do console do Windows.
-  Evitar em scripts; em conteúdo de arquivo UTF-8 é seguro.
+  Evitar em scripts; em conteúdo de arquivo UTF-8 é seguro. Acento também sai
+  mastigado (`Transit\xf3rios`) se o script não reconfigurar a saída — abrir com
+  `sys.stdout.reconfigure(encoding="utf-8", errors="replace")` dentro de um
+  `try/except`, como faz `ferramentas/verificar-lacunas.py`.
+- **O que não estiver em arquivo não sobrevive ao `/clear`.** O `/clear` entre
+  capítulos é obrigatório, então toda decisão, dívida ou próximo passo tem de
+  aterrissar no `ROADMAP.md`, no `CLAUDE.md` ou num script antes de a sessão
+  terminar. Handoff escrito em prosa no fim do capítulo anterior **não** é estado:
+  ninguém o lê ao abrir sessão. Ver a lição 11.
 
 ---
 

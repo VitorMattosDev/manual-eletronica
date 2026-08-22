@@ -153,14 +153,29 @@ Sem isso o `quarto-actions/publish@v2` aborta com erro circular, e
 
 ## Fluxo de trabalho
 
+**Abertura de sessão — primeiro comando, sempre:** ler o bloco "Estado da fila"
+do `ROADMAP.md` e rodar `python ferramentas/verificar-lacunas.py`. O capítulo a
+escrever é o **menor `[ ]` da fila**, nunca o primeiro capítulo do volume que o
+usuário nomeou. Se o usuário pedir um volume cujos anteriores têm lacuna,
+**dizer isso antes de escrever**, não no relatório final — a decisão de pular é
+dele, e ele precisa tomá-la com a informação na mão. Já custou quatro capítulos
+(ver a lição 11 do `LICOES-MANUAIS.md`).
+
 **Fatia vertical:** completar todos os capítulos de um volume antes de abrir o
-próximo; completar a Fase 1 antes da Fase 2.
+próximo; completar a Fase 1 antes da Fase 2. **A regra vale entre sessões, não só
+dentro de uma.** Sessão que acabar no meio de um volume atualiza o bloco "Estado
+da fila" do `ROADMAP.md` — contíguos até, lacunas abertas, próximo capítulo —
+antes de encerrar. O `/clear` apaga a conversa; o que não estiver em arquivo
+não sobrevive.
 
 **Por capítulo:** escrever → `quarto render --to html` → validação rápida →
 commit `cap NNN: <título>` com o status do `ROADMAP.md` atualizado **no mesmo commit**.
 
 **Validação rápida** (sem abrir o HTML): contar `<svg` no `_book` contra o número
-de blocos `{.tikz}` nos `.qmd`; `grep` por `?@` e `[?]` órfãos.
+de blocos `{.tikz}` nos `.qmd`; `grep` por `?@` e `[?]` órfãos. Atenção: `?@` zero
+prova que a referência **resolve**, nunca que ela leva a conteúdo — capítulo-stub
+carrega o rótulo `{#sec-cap-NNN}` e resolve normalmente, com o leitor caindo numa
+página vazia. Quem pega isso é `ferramentas/verificar-lacunas.py`.
 
 **Verificação visual das figuras** (capítulo com figura, antes do commit):
 `python figuras/verificar-figuras.py capitulos/NNN-....qmd` → gera um PNG com
@@ -173,9 +188,12 @@ invertida e polaridade trocada passam ilesos por toda a validação textual.
 1. `quarto render --to html` (livro inteiro)
 2. `grep -roE '\?@[a-zA-Z0-9_-]+' _book --include=*.html` → zero resultados
 3. `<svg` no `_book` × blocos `{.tikz}` nos `.qmd` — pega figura que falhou calada
-4. nenhuma citação crua `@chave` no HTML
-5. renderizar o PDF localmente
-6. após push: `gh run watch <id> --exit-status`; URL do Pages retornando 200 em
+4. `python ferramentas/verificar-lacunas.py` → sem lacuna atrasada (código 0), ou
+   lacuna aceita conscientemente e **declarada** no bloco "Estado da fila" do
+   `ROADMAP.md`. Pega o buraco no meio do livro, que o item 2 não pega.
+5. nenhuma citação crua `@chave` no HTML
+6. renderizar o PDF localmente
+7. após push: `gh run watch <id> --exit-status`; URL do Pages retornando 200 em
    `curl -s -o /dev/null -w "%{http_code}"`
 
 **Higiene:** `/clear` entre capítulos, `/compact` perto de 80 % de contexto.

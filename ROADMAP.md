@@ -8,7 +8,32 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 41/104**
+## Estado da fila
+
+| | |
+|---|---|
+| **Progresso** | 41/104 |
+| **Contíguos até** | **024** — daqui em diante a numeração tem buracos |
+| **Lacunas abertas** | **025, 026** (Volume 4) e **037, 038** (Volume 6) |
+| **Próximo capítulo: 025** | Transitórios RC: carga, descarga e constante de tempo |
+
+As quatro lacunas **já são referenciadas por texto publicado** — nove chamadas de
+`@sec-`, algumas com contrato de conteúdo explícito (o 033 promete que o 025 define
+$\tau$ e demonstra $t_r = 2{,}2\,\tau$; o 023 deixa um laboratório suspenso até o 026).
+Para ver a lista completa e atual:
+
+```
+python ferramentas/verificar-lacunas.py
+```
+
+Elas não vieram de decisão editorial: as sessões de escrita terminaram no meio do
+Volume 4 e do Volume 6, e a sessão seguinte reancorou na fronteira do **volume** em vez
+do próximo capítulo pendente. Ver a lição 11 do `LICOES-MANUAIS.md`.
+
+**Pendência separada, de outra natureza:** os capítulos 033 e 035 usam `@sec-` para
+apontar a 065, 069 e 070 — conteúdo do Volume 11, ainda não escrito. Isso viola a regra
+de referência cruzada do `CLAUDE.md` e deveria ser menção textual. O verificador lista as
+cinco ocorrências como aviso.
 
 
 ## Fase 1 — Fundamentos Elétricos
