@@ -12,14 +12,14 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 41/104 |
-| **Contíguos até** | **024** — daqui em diante a numeração tem buracos |
-| **Lacunas abertas** | **025, 026** (Volume 4) e **037, 038** (Volume 6) |
-| **Próximo capítulo: 025** | Transitórios RC: carga, descarga e constante de tempo |
+| **Progresso** | 42/104 |
+| **Contíguos até** | **025** — daqui em diante a numeração tem buracos |
+| **Lacunas abertas** | **026** (Volume 4) e **037, 038** (Volume 6) |
+| **Próximo capítulo: 026** | Transitórios RL e circuitos RLC no domínio do tempo |
 
-As quatro lacunas **já são referenciadas por texto publicado** — nove chamadas de
-`@sec-`, algumas com contrato de conteúdo explícito (o 033 promete que o 025 define
-$\tau$ e demonstra $t_r = 2{,}2\,\tau$; o 023 deixa um laboratório suspenso até o 026).
+As lacunas restantes **já são referenciadas por texto publicado** — quatro chamadas de
+`@sec-`, algumas com contrato de conteúdo explícito (o 023 deixa um laboratório
+suspenso até o 026; o 036 promete que o 038 explica seletividade).
 Para ver a lista completa e atual:
 
 ```
@@ -77,7 +77,7 @@ cinco ocorrências como aviso.
 - [x] 022 — O capacitor real: tipos, ESR e tensão de trabalho — `capitulos/022-o-capacitor-real-tipos-esr-e-tensao-de-trabalho.qmd`
 - [x] 023 — Campo magnético e indutância — `capitulos/023-campo-magnetico-e-indutancia.qmd`
 - [x] 024 — O indutor real e a energia armazenada — `capitulos/024-o-indutor-real-e-a-energia-armazenada.qmd`
-- [ ] 025 — Transitórios RC: carga, descarga e constante de tempo — `capitulos/025-transitorios-rc-carga-descarga-e-constante-de-tempo.qmd`
+- [x] 025 — Transitórios RC: carga, descarga e constante de tempo — `capitulos/025-transitorios-rc-carga-descarga-e-constante-de-tempo.qmd`
 - [ ] 026 — Transitórios RL e circuitos RLC no domínio do tempo — `capitulos/026-transitorios-rl-e-circuitos-rlc-no-dominio-do-tempo.qmd`
 
 

@@ -1,3 +1,793 @@
 # Transitórios RC: carga, descarga e constante de tempo {#sec-cap-025}
 
-*(em elaboração)*
+Até aqui, todo circuito deste manual foi resolvido em **regime**: ligado há muito
+tempo, com tudo parado. O Volume 3 inteiro é sobre isso — nós, malhas, Thévenin,
+superposição, todos supondo que nada muda. E o @sec-cap-021 fechou aquele mundo com
+uma frase econômica: em regime CC, capacitor é circuito aberto, então apague-o do
+desenho e resolva a rede resistiva que sobra.
+
+Este capítulo pergunta o que acontece **entre** dois regimes. Você fecha a chave: a
+fonte tem 9 V, o capacitor tem 0 V, e um instante depois o capacitor terá 9 V. O que
+ele faz no caminho? Quanto tempo leva? E o que decide esse tempo?
+
+A resposta exige a primeira **equação diferencial** do manual, e ela é mais simples
+do que o nome sugere: uma equação, uma exponencial, um parâmetro. O parâmetro chama-se
+**constante de tempo**, escreve-se $\tau$, vale $RC$, e é medido em segundos. Depois
+que ele estiver na mão, todo circuito de primeira ordem que aparecer neste livro —
+filtro, acoplamento, disparo, *debounce*, atraso, partida de fonte, tempo de subida de
+osciloscópio — é o mesmo problema com nomes diferentes.
+
+## O circuito e a equação {#sec-025-equacao}
+
+::: {#fig-025-circuito}
+
+```{.tikz}
+%%| filename: 025-circuito
+%%| alt: Esquemático de um circuito RC série. Uma fonte de tensão contínua V liga-se por meio de uma chave S a um resistor R, e do resistor a um capacitor C ligado ao terra. A tensão sobre o capacitor é chamada v subscrito C e a corrente da malha é chamada i. Uma anotação indica que no instante em que a chave fecha o capacitor está descarregado e comporta-se como um curto-circuito, e outra anotação indica que depois de muito tempo a corrente é nula e o capacitor comporta-se como um circuito aberto.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, l=$V$] (0,3.2);
+  \draw (0,3.2) to[switch, l=$S$] (2.6,3.2);
+  \draw (2.6,3.2) to[R, l=$R$, i>^=$i$] (5.6,3.2);
+  \draw (5.6,3.2) to[C, l_=$C$] (5.6,0);
+  \draw (5.6,0) -- (0,0);
+  \node[ponto] at (5.6,3.2) {};
+  \draw (5.6,3.2) -- (6.6,3.2) node[right] {$v_C$};
+  \node[ponto] at (5.6,0) {};
+  \draw (2.8,0) node[ground]{};
+
+  \node[manualred, font=\scriptsize, anchor=west, align=left]
+       at (7.8,3.2) {em $t = 0^{+}$:\\$v_C = 0$, e o capacitor\\é um \textbf{curto}.\\A corrente vale $V/R$.};
+  \node[manualblue, font=\scriptsize, anchor=west, align=left]
+       at (7.8,0.6) {em $t \to \infty$:\\$i = 0$, e o capacitor\\é um \textbf{aberto}.\\A tensão vale $V$.};
+
+\end{circuitikz}
+```
+
+O circuito RC série. Os dois extremos são fáceis e saem sem equação nenhuma: no
+primeiro instante o capacitor é um curto, no fim é um aberto. Todo o trabalho deste
+capítulo é descrever o **meio do caminho**.
+
+:::
+
+Repare que os dois extremos já estão resolvidos, e sem esforço. Um capacitor
+descarregado tem 0 V entre os terminais, e um componente com 0 V entre os terminais é,
+naquele instante, indistinguível de um fio. Passado tempo suficiente, a tensão parou
+de mudar, $dv/dt = 0$, e $i = C\,dv/dt$ dá corrente nula — que é o comportamento de um
+circuito aberto.
+
+O meio do caminho vem da Lei das Malhas (@sec-cap-013). Percorrendo a malha depois de
+a chave fechar:
+
+$$ V = R\,i + v_C. $$
+
+Só que $i$ e $v_C$ não são independentes: a mesma corrente que atravessa o resistor
+entra no capacitor, e o @sec-cap-021 já disse quanto ela vale,
+
+$$ i = C\,\frac{dv_C}{dt}. $$
+
+Substituindo uma na outra:
+
+$$ \boxed{\;RC\,\frac{dv_C}{dt} + v_C = V\;} $$
+
+Esta é a equação. Ela relaciona uma função com a sua própria derivada, e é por isso
+que se chama diferencial. Não há como resolvê-la com álgebra — nenhuma manipulação de
+$v_C$ produz $dv_C/dt$. O que se faz, na prática, é **reconhecer** a solução.
+
+### Resolvendo
+
+Separe as variáveis. Escreva a equação como
+
+$$ \frac{dv_C}{V - v_C} = \frac{dt}{RC} $$
+
+e integre os dois lados, de $t = 0$ (com $v_C = 0$) até um instante $t$ qualquer:
+
+$$ -\ln(V - v_C)\Big|_{0}^{v_C} = \frac{t}{RC}
+   \qquad\Longrightarrow\qquad
+   \ln\!\frac{V}{V - v_C} = \frac{t}{RC}. $$
+
+Isolando $v_C$:
+
+$$ \boxed{\;v_C(t) = V\left(1 - e^{-t/RC}\right)\;} $$
+
+Vale conferir que a solução realmente resolve. Derivando,
+$dv_C/dt = (V/RC)\,e^{-t/RC}$. Multiplicando por $RC$ e somando $v_C$:
+
+$$ RC \cdot \frac{V}{RC}e^{-t/RC} + V - V e^{-t/RC} = V. $$
+
+Confere, e as duas condições de contorno também: $v_C(0) = V(1-1) = 0$, e
+$v_C(\infty) = V(1-0) = V$.
+
+A corrente sai por consequência, e é a **outra** exponencial da história:
+
+$$ i(t) = C\,\frac{dv_C}{dt} = \frac{V}{R}\,e^{-t/RC}. $$
+
+Ela começa no máximo, $V/R$, e decai. Isso importa mais do que parece: no instante
+do fechamento da chave, o único elemento limitando a corrente é o resistor. Um
+capacitor de 4700 µF ligado por uma chave direto a uma fonte de 12 V com 0,1 Ω de
+resistência de malha puxa 120 A no primeiro instante. É o **pico de partida**, e ele
+solda contatos de relé.
+
+## A constante de tempo {#sec-025-tau}
+
+O produto $RC$ aparece nas duas soluções sempre no mesmo lugar: dividindo o tempo.
+Ele precisa, portanto, ter unidade de tempo — e tem:
+
+$$ [\Omega][\text{F}]
+   = \frac{\text{V}}{\text{A}} \cdot \frac{\text{C}}{\text{V}}
+   = \frac{\text{C}}{\text{A}}
+   = \frac{\text{C}}{\text{C}/\text{s}}
+   = \text{s}. $$
+
+Ohm vezes farad é segundo. Dá-se a esse produto o nome de **constante de tempo**:
+
+$$ \tau = RC. $$
+
+Um resistor de 10 kΩ com um capacitor de 100 nF tem $\tau = 1$ ms. Um de 1 MΩ com
+470 µF tem $\tau = 470$ s, quase oito minutos. A mesma equação cobre os dois, e é essa
+indiferença de escala que faz o RC aparecer em circuito de rádio e em temporizador de
+portão.
+
+::: {#fig-025-curvas}
+
+```{.tikz}
+%%| filename: 025-curvas
+%%| alt: Dois gráficos lado a lado com o tempo em unidades de constante de tempo no eixo horizontal, de zero a cinco. À esquerda, a curva de carga sobe de zero e aproxima-se de cem por cento, passando por sessenta e três vírgula dois por cento em uma constante de tempo, oitenta e seis vírgula cinco por cento em duas, noventa e cinco por cento em três, noventa e oito vírgula dois em quatro e noventa e nove vírgula três em cinco. Uma reta tangente à curva na origem cruza a linha dos cem por cento exatamente em uma constante de tempo. À direita, a curva de descarga cai de cem por cento para trinta e seis vírgula oito por cento em uma constante de tempo, treze vírgula cinco em duas, quatro vírgula nove em três, um vírgula oito em quatro e zero vírgula sete em cinco. Uma marca indica a meia-vida em zero vírgula seis nove três constantes de tempo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+\begin{axis}[
+  name=ax1,
+  width=8.6cm, height=7.0cm,
+  xlabel={$t/\tau$}, ylabel={$v_C$ (\% de $V$)},
+  xmin=0, xmax=5.4, ymin=0, ymax=112,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  xtick={0,1,2,3,4,5}, ytick={0,20,40,60,80,100},
+  title={\footnotesize carga: $v_C = V(1-e^{-t/\tau})$},
+]
+  \addplot[auxiliar] coordinates {(0,100) (5.4,100)};
+  % tangente na origem: cruza 100 % em t = tau
+  \addplot[destaque, dashed] coordinates {(0,0) (1,100)};
+  \addplot[curva, domain=0:5.4, samples=200] {100*(1-exp(-x))};
+
+  \foreach \tp/\vp in {1/63.2, 2/86.5, 3/95.0, 4/98.2, 5/99.3}{
+    \edef\temp{\noexpand\addplot[manualgray, thin, dotted]
+      coordinates {(\tp,0) (\tp,\vp)};}\temp
+  }
+  \node[ponto] at (axis cs:1,63.2) {};
+  \node[ponto] at (axis cs:2,86.5) {};
+  \node[ponto] at (axis cs:3,95.0) {};
+  \node[font=\scriptsize, anchor=north west] at (axis cs:1.05,62)
+       {$63{,}2\ \%$};
+  \node[font=\scriptsize, anchor=north west] at (axis cs:2.05,86)
+       {$86{,}5\ \%$};
+  \node[font=\scriptsize, anchor=north west] at (axis cs:3.05,95)
+       {$95{,}0\ \%$};
+  \node[manualred, font=\scriptsize, anchor=west, align=left]
+       at (axis cs:1.15,30)
+       {a tangente na origem\\cruza $V$ em $t = \tau$};
+\end{axis}
+
+\begin{axis}[
+  name=ax2, at={(ax1.right of south east)}, anchor=left of south west,
+  width=8.6cm, height=7.0cm,
+  xlabel={$t/\tau$}, ylabel={$v_C$ (\% de $V_0$)},
+  xmin=0, xmax=5.4, ymin=0, ymax=112,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  xtick={0,1,2,3,4,5}, ytick={0,20,40,60,80,100},
+  title={\footnotesize descarga: $v_C = V_0\,e^{-t/\tau}$},
+]
+  \addplot[curva, domain=0:5.4, samples=200] {100*exp(-x)};
+  \foreach \tp/\vp in {1/36.8, 2/13.5, 3/4.98, 4/1.83, 5/0.67}{
+    \edef\temp{\noexpand\addplot[manualgray, thin, dotted]
+      coordinates {(\tp,0) (\tp,\vp)};}\temp
+  }
+  \node[ponto] at (axis cs:1,36.8) {};
+  \node[ponto] at (axis cs:2,13.5) {};
+  \node[font=\scriptsize, anchor=south west] at (axis cs:1.05,37)
+       {$36{,}8\ \%$};
+  \node[font=\scriptsize, anchor=south west] at (axis cs:2.05,14)
+       {$13{,}5\ \%$};
+
+  \addplot[destaque, thin, dashed] coordinates {(0,50) (0.693,50)};
+  \addplot[destaque, thin, dashed] coordinates {(0.693,0) (0.693,50)};
+  \node[manualred, font=\scriptsize, anchor=west, align=left]
+       at (axis cs:0.78,60) {meia-vida:\\$0{,}693\,\tau$};
+\end{axis}
+
+\end{tikzpicture}
+```
+
+Carga e descarga, com o tempo normalizado por $\tau$. Os dois gráficos servem para
+**qualquer** RC, porque a forma da curva não depende de $R$ nem de $C$ separadamente.
+A tangente na origem é um truque de leitura de tela: prolongue a inclinação inicial
+até o valor final e o cruzamento marca $\tau$.
+
+:::
+
+O que $\tau$ significa fisicamente: é o tempo que o capacitor levaria para chegar ao
+valor final **se continuasse na velocidade inicial**. Ele não continua — a corrente
+cai à medida que a tensão sobe, porque o que empurra a corrente é a diferença
+$V - v_C$, e essa diferença encolhe. O resultado é que em $\tau$ ele fez 63,2 % do
+caminho, e não 100 %.
+
+De onde vem o 63,2 %: $1 - e^{-1} = 1 - 0{,}368 = 0{,}632$. Os outros números da
+tabela saem do mesmo jeito.
+
+| $t$ | Carga (% de $V$) | Descarga (% de $V_0$) | Falta |
+|---|---|---|---|
+| $0{,}693\,\tau$ | 50,0 | 50,0 | metade |
+| $1\,\tau$ | 63,2 | 36,8 | 36,8 % |
+| $2\,\tau$ | 86,5 | 13,5 | 13,5 % |
+| $3\,\tau$ | 95,0 | 4,98 | 5 % |
+| $4\,\tau$ | 98,2 | 1,83 | 1,8 % |
+| $5\,\tau$ | 99,3 | 0,67 | 0,7 % |
+| $7\,\tau$ | 99,91 | 0,09 | 0,1 % |
+
+: A tabela que vale a pena decorar. A coluna "falta" é a mais útil: a cada $\tau$, o
+que faltava é multiplicado por 0,368. É um decaimento **relativo**, e é por isso que
+a curva nunca chega ao fim. {#tbl-025-tau}
+
+A regra de bancada é **cinco constantes de tempo**: depois de $5\tau$ falta 0,7 %, o
+que está dentro da tolerância de praticamente qualquer coisa e abaixo da resolução de
+qualquer multímetro de bancada. "Esperar cinco tau" é o equivalente elétrico de
+"esperar esfriar".
+
+Mas *praticamente qualquer coisa* não é *qualquer coisa*. Um conversor
+analógico-digital de 12 bits resolve 1 parte em 4096, ou 0,024 %: para o sinal
+assentar dentro de meio bit é preciso esperar cerca de $9\tau$. Quem projeta a entrada
+de um ADC conta $\tau$ pelo número de bits, não pela regra de bolso —
+$n\ln 2 \approx 0{,}69\,n$ constantes de tempo para $n$ bits.
+
+## A descarga {#sec-025-descarga}
+
+Tire a fonte do circuito e feche a malha só com $R$ e $C$. A Lei das Malhas fica
+
+$$ R\,i + v_C = 0
+   \qquad\Longrightarrow\qquad
+   RC\,\frac{dv_C}{dt} + v_C = 0, $$
+
+que é a mesma equação com o lado direito zerado, e a solução é a exponencial pura:
+
+$$ v_C(t) = V_0\,e^{-t/\tau}. $$
+
+A corrente agora é **negativa** — sai do capacitor:
+
+$$ i(t) = -\frac{V_0}{R}\,e^{-t/\tau}. $$
+
+Um detalhe que aparece no laboratório: o mesmo $\tau$ governa a carga e a descarga
+**apenas se o resistor for o mesmo**. Num temporizador em que o capacitor carrega por
+um caminho e descarrega por outro, são dois $\tau$ diferentes, e o ciclo de trabalho
+que sai disso é a base de metade dos osciladores discretos que existem.
+
+A **meia-vida** — o tempo para cair à metade — vale $\tau\ln 2 = 0{,}693\,\tau$. É o
+mesmo número do decaimento radioativo, pela mesma razão matemática: em ambos os casos,
+a taxa de saída é proporcional ao que ainda resta.
+
+## A forma geral: todo circuito de primeira ordem {#sec-025-geral}
+
+As duas soluções acima são casos particulares de uma só, e vale a pena guardar a
+forma geral porque ela dispensa refazer a integral:
+
+$$ \boxed{\;x(t) = x_\infty + \left(x_0 - x_\infty\right)e^{-t/\tau}\;} $$
+
+em que $x$ é qualquer tensão ou corrente do circuito, $x_0$ é o valor **no instante
+inicial**, $x_\infty$ é o valor **em regime**, e $\tau$ é a constante de tempo. Isto é
+o método das três grandezas, e resolve qualquer circuito de primeira ordem sem
+equação diferencial nenhuma:
+
+1. **Valor inicial.** Resolva o circuito no instante $t = 0^{+}$, lembrando que a
+   tensão do capacitor **não pode saltar** (saltar exigiria corrente infinita, pois
+   $i = C\,dv/dt$). Se ele estava com 3 V antes da chave, está com 3 V no instante
+   seguinte.
+2. **Valor final.** Resolva o circuito com o capacitor como circuito aberto, com os
+   métodos do Volume 3.
+3. **Constante de tempo.** $\tau = R_{\text{th}}\,C$, em que $R_{\text{th}}$ é a
+   resistência de Thévenin (@sec-cap-018) vista **pelos terminais do capacitor**, com
+   as fontes independentes zeradas.
+
+O passo 3 é o que a maioria erra. O resistor que entra em $\tau$ não é "o resistor do
+desenho": é a resistência equivalente que o capacitor enxerga.
+
+### Exemplo trabalhado
+
+Uma fonte de 12 V alimenta um divisor de 100 kΩ (superior) e 100 kΩ (inferior), com um
+capacitor de 470 µF em paralelo com o resistor inferior. A chave fecha em $t = 0$ com o
+capacitor descarregado.
+
+**Valor inicial:** $v_C(0) = 0$, por hipótese.
+
+**Valor final:** com o capacitor aberto, o divisor entrega
+$12 \times 100/(100+100) = 6{,}0$ V.
+
+**Constante de tempo:** zerando a fonte de 12 V (curto), o capacitor vê os dois
+resistores de 100 kΩ **em paralelo**, ou seja 50 kΩ. Logo
+$\tau = 50\,\text{k}\Omega \times 470\ \mu\text{F} = 23{,}5$ s — e não os 47 s que
+sairiam de usar 100 kΩ.
+
+**Resposta:** $v_C(t) = 6{,}0\left(1 - e^{-t/23{,}5}\right)$ V.
+
+Vale conferir o susto: a presença do resistor inferior **acelera** o circuito quase
+duas vezes, além de reduzir a tensão final pela metade. Quem mede só a tensão final e
+supõe $\tau = R_{\text{superior}}C$ erra o tempo por um fator 2.
+
+## Energia: a metade que sempre vira calor {#sec-025-energia}
+
+Carregue um capacitor de $C$ farads até $V$ volts através de um resistor. A fonte
+entrega carga $Q = CV$ mantendo a tensão $V$, portanto fornece energia
+
+$$ W_{\text{fonte}} = Q\,V = C V^{2}. $$
+
+O capacitor, no fim, guarda $W_C = \tfrac{1}{2}CV^{2}$ (@sec-cap-021). A diferença foi
+dissipada no resistor:
+
+$$ W_R = C V^{2} - \tfrac{1}{2}C V^{2} = \tfrac{1}{2}C V^{2}. $$
+
+Confirmando pela integral, para não ficar por conta da subtração:
+
+$$ W_R = \int_0^{\infty} R\,i^2\,dt
+       = \int_0^{\infty} R\,\frac{V^2}{R^2}e^{-2t/RC}\,dt
+       = \frac{V^2}{R}\cdot\frac{RC}{2}
+       = \tfrac{1}{2}C V^{2}. $$
+
+Repare no que **sumiu** da conta: $R$. A energia perdida é a mesma com 1 Ω e com
+1 MΩ. Com 1 Ω a perda acontece depressa e com corrente alta; com 1 MΩ, devagar e com
+corrente baixa; o total é idêntico. **Carregar capacitor por resistor tem rendimento
+de 50 %, sempre.** Não existe resistor bom o bastante.
+
+Isso não é curiosidade acadêmica: é a razão de fontes chaveadas carregarem capacitores
+através de **indutores**, que armazenam e devolvem em vez de dissipar (Volume 12). E é
+a razão de o resistor de pré-carga de um banco de capacitores grande ser
+dimensionado por energia, e não por potência contínua — ele leva $\frac{1}{2}CV^2$
+joules de uma vez, em poucos segundos, e um resistor de 1/4 W queima com 5 J mesmo
+que a média em uma hora seja irrisória.
+
+## Tempo de subida: $t_r = 2{,}2\,\tau$ {#sec-025-tr}
+
+Ninguém mede "o tempo até 100 %", porque ele é infinito. O que se mede na bancada é o
+**tempo de subida** $t_r$: o intervalo entre a saída passar por 10 % e por 90 % do
+degrau. Os dois pontos são convenções, mas são convenções universais — todo datasheet
+e todo osciloscópio usam exatamente esses.
+
+Da equação de carga, o instante em que $v_C$ atinge uma fração $k$ de $V$ é
+
+$$ k = 1 - e^{-t/\tau}
+   \qquad\Longrightarrow\qquad
+   t = \tau\ln\!\frac{1}{1-k}. $$
+
+Para $k = 0{,}10$: $t_{10} = \tau\ln(1{,}111) = 0{,}105\,\tau$.
+Para $k = 0{,}90$: $t_{90} = \tau\ln(10) = 2{,}303\,\tau$.
+
+A diferença é o tempo de subida:
+
+$$ t_r = t_{90} - t_{10} = \tau\left(\ln 10 - \ln\tfrac{10}{9}\right)
+       = \tau\ln 9 = 2{,}197\,\tau, $$
+
+que se arredonda, sem culpa, para
+
+$$ \boxed{\;t_r \approx 2{,}2\,\tau\;} $$
+
+::: {#fig-025-tr}
+
+```{.tikz}
+%%| filename: 025-tr
+%%| alt: Gráfico da curva de carga de um circuito RC com o tempo em unidades de constante de tempo no eixo horizontal. Linhas horizontais tracejadas marcam dez por cento e noventa por cento do valor final. A curva cruza dez por cento em zero vírgula cento e cinco constantes de tempo e noventa por cento em duas vírgula trezentas e três constantes de tempo. Uma seta dupla entre os dois cruzamentos indica o tempo de subida, igual a duas vírgula duas constantes de tempo.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13.0cm, height=7.2cm,
+  xlabel={$t/\tau$}, ylabel={$v_C$ (\% de $V$)},
+  xmin=-0.2, xmax=4.2, ymin=-3, ymax=112,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  xtick={0,1,2,3,4}, ytick={0,10,50,90,100},
+  font=\footnotesize,
+]
+  \addplot[auxiliar] coordinates {(-0.2,100) (4.2,100)};
+  \addplot[auxiliar] coordinates {(-0.2,90) (4.2,90)};
+  \addplot[auxiliar] coordinates {(-0.2,10) (4.2,10)};
+  \addplot[curva, domain=0:4.2, samples=200] {100*(1-exp(-x))};
+
+  \addplot[manualgray, thin, dotted] coordinates {(0.105,-3) (0.105,10)};
+  \addplot[manualgray, thin, dotted] coordinates {(2.303,-3) (2.303,90)};
+  \node[ponto] at (axis cs:0.105,10) {};
+  \node[ponto] at (axis cs:2.303,90) {};
+
+  \draw[destaque, <->, >=stealth]
+       (axis cs:0.105,30) -- (axis cs:2.303,30);
+  \node[manualred, font=\scriptsize, anchor=south, align=center]
+       at (axis cs:1.2,31)
+       {$t_r = \ln 9 \cdot \tau = 2{,}2\,\tau$};
+
+  \node[font=\scriptsize, anchor=west] at (axis cs:0.26,6)
+       {$t_{10} = 0{,}105\,\tau$};
+  \node[font=\scriptsize, anchor=west] at (axis cs:2.44,82)
+       {$t_{90} = 2{,}303\,\tau$};
+
+  \node[manualblue, font=\scriptsize, anchor=north east, align=right]
+       at (axis cs:4.15,68)
+       {os últimos 10 \% custam mais tempo\\
+        que toda a subida de 10 a 90 \%};
+\end{axis}
+\end{tikzpicture}
+```
+
+O tempo de subida de um circuito de primeira ordem. O número 2,2 não é empírico nem
+arredondado por conveniência: é $\ln 9$.
+
+:::
+
+Este resultado é a ponte entre o domínio do tempo, que é o assunto deste volume, e o
+domínio da frequência, que é o assunto do Volume 6. Lá se mostra que o mesmo RC tem
+uma frequência de corte $f_c = 1/(2\pi\tau)$; combinando as duas, $t_r = 0{,}35/f_c$ —
+a fórmula que todo mundo usa em laboratório para converter banda em tempo de subida, e
+que quase nunca é demonstrada. A demonstração é esta seção.
+
+## Onda quadrada num RC {#sec-025-onda}
+
+Um degrau é um evento único. Aplique degraus repetidos — uma onda quadrada — e o
+comportamento do RC depende inteiramente de como $\tau$ se compara ao **período** $T$
+do sinal.
+
+::: {#fig-025-onda}
+
+```{.tikz}
+%%| filename: 025-onda
+%%| alt: Três gráficos empilhados mostram a resposta de um circuito RC a uma onda quadrada de período T, com o tempo no eixo horizontal. No primeiro, a constante de tempo é quarenta vezes menor que o período e a saída acompanha a entrada quase como onda quadrada, apenas com cantos arredondados. No segundo, a constante de tempo é um quarto do período e a saída tem forma de dentes exponenciais que sobem e descem entre cerca de doze e oitenta e oito por cento. No terceiro, a constante de tempo é o dobro do período e a saída é uma pequena rampa quase triangular oscilando entre quarenta e quatro e cinquenta e seis por cento, em torno do valor médio da entrada, o que caracteriza o integrador.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+% ---- tau muito menor que o periodo ----
+\begin{axis}[
+  name=a1, width=13.0cm, height=4.0cm,
+  xmin=0, xmax=4, ymin=-0.15, ymax=1.3,
+  axis lines=left, ytick={0,1}, xtick=\empty,
+  ylabel={}, grid=none,
+  title={\footnotesize $\tau = T/40$ \ — \ segue a entrada (cantos arredondados)},
+]
+  \addplot[manualgray, thick] coordinates
+    {(0,0) (0,1) (1,1) (1,0) (2,0) (2,1) (3,1) (3,0) (4,0)};
+  \addplot[curva, samples=400, domain=0:1]  {1-exp(-x/0.05)};
+  \addplot[curva, samples=400, domain=1:2]  {exp(-(x-1)/0.05)};
+  \addplot[curva, samples=400, domain=2:3]  {1-exp(-(x-2)/0.05)};
+  \addplot[curva, samples=400, domain=3:4]  {exp(-(x-3)/0.05)};
+\end{axis}
+
+% ---- tau da ordem do meio periodo ----
+\begin{axis}[
+  name=a2, at={(a1.below south west)}, anchor=north west, yshift=-1.3cm,
+  width=13.0cm, height=4.0cm,
+  xmin=0, xmax=4, ymin=-0.15, ymax=1.3,
+  axis lines=left, ytick={0,1}, xtick=\empty,
+  grid=none,
+  title={\footnotesize $\tau = T/4$ \ — \ dentes exponenciais, sem chegar aos extremos},
+]
+  \addplot[manualgray, thick] coordinates
+    {(0,0) (0,1) (1,1) (1,0) (2,0) (2,1) (3,1) (3,0) (4,0)};
+  \addplot[curva, samples=200, domain=0:1] {1-(1-0.1192)*exp(-x/0.5)};
+  \addplot[curva, samples=200, domain=1:2] {0.8808*exp(-(x-1)/0.5)};
+  \addplot[curva, samples=200, domain=2:3] {1-(1-0.1192)*exp(-(x-2)/0.5)};
+  \addplot[curva, samples=200, domain=3:4] {0.8808*exp(-(x-3)/0.5)};
+\end{axis}
+
+% ---- tau muito maior que o periodo ----
+\begin{axis}[
+  name=a3, at={(a2.below south west)}, anchor=north west, yshift=-1.3cm,
+  width=13.0cm, height=4.0cm,
+  xmin=0, xmax=4, ymin=-0.15, ymax=1.3,
+  axis lines=left, ytick={0,1}, xtick=\empty,
+  xlabel={tempo},
+  grid=none,
+  title={\footnotesize $\tau = 2\,T$ \ — \ rampas em torno da média: o \textbf{integrador}},
+]
+  \addplot[manualgray, thick] coordinates
+    {(0,0) (0,1) (1,1) (1,0) (2,0) (2,1) (3,1) (3,0) (4,0)};
+  \addplot[auxiliar] coordinates {(0,0.5) (4,0.5)};
+  \addplot[curva, samples=100, domain=0:1] {1-(1-0.4378)*exp(-x/4)};
+  \addplot[curva, samples=100, domain=1:2] {0.5622*exp(-(x-1)/4)};
+  \addplot[curva, samples=100, domain=2:3] {1-(1-0.4378)*exp(-(x-2)/4)};
+  \addplot[curva, samples=100, domain=3:4] {0.5622*exp(-(x-3)/4)};
+  \node[manualred, font=\scriptsize, anchor=south west]
+       at (axis cs:3.15,0.72) {média da entrada};
+  \draw[manualred, thin, ->, >=stealth]
+       (axis cs:3.3,0.71) -- (axis cs:3.5,0.52);
+\end{axis}
+
+\end{tikzpicture}
+```
+
+O mesmo circuito, o mesmo sinal, três constantes de tempo. Em cinza, a entrada; em
+azul, a tensão no capacitor. Nada mudou no RC além da relação entre $\tau$ e o período
+— e o circuito passa de "fio com cantos arredondados" a integrador.
+
+:::
+
+Três regimes, três nomes:
+
+- **$\tau \ll T$** — o capacitor tem tempo de sobra para carregar e descarregar por
+  inteiro. A saída é a entrada com os cantos arredondados. É o caso do capacitor de
+  desacoplamento visto por um sinal lento: ele praticamente não existe.
+- **$\tau$ da ordem de $T$** — a saída são dentes exponenciais que não chegam nem a 0
+  nem a $V$. É o regime dos circuitos de temporização e do *debounce* de contato.
+- **$\tau \gg T$** — o capacitor mal se move dentro de cada meio-ciclo, e o pedaço de
+  exponencial que ele percorre é tão curto que é indistinguível de uma reta. A saída
+  vira uma rampa triangular em torno do valor médio: o circuito **integra**. É como se
+  fabrica uma onda triangular a partir de uma quadrada, e é o princípio da conversão
+  de PWM em nível analógico (Volume 14).
+
+A tensão sobre o **resistor**, no mesmo circuito, faz o contrário: com $\tau \ll T$
+ela vira picos estreitos nas bordas, um positivo na subida e um negativo na descida.
+Isso é o **diferenciador**, e é o que produz o pulso de disparo em circuitos de
+gatilho. O par integrador/diferenciador é a mesma malha lida em dois pontos
+diferentes, e o Volume 6 reencontra os dois com os nomes de passa-baixas e passa-altas.
+
+## O RC como relógio, e por que ele é um relógio ruim {#sec-025-relogio}
+
+A tentação é imediata: se $\tau$ é um tempo e depende só de $R$ e $C$, tem-se um
+temporizador de dois componentes. Funciona — mas com precisão modesta, e a razão está
+na tolerância.
+
+Um resistor de filme de 5 % com um eletrolítico de $-10\ \%/+50\ \%$ dá uma constante
+de tempo entre $0{,}86\,\tau$ e $1{,}58\,\tau$. Um temporizador projetado para 10 s
+entrega qualquer coisa entre 8,6 e 15,8 s, e isso **antes** de contar o efeito da
+temperatura (o eletrolítico perde capacitância no frio) e do envelhecimento (perde no
+tempo).
+
+As saídas usuais, em ordem de custo:
+
+| Solução | Erro típico | Custo |
+|---|---|---|
+| RC com eletrolítico | $\pm 30\ \%$ | mínimo |
+| RC com filme de 5 % e resistor de 1 % | $\pm 6\ \%$ | baixo |
+| RC calibrado com trimpot | $\pm 1\ \%$ (na hora do ajuste) | baixo, mais a mão de obra |
+| Oscilador RC integrado (temporizador 555) | $\pm 2\ \%$ na largura do pulso | baixo |
+| Cristal de quartzo com divisor | $\pm 0{,}005\ \%$ | médio |
+
+: O RC compete bem em tempos "de conforto" — apagar uma luz, esperar uma fonte
+estabilizar, filtrar um contato — e perde feio onde o número importa. {#tbl-025-relogio}
+
+Vale reter a fronteira: RC é excelente para dizer **"depois de um tempinho"** e
+péssimo para dizer **"em 10,00 segundos"**. Toda a família dos osciladores a cristal
+existe por causa da segunda coluna dessa tabela.
+
+## 🧪 Laboratório {#sec-025-lab}
+
+**Medir $\tau$ com um cronômetro e um multímetro, e usar o resultado para medir
+capacitância melhor do que muitos multímetros medem.** Este é um dos laboratórios mais
+rentáveis do manual: exige o equipamento mais barato possível e entrega um instrumento
+novo no fim.
+
+O truque que torna tudo isto possível sem osciloscópio é escolher $\tau$ na casa das
+dezenas de segundos. Com $R$ na faixa dos megaohms e $C$ na faixa das centenas de
+microfarads, o transitório acontece na escala do relógio de pulso.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital (anote a impedância de entrada — quase sempre 10 MΩ)
+- 1 cronômetro (o do celular serve)
+- 1 fonte de bancada ajustada em 9,0 V, ou uma bateria de 9 V
+- 1 capacitor eletrolítico de 470 µF, 25 V
+- 1 capacitor eletrolítico de 100 µF, 25 V
+- 1 capacitor de filme de 1 µF (poliéster)
+- Os **dez capacitores cerâmicos de 100 nF** medidos na Parte 2 do @sec-cap-022, com
+  a lista dos valores anotados
+- 1 resistor de 1 MΩ, 1 de 470 kΩ, 2 de 100 kΩ, 1 de 10 kΩ, 1 de 1 kΩ (1/4 W)
+- 1 LED vermelho e 1 resistor de 1 kΩ
+- 1 chave de duas posições (ou dois jumpers e um pouco de disciplina)
+- Protoboard, jumpers, papel quadriculado
+:::
+
+### Parte 1 — A curva inteira, ponto a ponto
+
+1. Monte $R = 100$ kΩ em série com $C = 470$ µF, do positivo da fonte de 9,0 V ao
+   terra. Deixe o capacitor **descarregado** (curte-o com um jumper e confirme 0 V).
+2. Calcule $\tau$ antes de ligar: $\tau = 10^5 \times 470\times10^{-6} = 47$ s.
+3. Ponha o multímetro sobre o capacitor, dispare o cronômetro e feche a chave no mesmo
+   instante.
+4. Anote a tensão a cada 10 s, até 240 s (cinco constantes de tempo).
+5. Passe os 25 pontos para papel quadriculado e sobreponha a curva teórica
+   $9{,}0\,(1 - e^{-t/47})$.
+
+Compare especialmente os pontos de 47 s (previsão: 5,69 V), 94 s (7,78 V) e 141 s
+(8,55 V).
+
+**A medida vai ficar sistematicamente abaixo da previsão, e há uma razão.** O
+multímetro tem 10 MΩ de impedância de entrada, ligados em paralelo com o capacitor.
+Isso faz duas coisas: puxa a tensão final para
+$9{,}0 \times 10/(10 + 0{,}1) = 8{,}91$ V e reduz a constante de tempo, porque o
+capacitor agora vê 100 kΩ em paralelo com 10 MΩ, isto é 99,0 kΩ. O erro em $\tau$ é
+de 1 % — pequeno, mas é a semente da Parte 4.
+
+### Parte 2 — Medir $\tau$ direto, sem tabela
+
+1. Repita a montagem, agora com $R = 470$ kΩ e $C = 100$ µF ($\tau$ previsto: 47 s).
+2. Calcule 63,2 % da tensão final: $0{,}632 \times 9{,}0 = 5{,}69$ V.
+3. Dispare o cronômetro junto com a chave e pare quando o display marcar 5,69 V.
+4. O tempo lido **é** $\tau$, sem conta nenhuma.
+5. Faça três medidas e tire a média.
+
+Este é o método de bancada. Ele funciona porque 63,2 % é justamente a região em que a
+curva ainda está subindo depressa: um erro de 0,1 V na leitura custa pouco mais de um
+segundo. Tentar medir "o tempo até 99 %" seria inútil — ali a curva é quase horizontal
+e um erro de 0,1 V custa dezenas de segundos.
+
+### Parte 3 — Descarga e meia-vida
+
+1. Com o capacitor carregado a 9,0 V, abra a chave e curto-circuite a fonte pelo
+   resistor (ou passe o jumper do positivo para o terra).
+2. Meça o tempo até a tensão cair a 4,50 V. Deve dar $0{,}693\,\tau = 32{,}6$ s.
+3. Meça o tempo de 4,50 V a 2,25 V. Deve dar **os mesmos** 32,6 s.
+4. Repita mais uma vez, de 2,25 V a 1,13 V.
+
+Os três intervalos iguais são a assinatura da exponencial: o tempo para cair à metade
+não depende de onde se começou. Se o terceiro intervalo vier bem maior que o primeiro,
+o capacitor tem fuga alta ou o resistor não é o que diz a faixa.
+
+### Parte 4 — Um capacímetro feito de cronômetro
+
+Aqui os dez cerâmicos do @sec-cap-022 entram em cena — e entram pelos **valores
+medidos**, não pelo nominal.
+
+1. Some os dez valores que você anotou naquele capítulo. Se cada um deu em torno de
+   93 nF, o total é 0,93 µF, e não 1,00 µF.
+2. Ligue os dez em paralelo na protoboard. Some também o capacitor de filme de 1 µF em
+   outra fileira, separado — ele é a testemunha de controle.
+3. Carregue o conjunto dos dez a 9,0 V através de um resistor de 1 kΩ e **desligue a
+   fonte**, deixando apenas as pontas do multímetro conectadas.
+4. O multímetro agora é o resistor de descarga: 10 MΩ. Previsão da constante de tempo
+   com os valores medidos: $\tau = 10^7 \times 0{,}93\times10^{-6} = 9{,}3$ s. Com o
+   valor nominal seria 10,0 s.
+5. Cronometre o tempo até a tensão cair a $0{,}368 \times 9{,}0 = 3{,}31$ V.
+6. Repita com o capacitor de filme de 1 µF.
+
+O que se comprova aqui: o cronômetro consegue distinguir 9,3 s de 10,0 s, e portanto
+distinguir a soma medida da soma nominal. **A previsão feita com os valores medidos
+acerta; a feita com os nominais erra por 7 %** — que é exatamente o desvio sistemático
+que o @sec-cap-022 encontrou nos cerâmicos.
+
+Invertendo a conta, você tem um capacímetro: $C = \tau/R_{\text{entrada}}$. Ele mede
+de 10 nF a 10 µF com erro de poucos por cento, o que é melhor do que a escala de
+capacitância de muitos multímetros baratos — e mede o capacitor **na tensão de
+trabalho real**, coisa que nenhuma escala de capacímetro faz.
+
+Confirme a impedância de entrada do seu multímetro no manual antes de confiar no
+número. Se lá disser 11 MΩ, use 11 MΩ.
+
+### Parte 5 — O $\tau$ que não é $RC$
+
+1. Monte o divisor: 100 kΩ do positivo de 9,0 V ao nó, 100 kΩ do nó ao terra.
+2. Ligue o capacitor de 470 µF do nó ao terra.
+3. Preveja: tensão final de 4,50 V, e $\tau = 50\,\text{k}\Omega \times 470\ \mu$F
+   $= 23{,}5$ s.
+4. Meça o tempo até $0{,}632 \times 4{,}50 = 2{,}84$ V.
+5. Agora retire o resistor inferior e repita. A tensão final vai a 9,0 V e $\tau$
+   dobra para 47 s.
+
+Esta é a diferença entre saber e não saber usar Thévenin. O mesmo capacitor, o mesmo
+resistor "de cima", e o tempo muda por um fator dois só porque existe um caminho a
+mais para o terra.
+
+### Parte 6 — Um temporizador que se vê
+
+1. Monte 1 MΩ em série com 100 µF (τ = 100 s) a partir de 9,0 V.
+2. Ligue o LED com o seu resistor de 1 kΩ **em paralelo com o capacitor**.
+3. Observe: o LED acende fraco e vai clareando ao longo de uns dois minutos.
+
+O LED começa a conduzir de verdade só acima de 1,8 V, o que acontece por volta de
+$t = \tau\ln(9/7{,}2) = 0{,}22\,\tau$, isto é uns 22 s. Depois disso o brilho cresce
+com a tensão. E note o efeito colateral: o LED com o seu resistor é uma carga em
+paralelo, então nem a tensão final nem $\tau$ são os previstos. Meça o valor final
+real e compare com 9,0 V — a diferença é o preço de espiar o circuito.
+
+### Variante simulada (plano B)
+
+No simulador, o mesmo circuito sai em análise transiente com dois cliques, e ele
+permite três coisas que a bancada não permite com facilidade:
+
+- **Ver a corrente.** Ponha um amperímetro em série e observe a exponencial decrescente
+  ao lado da crescente. Na bancada isso exigiria um resistor de amostragem e um
+  osciloscópio.
+- **Varrer $\tau$.** Faça uma varredura paramétrica em $R$ de 1 kΩ a 1 MΩ e veja o
+  feixe de curvas. Todas têm a mesma forma; só o eixo do tempo se estica.
+- **Verificar a conta da energia.** Coloque um medidor de potência no resistor,
+  integre, e compare com $\frac{1}{2}CV^2$. Depois mude $R$ por um fator 100 e
+  confirme que a integral não muda.
+
+O que o simulador não mostra sem ajuda: a fuga do eletrolítico, a absorção dielétrica e
+os 10 MΩ do seu multímetro. Se quiser reproduzir a Parte 4 na tela, ponha o resistor de
+10 MΩ explicitamente — o simulador mede sem carregar, e o resultado só bate com a
+bancada quando o instrumento entra no esquemático.
+
+## 🔥 Onde Queima {#sec-025-queima}
+
+**Medir um RC lento com o multímetro e esquecer que o multímetro é um resistor.** Os
+10 MΩ de entrada ficam em paralelo com o seu resistor. Com $R = 100$ kΩ o erro é de
+1 %; com $R = 10$ MΩ, o instrumento **dobra** a velocidade do circuito e você mede a
+metade de $\tau$. Regra: acima de 1 MΩ, o multímetro faz parte do circuito.
+
+**Usar $\tau = RC$ com o resistor errado.** O que entra na conta é a resistência de
+Thévenin vista pelos terminais do capacitor, com as fontes zeradas. Resistor de carga,
+divisor, resistência interna da fonte e resistência de fuga do próprio capacitor
+entram todos.
+
+**Dimensionar o resistor de carga pela potência média.** Um banco de 10 000 µF a 400 V
+guarda 800 J. O resistor de pré-carga leva metade disso — 400 J — em poucos segundos.
+Um resistor de 5 W que aguentaria a média horária vira carvão no primeiro ciclo. Para
+esse serviço, especifica-se **energia de pulso**, não potência.
+
+**Fechar a chave direto no capacitor, sem resistor nenhum.** A corrente de partida é
+limitada apenas pela resistência de malha, que é de miliohms. Isso solda contatos de
+relé, abre trilhas e dispara a proteção da fonte. Todo banco grande precisa de
+pré-carga.
+
+**Achar que descarregado é descarregado.** A **absorção dielétrica** faz um capacitor
+curto-circuitado e liberado voltar sozinho a alguns por cento da tensão original em
+minutos. Em eletrolítico de alta tensão isso é um choque esperando acontecer
+(@sec-cap-002); em circuito de amostragem, é erro de medida. Capacitor grande fica com
+o resistor de sangria permanentemente ligado.
+
+**Usar eletrolítico em temporização de precisão.** Tolerância de $-10\ \%/+50\ \%$,
+deriva térmica e envelhecimento. Se o tempo importa, use filme; se importa de verdade,
+use cristal.
+
+**Esquecer a fuga do capacitor em $\tau$ longo.** Um eletrolítico de 470 µF com 5 µA
+de fuga a 9 V equivale a um resistor de 1,8 MΩ em paralelo. Num RC com $R = 1$ MΩ,
+isso não é um detalhe: é um segundo divisor, e a tensão final nunca chega ao previsto.
+Para $\tau$ acima de alguns segundos com resistores altos, filme ou polipropileno.
+
+**Confiar em "cinco tau" onde a especificação pede 12 bits.** $5\tau$ deixa 0,7 % de
+erro. Meio LSB de um ADC de 12 bits é 0,012 %. A conta certa é
+$t \approx 0{,}69\,(n+1)\,\tau$ para $n$ bits — cerca de $9\tau$ para 12 bits e $12\tau$
+para 16.
+
+**Montar RC de alta impedância em protoboard suja.** Com $R = 10$ MΩ, um filme de fluxo
+de solda ou uma digital gordurosa entre as fileiras vale alguns megaohms e entra em
+paralelo com o seu resistor. Circuito de altíssima impedância pede placa limpa, e às
+vezes anel de guarda.
+
+**Supor que a tensão do capacitor pode saltar.** Ela não pode: $i = C\,dv/dt$ exigiria
+corrente infinita. Se a sua análise pede um salto, a análise está errada — ou existe
+uma resistência escondida em algum lugar que você não desenhou.
+
+**Trocar o capacitor por "um de valor maior, que é melhor".** Em temporização, valor
+maior é tempo maior. Em desacoplamento, capacitor maior tem ESR e indutância parasita
+diferentes (@sec-cap-022) e pode piorar. Só em reserva de energia "maior" é
+inequivocamente melhor.
+
+**Cronometrar a carga a partir do zero com o capacitor sujo.** Um eletrolítico que
+ficou na gaveta guarda carga residual e começa o experimento em 0,3 V em vez de 0.
+Curte-o por dez segundos com um resistor de 1 kΩ e confirme com o multímetro antes de
+disparar o cronômetro.
+
+## O que fica deste capítulo {#sec-025-resumo}
+
+Um resistor e um capacitor em série obedecem a
+$RC\,dv_C/dt + v_C = V$, cuja solução é
+$v_C = V(1 - e^{-t/\tau})$ na carga e $v_C = V_0\,e^{-t/\tau}$ na descarga, com
+$\tau = RC$ medido em segundos.
+
+A constante de tempo não é o tempo até o fim — é o tempo até **63,2 %** do caminho, e
+o tempo que a curva levaria se mantivesse a inclinação inicial. A cada $\tau$, o que
+faltava é multiplicado por 0,368. Cinco constantes de tempo deixam 0,7 %, o que é a
+definição prática de "acabou" — exceto quando a especificação diz outra coisa.
+
+Qualquer circuito de primeira ordem sai da forma geral
+$x(t) = x_\infty + (x_0 - x_\infty)e^{-t/\tau}$, com três perguntas: valor inicial,
+valor final e constante de tempo. A terceira é a que mais engana, porque
+$R$ é a resistência de **Thévenin** vista pelo capacitor, e não o resistor mais visível
+do desenho.
+
+Carregar capacitor através de resistor desperdiça $\frac{1}{2}CV^2$ em calor,
+**qualquer que seja o resistor**. Rendimento de 50 %, sem exceção — e é por isso que
+existe a fonte chaveada.
+
+O tempo de subida de 10 a 90 % vale $\ln 9 \cdot \tau = 2{,}2\,\tau$, e essa é a ponte
+para o Volume 6, onde o mesmo circuito é descrito por uma frequência de corte em vez de
+uma constante de tempo. As duas descrições são a mesma informação.
+
+Falta o outro elemento reativo. O indutor tem a sua própria constante de tempo, e ela
+não é $RL$: pela dualidade do @sec-cap-023, é $L/R$ — dividida, não multiplicada, com
+consequências que surpreendem quem só viu RC. E quando os dois aparecem na mesma malha,
+a equação sobe para segunda ordem e o circuito ganha um comportamento que nenhum RC tem:
+ele **oscila**. É o @sec-cap-026.
