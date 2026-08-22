@@ -1,3 +1,708 @@
 # Sinais periódicos, forma de onda e ciclo de trabalho {#sec-cap-039}
 
-*(em elaboração)*
+O Volume 5 inteiro tratou de um sinal só: a senoide. O Volume 6 mediu o que os filtros
+fazem com ela. A justificativa foi dada no @sec-cap-027 — a senoide é a única forma de
+onda que atravessa um circuito linear sem mudar de forma —, e ela é boa. Mas ela também
+esconde que, na bancada, senoide pura é minoria.
+
+O sinal que sai de um microcontrolador é uma onda quadrada. O que controla o motor é um
+trem de pulsos de largura variável. O que sai da fonte chaveada é um dente de serra
+somado a um degrau. O que a fonte retificada entrega antes do capacitor é uma senoide
+dobrada. E o que aparece na entrada do amplificador quando ninguém está tocando nada é
+ruído — que nem periódico é.
+
+Este capítulo monta o vocabulário para descrever qualquer um desses sinais com precisão:
+período, forma, ciclo de trabalho, nível, fator de crista, tempo de subida. É vocabulário
+de instrumentação, e ele é a base dos seis capítulos seguintes. Sem ele, o @sec-cap-040
+não tem como dizer *o que* está sendo decomposto em harmônicos, e o Volume 7 inteiro não
+tem como falar do que o osciloscópio mostra.
+
+## O que faz um sinal ser periódico {#sec-039-periodico}
+
+Um sinal $v(t)$ é **periódico** quando existe um número $T > 0$ tal que
+
+$$ \boxed{\;v(t + T) = v(t) \quad \text{para todo } t.\;} $$
+
+O menor $T$ que satisfaz isso é o **período**, e o seu inverso é a **frequência
+fundamental** $f = 1/T$. Tudo o que o Volume 5 disse sobre período e frequência continua
+valendo aqui; o que muda é que a forma dentro de um período deixa de ser obrigatoriamente
+senoidal.
+
+Três consequências valem ser ditas por extenso, porque são fonte constante de confusão.
+
+**Um sinal periódico tem uma frequência, não uma "faixa de frequências".** A frequência
+de uma onda quadrada de 1 kHz é 1 kHz — mesmo que ela contenha componentes em 3 kHz,
+5 kHz, 7 kHz e assim por diante. Esses componentes são os **harmônicos**, e o
+@sec-cap-040 mostra de onde saem. Frequência fundamental e conteúdo espectral são coisas
+diferentes.
+
+**"Periódico" não é o mesmo que "alternado".** Alternado significa que o sinal muda de
+sinal, isto é, que cruza o zero. Uma onda quadrada que varia entre 0 e 5 V é
+perfeitamente periódica e nunca é negativa. Todo sinal de lógica digital é assim.
+
+**Quase nada é periódico para sempre.** Um sinal de áudio é periódico durante alguns
+milissegundos e depois muda. Um sinal digital carrega dados, e dados não se repetem. A
+periodicidade é uma idealização útil enquanto durar a janela de observação — e é
+exatamente por isso que o osciloscópio precisa de um circuito de gatilho, assunto do
+@sec-cap-043.
+
+Sinais que não são periódicos aparecem em três famílias: **transitórios** (um degrau, uma
+descarga, um clique), **aleatórios** (ruído, @sec-cap-042) e **modulados** (uma portadora
+cuja amplitude, frequência ou fase carrega informação). Nenhuma delas some deste manual;
+elas só não cabem no vocabulário desta seção.
+
+## O catálogo de formas {#sec-039-formas}
+
+::: {#fig-039-formas}
+
+```{.tikz}
+%%| filename: 039-formas
+%%| alt: Seis pequenos gráficos de tensão contra tempo, dispostos em duas colunas e três linhas, cada um mostrando dois períodos de uma forma de onda diferente. Na primeira linha, à esquerda uma senoide suave entre menos um e mais um, e à direita uma onda quadrada simétrica que alterna abruptamente entre menos um e mais um. Na segunda linha, à esquerda uma onda triangular com subidas e descidas de mesma inclinação, e à direita um dente de serra que sobe em rampa e cai verticalmente. Na terceira linha, à esquerda um trem de pulsos unipolar entre zero e um, alto durante um quinto de cada período, e à direita uma forma de onda arbitrária resultante da soma de três senoides de frequências diferentes, sem simetria evidente.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- senoide ----------------
+  \begin{axis}[
+      at={(0cm,0cm)}, anchor=north west,
+      width=7.2cm, height=3.9cm,
+      xmin=0, xmax=2, ymin=-1.35, ymax=1.35,
+      title={\textbf{senoidal}}, title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5,2}, xticklabels={{0},{},{$T$},{},{$2T$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[curva, domain=0:2, samples=200] {sin(360*x)};
+  \end{axis}
+
+  % ---------------- quadrada ----------------
+  \begin{axis}[
+      at={(8.7cm,0cm)}, anchor=north west,
+      width=7.2cm, height=3.9cm,
+      xmin=0, xmax=2, ymin=-1.35, ymax=1.35,
+      title={\textbf{quadrada} (simétrica)}, title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5,2}, xticklabels={{0},{},{$T$},{},{$2T$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[curva] coordinates
+      {(0,1) (0.5,1) (0.5,-1) (1,-1) (1,1) (1.5,1) (1.5,-1) (2,-1)};
+  \end{axis}
+
+  % ---------------- triangular ----------------
+  \begin{axis}[
+      at={(0cm,-4.9cm)}, anchor=north west,
+      width=7.2cm, height=3.9cm,
+      xmin=0, xmax=2, ymin=-1.35, ymax=1.35,
+      title={\textbf{triangular}}, title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5,2}, xticklabels={{0},{},{$T$},{},{$2T$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[curva] coordinates
+      {(0,-1) (0.5,1) (1,-1) (1.5,1) (2,-1)};
+  \end{axis}
+
+  % ---------------- dente de serra ----------------
+  \begin{axis}[
+      at={(8.7cm,-4.9cm)}, anchor=north west,
+      width=7.2cm, height=3.9cm,
+      xmin=0, xmax=2, ymin=-1.35, ymax=1.35,
+      title={\textbf{dente de serra}}, title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5,2}, xticklabels={{0},{},{$T$},{},{$2T$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[curva] coordinates
+      {(0,-1) (1,1) (1,-1) (2,1) (2,-1)};
+  \end{axis}
+
+  % ---------------- trem de pulsos ----------------
+  \begin{axis}[
+      at={(0cm,-9.8cm)}, anchor=north west,
+      width=7.2cm, height=3.9cm,
+      xmin=0, xmax=2, ymin=-0.35, ymax=1.35,
+      title={\textbf{trem de pulsos}, $D = 0{,}20$}, title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5,2}, xticklabels={{0},{},{$T$},{},{$2T$}},
+      ytick={0,1}, yticklabels={{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[curva] coordinates
+      {(0,0) (0,1) (0.2,1) (0.2,0) (1,0) (1,1) (1.2,1) (1.2,0) (2,0)};
+  \end{axis}
+
+  % ---------------- arbitraria ----------------
+  \begin{axis}[
+      at={(8.7cm,-9.8cm)}, anchor=north west,
+      width=7.2cm, height=3.9cm,
+      xmin=0, xmax=2, ymin=-1.35, ymax=1.35,
+      title={\textbf{arbitrária} (mas periódica)}, title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5,2}, xticklabels={{0},{},{$T$},{},{$2T$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[curva, domain=0:2, samples=400]
+      {0.62*sin(360*x) + 0.30*sin(2*360*x + 55) + 0.16*sin(5*360*x + 20)};
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+As formas de onda do dia a dia. Todas têm o mesmo período $T$ e a mesma frequência
+fundamental; o que muda é o que acontece dentro do período — e, como o @sec-cap-040 vai
+mostrar, é isso que decide quais harmônicos existem.
+
+:::
+
+Cada forma vem com dois números que já foram definidos no @sec-cap-028 e que agora
+precisam ser tabelados: o **valor médio** e o **valor eficaz**. Aparece um terceiro, o
+**fator de crista**, que será usado adiante.
+
+| Forma (bipolar, amplitude $A$) | $V_{\text{méd}}$ | $V_{\text{ef}}$ | Fator de crista |
+|---|---|---|---|
+| Senoidal | 0 | $A/\sqrt{2} = 0{,}707A$ | 1,414 |
+| Quadrada simétrica | 0 | $A$ | 1,000 |
+| Triangular | 0 | $A/\sqrt{3} = 0{,}577A$ | 1,732 |
+| Dente de serra | 0 | $A/\sqrt{3} = 0{,}577A$ | 1,732 |
+| Senoidal retificada em onda completa | $2A/\pi = 0{,}637A$ | $0{,}707A$ | 1,414 |
+| Trem de pulsos $0$ a $A$, ciclo $D$ | $DA$ | $A\sqrt{D}$ | $1/\sqrt{D}$ |
+
+: Valor médio, valor eficaz e fator de crista das formas usuais. O médio das quatro
+primeiras é zero porque elas são simétricas em torno do zero — o que **não** significa
+que não aqueçam nada. {#tbl-039-formas}
+
+Onde cada uma aparece, na prática:
+
+- **Senoidal** — rede elétrica, osciladores de RF, saída de gerador de funções, tom de
+  teste de áudio.
+- **Quadrada** — clock digital, saída de comparador, oscilador de relaxação, sinal de
+  compensação de ponta de prova (@sec-cap-044).
+- **Triangular** — rampa interna de um modulador PWM, varredura de osciloscópio
+  analógico, teste de linearidade de amplificador.
+- **Dente de serra** — base de tempo de osciloscópio analógico, corrente no indutor de
+  uma fonte chaveada operando em condução contínua.
+- **Trem de pulsos** — PWM de motor, dimerização de LED, comunicação serial em repouso
+  com dado alternado, disparo de tiristor.
+- **Retificada** — saída de ponte retificadora antes do capacitor de filtro
+  (Volume 8).
+
+## Ciclo de trabalho {#sec-039-duty}
+
+O **ciclo de trabalho** (em inglês *duty cycle*) é a fração do período em que o sinal
+está no nível alto:
+
+$$ \boxed{\;D = \frac{t_{\text{on}}}{T}\;} $$
+
+Ele é sempre um número entre 0 e 1, ou entre 0 % e 100 %. Uma onda quadrada é, por
+definição, o caso $D = 0{,}5$; qualquer outro valor faz dela um trem de pulsos.
+
+::: {#fig-039-duty}
+
+```{.tikz}
+%%| filename: 039-duty
+%%| alt: Cronograma digital com cinco linhas empilhadas, cada uma mostrando três períodos de um trem de pulsos com o mesmo período mas ciclo de trabalho diferente. De cima para baixo, os ciclos de trabalho são dez por cento, trinta por cento, cinquenta por cento, setenta por cento e noventa por cento. À esquerda de cada linha está o valor do ciclo de trabalho e a tensão média resultante para um pulso de cinco volts, respectivamente zero vírgula cinco, um vírgula cinco, dois vírgula cinco, três vírgula cinco e quatro vírgula cinco volts. O período é o mesmo nas cinco linhas: só a largura do trecho alto muda.
+
+\begin{tikztimingtable}[timing/wscale=0.80, timing/rowdist=2.4ex,
+                        xscale=1, font=\footnotesize]
+  $D = 0{,}10$ \quad $V_{\text{méd}} = 0{,}5$ V & 3{1H 9L} \\
+  $D = 0{,}30$ \quad $V_{\text{méd}} = 1{,}5$ V & 3{3H 7L} \\
+  $D = 0{,}50$ \quad $V_{\text{méd}} = 2{,}5$ V & 3{5H 5L} \\
+  $D = 0{,}70$ \quad $V_{\text{méd}} = 3{,}5$ V & 3{7H 3L} \\
+  $D = 0{,}90$ \quad $V_{\text{méd}} = 4{,}5$ V & 3{9H 1L} \\
+\end{tikztimingtable}
+```
+
+Cinco ciclos de trabalho, mesmo período, pulso de 0 a 5 V. A frequência não muda em
+nenhuma linha — o que muda é quanto tempo o sinal passa em cima, e é isso que a tensão
+média enxerga.
+
+:::
+
+Para um trem de pulsos que vale $V_H$ durante $t_{\text{on}}$ e $V_L$ durante o resto:
+
+$$ V_{\text{méd}} = D\,V_H + (1 - D)\,V_L,
+   \qquad
+   V_{\text{ef}} = \sqrt{D\,V_H^2 + (1-D)\,V_L^2}. $$
+
+Com $V_L = 0$, isso se reduz aos dois resultados que vale a pena decorar:
+
+$$ V_{\text{méd}} = D\,V_H
+   \qquad\text{e}\qquad
+   V_{\text{ef}} = V_H\sqrt{D}. $$
+
+A assimetria entre os dois é o ponto inteiro da seção. **O valor médio é linear em $D$; o
+valor eficaz vai com a raiz.** Um pulso com 25 % de ciclo tem um quarto da tensão média,
+mas metade da tensão eficaz — e, portanto, um quarto da potência sobre um resistor, o que
+felizmente volta a ser linear. É por isso que PWM é uma maneira honesta de controlar
+potência, e é por isso que a leitura de um multímetro num sinal PWM depende de qual
+escala foi escolhida.
+
+::: {#fig-039-medio}
+
+```{.tikz}
+%%| filename: 039-medio
+%%| alt: Dois gráficos lado a lado. No da esquerda, dois períodos de um trem de pulsos de zero a cinco volts com ciclo de trabalho de trinta por cento, e sobre ele três linhas horizontais tracejadas: a tensão média em um vírgula cinco volts, a tensão eficaz em dois vírgula setenta e quatro volts e a tensão eficaz da componente alternada em dois vírgula vinte e nove volts. No da direita, três curvas em função do ciclo de trabalho variando de zero a um. A tensão média é uma reta que sobe de zero a cinco volts. A tensão eficaz é uma curva de raiz quadrada que sobe rápido no começo e chega a cinco volts no fim. A tensão eficaz da componente alternada é um arco simétrico que vale zero nos dois extremos e atinge o máximo de dois vírgula cinco volts no ciclo de cinquenta por cento.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- pulso com as tres reguas ----------------
+  \begin{axis}[
+      at={(0cm,0cm)}, anchor=north west,
+      width=7.6cm, height=6.6cm,
+      xmin=0, xmax=2, ymin=-0.4, ymax=6.4,
+      xlabel={$t/T$}, ylabel={$v$ (V)},
+      xtick={0,0.5,1,1.5,2},
+      xticklabels={{0},{$0{,}5$},{1},{$1{,}5$},{2}},
+      ytick={0,1.5,2.29,2.74,5},
+      yticklabels={{0},{$1{,}5$},{$2{,}29$},{$2{,}74$},{5}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[curva] coordinates
+      {(0,0) (0,5) (0.3,5) (0.3,0) (1,0) (1,5) (1.3,5) (1.3,0) (2,0)};
+    \addplot[manualred, thick, dashed, forget plot] coordinates {(0,1.5) (2,1.5)};
+    \addplot[manualgreen, thick, dashed, forget plot] coordinates {(0,2.74) (2,2.74)};
+    \addplot[manualblue, thick, dotted, forget plot] coordinates {(0,2.29) (2,2.29)};
+    \node[manualgreen, anchor=south west, font=\scriptsize] at (axis cs:0.36,2.80)
+         {$V_{\text{ef}}$};
+    \node[manualblue, anchor=north west, font=\scriptsize] at (axis cs:0.36,2.22)
+         {$V_{\text{ef,ca}}$};
+    \node[manualred, anchor=north west, font=\scriptsize] at (axis cs:0.36,1.43)
+         {$V_{\text{méd}}$};
+  \end{axis}
+
+  % ---------------- as tres curvas contra D ----------------
+  \begin{axis}[
+      at={(8.9cm,0cm)}, anchor=north west,
+      width=7.6cm, height=6.6cm,
+      xmin=0, xmax=1, ymin=0, ymax=5.8,
+      xlabel={ciclo de trabalho $D$}, ylabel={tensão (V)},
+      xtick={0,0.25,0.5,0.75,1},
+      xticklabels={{0},{$0{,}25$},{$0{,}5$},{$0{,}75$},{1}},
+      ytick={0,1.25,2.5,3.75,5},
+      yticklabels={{0},{$1{,}25$},{$2{,}5$},{$3{,}75$},{5}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+      legend style={at={(0.03,0.97)}, anchor=north west, font=\scriptsize,
+                    draw=manualgray!50},
+    ]
+    \addplot[manualred, very thick, domain=0:1, samples=2] {5*x};
+    \addlegendentry{$V_{\text{méd}} = 5D$}
+    \addplot[manualgreen, very thick, domain=0:1, samples=200] {5*sqrt(x)};
+    \addlegendentry{$V_{\text{ef}} = 5\sqrt{D}$}
+    \addplot[manualblue, very thick, domain=0:1, samples=200] {5*sqrt(x*(1-x))};
+    \addlegendentry{$V_{\text{ef,ca}} = 5\sqrt{D(1-D)}$}
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+O mesmo pulso, três réguas. À esquerda, um trem de 0 a 5 V com $D = 0{,}30$. À direita,
+como cada régua varia com o ciclo de trabalho. A curva azul é o que o multímetro em escala
+CA lê, e ela **volta a zero nos dois extremos** — em $D = 0$ e $D = 1$ não há nada
+alternando.
+
+:::
+
+A terceira curva merece atenção. Um multímetro em escala CA rejeita a componente
+contínua, de modo que o que ele mede num trem de pulsos é
+
+$$ V_{\text{ef,ca}} = \sqrt{V_{\text{ef}}^2 - V_{\text{méd}}^2}
+   = V_H\sqrt{D(1-D)}, $$
+
+que é máximo em $D = 0{,}5$ e nulo nos dois extremos. Aponte um multímetro em CA para um
+PWM de 95 % de ciclo e ele mostrará quase nada, ainda que o motor esteja quase em plena
+velocidade. Esse é um dos erros de bancada mais frequentes deste manual inteiro, e ele
+está diretamente ligado ao @sec-cap-028.
+
+### PWM: por que o ciclo de trabalho existe {#sec-039-pwm}
+
+Controlar potência com um resistor em série desperdiça a diferença em calor: para
+entregar metade da tensão a uma carga, o resistor série dissipa tanto quanto ela. A
+alternativa é não controlar a tensão e sim o **tempo**: ligar e desligar rápido, e ajustar
+a fração ligada.
+
+O interruptor eletrônico — transistor ou MOSFET, do Volume 9 e do Volume 10 — dissipa
+pouco em dois estados: totalmente aberto (corrente nula) e totalmente fechado (tensão
+quase nula). Nos dois casos, o produto $v \times i$ é pequeno. É a passagem entre eles que
+custa, e por isso a frequência de chaveamento tem limite.
+
+A carga então faz a média. Um motor faz a média pela própria inércia mecânica; uma lâmpada
+incandescente, pela inércia térmica do filamento; um LED, pela inércia do olho de quem
+olha (acima de uns 200 Hz não se vê cintilação, mas a câmera do celular vê); um circuito
+eletrônico, por um filtro RC — que é exatamente o circuito do @sec-cap-033, aplicado
+exatamente para isso.
+
+Duas escolhas independentes definem um PWM, e confundi-las é comum:
+
+- **A frequência** decide se a carga consegue fazer a média e quanta interferência o
+  chaveamento gera. Motor CC: 1 a 20 kHz (acima de 18 kHz para não assobiar). LED: acima
+  de 200 Hz. Aquecedor: 1 Hz basta.
+- **O ciclo de trabalho** decide a potência entregue. Ele é a informação; a frequência é
+  só o portador.
+
+## Nível, amplitude e o que "5 V" quer dizer {#sec-039-nivel}
+
+Dizer que um sinal "tem 5 V" não diz quase nada. Há pelo menos quatro leituras, e a
+diferença entre elas é fator 3.
+
+- **$V_{pp}$, pico a pico** — do mínimo ao máximo. É o que se lê direto na tela do
+  osciloscópio, e é a medida menos ambígua de todas.
+- **$V_p$, pico** — do nível de referência ao extremo. Só é igual a $V_{pp}/2$ se o sinal
+  for simétrico em torno da referência.
+- **$V_{\text{ef}}$** — o valor eficaz do @sec-cap-028, que é o que o multímetro mostra e
+  o que decide aquecimento.
+- **$V_{\text{méd}}$** — a componente contínua, o que o multímetro em CC mostra.
+
+Some-se a isso o **offset**, que é o nível de referência em torno do qual o sinal oscila.
+Um gerador de funções tem esse controle separado da amplitude, e a soma dos dois é o que
+sai:
+
+$$ v(t) = V_{\text{offset}} + A\,f(t), \qquad f(t) \text{ entre } -1 \text{ e } +1. $$
+
+Um sinal com offset zero é **bipolar**; um com offset igual à amplitude é **unipolar** e
+nunca fica negativo. Todo sinal lógico é unipolar; quase todo sinal de áudio é bipolar.
+Ligar um bipolar na entrada de um circuito alimentado por fonte simples destrói a metade
+negativa — e esse é o problema que o acoplamento e a polarização do @sec-cap-034 resolvem.
+
+::: {.callout-warning}
+## Amplitude é a metade que quase ninguém confere
+
+Gerador de funções, na esmagadora maioria dos modelos, tem o controle de amplitude
+calibrado em **$V_{pp}$**. Multímetro mostra **$V_{\text{ef}}$**. Folha de dados de
+amplificador operacional especifica a excursão de saída em **$V_p$** a partir de cada
+trilho. Especificação de áudio profissional usa **dBu**, que é uma tensão eficaz de
+referência (@sec-cap-041).
+
+Para uma senoide, os fatores entre eles são 2 e $\sqrt{2}$. Para uma quadrada, são 2 e 1.
+Para um pulso de 10 %, são 2 e 3,16. **Não existe fator universal** — ele depende da forma
+de onda, e é por isso que a forma tem de ser dita junto com o número.
+:::
+
+## Fator de crista {#sec-039-crista}
+
+O **fator de crista** é a razão entre o valor de pico e o valor eficaz:
+
+$$ \boxed{\;\text{FC} = \frac{V_p}{V_{\text{ef}}}\;} $$
+
+Ele mede o quanto o sinal é "pontudo". Uma onda quadrada tem FC $= 1$: ela passa todo o
+tempo no valor máximo, e o eficaz é igual ao pico. Uma senoide tem $\sqrt{2} = 1{,}41$. Um
+pulso estreito de 1 % de ciclo tem FC $= 10$: quase todo o tempo em zero, com picos altos.
+
+O fator de crista importa em três lugares concretos, e nos três ele é um limite de
+hardware:
+
+**No multímetro true RMS.** A folha de dados especifica um fator de crista máximo — tipo
+3 ou 5 — acima do qual o instrumento satura internamente e passa a ler para menos, sem
+avisar. Um multímetro com FC máximo 3 apontado para um PWM de 5 % de ciclo (FC = 4,5) dá
+número errado. O @sec-cap-028 apresentou esse limite; aqui ele ganha o nome.
+
+**No amplificador e na fonte.** Um sinal de áudio real tem FC entre 4 e 20. Um amplificador
+que precisa entregar 10 W eficazes a um sinal de FC igual a 5 tem de conseguir picos de
+$5 \times \sqrt{10 \times 8} = 45$ V numa carga de 8 Ω — quatro vezes mais tensão de pico
+do que a potência eficaz sugere. Fonte dimensionada pela potência média e amplificador
+dimensionado pela tensão de pico é a receita padrão de recorte nos picos.
+
+**No fio e no fusível.** Corrente com fator de crista alto — a de entrada de qualquer
+fonte chaveada sem correção de fator de potência, como no @sec-cap-032 — aquece o
+condutor pelo valor eficaz e estressa o contato pelo pico.
+
+## O pulso real: bordas, sobressinal e o resto {#sec-039-real}
+
+Todas as figuras anteriores mentem num ponto: as bordas são verticais. Borda vertical
+exigiria corrente infinita para carregar qualquer capacitância, e capacitância parasita
+existe em tudo. O pulso real tem estrutura, e ela tem nomes.
+
+::: {#fig-039-borda}
+
+```{.tikz}
+%%| filename: 039-borda
+%%| alt: Gráfico da subida de um pulso digital real em função do tempo em nanossegundos, com o eixo vertical em porcentagem do nível final. O sinal parte de zero, sobe rapidamente, ultrapassa o nível final atingindo cento e vinte e um por cento por volta de quatro vírgula oito nanossegundos, depois oscila com amplitude decrescente em torno do nível final e se acomoda em cem por cento por volta de vinte nanossegundos. Duas linhas horizontais tracejadas marcam dez por cento e noventa por cento, e uma seta horizontal entre os dois cruzamentos indica o tempo de subida de dois vírgula um nanossegundos. Uma seta vertical marca o sobressinal de vinte e um por cento no pico. Uma faixa horizontal sombreada em torno de cem por cento representa a banda de acomodação de mais ou menos dois por cento.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.4cm, height=8.4cm,
+  xmin=-2, xmax=26, ymin=-22, ymax=136,
+  xlabel={$t$ (ns)}, ylabel={amplitude (\% do valor final)},
+  xtick={0,5,10,15,20,25},
+  ytick={0,10,50,90,100,121},
+  yticklabels={{0},{10},{50},{90},{100},{121}},
+  grid=both, grid style={manualgray!20}, font=\footnotesize,
+  declare function={
+    ov(\t) = 100*(1 - exp(-0.32*\t)*(cos(deg(0.65*\t))
+             + 0.4923*sin(deg(0.65*\t))));},
+]
+  % banda de acomodacao
+  \addplot[draw=none, fill=manualgreen!12, forget plot]
+          coordinates {(-2,98) (26,98) (26,102) (-2,102)} \closedcycle;
+
+  \addplot[auxiliar, forget plot] coordinates {(-2,10) (26,10)};
+  \addplot[auxiliar, forget plot] coordinates {(-2,90) (26,90)};
+  \addplot[auxiliar, forget plot] coordinates {(-2,100) (26,100)};
+
+  \addplot[curva, very thick, forget plot] coordinates {(-2,0) (0,0)};
+  \addplot[curva, very thick, domain=0:26, samples=420, forget plot]
+          ({x}, {ov(x)});
+
+  % tempo de subida
+  \draw[manualred, thick, <->] (axis cs:0.68,-7) -- (axis cs:2.78,-7);
+  \node[manualred, anchor=north, font=\scriptsize] at (axis cs:1.73,-8.5)
+       {$t_r = 2{,}1$ ns};
+  \addplot[auxiliar, forget plot] coordinates {(0.68,-7) (0.68,10)};
+  \addplot[auxiliar, forget plot] coordinates {(2.78,-7) (2.78,90)};
+
+  % sobressinal
+  \draw[manualred, thick, <->] (axis cs:4.83,100) -- (axis cs:4.83,121);
+  \node[manualred, anchor=west, font=\scriptsize, align=left]
+       at (axis cs:6.3,121) {sobressinal\\21 \%};
+
+  % subsinal
+  \node[manualblue, anchor=north, font=\scriptsize, align=center]
+       at (axis cs:9.6,78) {subsinal};
+  \draw[manualblue, thick, ->] (axis cs:9.6,80) -- (axis cs:9.6,90.5);
+
+  % oscilacao amortecida
+  \node[manualgray, anchor=south, font=\scriptsize, align=center]
+       at (axis cs:14.6,108) {oscilação amortecida\\(\emph{ringing})};
+
+  % acomodacao
+  \node[manualgreen!60!black, anchor=west, font=\scriptsize, align=left]
+       at (axis cs:20.6,88) {banda de\\acomodação\\$\pm 2$ \%};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A subida de um pulso real. Nenhuma dessas grandezas aparece no desenho idealizado, e todas
+as cinco são especificadas em folha de dados de porta lógica, de amplificador e de gerador
+de funções.
+
+:::
+
+**Tempo de subida $t_r$ e de descida $t_f$.** Medidos entre **10 % e 90 %** do valor final,
+por convenção quase universal. Instrumentos rápidos e famílias lógicas modernas às vezes
+usam 20 %–80 %; o número muda e a folha de dados diz qual foi. Um 74HC a 5 V tem
+$t_r \approx 6$ ns; um 74LVC, cerca de 2 ns; um amplificador operacional de uso geral,
+alguns microssegundos.
+
+**Sobressinal e subsinal.** A ultrapassagem do valor final e o retorno abaixo dele. Vêm da
+mesma origem que o pico do filtro LC do @sec-cap-036: um par de polos complexos, isto é,
+indutância e capacitância trocando energia. Na bancada, a indutância costuma ser a da
+trilha ou a do fio de terra da ponta de prova, e a capacitância a da entrada do
+instrumento — assunto inteiro do @sec-cap-044.
+
+**Oscilação amortecida (*ringing*).** O resto da mesma história, decaindo com o tempo. A
+frequência da oscilação diz onde está a ressonância parasita: no gráfico, um período de
+9,7 ns corresponde a 103 MHz.
+
+**Tempo de acomodação.** Quanto tempo até o sinal ficar dentro de uma faixa declarada — 1 %,
+0,1 % — em torno do valor final. É o número que importa em conversor digital-analógico e em
+circuito de amostragem, e ele pode ser muito maior que o tempo de subida.
+
+**Inclinação de topo (*droop*).** Um patamar que deveria ser plano e desce devagar. Não
+aparece na figura porque a causa é outra: acoplamento capacitivo com constante de tempo
+insuficiente, exatamente o efeito medido na Parte 3 do laboratório do @sec-cap-034.
+
+**Jitter.** A variação do instante em que a borda acontece, de ciclo para ciclo. Um sinal
+pode ter borda rápida e mesmo assim ser inútil como referência de tempo se o jitter for
+alto. Ele não se vê num pulso isolado — só na sobreposição de muitos, que é o que o
+diagrama de olho faz.
+
+## 🧪 Laboratório {#sec-039-lab}
+
+**Gerar um trem de pulsos com ciclo de trabalho ajustável, provar que $V_{\text{méd}} = DV_H$
+e que $V_{\text{ef}} = V_H\sqrt{D}$ com um multímetro comum, e ver o multímetro em escala CA
+mentir.**
+
+Este roteiro não precisa de osciloscópio. Ele mede um sinal de alta frequência usando dois
+fatos: o multímetro em CC entrega a média, e um filtro RC entrega a média também.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital (com escala CA, de preferência *true RMS*)
+- 1 circuito integrado 555 (NE555 ou, melhor, TLC555/LMC555 CMOS)
+- 1 diodo 1N4148
+- Resistores 1/4 W: 10 kΩ, 27 kΩ, 47 kΩ (dois), 75 kΩ, 91 kΩ, 1 kΩ, 10 kΩ
+- Capacitores: 100 nF poliéster (dois), 10 nF cerâmico, 10 µF eletrolítico
+- 1 LED vermelho de 5 mm e 1 resistor de 470 Ω
+- 1 fonte de 5 V (fonte de bancada, ou fonte USB com regulador)
+- Protoboard, jumpers, papel para anotar
+:::
+
+### Parte 1 — Montar o oscilador de ciclo ajustável
+
+O 555 em configuração astável clássica carrega o capacitor por $R_A + R_B$ e o descarrega
+por $R_B$ apenas, o que trava o ciclo de trabalho **acima de 50 %**. Um diodo em paralelo
+com $R_B$, apontando do pino 7 para o pino 6, separa os dois caminhos: a carga passa a ser
+só por $R_A$ e a descarga só por $R_B$.
+
+1. Monte o astável: pino 1 no terra, pino 8 e pino 4 em +5 V, pino 2 ligado ao pino 6,
+   capacitor de temporização de 100 nF do pino 6 ao terra, capacitor de 10 nF do pino 5 ao
+   terra. $R_A$ do pino 7 ao pino 8; $R_B$ do pino 7 ao pino 6.
+2. Ligue o diodo 1N4148 em paralelo com $R_B$, **catodo no pino 6**.
+3. A saída é o pino 3.
+
+Com o diodo, as fórmulas ficam:
+
+$$ t_{\text{on}} \approx 0{,}693\,R_A C, \qquad
+   t_{\text{off}} \approx 0{,}693\,R_B C, \qquad
+   D \approx \frac{R_A}{R_A + R_B}. $$
+
+### Parte 2 — As cinco medidas de tensão média
+
+1. Meça primeiro os dois níveis reais da saída, com o multímetro em CC e o 555 parado
+   (retire o capacitor de temporização e force o pino 2 ora no terra, ora em +5 V). Anote
+   $V_H$ e $V_L$. Com um NE555 bipolar, $V_H$ fica perto de 3,3 a 3,8 V, não 5 V; com um
+   TLC555, perto de 4,9 V. **Use o seu $V_H$ medido nas contas abaixo, não 5 V.**
+2. Recoloque o capacitor. Para cada par de resistores da tabela, meça a tensão na saída com
+   o multímetro em **CC**.
+
+| $R_A$ | $R_B$ | $D$ previsto | $f$ prevista | $V_{\text{méd}}$ previsto ($V_H = 4{,}9$ V) | medido |
+|---|---|---|---|---|---|
+| 10 kΩ | 91 kΩ | 0,099 | 143 Hz | 0,49 V | |
+| 27 kΩ | 75 kΩ | 0,265 | 141 Hz | 1,30 V | |
+| 47 kΩ | 47 kΩ | 0,500 | 153 Hz | 2,45 V | |
+| 75 kΩ | 27 kΩ | 0,735 | 141 Hz | 3,60 V | |
+| 91 kΩ | 10 kΩ | 0,901 | 143 Hz | 4,41 V | |
+
+: Tabela da Parte 2. A frequência é aproximadamente constante porque $R_A + R_B$ foi mantido
+perto de 100 kΩ nas cinco combinações. {#tbl-039-lab}
+
+3. Marque os cinco pontos num gráfico de $V_{\text{méd}}$ contra $D$. Deve sair uma reta
+   passando pela origem, com inclinação $V_H$.
+
+O desvio típico é de 2 % a 5 % para mais, e ele tem causa conhecida: a queda direta do
+1N4148 faz o capacitor carregar por um caminho ligeiramente diferente do que a fórmula supõe.
+Não é erro de medição — é o diodo.
+
+### Parte 3 — A raiz quadrada
+
+1. Com o multímetro em escala **CA**, repita as cinco medidas.
+2. Para cada uma, calcule $V_{\text{ef,ca}}$ previsto pela fórmula $V_H\sqrt{D(1-D)}$:
+   1,48 V, 2,17 V, 2,45 V, 2,17 V e 1,46 V.
+3. Compare.
+
+O resultado é a demonstração da @fig-039-medio: a leitura em CA **sobe e depois desce**,
+com máximo em $D = 0{,}5$, enquanto a leitura em CC sobe monotonicamente. Duas escalas do
+mesmo instrumento, no mesmo sinal, contando histórias diferentes — e as duas certas.
+
+::: {.callout-note}
+## Se o multímetro não for *true RMS*
+
+Um multímetro de valor médio retificado, calibrado para senoide (@sec-cap-028), vai errar
+nessa parte, e errar bastante — o fator de forma de um pulso não é o de uma senoide. Faça a
+medida assim mesmo e anote os dois números: a discrepância entre o previsto e o lido **é** o
+resultado do experimento. Se o instrumento for *true RMS*, os números fecham em poucos por
+cento; se não for, a diferença chega a 30 %.
+:::
+
+### Parte 4 — O filtro que faz a média de verdade
+
+1. Ligue um RC na saída do 555: $R = 10$ kΩ em série, $C = 10$ µF ao terra (respeite a
+   polaridade do eletrolítico). A frequência de corte é $f_c = 1{,}6$ Hz, cem vezes abaixo
+   da frequência do pulso.
+2. Meça a tensão sobre o capacitor com o multímetro em CC para os cinco pares de resistores.
+
+Deve dar o mesmo da Parte 2, com ondulação desprezível. Este é o mesmo circuito do
+@sec-cap-033, e a razão de ele funcionar é a mesma: o filtro deixa passar a componente
+contínua (que é o valor médio) e atenua a fundamental em 40 dB.
+
+3. Troque o capacitor por 100 nF ($f_c = 159$ Hz, comparável à frequência do pulso) e
+   repita. A média continua certa, mas agora existe ondulação — e ela é o que o
+   @sec-cap-040 explica em termos de harmônicos.
+
+### Parte 5 — O olho como integrador
+
+1. Ligue o LED com o resistor de 470 Ω na saída do 555.
+2. Percorra os cinco pares de resistores. O brilho acompanha $D$.
+3. Agora troque o capacitor de temporização de 100 nF por 10 µF: a frequência cai para cerca
+   de 1,4 Hz.
+4. Repita. Em $D = 0{,}5$ o LED pisca visivelmente; em $D = 0{,}9$, ele fica quase sempre
+   aceso com um piscar curto.
+
+O brilho médio é o mesmo nos dois casos — o que mudou foi só a frequência. **A informação
+está no ciclo de trabalho; a frequência só decide se o integrador consegue acompanhar.**
+Filme a tela do LED a 143 Hz com a câmera do celular em câmera lenta e o piscar reaparece:
+o integrador da câmera é mais rápido que o do olho.
+
+**Variante simulada (plano B).** Sem 555 na gaveta, qualquer microcontrolador com
+`analogWrite()` (Arduino) ou `PWM` (micro:bit, ESP32, Raspberry Pi Pico) gera o mesmo trem
+com ciclo exato de 0 a 255 — e sem o desvio do diodo, o que torna a reta da Parte 2 ainda
+mais limpa. No Falstad, a fonte de tensão em modo *square* tem controle de ciclo de trabalho,
+e um voltímetro em CC na saída de um RC reproduz a Parte 4 em segundos.
+
+## 🔥 Onde Queima {#sec-039-queima}
+
+**Medir PWM com o multímetro em escala CA e concluir que o sinal sumiu.** Em ciclo alto ou
+baixo, $V_{\text{ef,ca}} = V_H\sqrt{D(1-D)}$ tende a zero. A escala certa para PWM é a CC,
+que dá a média.
+
+**Supor que o nível alto de uma saída digital é a tensão de alimentação.** NE555 bipolar
+perde mais de 1 V; porta lógica sob carga perde de acordo com a corrente. Meça $V_H$ e
+$V_L$ antes de qualquer conta que dependa deles.
+
+**Trocar amplitude por pico a pico no gerador.** O controle do gerador é $V_{pp}$; a
+folha de dados do circuito costuma ser $V_p$ ou $V_{\text{ef}}$. Fator 2 ou 2,83 de erro,
+conforme o caso.
+
+**Usar o fator $\sqrt{2}$ fora da senoide.** Ele é da senoide, e só dela. Quadrada é 1;
+triangular é $\sqrt{3}$; pulso de ciclo $D$ é $1/\sqrt{D}$.
+
+**Ignorar o fator de crista máximo do multímetro.** Em pulso estreito, o instrumento
+satura internamente e lê para menos, sem indicar nada no display.
+
+**Dimensionar amplificador ou fonte pela potência média de um sinal com fator de crista
+alto.** Áudio real tem FC de 4 a 20; o pico é que define a tensão de trilho necessária.
+
+**Escolher a frequência de PWM sem olhar a carga.** Baixa demais, a carga não faz a média
+(motor treme, LED cintila); alta demais, as perdas de comutação dominam e a interferência
+irradiada aumenta.
+
+**Achar que ciclo de trabalho se aplica a uma senoide.** Ciclo de trabalho é definido para
+sinal de dois níveis. Para senoide, o número existe (50 %) e é inútil.
+
+**Desenhar bordas verticais e projetar como se fossem.** Todo pulso real tem $t_r$, e é
+$t_r$ que determina a largura de banda necessária — o @sec-cap-040 põe número nisso.
+
+**Confundir sobressinal do sinal com sobressinal da medição.** Metade do *ringing* visto
+na bancada é fabricado pelo fio de terra longo da ponta de prova. O @sec-cap-044 mostra
+como separar um do outro.
+
+**Alimentar um circuito de fonte simples com sinal bipolar.** A metade negativa é ceifada
+pelo diodo de proteção da entrada, ou destrói a entrada. É para isso que existe acoplamento
+com polarização (@sec-cap-034).
+
+## O que fica deste capítulo {#sec-039-resumo}
+
+Sinal **periódico** é o que satisfaz $v(t+T) = v(t)$. O período fixa a frequência
+fundamental; a forma dentro do período é livre, e periódico não implica alternado.
+
+Cada forma de onda tem sua própria relação entre pico, médio e eficaz. Não há fator
+universal: senoide dá $0{,}707A$, quadrada dá $A$, triangular dá $0{,}577A$, pulso de ciclo
+$D$ dá $A\sqrt{D}$. A @tbl-039-formas é para consulta permanente.
+
+**Ciclo de trabalho** é $D = t_{\text{on}}/T$, e ele separa duas grandezas que crescem de
+formas diferentes:
+
+$$ V_{\text{méd}} = D\,V_H \quad\text{(linear)},
+   \qquad
+   V_{\text{ef}} = V_H\sqrt{D} \quad\text{(raiz)},
+   \qquad
+   V_{\text{ef,ca}} = V_H\sqrt{D(1-D)} \quad\text{(arco)}. $$
+
+A terceira é o que o multímetro em CA mede, e ela é enganosa nos extremos. PWM funciona
+porque o interruptor dissipa pouco nos dois estados e a carga faz a média — mecânica,
+térmica, visual ou por um RC.
+
+Quatro números descrevem o **nível**: $V_{pp}$, $V_p$, $V_{\text{ef}}$ e $V_{\text{méd}}$,
+mais o offset. Instrumentos diferentes usam réguas diferentes, e a forma de onda tem de ser
+dita junto com o número. O **fator de crista** $V_p/V_{\text{ef}}$ é o limite de hardware
+que aparece no multímetro *true RMS*, no amplificador e no fio.
+
+O pulso real tem estrutura de borda: $t_r$ e $t_f$ entre 10 % e 90 %, sobressinal, subsinal,
+oscilação amortecida, tempo de acomodação, inclinação de topo e jitter. Todos têm origem
+física identificável, e a maioria vem de um par LC parasita.
+
+Fica de pé a pergunta que atravessa este volume. A @fig-039-formas mostrou seis formas
+diferentes com o mesmo período, e o @sec-cap-033 mostrou o que um filtro faz com uma
+senoide. O que um filtro faz com uma **quadrada**? A resposta exige decompor a quadrada em
+senoides — e essa decomposição, que transforma qualquer sinal periódico numa soma de
+senoides com frequências múltiplas da fundamental, é o @sec-cap-040.
