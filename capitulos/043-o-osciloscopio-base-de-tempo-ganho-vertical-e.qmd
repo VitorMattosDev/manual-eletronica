@@ -1,3 +1,726 @@
 # O osciloscópio: base de tempo, ganho vertical e gatilho {#sec-cap-043}
 
-*(em elaboração)*
+Quarenta e dois capítulos foram escritos com um multímetro. Ele mede bem, e mede uma coisa
+por vez: um número. Tudo o que este volume construiu — a forma de onda do @sec-cap-039, os
+harmônicos do @sec-cap-040, a diferença entre ruído e interferência do @sec-cap-042 — pede
+outra coisa. Pede **ver**.
+
+O osciloscópio é o instrumento que desenha $v(t)$. Ele é o primeiro equipamento caro deste
+manual, e é também o divisor de águas da bancada: com ele, um circuito que não funciona
+deixa de ser um mistério e passa a ser um diagnóstico. Sem ele, boa parte da eletrônica de
+sinais é adivinhação informada.
+
+Este capítulo cobre o instrumento em si — os três eixos de controle, o que a amostragem faz
+e não faz, e o que a especificação de banda realmente compra. O @sec-cap-044 cobre a ponta
+de prova, que é onde mais medidas se perdem, e o @sec-cap-045 fecha o volume com o gerador
+de funções e o ensaio completo.
+
+::: {.callout-note}
+## Se não houver osciloscópio na bancada
+
+Nada aqui exige comprar um. Há três caminhos honestos, e o laboratório está escrito para os
+quatro casos:
+
+- **Osciloscópio de placa de som.** Qualquer entrada de áudio de computador, com um programa
+  como o Soundcard Scope ou o Visual Analyser, é um osciloscópio de dois canais de 20 kHz de
+  banda e resolução vertical excelente. Serve para tudo o que for áudio, e serve muito bem.
+- **Simulador.** O ngspice e o LTspice mostram formas de onda com precisão infinita; o
+  Falstad tem um osciloscópio ao vivo em cada nó. O que eles não têm é ruído real, ponta de
+  prova real e terra real — e é justamente isso que o instrumento físico ensina.
+- **Módulo de baixo custo.** Existem osciloscópios de bancada de entrada com 8 bits e alguns
+  MHz de banda, e módulos USB que usam o computador como tela. São limitados, e são
+  suficientes para tudo neste manual até o Volume 13.
+- **Emprestado.** Uma tarde no laboratório de uma escola técnica cobre o roteiro inteiro.
+:::
+
+## O que o osciloscópio faz {#sec-043-oquefaz}
+
+Um osciloscópio desenha um gráfico de tensão contra tempo. É só isso, e a dificuldade toda
+está em três perguntas que o instrumento não pode responder sozinho:
+
+1. **Quantos volts por divisão vertical?** — o ganho vertical.
+2. **Quanto tempo por divisão horizontal?** — a base de tempo.
+3. **Quando começar a desenhar?** — o gatilho.
+
+Errar qualquer uma das três produz uma tela inútil, e o iniciante costuma errar a terceira
+sem saber que ela existe. **O gatilho é o controle que separa quem sabe usar o instrumento
+de quem não sabe**, e ele ganha uma seção inteira adiante.
+
+::: {#fig-043-tela}
+
+```{.tikz}
+%%| filename: 043-tela
+%%| alt: Representação de uma tela de osciloscópio com uma grade de dez divisões horizontais por oito divisões verticais, com marcas finas de subdivisão nos eixos centrais. Sobre a grade há uma senoide azul de amplitude quatro divisões pico a pico, cujo período ocupa exatamente quatro divisões horizontais. Anotações à direita da tela indicam a escala vertical de dois volts por divisão e a escala horizontal de zero vírgula cinco milissegundos por divisão, e a partir delas os valores calculados de oito volts pico a pico e de período de dois milissegundos, correspondendo a quinhentos hertz. Setas verticais e horizontais marcam na própria tela as quatro divisões de amplitude e as quatro divisões de período.
+
+\begin{tikzpicture}[font=\footnotesize, scale=1.0]
+
+  % --------- grade ---------
+  \fill[manualgray!6] (0,0) rectangle (10,8);
+  \draw[manualgray!35, thin] (0,0) grid[step=1] (10,8);
+  \draw[manualgray!70, thin] (5,0) -- (5,8);
+  \draw[manualgray!70, thin] (0,4) -- (10,4);
+  \foreach \ii in {0.2,0.4,...,7.9}{
+    \draw[manualgray!55, very thin] (4.88,\ii) -- (5.12,\ii);}
+  \foreach \ii in {0.2,0.4,...,9.9}{
+    \draw[manualgray!55, very thin] (\ii,3.88) -- (\ii,4.12);}
+  \draw[thick, manualgray!80] (0,0) rectangle (10,8);
+
+  % --------- senoide: 4 div de periodo, 4 div pico a pico ---------
+  \draw[manualblue, very thick, smooth, samples=300, domain=0:10]
+       plot (\x, {4 + 2*sin(90*\x)});
+
+  % --------- marcacao de amplitude ---------
+  \draw[manualred, thick, <->] (1.35,2) -- (1.35,6);
+  \node[manualred, anchor=east, font=\scriptsize] at (1.22,3.4) {4 div};
+
+  % --------- marcacao de periodo ---------
+  \draw[manualgreen!60!black, thick, <->] (2,6.55) -- (6,6.55);
+  \node[manualgreen!60!black, anchor=south, font=\scriptsize]
+       at (4,6.62) {4 div};
+
+  % --------- legendas laterais ---------
+  \node[anchor=north west, font=\scriptsize, align=left] at (10.4,8)
+    {\textbf{ajustes}\\[3pt]
+     vertical: 2 V/div\\
+     horizontal: $0{,}5$ ms/div\\
+     acoplamento: CC\\
+     gatilho: subida, $0$ V\\[7pt]
+     \textbf{leitura}\\[3pt]
+     $V_{pp} = 4 \times 2 = 8$ V\\
+     $V_p = 4$ V\\
+     $V_{\mathrm{ef}} = 4/\sqrt{2} = 2{,}83$ V\\
+     $T = 4 \times 0{,}5 = 2$ ms\\
+     $f = 1/T = 500$ Hz};
+
+  \node[anchor=north, font=\scriptsize] at (5,-0.35)
+       {10 divisões horizontais $\times$ 8 verticais — o padrão de toda tela};
+
+\end{tikzpicture}
+```
+
+A tela e as duas contas que se fazem nela. Nenhum número é lido diretamente: tudo sai de
+contar divisões e multiplicar pela escala. Os osciloscópios digitais medem sozinhos, e
+saber fazer isso à mão continua sendo o que permite desconfiar da medida automática.
+
+:::
+
+## Analógico e digital {#sec-043-tipos}
+
+O osciloscópio analógico desviava um feixe de elétrons num tubo de raios catódicos: a tensão
+de entrada, amplificada, ia às placas verticais; uma rampa de dente de serra ia às
+horizontais. A imagem era literalmente o sinal, sem intermediários, e por isso ele nunca
+mentia sobre a forma — ele apenas apagava depressa demais.
+
+O osciloscópio digital de armazenamento — DSO, e é o que se compra hoje — amostra o sinal
+com um conversor analógico-digital, guarda os pontos numa memória e desenha a tela a partir
+deles. Ele pode congelar, medir sozinho, calcular FFT, disparar em condições complexas e
+guardar o que aconteceu **antes** do gatilho. E ele pode mentir, de maneiras que o analógico
+não conseguia — todas ligadas à amostragem, e todas tratadas no @sec-043-aliasing.
+
+::: {#fig-043-blocos}
+
+```{.tikz}
+%%| filename: 043-blocos
+%%| alt: Diagrama de blocos de um osciloscópio digital. Da esquerda para a direita, o sinal entra pela ponta de prova, passa por um bloco de acoplamento com as opções corrente contínua, corrente alternada e terra, depois por um atenuador calibrado em volts por divisão, depois por um amplificador vertical, e chega ao conversor analógico-digital, cujos pontos vão para uma memória de aquisição e daí para o processador e a tela. Numa derivação a partir da saída do amplificador vertical, um bloco comparador de gatilho recebe também um nível ajustável e uma escolha de inclinação, e sua saída vai para o bloco de base de tempo, que comanda tanto o relógio de amostragem do conversor quanto o início da aquisição na memória. Uma seta de realimentação indica que a base de tempo determina o intervalo entre amostras.
+
+\begin{tikzpicture}[font=\footnotesize,
+  bloco/.style={draw, thick, rounded corners=2pt, minimum height=0.95cm,
+                minimum width=1.85cm, align=center, font=\scriptsize,
+                fill=white},
+  seta/.style={-{Latex[length=2mm]}, thick}]
+
+  \node[anchor=east, font=\scriptsize, align=right] at (-0.35,0) {ponta de\\prova};
+  \draw[seta] (-0.3,0) -- (0.05,0);
+
+  \node[bloco] (acop) at (1.0,0) {acoplamento\\CC / CA / terra};
+  \node[bloco] (aten) at (3.3,0) {atenuador\\V/div};
+  \node[bloco] (amp)  at (5.6,0) {amplificador\\vertical};
+  \node[bloco] (adc)  at (7.9,0) {conversor\\A/D};
+  \node[bloco] (mem)  at (10.2,0) {memória de\\aquisição};
+  \node[bloco] (cpu)  at (12.5,0) {processador\\e tela};
+
+  \draw[seta] (acop) -- (aten);
+  \draw[seta] (aten) -- (amp);
+  \draw[seta] (amp)  -- (adc);
+  \draw[seta] (adc)  -- (mem);
+  \draw[seta] (mem)  -- (cpu);
+
+  % ramo do gatilho
+  \node[bloco, fill=manualred!8, draw=manualred] (gat) at (5.6,-2.5)
+       {comparador\\de gatilho};
+  \node[bloco, fill=manualred!8, draw=manualred] (base) at (8.9,-2.5)
+       {base de tempo\\s/div};
+
+  \draw[manualred, thick] (5.6,-0.475) -- (5.6,-2.025);
+  \draw[manualred, seta] (5.6,-1.6) -- (5.6,-2.025);
+  \draw[manualred, seta] (gat) -- (base);
+  \draw[manualred, seta] (base) -- (7.9,-2.5) -- (7.9,-0.475);
+  \draw[manualred, seta] (base.east) -- (10.2,-2.5) -- (10.2,-0.475);
+
+  \node[anchor=east, font=\scriptsize, align=right, manualred]
+       at (4.0,-2.15) {nível};
+  \node[anchor=east, font=\scriptsize, align=right, manualred]
+       at (4.0,-2.85) {inclinação};
+  \draw[manualred, seta] (4.05,-2.2) -- (4.65,-2.2);
+  \draw[manualred, seta] (4.05,-2.8) -- (4.65,-2.8);
+
+  \node[manualred, anchor=east, font=\scriptsize, align=right] at (7.65,-1.35)
+       {relógio de\\amostragem};
+  \node[manualred, anchor=west, font=\scriptsize, align=left] at (10.45,-1.35)
+       {início da\\aquisição};
+
+\end{tikzpicture}
+```
+
+Os blocos de um osciloscópio digital. O ramo vermelho é o gatilho: ele não altera o sinal,
+só decide **quando** a aquisição começa — e é por isso que errá-lo produz uma tela ilegível
+sem que nada esteja errado no circuito.
+
+:::
+
+## O eixo vertical {#sec-043-vertical}
+
+**Volts por divisão.** O atenuador de entrada é um divisor calibrado, em passos de 1–2–5:
+1 mV/div, 2 mV/div, 5 mV/div, 10 mV/div e assim por diante. Com 8 divisões verticais, a
+escala de 2 V/div cobre 16 V de janela. **Ajuste sempre para o sinal ocupar de 4 a 6
+divisões**: menos que isso desperdiça resolução, mais que isso corta a tela.
+
+**Posição e deslocamento.** Move o traço verticalmente sem mudar a escala. Serve para trazer
+à tela um sinal com componente contínua grande, e para separar dois canais.
+
+**Acoplamento.** Três posições, e a escolha delas é uma decisão de medida:
+
+- **CC** — passa tudo. É o padrão, e é o que se usa quando o nível contínuo importa: tensão
+  de alimentação, ponto de polarização, nível lógico.
+- **CA** — insere um capacitor em série, tirando a componente contínua. É o passa-altas do
+  @sec-cap-034, com corte tipicamente em 10 Hz. Serve para ver 50 mV de ondulação sobre
+  12 V de alimentação, o que em acoplamento CC seria invisível.
+- **Terra** — desliga a entrada e aterra o amplificador. Mostra onde está o zero na tela, e
+  serve para conferir a referência antes de medir. Não desliga o sinal do circuito: a ponta
+  continua ligada.
+
+::: {.callout-warning}
+## Acoplamento CA distorce o que ele deixa passar
+
+O capacitor de acoplamento é um passa-altas de verdade, com tudo o que o @sec-cap-034
+mostrou: inclinação de topo em onda quadrada, defasagem perto do corte, e transitório de
+carga ao mudar de acoplamento. Uma quadrada de 20 Hz vista em acoplamento CA aparece com os
+patamares descendo — e o defeito é do instrumento, não do circuito.
+
+Regra: use CC por padrão e CA só quando quiser deliberadamente esconder a contínua. Depois
+volte para CC.
+:::
+
+**Impedância de entrada.** A entrada padrão é 1 MΩ em paralelo com 10 a 30 pF. Osciloscópios
+de banda larga oferecem também 50 Ω comutável, para medir sistemas casados de RF sem
+reflexão. Ligar 50 Ω num circuito que não espera essa carga derruba o sinal e pode queimar a
+entrada — a especificação de tensão máxima em 50 Ω é de poucos volts.
+
+**Resolução vertical.** Quase todo DSO de bancada usa conversor de **8 bits**: 256 níveis
+sobre as 8 divisões da tela, isto é, 32 níveis por divisão, ou 0,4 % do fundo de escala. É
+pouco, e é a razão de o osciloscópio ser um péssimo voltímetro: para medir tensão com
+precisão, o multímetro de 4½ dígitos é três ordens de grandeza melhor. **O osciloscópio mede
+tempo e forma; o multímetro mede amplitude.** Modelos recentes de 10 e 12 bits melhoram isso,
+e o modo de alta resolução, que faz média de várias amostras, também.
+
+**Limitador de banda.** Quase todo osciloscópio tem uma opção de limitar a banda a 20 MHz.
+Ela reduz o ruído visível e é honesta desde que o sinal caiba nessa banda. Ligá-la para
+"limpar a tela" ao medir uma borda rápida é fabricar o resultado.
+
+## O eixo horizontal {#sec-043-horizontal}
+
+**Segundos por divisão.** Também em passos de 1–2–5. Com 10 divisões, a janela de tempo é
+dez vezes a escala: 0,5 ms/div mostra 5 ms. **Ajuste para ver de 2 a 5 períodos**: um só
+período não deixa avaliar estabilidade, e vinte períodos viram uma mancha.
+
+**Posição horizontal e o pré-gatilho.** Num DSO, a aquisição está sempre rodando e a memória
+é circular: quando o gatilho acontece, o instrumento já tem gravado o que veio **antes**.
+Deslocar o ponto de gatilho para a direita da tela mostra o que precedeu o evento. Essa é
+uma capacidade que o analógico não tinha e que resolve uma classe inteira de problemas — ver
+o que acontece imediatamente antes de um circuito travar, por exemplo.
+
+**Taxa de amostragem e profundidade de memória.** Aqui está a relação que confunde mais
+gente:
+
+$$ \text{tempo na tela} = 10 \times (\text{s/div}),
+   \qquad
+   \text{amostras necessárias} = \text{tempo na tela} \times \text{taxa}. $$
+
+Um osciloscópio de 1 GSa/s com 10 kpontos de memória só consegue amostrar a 1 GSa/s enquanto
+a janela couber em 10 µs. Pedindo 10 ms/div — janela de 100 ms —, ele precisaria de $10^8$
+pontos; sem memória para isso, ele **reduz a taxa de amostragem** para 100 kSa/s, e passa a
+enxergar apenas até 50 kHz. O número de 1 GSa/s da propaganda continua verdadeiro e deixou
+de ser relevante.
+
+**A consequência prática:** ao aumentar a janela de tempo, confira a taxa de amostragem
+mostrada na tela. Boa parte dos "sinais que sumiram ao afastar o zoom" é isto.
+
+## O gatilho {#sec-043-gatilho}
+
+O gatilho responde à pergunta *quando começar a desenhar*. Sem ele, cada varredura começaria
+num ponto aleatório do sinal e as imagens sucessivas não se sobreporiam: a tela mostraria um
+borrão.
+
+::: {#fig-043-gatilho}
+
+```{.tikz}
+%%| filename: 043-gatilho
+%%| alt: Dois gráficos lado a lado mostrando o efeito do gatilho. No da esquerda, uma senoide única com uma linha horizontal tracejada marcando o nível de gatilho acima do zero e um ponto destacado onde a curva cruza esse nível subindo, indicado como o instante em que a varredura começa; anotações indicam que só cruzamentos de subida contam e que o nível escolhido determina a fase inicial mostrada. No da direita, o resultado de não haver gatilho: cinco cópias da mesma senoide desenhadas com deslocamentos horizontais aleatórios e sobrepostas, produzindo uma mancha em que nada se distingue.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- com gatilho ----------------
+  \begin{axis}[
+      at={(0cm,0cm)}, anchor=north west,
+      width=7.6cm, height=6.2cm,
+      xmin=-0.35, xmax=2.2, ymin=-1.6, ymax=1.9,
+      title={\textbf{com gatilho} — a varredura começa sempre no mesmo ponto},
+      title style={font=\scriptsize, align=center},
+      xlabel={tempo}, ylabel={$v$},
+      xtick=\empty, ytick={-1,0,0.5,1},
+      yticklabels={{$-A$},{0},{nível},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualblue, very thick, domain=-0.35:2.2, samples=300]
+      {sin(360*x)};
+    \addplot[manualred, thick, dashed, domain=-0.35:2.2, samples=2, forget plot]
+      {0.5};
+    \addplot[manualred, only marks, mark=*, mark size=2.4pt, forget plot]
+      coordinates {(0.0833,0.5) (1.0833,0.5)};
+    \addplot[manualgray, only marks, mark=o, mark size=2.4pt, forget plot]
+      coordinates {(0.4167,0.5) (1.4167,0.5)};
+    \node[manualred, anchor=south west, font=\scriptsize, align=left]
+      at (axis cs:-0.30,1.12) {$\bullet$ subida: dispara};
+    \node[manualgray, anchor=south east, font=\scriptsize, align=right]
+      at (axis cs:2.15,1.12) {$\circ$ descida: ignorada};
+  \end{axis}
+
+  % ---------------- sem gatilho ----------------
+  \begin{axis}[
+      at={(8.9cm,0cm)}, anchor=north west,
+      width=7.6cm, height=6.2cm,
+      xmin=0, xmax=2.2, ymin=-1.6, ymax=1.9,
+      title={\textbf{sem gatilho} — cada varredura começa noutro ponto},
+      title style={font=\scriptsize, align=center},
+      xlabel={tempo}, ylabel={$v$},
+      xtick=\empty, ytick={-1,0,1},
+      yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualblue, thick, domain=0:2.2, samples=260] {sin(360*x)};
+    \addplot[manualblue, thick, domain=0:2.2, samples=260] {sin(360*x + 71)};
+    \addplot[manualblue, thick, domain=0:2.2, samples=260] {sin(360*x + 143)};
+    \addplot[manualblue, thick, domain=0:2.2, samples=260] {sin(360*x + 208)};
+    \addplot[manualblue, thick, domain=0:2.2, samples=260] {sin(360*x + 292)};
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+O gatilho não muda o sinal: ele decide o instante zero da tela. À direita, o mesmo sinal
+perfeito, sem gatilho — e é exatamente essa a tela que faz um iniciante concluir que o
+circuito está oscilando.
+
+:::
+
+Os controles, um a um:
+
+**Fonte.** Qual canal (ou entrada externa, ou a própria rede de 50/60 Hz) decide o disparo.
+Disparar no canal mais limpo e observar o outro é uma técnica básica de diagnóstico.
+
+**Nível.** A tensão em que o disparo acontece. Tem de estar **dentro** da excursão do sinal:
+nível acima do pico nunca dispara. Muitos osciloscópios têm um botão que põe o nível
+automaticamente no meio do sinal, e ele resolve 90 % dos casos.
+
+**Inclinação.** Subida ou descida. Muda a fase mostrada na tela em meio período, e importa
+muito ao medir tempo de descida ou atraso entre dois sinais.
+
+**Modo.**
+
+- **Auto** — se não houver disparo em algum tempo, varre assim mesmo. A tela nunca fica
+  vazia, e um sinal sem disparo aparece rolando. É o modo em que se começa.
+- **Normal** — só varre quando há disparo. Se o nível estiver errado, a tela fica **vazia** —
+  o que assusta e é a informação correta.
+- **Único** (*single*) — arma uma vez e congela na primeira ocorrência. É o modo para eventos
+  que acontecem uma vez: o transitório de partida, a falha intermitente, o glitch.
+
+**Acoplamento do gatilho.** Independente do acoplamento vertical. Um filtro de rejeição de
+alta frequência no caminho do gatilho estabiliza a imagem de um sinal ruidoso sem alterar o
+que se vê.
+
+**Retenção (*holdoff*).** Um tempo morto após cada disparo, durante o qual novos disparos
+são ignorados. Serve para sinais com estrutura repetitiva complexa — uma rajada de pulsos
+que se repete a cada 10 ms dispara em qualquer pulso, e a imagem pula; com retenção de
+9 ms, ela trava no primeiro pulso de cada rajada.
+
+**Gatilhos avançados.** Osciloscópios modernos disparam em largura de pulso fora de faixa,
+em bordas que faltaram, em padrões lógicos, em condições de barramento serial. São o que
+transforma o instrumento num analisador de protocolo, e ficam para o Volume 16.
+
+## Amostragem e aliasing {#sec-043-aliasing}
+
+O osciloscópio digital vê o sinal apenas nos instantes em que amostra. Entre uma amostra e
+outra, ele não sabe de nada — e desenha a linha que julgar mais provável.
+
+O teorema da amostragem, de Nyquist e Shannon, garante que um sinal limitado a uma banda $B$
+pode ser **perfeitamente** reconstruído se amostrado acima de $2B$. Acima é diferente de
+igual, e a reconstrução perfeita exige interpolação $\sin x/x$ e um número infinito de
+amostras. Abaixo de $2B$, aparece o **aliasing**: componentes de alta frequência se disfarçam
+de baixa, e o instrumento desenha, com toda a convicção, um sinal que não existe.
+
+::: {#fig-043-aliasing}
+
+```{.tikz}
+%%| filename: 043-aliasing
+%%| alt: Gráfico de tensão contra tempo mostrando aliasing. Uma senoide azul de frequência alta oscila rapidamente ao longo de todo o intervalo. Sobre ela estão marcados pontos vermelhos correspondentes aos instantes de amostragem, espaçados de modo que ocorram menos de duas amostras por período do sinal. Ligando esses pontos, uma curva vermelha tracejada de frequência muito mais baixa atravessa a figura, e é essa curva lenta e falsa que o osciloscópio desenharia na tela. Uma anotação indica que o sinal verdadeiro tem nove hertz, que a taxa de amostragem é de dez amostras por segundo e que o alias resultante aparece em um hertz.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.4cm, height=7.4cm,
+  xmin=0, xmax=2, ymin=-1.75, ymax=1.95,
+  xlabel={tempo (s)}, ylabel={$v$},
+  xtick={0,0.5,1,1.5,2},
+  xticklabels={{0},{$0{,}5$},{1},{$1{,}5$},{2}},
+  ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+  grid=both, grid style={manualgray!20}, font=\footnotesize,
+  legend style={at={(0.5,-0.22)}, anchor=north, font=\scriptsize,
+                draw=manualgray!50, legend columns=3},
+]
+  \addplot[manualblue, thick, domain=0:2, samples=900] {sin(360*9*x)};
+  \addlegendentry{sinal real, 9 Hz}
+
+  \addplot[manualred, thick, dashed, domain=0:2, samples=300] {sin(-360*x)};
+  \addlegendentry{alias desenhado, 1 Hz}
+
+  \addplot[manualred, only marks, mark=*, mark size=2pt,
+           domain=0:2, samples=21] {sin(360*9*x)};
+  \addlegendentry{amostras, 10 Sa/s}
+
+  \node[manualgray, anchor=north east, font=\scriptsize, align=right]
+       at (axis cs:1.97,1.88)
+       {$9$ Hz amostrado a $10$ Sa/s\\ aparece em $|9-10| = 1$ Hz};
+\end{axis}
+\end{tikzpicture}
+```
+
+O aliasing em ação. As amostras são todas corretas; o que está errado é a conclusão. Note
+que não há nenhum sinal na tela indicando que algo deu errado — é essa a parte perigosa.
+
+:::
+
+O aliasing coloca uma componente de frequência $f$, amostrada a $f_s$, na frequência
+$|f - n f_s|$ mais próxima de zero. Quatro defesas, e é bom conhecer as quatro:
+
+**Amostrar bem acima do dobro.** No domínio do tempo, a regra prática é **5 a 10 amostras
+por período** da componente mais rápida de interesse. O dobro basta para reconstruir
+matematicamente; não basta para desenhar uma tela que se possa ler.
+
+**Conferir mudando a base de tempo.** Um sinal verdadeiro mantém a frequência quando a
+escala horizontal muda. Um alias **muda de frequência**, porque a taxa de amostragem mudou.
+Este é o teste de dois segundos que resolve a dúvida, e ele deveria ser reflexo.
+
+**Modo de detecção de pico.** O instrumento guarda o máximo e o mínimo de cada intervalo em
+vez de uma amostra pontual. Distorce a forma, mas revela que existe alguma coisa rápida ali.
+É o modo para procurar glitches em janelas longas.
+
+**Interpolação.** Com poucas amostras por período, a interpolação linear desenha uma
+poligonal e a interpolação $\sin x/x$ desenha uma curva suave. A segunda é correta para
+sinais senoidais e **fabrica sobressinal** em bordas rápidas mal amostradas — o fenômeno de
+Gibbs do @sec-cap-040, aparecendo na tela do instrumento.
+
+**Amostragem em tempo equivalente.** Para sinais repetitivos, o osciloscópio pode amostrar
+um ponto por repetição, deslocando ligeiramente o instante a cada vez, e montar uma imagem
+com resolução temporal muito maior que a taxa real. Funciona lindamente e só funciona para
+sinal **repetitivo e estável** — nunca para um evento único.
+
+## Largura de banda: o que ela custa e o que ela compra {#sec-043-banda}
+
+A **largura de banda** de um osciloscópio é a frequência em que a resposta cai 3 dB. É o
+número que aparece no nome do modelo e é o que determina o preço.
+
+Duas consequências imediatas, e as duas mordem.
+
+**No limite da banda, o instrumento lê 30 % para menos.** Um osciloscópio de 100 MHz
+mostrando uma senoide de 100 MHz exibe 70,7 % da amplitude verdadeira. A −3 dB não é o
+limite do útil: é o ponto onde o erro já é grosseiro.
+
+**Tempo de subida medido é a soma em quadratura**, como o @sec-cap-040 estabeleceu:
+
+$$ t_{r,\text{medido}} = \sqrt{t_{r,\text{sinal}}^2 + t_{r,\text{osc}}^2},
+   \qquad
+   t_{r,\text{osc}} \approx \frac{0{,}35}{\text{banda}}. $$
+
+| Banda | $t_{r}$ do instrumento | Medindo uma borda de 5 ns | Erro |
+|---|---|---|---|
+| 20 MHz | 17,5 ns | 18,2 ns | +264 % |
+| 100 MHz | 3,5 ns | 6,1 ns | +22 % |
+| 200 MHz | 1,75 ns | 5,30 ns | +6,0 % |
+| 500 MHz | 0,70 ns | 5,05 ns | +1,0 % |
+
+: O que a banda do osciloscópio faz com a medida de uma borda de 5 ns. A regra dos cinco —
+banda do instrumento igual a cinco vezes a banda do sinal — corresponde à terceira linha.
+{#tbl-043-banda}
+
+E o corolário mais útil: **a medida pode ser corrigida.** Conhecendo $t_{r,\text{osc}}$,
+
+$$ t_{r,\text{sinal}} = \sqrt{t_{r,\text{medido}}^2 - t_{r,\text{osc}}^2}, $$
+
+o que recupera o valor verdadeiro sempre que a contribuição do instrumento não for
+dominante. Acima de 50 % de contribuição, a subtração amplifica qualquer erro e o resultado
+deixa de ter sentido.
+
+**A banda do conjunto inclui a ponta de prova.** Uma ponta de 60 MHz num osciloscópio de
+200 MHz entrega 60 MHz. Isso e todo o resto do que a ponta faz com a medida é o assunto do
+@sec-cap-044.
+
+## Medidas automáticas, cursores e modos de aquisição {#sec-043-medidas}
+
+**Cursores.** Duas linhas verticais medem intervalo de tempo; duas horizontais medem
+diferença de tensão. São a forma mais confiável de medir, porque quem escolhe onde medir é
+quem está olhando.
+
+**Medidas automáticas.** O instrumento calcula $V_{pp}$, $V_{\text{méd}}$,
+$V_{\text{ef}}$, frequência, período, ciclo de trabalho, $t_r$, $t_f$, sobressinal. São
+rápidas e são confiáveis **enquanto o sinal estiver bem enquadrado e estável**. Elas erram
+silenciosamente quando o sinal sai da tela, quando há ruído no nível de cruzamento, ou
+quando existem menos de dois períodos na janela. Regra: confira a medida automática contra a
+contagem de divisões da @fig-043-tela pelo menos uma vez por sessão.
+
+**Média (*average*).** Soma $N$ aquisições e divide. O sinal, que é o mesmo em todas, se
+mantém; o ruído, que é aleatório, cai com $\sqrt{N}$ — 16 médias reduzem o ruído em 12 dB,
+256 médias em 24 dB. **Só funciona com sinal repetitivo e gatilho estável**, e mata
+qualquer evento não repetitivo.
+
+**Alta resolução.** Faz a média de amostras vizinhas dentro da mesma aquisição, trocando
+banda por bits. Funciona em evento único, ao contrário da média.
+
+**Persistência.** Mantém traços antigos na tela por algum tempo, com ou sem esmaecimento.
+É o que revela jitter, modulação e eventos raros — o "diagrama de olho" do @sec-cap-039 é
+persistência aplicada a um sinal de dados.
+
+**Função matemática e FFT.** Soma, diferença e produto entre canais, e a transformada rápida
+de Fourier, que mostra o espectro do @sec-cap-040 diretamente. A FFT do osciloscópio é
+grosseira comparada a um analisador de espectro dedicado — faixa dinâmica de 50 a 60 dB
+contra mais de 100 —, e é suficiente para achar a frequência de uma interferência e para
+distinguir o tapete do ruído da raia da interferência, que é o critério do @sec-cap-042.
+
+## O terra do osciloscópio {#sec-043-terra}
+
+::: {.callout-warning}
+## A garra jacaré da ponta é o terra da rede elétrica
+
+Num osciloscópio de bancada comum, a malha do conector BNC está ligada ao chassi, e o chassi
+está ligado ao **condutor de proteção da tomada**. Todas as pontas de prova compartilham esse
+mesmo terra.
+
+Três consequências, e a terceira mata.
+
+**1. Prender a garra num ponto que não é o terra do circuito cria um curto-circuito** através
+da malha da ponta e do cabo de alimentação do osciloscópio. Se esse ponto estiver num circuito
+alimentado pela rede, a corrente de curto passa por um fio fino de ponta de prova. O melhor
+resultado é a ponta destruída; o pior é o circuito, o instrumento, ou os dois.
+
+**2. Os dois canais compartilham o mesmo terra.** Não é possível medir duas tensões
+diferenciais independentes com dois canais e duas garras em pontos diferentes. Tentar isso
+curto-circuita um ponto no outro.
+
+**3. Retirar o pino de terra do osciloscópio para "resolver" isso é a manobra mais perigosa
+da eletrônica de bancada.** O chassi inteiro do instrumento — e a malha de toda ponta ligada
+a ele — passa a flutuar no potencial em que a garra estiver preso. Prendendo-a no vivo da
+rede, o gabinete metálico do osciloscópio fica a 127 ou 220 V em relação ao chão. Isso mata
+pessoas todos os anos. **Nunca faça isso.**
+
+A solução correta para medir num circuito ligado à rede é uma destas: **ponta de prova
+diferencial** de alta tensão (o instrumento certo, e caro), **transformador de isolação
+alimentando o circuito sob teste** (nunca o osciloscópio), ou **medir a diferença entre dois
+canais** com a função matemática, com as duas garras no mesmo ponto de terra do circuito.
+
+Tudo o que o @sec-cap-002 estabeleceu continua valendo, e este parágrafo é a versão dele
+para instrumentação.
+:::
+
+## 🧪 Laboratório {#sec-043-lab}
+
+**Domar os três controles num sinal conhecido, medir o que o @sec-cap-039 definiu, e depois
+flagrar o instrumento errando: aliasing, banda insuficiente e média que apaga o que
+interessa.**
+
+### Material
+
+::: {.lab-material}
+- 1 osciloscópio — de bancada, USB, de placa de som ou simulado (ver a nota de abertura)
+- 1 gerador de sinal — de bancada, ou aplicativo de gerador de tom no computador
+- 1 multímetro digital, para conferir as medidas
+- 1 circuito integrado 555 e os componentes do laboratório do @sec-cap-039 (resistores de
+  10 kΩ, 27 kΩ, 47 kΩ, 75 kΩ e 91 kΩ; capacitor de 100 nF; diodo 1N4148)
+- Resistores 1/4 W: 1 kΩ, 3,3 kΩ, 10 kΩ
+- Capacitores: 10 nF, 100 nF poliéster
+- 1 fonte de 5 V
+- Protoboard, jumpers
+:::
+
+### Parte 1 — Do zero a uma tela legível, em seis passos
+
+Este é o procedimento que se repete a vida inteira. Decore-o.
+
+1. Acoplamento em **CC**, ponta em **1×** (por enquanto), canal 1 ligado.
+2. Ponha o acoplamento em **terra** e centre o traço na linha do meio. Esse é o zero.
+3. Volte para **CC** e ligue a ponta ao sinal, com a garra no terra do circuito.
+4. Ajuste **V/div** até o sinal ocupar 4 a 6 divisões.
+5. Ajuste **s/div** até ver 2 a 5 períodos.
+6. Ajuste o **nível de gatilho** para o meio do sinal, modo **auto**, inclinação de subida.
+
+Se a imagem estiver parada, está pronto. Se estiver rolando, o nível está fora da excursão do
+sinal — volte ao passo 6.
+
+### Parte 2 — Medir o que já foi calculado
+
+Use o astável a 555 do @sec-cap-039, com $R_A = 27$ kΩ e $R_B = 75$ kΩ.
+
+1. Meça $V_H$, $V_L$ e $V_{pp}$ com os cursores.
+2. Meça $T$ e calcule $f$. Compare com a previsão de 141 Hz.
+3. Meça $t_{\text{on}}$ e calcule $D = t_{\text{on}}/T$. Compare com a previsão de 0,265.
+4. Ligue as medidas automáticas e compare com os cursores.
+5. Meça a tensão média com o multímetro em CC e compare com $D\,V_H + (1-D)V_L$.
+
+Esta parte fecha o laboratório do @sec-cap-039, que precisou de um filtro RC e de duas
+escalas do multímetro para chegar ao mesmo lugar. É o momento de perceber o que o
+osciloscópio mudou.
+
+### Parte 3 — Acoplamento CA, e por que ele mente
+
+1. Com o mesmo sinal, mude para acoplamento **CA**. O traço desce e centra no zero.
+2. Baixe a frequência do 555 para cerca de 1,4 Hz (troque o capacitor de temporização por
+   10 µF).
+3. Observe a **inclinação de topo**: os patamares deixam de ser planos.
+
+O que se vê é o passa-altas do @sec-cap-034 dentro do instrumento. Com corte em 10 Hz e sinal
+em 1,4 Hz, a distorção é grosseira. Volte para CC e ela some.
+
+### Parte 4 — Medir um tempo de subida e descontar o instrumento
+
+1. Monte o RC de $R = 3{,}3$ kΩ e $C = 10$ nF do laboratório do @sec-cap-040, alimentado
+   pela quadrada do gerador a 200 Hz.
+2. Meça o tempo de subida da saída entre 10 % e 90 % com os cursores.
+3. Compare com a previsão $t_r = 0{,}35/f_c = 73$ µs.
+4. Calcule $t_{r,\text{osc}} = 0{,}35/\text{banda}$ para o seu instrumento e verifique que ele
+   é desprezível aqui.
+5. Agora troque o capacitor por 100 pF, se houver ($f_c = 482$ kHz, $t_r = 0{,}73$ µs).
+   Repita. Se o seu osciloscópio for de 20 MHz, $t_{r,\text{osc}} = 17{,}5$ ns e a correção
+   ainda é pequena; se for de placa de som, o sinal simplesmente não aparece.
+
+### Parte 5 — Fabricar um aliasing
+
+1. Ponha o gerador em senoide e a base de tempo numa escala **lenta**, de modo que a taxa de
+   amostragem mostrada na tela caia bem.
+2. Suba a frequência do gerador até ela passar de metade da taxa de amostragem.
+3. Observe: a tela mostra uma senoide **lenta**, perfeitamente estável e completamente falsa.
+4. **Mude a base de tempo.** A frequência aparente muda. Sinal verdadeiro não faz isso.
+5. Ligue o modo de detecção de pico. A tela passa a mostrar uma faixa cheia, revelando que
+   existe algo rápido ali.
+
+Este é o experimento mais importante do capítulo. Um alias não vem com aviso.
+
+### Parte 6 — Média, e o que ela apaga
+
+1. Volte a uma senoide bem enquadrada. Aumente o ganho vertical até o ruído ficar visível.
+2. Ligue a média com $N = 16$. O traço afina. Meça o ruído antes e depois: a redução prevista
+   é $\sqrt{16} = 4$ vezes, ou 12 dB.
+3. Ponha $N = 256$: mais 12 dB.
+4. Agora toque o circuito rapidamente com o dedo, provocando um transitório único. Com média
+   ligada, ele quase não aparece; ele foi diluído entre 256 aquisições.
+5. Desligue a média, ponha o modo de gatilho **único** e repita. Agora o transitório é
+   capturado inteiro.
+
+Média é para sinal repetitivo. Gatilho único é para evento único. Confundir os dois é perder
+o defeito que se estava procurando.
+
+**Variante simulada (plano B).** No LTspice ou ngspice, todos os itens de forma de onda das
+Partes 2 a 4 saem de uma análise `.tran`, com a vantagem de os cursores serem exatos. As
+Partes 5 e 6 não têm equivalente honesto em simulador — aliasing e ruído de aquisição são
+propriedades do instrumento, não do circuito —, e é por isso que uma tarde com um
+osciloscópio real vale o esforço de conseguir um emprestado.
+
+## 🔥 Onde Queima {#sec-043-queima}
+
+**Prender a garra de terra num ponto que não é terra.** Curto-circuito através do chassi e
+do cabo de alimentação. É o erro que mais destrói pontas de prova e circuitos.
+
+**Tirar o pino de terra do osciloscópio.** Põe o gabinete inteiro no potencial da garra. Isso
+mata. Use ponta diferencial ou isole o circuito sob teste, nunca o instrumento.
+
+**Tentar duas medidas diferenciais com dois canais.** Os dois terras são o mesmo ponto. Use a
+função matemática de diferença entre canais.
+
+**Concluir que o circuito oscila porque a tela está borrada.** Quase sempre é o gatilho. Ponha
+o nível dentro da excursão do sinal antes de qualquer diagnóstico.
+
+**Deixar o modo de gatilho em auto ao procurar evento raro.** Em auto, o instrumento varre
+mesmo sem disparo e o evento se perde entre varreduras espúrias. Use normal ou único.
+
+**Esquecer que a taxa de amostragem cai ao aumentar a janela de tempo.** O 1 GSa/s da
+propaganda vale para janelas curtas. Confira a taxa mostrada na tela em cada escala.
+
+**Acreditar num sinal sem checar mudando a base de tempo.** É o teste de aliasing, e ele
+custa dois segundos.
+
+**Medir borda rápida com banda insuficiente e não descontar o instrumento.** Com banda igual
+à do sinal, a leitura sai 41 % alta. A correção em quadratura existe e deve ser usada.
+
+**Ligar o limitador de banda de 20 MHz para "limpar" a tela ao medir uma borda.** O traço
+fica bonito e o número, errado.
+
+**Usar o osciloscópio como voltímetro de precisão.** Oito bits são 0,4 % do fundo de escala,
+e a calibração vertical típica é de 3 %. Para amplitude, use o multímetro.
+
+**Deixar o acoplamento em CA e esquecer.** Some a contínua sem avisar, e distorce sinal lento.
+CC é o padrão.
+
+**Confiar cegamente na medida automática.** Sinal mal enquadrado, ruidoso ou com menos de dois
+períodos na tela produz número errado sem indicação de erro.
+
+**Ligar média com sinal não repetitivo.** O evento único é diluído e some. Use gatilho único.
+
+**Esquecer que a ponta faz parte do instrumento.** Ponta de 60 MHz limita um osciloscópio de
+200 MHz a 60 MHz — e é só o começo do que ela faz, como mostra o próximo capítulo.
+
+## O que fica deste capítulo {#sec-043-resumo}
+
+O osciloscópio desenha $v(t)$, e são três os controles: **ganho vertical** (V/div), **base de
+tempo** (s/div) e **gatilho**. Os dois primeiros são escala; o terceiro decide quando a
+varredura começa, e é ele que separa uma tela legível de um borrão.
+
+No vertical: enquadrar em 4 a 6 divisões, acoplamento **CC** por padrão, **terra** para achar
+o zero, **CA** só para esconder a contínua deliberadamente — e ao custo de distorcer sinal
+lento. A entrada é 1 MΩ com dezenas de picofarads, a resolução típica é de 8 bits, e por isso
+o instrumento **mede tempo e forma, não amplitude com precisão**.
+
+No horizontal: ver 2 a 5 períodos, e lembrar que **taxa de amostragem $\times$ janela de tempo
+$\leq$ profundidade de memória**. Aumentar a janela baixa a taxa, e com ela a banda efetiva.
+
+No gatilho: fonte, nível dentro da excursão, inclinação, e três modos — **auto** para começar,
+**normal** para sinal raro, **único** para evento que acontece uma vez. Retenção resolve sinal
+com estrutura repetitiva.
+
+**Aliasing** é o modo de falha silencioso da amostragem: a componente em $f$ amostrada a $f_s$
+aparece em $|f - nf_s|$. Amostrar 5 a 10 vezes por período, e **conferir mudando a base de
+tempo** — sinal real não muda de frequência quando a escala muda.
+
+A **banda** é o ponto de −3 dB, o que significa 30 % de erro de amplitude ali. Para tempo de
+subida,
+
+$$ t_{r,\text{medido}} = \sqrt{t_{r,\text{sinal}}^2 + t_{r,\text{osc}}^2},
+   \qquad t_{r,\text{osc}} = \frac{0{,}35}{\text{banda}}, $$
+
+e a regra dos cinco mantém o erro abaixo de 2 %. **Média** reduz ruído aleatório em
+$\sqrt{N}$ e só serve para sinal repetitivo; **persistência** revela jitter; **FFT** mostra o
+espectro com faixa dinâmica modesta.
+
+E a advertência que atravessa tudo: **a garra de terra da ponta é o terra da rede elétrica**.
+Nunca a prenda fora do terra do circuito, nunca remova o pino de terra do instrumento.
+
+Um detalhe ficou pendurado, e ele é grande. Todas as medidas acima foram feitas através de um
+objeto que o capítulo tratou como um pedaço de fio: a **ponta de prova**. Ela não é um pedaço
+de fio. Ela é um circuito, com resistência, capacitância e indutância próprias, que precisa
+ser ajustado ao osciloscópio antes de qualquer medida confiável, que carrega o circuito sob
+teste, e que fabrica sozinha boa parte do sobressinal que se vê na tela. É o @sec-cap-044.
