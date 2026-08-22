@@ -1,3 +1,584 @@
 # O decibel e as escalas logarítmicas {#sec-cap-041}
 
-*(em elaboração)*
+O @sec-cap-035 usou o decibel como ferramenta de desenho: com o eixo vertical em dB, a
+cascata de filtros vira soma de retas. Foi o suficiente para o Volume 6, e deliberadamente
+insuficiente para o resto do manual.
+
+Porque o decibel não é só uma escala de gráfico. Ele é a unidade em que praticamente toda
+a eletrônica de sinais se comunica, e vem quase sempre com uma letra colada: **dBm**,
+**dBV**, **dBu**, **dBc**, **dBFS**, **dB SPL**. Essa letra transforma uma razão — que é
+adimensional — numa medida absoluta, e sem ela metade das folhas de dados fica ilegível.
+"Sensibilidade de −107 dBm" e "ruído de −120 dBV" são frases precisas, com valor em volts
+calculável; quem lê "dB" e pensa só em "razão" perde o número.
+
+Este capítulo fecha o assunto: de onde o decibel veio, por que existem dois fatores (10 e
+20), como somar níveis corretamente — o que é diferente de somar dB —, o que cada sufixo
+significa, e onde mais a escala logarítmica aparece na bancada.
+
+## De onde vem o bel {#sec-041-bel}
+
+O decibel nasceu na companhia telefônica, no problema de descrever perda em linha longa.
+
+Uma linha telefônica de cabo perde uma **fração** do sinal por unidade de comprimento, não
+uma quantidade fixa. Duas milhas de cabo perdem o quadrado do que uma milha perde, não o
+dobro. A unidade prática dos anos 1920 era a "milha de cabo padrão" — a perda de uma milha
+de cabo de bitola 19, a cerca de 800 Hz —, e ela se compunha por **multiplicação**.
+
+Multiplicação é ruim de fazer de cabeça e péssima de acumular ao longo de um enlace com
+dezenas de trechos. O logaritmo resolve: transforma o produto em soma. Em 1928 os
+Laboratórios Bell padronizaram a unidade e a batizaram de **bel**, em homenagem a Alexander
+Graham Bell:
+
+$$ \text{razão em bels} = \log_{10}\frac{P_2}{P_1}. $$
+
+O bel é grande demais para uso prático — um bel é um fator dez —, e a unidade que sobrou foi
+o décimo dele, o **decibel**. A milha de cabo padrão valia cerca de 1 dB, o que não é
+coincidência: a escolha do fator 10 foi feita para que a nova unidade ficasse perto da
+antiga e ninguém precisasse reaprender a intuição.
+
+Há uma segunda razão, independente da conveniência aritmética, e ela é a que faz o decibel
+sobreviver fora da telefonia. **Os sentidos humanos respondem de forma aproximadamente
+logarítmica.** Dobrar a potência acústica não soa como o dobro do volume; soa como um
+pouco mais alto. Essa é a lei de Weber–Fechner, e ela é o motivo de o volume de qualquer
+aparelho ser controlado em passos de decibel — e de o potenciômetro de volume ter uma
+curva especial, assunto do @sec-041-log.
+
+## Potência, tensão, e o par 10/20 {#sec-041-1020}
+
+A definição fundamental é sobre **potência**:
+
+$$ \boxed{\;\text{dB} = 10\log_{10}\frac{P_2}{P_1}\;} $$
+
+Tudo o mais deriva daí. Como a potência sobre uma resistência vai com o quadrado da tensão
+(@sec-cap-011),
+
+$$ \frac{P_2}{P_1} = \frac{V_2^2/R_2}{V_1^2/R_1}, $$
+
+e se as duas resistências forem iguais, o $R$ cancela e sobra
+
+$$ \boxed{\;\text{dB} = 20\log_{10}\frac{V_2}{V_1}\;} $$
+
+O mesmo vale para corrente. **O fator é 10 para potência e 20 para amplitude** — e isso é
+tudo o que precisa ser decorado, desde que se saiba qual grandeza está na mão.
+
+::: {.callout-warning}
+## O "se as impedâncias forem iguais" que quase ninguém respeita
+
+A dedução acima exige $R_1 = R_2$. Na prática, ninguém verifica isso, e por uma razão
+defensável: fora de sistemas casados de RF, o que se quer descrever é a razão de
+**amplitudes**, não a de potências. Um amplificador com ganho de tensão 100 é descrito
+como tendo 40 dB de ganho, ainda que a impedância de entrada seja 1 MΩ e a de saída 50 Ω —
+caso em que o ganho de **potência** é outro número inteiramente.
+
+A convenção moderna é esta: **20 log para qualquer razão de tensão, 10 log para qualquer
+razão de potência, sem exigir casamento**. Só há um lugar em que essa liberdade causa erro
+real: ao converter entre dBm (potência) e dBV (tensão), a impedância é obrigatória, porque
+é ela que liga uma coisa à outra. Fora daí, informe qual grandeza está sendo comparada e o
+número fica sem ambiguidade.
+:::
+
+## A tabela que se usa de cabeça {#sec-041-tabela}
+
+::: {#fig-041-regua}
+
+```{.tikz}
+%%| filename: 041-regua
+%%| alt: Gráfico com eixo horizontal de menos sessenta a mais sessenta decibéis e eixo vertical logarítmico de um milionésimo a um milhão, mostrando duas retas. A reta azul é a razão de tensão, que passa por um em zero decibel, por dez em vinte decibéis e por mil em sessenta decibéis. A reta vermelha, mais inclinada, é a razão de potência, que passa por um em zero decibel, por cem em vinte decibéis e por um milhão em sessenta decibéis. Pontos marcados na reta azul destacam menos três decibéis correspondendo a zero vírgula setecentos e sete, menos seis decibéis a zero vírgula cinco, mais seis decibéis a dois e mais vinte decibéis a dez.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  ymode=log,
+  width=15.4cm, height=9.2cm,
+  xmin=-62, xmax=62, ymin=1e-6, ymax=1e6,
+  xlabel={decibéis}, ylabel={razão (vezes)},
+  xtick={-60,-40,-20,-6,0,6,20,40,60},
+  xticklabels={{$-60$},{$-40$},{$-20$},{$-6$},{0},{$+6$},{$+20$},{$+40$},{$+60$}},
+  ytick={1e-6,1e-4,1e-2,1,1e2,1e4,1e6},
+  yticklabels={{$10^{-6}$},{$10^{-4}$},{$0{,}01$},{1},
+               {100},{$10^{4}$},{$10^{6}$}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.97,0.03)}, anchor=south east, font=\scriptsize,
+                draw=manualgray!50},
+]
+  \addplot[manualblue, very thick, domain=-60:60, samples=200] {10^(x/20)};
+  \addlegendentry{razão de \textbf{tensão} \quad $10^{\,\mathrm{dB}/20}$}
+
+  \addplot[manualred, very thick, domain=-60:60, samples=200] {10^(x/10)};
+  \addlegendentry{razão de \textbf{potência} \quad $10^{\,\mathrm{dB}/10}$}
+
+  \addplot[manualgray, only marks, mark=*, mark size=2pt, forget plot]
+    coordinates {(-6.02,0.5) (-3.01,0.7079) (0,1) (6.02,2) (20,10)};
+
+  \node[manualgray, anchor=north west, font=\scriptsize, align=left]
+       at (axis cs:-59,3e5)
+       {em \textbf{tensão}:\\[2pt]
+        $-6$ dB $\to$ metade\\
+        $+6$ dB $\to$ o dobro\\
+        $+20$ dB $\to$ dez vezes};
+\end{axis}
+\end{tikzpicture}
+```
+
+As duas conversões, no mesmo gráfico. A reta de potência sobe com o dobro da inclinação da
+de tensão — é exatamente o par 10/20. Sessenta decibéis são mil vezes em tensão e um milhão
+de vezes em potência.
+
+:::
+
+| dB | Razão de tensão | Razão de potência | Como lembrar |
+|---|---|---|---|
+| +60 | 1000 | $10^6$ | três décadas de tensão |
+| +40 | 100 | $10^4$ | duas décadas |
+| +20 | 10 | 100 | uma década |
+| +10 | 3,162 | 10 | raiz de dez em tensão |
+| +6,02 | 2 | 4 | **dobrar a tensão** |
+| +3,01 | 1,414 | 2 | **dobrar a potência** |
+| 0 | 1 | 1 | sem mudança |
+| −3,01 | 0,7079 | 0,5 | meia potência — o ponto de corte |
+| −6,02 | 0,5 | 0,25 | metade da tensão |
+| −20 | 0,1 | 0,01 | um décimo |
+| −60 | 0,001 | $10^{-6}$ | um milésimo em tensão |
+
+: A tabela inteira do decibel. Na prática só se decoram quatro linhas — 3, 6, 10 e 20 — e o
+resto sai somando. {#tbl-041-conversao}
+
+**O método de somar.** Como dB é logaritmo, somar decibéis é multiplicar razões. Qualquer
+valor sai das quatro linhas decoradas:
+
+- 26 dB = 20 + 6 $\to$ $10 \times 2 = 20$ vezes em tensão.
+- 46 dB = 40 + 6 $\to$ 200 vezes.
+- 13 dB = 20 − 6 − 1 $\to$ $10 \times 0{,}5 \times 1{,}12 = 4{,}47$ vezes. (E 1 dB é 1,12 em
+  tensão — a quinta linha que vale a pena decorar.)
+- 100 dB = 20 × 5 $\to$ $10^5$ vezes em tensão.
+
+**O detalhe do 3,01 e do 6,02.** Os números redondos 3 e 6 são arredondamentos. Uma cascata
+de vinte estágios de "3 dB" acumula 0,2 dB de erro se se usar 3 em vez de 3,01. Na bancada
+isso não importa; em cálculo de enlace com muitos trechos, importa.
+
+## Somar dB não é somar níveis {#sec-041-soma}
+
+Aqui está o erro conceitual mais caro do capítulo.
+
+**Ganhos em cascata somam-se em dB.** Um amplificador de +20 dB seguido de um atenuador de
+−6 dB e de outro amplificador de +14 dB dá +28 dB. Isso é direto, é o resultado do
+@sec-cap-035, e é a razão de o decibel existir.
+
+**Dois sinais chegando ao mesmo ponto não somam em dB.** Duas fontes de −20 dBm cada uma
+não dão −40 dBm nem 0 dBm: dão −17 dBm, porque as **potências** somam e o dobro da potência
+é +3 dB.
+
+::: {#fig-041-soma}
+
+```{.tikz}
+%%| filename: 041-soma
+%%| alt: Gráfico com eixo horizontal indicando a diferença em decibéis entre dois sinais, de zero a vinte e cinco decibéis, e eixo vertical indicando quanto o nível resultante fica acima do maior dos dois, de zero a sete decibéis. Duas curvas descendentes. A curva vermelha, para sinais correlacionados que somam em fase, parte de mais seis vírgula zero dois decibéis quando os dois são iguais e cai até quase zero em vinte e cinco decibéis de diferença. A curva azul, para sinais descorrelacionados como ruído, parte de mais três vírgula zero um decibéis quando os dois são iguais e cai mais depressa, ficando abaixo de meio decibel já em dez decibéis de diferença. Uma linha horizontal tracejada marca o nível de um décimo de decibel, abaixo do qual a contribuição do menor sinal é irrelevante.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.4cm, height=8.4cm,
+  xmin=0, xmax=25, ymin=-0.35, ymax=7,
+  xlabel={diferença entre os dois níveis (dB)},
+  ylabel={quanto o total fica acima do maior (dB)},
+  xtick={0,5,10,15,20,25},
+  ytick={0,1,2,3.01,4,5,6.02},
+  yticklabels={{0},{1},{2},{$3{,}01$},{4},{5},{$6{,}02$}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.97,0.97)}, anchor=north east, font=\scriptsize,
+                draw=manualgray!50},
+]
+  \addplot[manualred, very thick, domain=0:25, samples=250]
+    {20*log10(1 + 10^(-x/20))};
+  \addlegendentry{sinais \textbf{correlacionados}, em fase \quad (tensões somam)}
+
+  \addplot[manualblue, very thick, domain=0:25, samples=250]
+    {10*log10(1 + 10^(-x/10))};
+  \addlegendentry{sinais \textbf{descorrelacionados}, como ruído \quad (potências somam)}
+
+  \addplot[auxiliar, forget plot, domain=0:25, samples=2] {0.1};
+  \node[manualgray, anchor=south west, font=\scriptsize]
+       at (axis cs:15.4,0.18) {$0{,}1$ dB — desprezível};
+\end{axis}
+\end{tikzpicture}
+```
+
+Quando dois sinais se encontram, o nível resultante depende de eles serem correlacionados ou
+não. Nos dois casos, um sinal 10 dB abaixo do outro quase não muda nada — e essa é a razão
+prática de o ruído de um estágio dominar toda a cadeia.
+
+:::
+
+Os dois casos limites:
+
+**Descorrelacionados** — duas fontes de ruído independentes, duas máquinas diferentes,
+sinais sem relação de fase. As **potências** somam:
+
+$$ P_{\text{total}} = P_1 + P_2
+   \qquad\Longrightarrow\qquad
+   L_{\text{total}} = 10\log_{10}\bigl(10^{L_1/10} + 10^{L_2/10}\bigr). $$
+
+Dois níveis iguais dão +3,01 dB.
+
+**Correlacionados e em fase** — o mesmo sinal chegando por dois caminhos, dois alto-falantes
+tocando o mesmo tom. As **tensões** somam, e a potência quadruplica: +6,02 dB. Se chegarem
+em oposição de fase, cancelam-se — e o resultado é $-\infty$ dB, isto é, silêncio. É por isso
+que o cancelamento de ruído funciona e é por isso que dois alto-falantes ligados com
+polaridade trocada matam o grave.
+
+Duas leituras práticas da @fig-041-soma:
+
+**A regra dos 10 dB.** Um sinal 10 dB abaixo de outro contribui com 0,41 dB no caso
+descorrelacionado. Vinte decibéis abaixo, 0,04 dB. **Na prática, o que estiver 10 dB abaixo
+não existe.** Essa é a razão de o primeiro estágio de uma cadeia dominar o ruído total, e é
+o ponto de partida do @sec-cap-042.
+
+**A regra dos 3 dB, ao contrário.** Se ao desligar uma das duas fontes o nível cai só 3 dB,
+as duas contribuem igualmente e resolver uma só resolve metade do problema. Se cai 20 dB,
+a fonte desligada era tudo.
+
+## dB absoluto: a letra depois do B {#sec-041-absoluto}
+
+Decibel puro é razão, e razão precisa de referência. Fixar a referência transforma o
+decibel numa unidade absoluta, e a convenção é escrever a referência como sufixo.
+
+| Unidade | Referência | 0 unidade vale | Onde aparece |
+|---|---|---|---|
+| dBW | 1 W | 1 W | transmissores, radar |
+| dBm | 1 mW | 1 mW $\to$ 0,224 V em 50 Ω; 0,775 V em 600 Ω | RF, telecomunicações |
+| dBµV | 1 µV | 1 µV | compatibilidade eletromagnética, TV |
+| dBV | 1 V eficaz | 1 V | áudio de consumo, ruído de amp. op. |
+| dBu | 0,7746 V eficaz | 0,7746 V | áudio profissional |
+| dBFS | fundo de escala | o máximo do conversor | áudio e vídeo digitais |
+| dB SPL | 20 µPa | limiar da audição | acústica |
+| dBc | a portadora | o nível da portadora | espúrios, ruído de fase |
+| dBi | antena isotrópica | ganho unitário | antenas |
+
+: As unidades absolutas usuais. Todas se convertem para volts ou watts assim que a
+referência é conhecida — e, nos dois primeiros casos, também a impedância.
+{#tbl-041-absoluto}
+
+Três delas merecem detalhe, porque são as que mais confundem.
+
+**dBm.** Potência referida a 1 mW. É a unidade padrão de RF, e a conversão para tensão
+**exige** a impedância:
+
+$$ V_{\text{ef}} = \sqrt{P R} = \sqrt{10^{(\text{dBm} - 30)/10}\;R}. $$
+
+Em 50 Ω, 0 dBm são 0,2236 V eficazes, ou 0,632 $V_{pp}$. Em 600 Ω, 0 dBm são 0,7746 V. Um
+receptor com sensibilidade de −107 dBm está falando de $2 \times 10^{-14}$ W, ou 1,0 µV em
+50 Ω. Esse é o valor que o @sec-cap-042 vai comparar com o ruído térmico.
+
+**dBu e o fantasma dos 600 Ω.** O áudio profissional herdou a impedância de 600 Ω da
+telefonia. Nela, 0 dBm dá exatamente 0,7746 V. Quando os equipamentos deixaram de ser
+casados em 600 Ω — hoje a saída tem impedância baixa e a entrada, alta —, a potência
+deixou de fazer sentido, mas a tensão de 0,7746 V ficou. Renomearam-na **dBu** (o "u" de
+*unloaded*, sem carga), e ela é **tensão pura**, sem impedância nenhuma envolvida.
+
+Daí a diferença entre os dois níveis de linha do mercado:
+
+- **Consumo:** −10 dBV = 0,316 V eficazes nominais.
+- **Profissional:** +4 dBu = 1,228 V eficazes nominais.
+
+A diferença é de 11,8 dB, quase quatro vezes em tensão. Ligar uma saída profissional numa
+entrada de consumo satura; o contrário deixa o sinal enterrado no ruído. A conversão entre
+as duas escalas é fixa: $0\ \text{dBV} = +2{,}21\ \text{dBu}$.
+
+**dBFS.** Em sistemas digitais, o valor máximo representável é a referência, e por isso
+**todo nível é negativo**. Um sinal em −20 dBFS está 20 dB abaixo do ponto de recorte. Zero
+dBFS não é "alto": é o teto absoluto, e ultrapassá-lo não distorce suavemente como um
+circuito analógico — ele estoura, e o resultado é o recorte duro da @fig-040-thd, com todo o
+espectro de harmônicos que ele traz.
+
+## Faixa dinâmica, piso de ruído e folga {#sec-041-dinamica}
+
+Três números descrevem qualquer sistema de sinais, e todos são decibéis.
+
+**Piso de ruído.** O menor nível abaixo do qual o sinal se perde. É determinado pelo ruído
+térmico e pelo ruído do primeiro estágio (@sec-cap-042).
+
+**Nível máximo.** O maior nível antes do recorte ou da distorção inaceitável.
+
+**Faixa dinâmica.** A razão entre os dois, em dB. É o espaço utilizável.
+
+$$ \text{faixa dinâmica (dB)} = 20\log_{10}
+   \frac{V_{\max}}{V_{\text{piso}}}. $$
+
+Alguns valores de referência para calibrar a intuição:
+
+- Ouvido humano: cerca de 120 dB, do limiar da audição ao limiar da dor.
+- Conversor A/D de $n$ bits, teórico: $6{,}02n + 1{,}76$ dB. Doze bits dão 74 dB;
+  dezesseis, 98 dB; vinte e quatro, 146 dB — este último inatingível na prática, porque o
+  ruído térmico dos próprios resistores do circuito chega antes.
+- Multímetro de 3½ dígitos: cerca de 66 dB por faixa.
+- Fita cassete: 50 a 60 dB. Disco de vinil: 60 a 70 dB.
+
+**A regra dos 6 dB por bit** merece ser entendida, não decorada. Cada bit adicional dobra o
+número de níveis representáveis; dobrar a amplitude representável é +6,02 dB. A parcela de
+1,76 dB vem da distribuição do erro de quantização, e é constante.
+
+**Folga (*headroom*).** A distância entre o nível de operação nominal e o nível máximo. Um
+sistema de áudio profissional opera em +4 dBu com teto em +24 dBu: 20 dB de folga, que é o
+espaço deixado para os picos do @sec-cap-039. Trabalhar sem folga é recortar nos transientes;
+trabalhar com folga excessiva é operar perto do piso de ruído. **A escolha do nível de
+operação é a divisão do orçamento de faixa dinâmica entre esses dois riscos**, e não há
+resposta única.
+
+## Onde a escala logarítmica aparece fora do dB {#sec-041-log}
+
+**A década e a oitava.** Já usadas desde o @sec-cap-035: uma década é fator 10 em
+frequência, uma oitava é fator 2. Uma década tem $\log_2 10 = 3{,}32$ oitavas, e é daí que
+sai a conversão "20 dB por década são 6 dB por oitava".
+
+**O neper.** A unidade logarítmica natural, de base $e$, usada em teoria de linhas de
+transmissão e em análise de circuitos com exponenciais:
+
+$$ 1\ \text{Np} = 20\log_{10} e = 8{,}686\ \text{dB}. $$
+
+Raro em bancada, comum em texto teórico. Vale reconhecê-lo para não confundir com dB.
+
+**O potenciômetro logarítmico.** O controle de volume é o caso mais palpável.
+
+::: {#fig-041-pot}
+
+```{.tikz}
+%%| filename: 041-pot
+%%| alt: Gráfico com eixo horizontal indicando a rotação do potenciômetro de zero a um, isto é, do mínimo ao máximo, e eixo vertical indicando a atenuação em decibéis de menos sessenta a zero. A curva azul, do potenciômetro linear, é fortemente encurvada: sobe muito depressa no começo, já passando de menos vinte decibéis com apenas dez por cento de rotação, e depois fica quase horizontal, de modo que quase toda a variação audível se concentra no primeiro décimo do curso. A curva vermelha, do potenciômetro logarítmico ideal, é uma reta que vai de menos quarenta decibéis no início a zero decibel no fim, distribuindo a variação uniformemente ao longo de todo o curso. Uma curva verde tracejada mostra a aproximação real de um potenciômetro de curva A comercial, feita de dois segmentos de reta que passam por menos vinte decibéis na metade do curso.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.4cm, height=8.2cm,
+  xmin=0, xmax=1, ymin=-62, ymax=4,
+  xlabel={rotação do eixo (fração do curso)},
+  ylabel={atenuação (dB)},
+  xtick={0,0.1,0.25,0.5,0.75,1},
+  xticklabels={{0},{$0{,}1$},{$0{,}25$},{$0{,}5$},{$0{,}75$},{1}},
+  ytick={0,-6,-20,-40,-60},
+  yticklabels={{0},{$-6$},{$-20$},{$-40$},{$-60$}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.97,0.03)}, anchor=south east, font=\scriptsize,
+                draw=manualgray!50},
+]
+  \addplot[manualblue, very thick, domain=0.001:1, samples=400]
+    {max(20*log10(x),-62)};
+  \addlegendentry{potenciômetro \textbf{linear}}
+
+  \addplot[manualred, very thick, domain=0:1, samples=2] {40*(x-1)};
+  \addlegendentry{logarítmico \textbf{ideal} \quad (reta em dB)}
+
+  \addplot[manualgreen, very thick, dashed] coordinates
+    {(0,-60) (0.5,-20) (1,0)};
+  \addlegendentry{curva \textbf{A} comercial \quad (dois segmentos, 10 \% em meio curso)}
+
+  \addplot[manualgray, only marks, mark=*, mark size=2pt, forget plot]
+    coordinates {(0.5,-6.02) (0.5,-20)};
+  \node[manualblue, anchor=north west, font=\scriptsize, align=left]
+       at (axis cs:0.055,-1.2) {no linear, meio curso já está\\a $-6$ dB do máximo};
+  \draw[manualblue, thick, ->] (axis cs:0.34,-4.6) -- (axis cs:0.48,-5.9);
+\end{axis}
+\end{tikzpicture}
+```
+
+Por que existe potenciômetro logarítmico. Com o linear, a metade do curso já está a apenas
+6 dB do máximo e todo o resto do controle se aperta no primeiro décimo. Com o logarítmico,
+cada grau de rotação vale o mesmo número de decibéis.
+
+:::
+
+Um potenciômetro **linear** divide a tensão proporcionalmente à rotação. Em meio curso, a
+saída é metade — isto é, −6 dB, que o ouvido percebe como "quase igual". Toda a faixa
+audível de atenuação, de −60 a −6 dB, fica espremida nos primeiros 10 % do curso, e o
+controle fica impossível de ajustar.
+
+O potenciômetro **logarítmico** (curva A, ou *audio taper*) tem a resistência distribuída de
+modo que a atenuação em dB seja aproximadamente proporcional à rotação. Comercialmente, ele
+é feito de dois ou três segmentos de trilha com resistividades diferentes, o que produz a
+curva quebrada da figura; o padrão mais comum entrega 10 % da tensão em meio curso, isto é,
+−20 dB. Não é a exponencial perfeita, e é boa o suficiente.
+
+Existe ainda a curva **C** (log invertida), usada em controles em que o efeito precisa ser
+fino no fim do curso, e a curva **W** de alguns fabricantes. Em qualquer caso, **usar linear
+onde o correto é logarítmico produz um controle ruim que muita gente atribui ao circuito** —
+e o inverso, logarítmico onde se queria linear, produz um ajuste que não sai do canto.
+
+## 🧪 Laboratório {#sec-041-lab}
+
+**Construir atenuadores calibrados em decibéis, medir cada um, medir a cascata e provar que
+os dB se somam enquanto as razões se multiplicam. Depois, ver na prática por que o
+potenciômetro de volume não é linear.**
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala CA (*true RMS* de preferência)
+- 1 gerador de sinal: saída de fone de celular ou computador com aplicativo gerador de tom
+- Resistores 1/4 W: 1 kΩ, 2,2 kΩ, 4,7 kΩ, 10 kΩ, 100 kΩ, 220 kΩ, 470 kΩ, 1 MΩ
+- 1 potenciômetro linear de 10 kΩ (curva B)
+- 1 potenciômetro logarítmico de 10 kΩ (curva A)
+- 1 alto-falante pequeno ou fone de ouvido velho
+- 1 celular com aplicativo de medidor de nível sonoro (dB SPL) e de gerador de tom
+- Protoboard, jumpers, calculadora
+:::
+
+### Parte 1 — Atenuadores calibrados
+
+Um divisor de tensão com $R_1$ em série e $R_2$ para o terra atenua
+
+$$ \text{dB} = 20\log_{10}\frac{R_2}{R_1 + R_2}. $$
+
+1. Monte cada um dos divisores da tabela e calcule a atenuação prevista.
+
+| $R_1$ | $R_2$ | Razão | dB previsto | dB "de catálogo" |
+|---|---|---|---|---|
+| 4,7 kΩ | 10 kΩ | 0,6803 | −3,34 | −3 |
+| 10 kΩ | 10 kΩ | 0,5000 | −6,02 | −6 |
+| 2,2 kΩ | 1 kΩ | 0,3125 | −10,10 | −10 |
+| 10 kΩ | 1 kΩ | 0,0909 | −20,83 | −20 |
+| 100 kΩ | 1 kΩ | 0,0099 | −40,09 | −40 |
+
+: Divisores da Parte 1, todos com valores E12/E24 reais. A última coluna mostra o valor
+"redondo" pretendido — repare que só um deles cai a menos de 1 dB do alvo, e é isso que
+torna o atenuador de precisão um componente caro. {#tbl-041-lab}
+
+2. Alimente com um tom de 1 kHz, ajustando a amplitude para 2,000 V eficazes na entrada.
+3. Meça a saída de cada divisor e converta para dB: $20\log_{10}(V_{\text{out}}/2{,}000)$.
+4. Compare com a previsão.
+
+Espere de 0,1 a 0,5 dB de desvio, quase todo ele devido à tolerância de 5 % dos resistores.
+**Um resistor de 5 % introduz até 0,4 dB de incerteza num divisor** — número que vale
+guardar.
+
+### Parte 2 — A cascata que soma
+
+O problema de encadear dois divisores é o carregamento (@sec-cap-020): o segundo carrega o
+primeiro e a conta não fecha. A saída é montar o segundo estágio numa impedância cem vezes
+maior.
+
+1. Estágio 1: $R_1 = 2{,}2$ kΩ, $R_2 = 1$ kΩ. Atenuação prevista: −10,10 dB.
+2. Estágio 2: $R_1 = 220$ kΩ, $R_2 = 100$ kΩ. Mesma razão, mesma atenuação prevista.
+3. Meça cada um **separadamente**, com 2,000 V na entrada.
+4. Agora ligue a entrada do estágio 2 na saída do estágio 1 e meça a saída final.
+
+A previsão é −20,2 dB, que é a soma das duas medidas individuais. A razão correspondente é
+0,0977 — o **produto** de 0,3125 por 0,3125.
+
+5. Refaça a conta considerando o carregamento: a entrada do estágio 2 tem 320 kΩ, que em
+   paralelo com o $R_2$ de 1 kΩ dá 997 Ω. O erro introduzido é de 0,02 dB.
+6. E o carregamento do próprio multímetro: 10 MΩ em paralelo com 100 kΩ dá 99,0 kΩ, o que
+   introduz 0,06 dB.
+
+Os dois erros são pequenos **porque foram projetados para ser**. Repita a cascata com os
+dois estágios na mesma escala de 1 kΩ e meça de novo: agora o erro é de vários decibéis, e
+ele é inteiramente carregamento.
+
+### Parte 3 — O ouvido, em decibéis
+
+1. Ligue o alto-falante à saída do gerador através de um resistor de 1 kΩ.
+2. Gere um tom de 1 kHz e ajuste até ouvir confortavelmente. Meça o nível com o aplicativo de
+   dB SPL, com o celular a uns 30 cm.
+3. Atenue o sinal em **6 dB** (metade da tensão) usando o divisor de 10 kΩ + 10 kΩ. Meça de
+   novo e escute.
+4. Atenue em **20 dB** e repita.
+
+Seis decibéis a menos é uma diferença clara, mas não é "metade do volume". A regra prática da
+psicoacústica é que **10 dB são percebidos como metade do volume** — o que corresponde a um
+décimo da potência. Confirme com o aplicativo.
+
+5. Afaste-se do alto-falante para o dobro da distância e meça. A queda prevista pela
+   propagação em campo livre é de 6 dB por dobra de distância. Num cômodo, você vai medir
+   menos que isso, e a razão é a reflexão nas paredes.
+
+### Parte 4 — Linear contra logarítmico
+
+1. Monte o potenciômetro **linear** de 10 kΩ como divisor: extremos entre o sinal e o terra,
+   cursor na saída.
+2. Com 2,000 V de entrada, meça a saída em cinco posições: mínimo, um quarto, meio, três
+   quartos e máximo. Converta cada leitura para dB.
+3. Repita com o potenciômetro **logarítmico**.
+4. Marque os dez pontos no mesmo gráfico de dB contra rotação.
+
+O linear dará algo próximo de −∞, −12, −6, −2,5 e 0 dB. O logarítmico, algo próximo de −∞,
+−35, −20, −8 e 0 dB. É a @fig-041-pot medida.
+
+5. Ligue o alto-falante e gire cada um deles com o tom ligado. A diferença de sensação é
+   imediata, e ela é o argumento inteiro desta seção.
+
+**Variante simulada (plano B).** Sem componentes, uma planilha resolve as Partes 1 e 2: uma
+coluna com $R_1$, outra com $R_2$, uma com a razão e uma com $20\log_{10}$ da razão. O ponto
+da Parte 2 — que os dB somam e as razões multiplicam — fica igualmente demonstrado. Para a
+Parte 3, o aplicativo de dB SPL sozinho já permite medir a queda de 6 dB por dobra de
+distância ao ar livre.
+
+## 🔥 Onde Queima {#sec-041-queima}
+
+**Usar 10 log onde cabia 20 log.** Razão de tensão é 20 log; razão de potência é 10 log.
+Trocar dá exatamente o dobro ou a metade do valor em dB, e o erro passa despercebido porque
+o número continua "plausível".
+
+**Converter dBm para volts sem a impedância.** Zero dBm é 0,224 V em 50 Ω e 0,775 V em 600 Ω.
+Sem a impedância declarada, dBm não vira tensão.
+
+**Confundir dBV com dBu.** São 2,21 dB de diferença, e a confusão entre nível de consumo
+(−10 dBV) e profissional (+4 dBu) vale 11,8 dB — quatro vezes em tensão. É saturação de um
+lado ou ruído do outro.
+
+**Somar níveis somando decibéis.** Duas fontes de −20 dBm dão −17 dBm, não −40 nem 0. Ganhos
+em cascata somam; níveis de sinais que se encontram, não.
+
+**Somar ruídos como se fossem coerentes.** Fontes de ruído independentes somam em potência
+(+3 dB para o dobro), não em tensão (+6 dB). Superestimar em 3 dB por estágio arruína um
+orçamento de ruído.
+
+**Esperar que um sinal 20 dB abaixo importe.** Ele contribui com 0,04 dB. Perseguir uma
+contribuição dessas antes de resolver a dominante é desperdício de bancada.
+
+**Tratar 0 dBFS como um nível de operação.** É o teto absoluto do conversor, e o recorte
+digital é abrupto. Trabalhar em −18 ou −20 dBFS é o que deixa folga para os picos.
+
+**Esquecer que dB é adimensional e escrever "ganho de 40 dBV".** O ganho é uma razão e não
+tem referência: é 40 dB e ponto. dBV é um nível, não um ganho.
+
+**Usar potenciômetro linear em controle de volume.** Todo o efeito audível se concentra nos
+primeiros 10 % do curso. E o inverso — logarítmico em ajuste de polarização — dá um trimpot
+que não sai do canto.
+
+**Confundir a atenuação de um divisor com a atenuação sob carga.** A conta
+$20\log_{10}[R_2/(R_1+R_2)]$ vale a vazio. Com carga, recalcule com $R_2$ em paralelo com a
+carga, ou o número é ficção — foi o assunto do @sec-cap-020.
+
+**Arredondar 3,01 para 3 numa cadeia longa.** Vinte estágios acumulam 0,2 dB. Em bancada,
+irrelevante; em orçamento de enlace, não.
+
+## O que fica deste capítulo {#sec-041-resumo}
+
+O decibel é logarítmico porque perdas e ganhos se **multiplicam** ao longo de uma cadeia, e
+porque os sentidos humanos respondem de forma logarítmica. É um décimo do bel, e o bel é o
+logaritmo decimal de uma razão de potências.
+
+$$ \text{dB} = 10\log_{10}\frac{P_2}{P_1} = 20\log_{10}\frac{V_2}{V_1}. $$
+
+O fator 20 vale para amplitude; o 10, para potência. A dedução exige impedâncias iguais, e a
+convenção moderna dispensa isso, salvo na conversão entre dBm e volts.
+
+Quatro linhas resolvem quase tudo de cabeça: 3 dB é dobro de potência, 6 dB é dobro de
+tensão, 10 dB é dez vezes a potência, 20 dB é dez vezes a tensão. O resto sai somando.
+
+**Ganhos em cascata somam em dB; níveis de sinais que se encontram, não.** Descorrelacionados
+somam em potência (+3 dB para dois iguais); correlacionados em fase somam em tensão (+6 dB).
+E o que estiver 10 dB abaixo contribui com 0,4 dB — na prática, não existe.
+
+O sufixo fixa a referência: **dBm** (1 mW, exige impedância), **dBV** (1 V), **dBu**
+(0,7746 V, herança dos 600 Ω), **dBFS** (fundo de escala, sempre negativo), **dB SPL**,
+**dBc**, **dBi**. Sem o sufixo, dB é razão pura.
+
+**Faixa dinâmica** é a razão entre o nível máximo e o piso de ruído; **folga** é a distância
+entre o nível de operação e o máximo. Um conversor de $n$ bits entrega, no teto teórico,
+$6{,}02n + 1{,}76$ dB.
+
+E a escala logarítmica aparece fora do decibel: na década e na oitava, no neper
+(1 Np = 8,686 dB) e na curva do potenciômetro de volume, que é logarítmica justamente para
+que cada grau de rotação valha o mesmo número de decibéis.
+
+Todo o capítulo apontou para o mesmo lugar sem chegar lá. Faixa dinâmica exige um **piso**;
+sensibilidade de receptor exige um **piso**; a regra dos 10 dB só importa porque existe algo
+embaixo. Esse piso não é uma escolha de projeto: ele é imposto pela física, e existe mesmo
+num circuito perfeito, alimentado por uma fonte perfeita, sem sinal nenhum na entrada. É o
+**ruído**, e ele é o @sec-cap-042.

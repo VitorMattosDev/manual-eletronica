@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 36/104**
+**Progresso: 37/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -83,7 +83,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 - [x] 039 — Sinais periódicos, forma de onda e ciclo de trabalho — `capitulos/039-sinais-periodicos-forma-de-onda-e-ciclo-de-trabalho.qmd`
 - [x] 040 — Fourier na prática: harmônicos e largura de banda — `capitulos/040-fourier-na-pratica-harmonicos-e-largura-de-banda.qmd`
-- [ ] 041 — O decibel e as escalas logarítmicas — `capitulos/041-o-decibel-e-as-escalas-logaritmicas.qmd`
+- [x] 041 — O decibel e as escalas logarítmicas — `capitulos/041-o-decibel-e-as-escalas-logaritmicas.qmd`
 - [ ] 042 — Ruído: térmico, de disparo e interferência externa — `capitulos/042-ruido-termico-de-disparo-e-interferencia-externa.qmd`
 - [ ] 043 — O osciloscópio: base de tempo, ganho vertical e gatilho — `capitulos/043-o-osciloscopio-base-de-tempo-ganho-vertical-e.qmd`
 - [ ] 044 — Pontas de prova, compensação e artefatos de medição — `capitulos/044-pontas-de-prova-compensacao-e-artefatos-de-medicao.qmd`
