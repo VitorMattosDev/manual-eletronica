@@ -1,3 +1,807 @@
 # Fourier na prática: harmônicos e largura de banda {#sec-cap-040}
 
-*(em elaboração)*
+O @sec-cap-027 deu uma razão para a senoide ser especial: ela é a única forma de onda que
+atravessa um circuito linear e sai com a mesma forma, mudando apenas amplitude e fase. O
+Volume 6 inteiro se apoiou nisso — todo filtro foi caracterizado alimentando-o com uma
+senoide de cada vez.
+
+O @sec-cap-039 então mostrou seis formas de onda, e nenhuma era senoide.
+
+A ponte entre as duas coisas é o resultado que Joseph Fourier publicou em 1822, estudando
+condução de calor, e que se tornou a ferramenta central da eletrônica de sinais:
+**qualquer sinal periódico pode ser escrito como uma soma de senoides cujas frequências
+são múltiplos inteiros da fundamental.**
+
+Uma vez aceito isso, tudo o que o Volume 6 construiu volta a valer. Para saber o que um
+filtro faz com uma onda quadrada, decompõe-se a quadrada em senoides, aplica-se a resposta
+do filtro a cada uma — o que já se sabe fazer — e soma-se de volta. É superposição
+(@sec-cap-017), aplicada no domínio da frequência.
+
+Este capítulo mostra como isso funciona na prática, o que cada forma de onda contém, e
+como se chega ao número que governa toda a instrumentação do resto do volume: a relação
+entre **tempo de subida** e **largura de banda**.
+
+## A ideia, e a condição para ela valer {#sec-040-ideia}
+
+O enunciado prático é este. Seja $v(t)$ periódico de período $T$, com fundamental
+$f_0 = 1/T$ e $\omega_0 = 2\pi f_0$. Então
+
+$$ \boxed{\;v(t) = a_0 + \sum_{n=1}^{\infty}\bigl[a_n\cos(n\omega_0 t)
+   + b_n\sin(n\omega_0 t)\bigr]\;} $$
+
+com
+
+$$ a_0 = \frac{1}{T}\int_0^T v(t)\,dt, \qquad
+   a_n = \frac{2}{T}\int_0^T v(t)\cos(n\omega_0 t)\,dt, \qquad
+   b_n = \frac{2}{T}\int_0^T v(t)\sin(n\omega_0 t)\,dt. $$
+
+Três leituras imediatas, antes de qualquer conta:
+
+- **$a_0$ é o valor médio.** É a mesma integral do @sec-cap-028, e ela é a componente
+  contínua do sinal. Em Fourier, a contínua é só o "harmônico de ordem zero".
+- **$n = 1$ é a fundamental**, e ela tem a mesma frequência do sinal. $n = 2$ é o segundo
+  harmônico, com o dobro da frequência; $n = 3$, o triplo, e assim por diante. Cuidado com
+  a nomenclatura de áudio, em que "primeira harmônica" às vezes significa o segundo
+  harmônico — neste manual, harmônico $n$ tem frequência $nf_0$, sem exceção.
+- **As frequências são só múltiplos inteiros.** Não há nada entre $f_0$ e $2f_0$. O
+  espectro de um sinal periódico é um conjunto de **raias**, não uma faixa contínua. Sinal
+  não periódico é que tem espectro contínuo, e a ferramenta para ele é a transformada de
+  Fourier, não a série.
+
+É mais cômodo agrupar seno e cosseno de mesma frequência numa senoide única com fase, o
+que sempre é possível (@sec-cap-029):
+
+$$ v(t) = A_0 + \sum_{n=1}^{\infty} A_n\cos(n\omega_0 t + \phi_n),
+   \qquad
+   A_n = \sqrt{a_n^2 + b_n^2},
+   \qquad
+   \phi_n = -\arctan\frac{b_n}{a_n}. $$
+
+O conjunto dos $A_n$ é o **espectro de amplitude**; o dos $\phi_n$, o **espectro de fase**.
+Quase todo instrumento mostra só o primeiro, e o @sec-cap-043 explica por quê.
+
+**A condição para a série existir** — as condições de Dirichlet — é satisfeita por
+qualquer sinal fisicamente realizável: número finito de máximos, mínimos e descontinuidades
+por período, e integral do módulo finita. Nenhum sinal de bancada as viola. Não é preciso
+se preocupar com isso; é preciso saber que a preocupação existe e já foi resolvida.
+
+## As três séries que se decoram {#sec-040-tres}
+
+Deduzir os coeficientes por integração é trabalho de Cálculo e está feito em qualquer
+livro de sinais. O que serve na bancada são três resultados e o padrão que eles formam.
+
+**Onda quadrada** simétrica, amplitude $A$:
+
+$$ v(t) = \frac{4A}{\pi}\left[\sin\omega_0 t + \frac{1}{3}\sin 3\omega_0 t
+   + \frac{1}{5}\sin 5\omega_0 t + \cdots\right]
+   = \frac{4A}{\pi}\sum_{n\ \text{ímpar}} \frac{\sin n\omega_0 t}{n}. $$
+
+**Onda triangular**, amplitude $A$:
+
+$$ v(t) = \frac{8A}{\pi^2}\left[\sin\omega_0 t - \frac{1}{9}\sin 3\omega_0 t
+   + \frac{1}{25}\sin 5\omega_0 t - \cdots\right]. $$
+
+**Dente de serra**, amplitude $A$:
+
+$$ v(t) = \frac{2A}{\pi}\left[\sin\omega_0 t - \frac{1}{2}\sin 2\omega_0 t
+   + \frac{1}{3}\sin 3\omega_0 t - \cdots\right]. $$
+
+Duas regularidades saltam à vista e valem mais que as fórmulas.
+
+**Quem tem quina cai devagar; quem é suave cai depressa.** A quadrada tem descontinuidade
+de valor e seus harmônicos caem com $1/n$ — isto é, 20 dB por década. A triangular tem
+descontinuidade só de inclinação e cai com $1/n^2$, 40 dB por década. A senoide não tem
+descontinuidade nenhuma e não tem harmônico nenhum. **A aspereza do sinal no tempo é a
+riqueza dele em frequência**, e essa frase é o resumo operacional do capítulo.
+
+**Quadrada e triangular só têm harmônicos ímpares; o dente de serra tem todos.** A razão é
+simetria, e é a próxima seção.
+
+::: {#fig-040-espectros}
+
+```{.tikz}
+%%| filename: 040-espectros
+%%| alt: Quatro gráficos de barras dispostos em duas colunas e duas linhas, mostrando a amplitude de cada harmônico em função da ordem do harmônico, de um a quinze. No primeiro, o espectro da onda quadrada: só barras de ordem ímpar, decrescendo como o inverso da ordem, com a fundamental valendo um vírgula vinte e sete. No segundo, o espectro da onda triangular: também só ordens ímpares, mas decrescendo muito mais rápido, com o inverso do quadrado da ordem, de modo que o terceiro harmônico já é quase invisível. No terceiro, o dente de serra: todas as ordens presentes, pares e ímpares, decrescendo com o inverso da ordem. No quarto, um trem de pulsos com ciclo de trabalho de vinte por cento: todas as ordens presentes, com amplitudes que seguem um envelope em forma de seno cardinal e que se anulam exatamente nas ordens cinco, dez e quinze, múltiplos do inverso do ciclo de trabalho.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- quadrada ----------------
+  \begin{axis}[
+      at={(0cm,0cm)}, anchor=north west,
+      width=7.6cm, height=5.2cm,
+      ybar, bar width=3.4pt,
+      xmin=0, xmax=16, ymin=0, ymax=1.45,
+      title={\textbf{quadrada} \quad harmônicos ímpares, $1/n$},
+      title style={font=\scriptsize},
+      xlabel={ordem $n$}, ylabel={$A_n$},
+      xtick={1,3,5,7,9,11,13,15},
+      ytick={0,0.5,1,1.27},
+      yticklabels={{0},{$0{,}5$},{1},{$1{,}27$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[fill=manualblue, draw=manualblue] coordinates
+      {(1,1.273) (3,0.424) (5,0.255) (7,0.182) (9,0.141) (11,0.116)
+       (13,0.098) (15,0.085)};
+  \end{axis}
+
+  % ---------------- triangular ----------------
+  \begin{axis}[
+      at={(8.9cm,0cm)}, anchor=north west,
+      width=7.6cm, height=5.2cm,
+      ybar, bar width=3.4pt,
+      xmin=0, xmax=16, ymin=0, ymax=1.45,
+      title={\textbf{triangular} \quad harmônicos ímpares, $1/n^2$},
+      title style={font=\scriptsize},
+      xlabel={ordem $n$}, ylabel={$A_n$},
+      xtick={1,3,5,7,9,11,13,15},
+      ytick={0,0.5,0.81,1},
+      yticklabels={{0},{$0{,}5$},{$0{,}81$},{1}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[fill=manualgreen, draw=manualgreen] coordinates
+      {(1,0.811) (3,0.0901) (5,0.0324) (7,0.0165) (9,0.0100) (11,0.0067)
+       (13,0.0048) (15,0.0036)};
+  \end{axis}
+
+  % ---------------- dente de serra ----------------
+  \begin{axis}[
+      at={(0cm,-6.6cm)}, anchor=north west,
+      width=7.6cm, height=5.2cm,
+      ybar, bar width=3.4pt,
+      xmin=0, xmax=16, ymin=0, ymax=0.78,
+      title={\textbf{dente de serra} \quad todos os harmônicos, $1/n$},
+      title style={font=\scriptsize},
+      xlabel={ordem $n$}, ylabel={$A_n$},
+      xtick={1,3,5,7,9,11,13,15},
+      ytick={0,0.2,0.4,0.637},
+      yticklabels={{0},{$0{,}2$},{$0{,}4$},{$0{,}64$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[fill=manualyellow, draw=manualyellow] coordinates
+      {(1,0.637) (2,0.318) (3,0.212) (4,0.159) (5,0.127) (6,0.106)
+       (7,0.091) (8,0.080) (9,0.071) (10,0.064) (11,0.058) (12,0.053)
+       (13,0.049) (14,0.045) (15,0.042)};
+  \end{axis}
+
+  % ---------------- pulso D = 0,20 ----------------
+  \begin{axis}[
+      at={(8.9cm,-6.6cm)}, anchor=north west,
+      width=7.6cm, height=5.2cm,
+      xmin=0, xmax=16, ymin=0, ymax=0.48,
+      title={\textbf{pulso}, $D = 0{,}20$ \quad envelope $\mathrm{sinc}$},
+      title style={font=\scriptsize},
+      xlabel={ordem $n$}, ylabel={$A_n$},
+      xtick={0,5,10,15},
+      ytick={0,0.1,0.2,0.3,0.4},
+      yticklabels={{0},{$0{,}1$},{$0{,}2$},{$0{,}3$},{$0{,}4$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualgray, thick, dashed, domain=0.02:16, samples=400, forget plot]
+      {0.4*abs(sin(36*x)/(0.6283*x))};
+    \addplot[ybar, bar width=3.4pt, fill=manualred, draw=manualred] coordinates
+      {(0,0.200) (1,0.374) (2,0.303) (3,0.202) (4,0.094) (5,0.000)
+       (6,0.062) (7,0.087) (8,0.076) (9,0.042) (10,0.000)
+       (11,0.034) (12,0.051) (13,0.047) (14,0.027) (15,0.000)};
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+O mesmo período, quatro conteúdos espectrais. A barra em $n = 0$ do último painel é a
+componente contínua, que vale $D$ vezes a amplitude. Os zeros em $n = 5$, 10 e 15 estão
+nos múltiplos de $1/D$ — e o @sec-040-simetria explica por quê.
+
+:::
+
+## Simetria decide quais harmônicos existem {#sec-040-simetria}
+
+Antes de integrar qualquer coisa, olhar a simetria do sinal já elimina metade dos
+coeficientes. São quatro regras, e elas se verificam a olho.
+
+**Valor médio.** Se a área acima do zero é igual à abaixo, $a_0 = 0$ e não há componente
+contínua. Óbvio, e frequentemente esquecido.
+
+**Simetria par** — $v(-t) = v(t)$, como o cosseno. Todos os $b_n$ são nulos: a série só tem
+cossenos.
+
+**Simetria ímpar** — $v(-t) = -v(t)$, como o seno. Todos os $a_n$ são nulos: a série só tem
+senos. Note que essas duas dependem de onde se pôs a origem do tempo; deslocar o sinal
+troca amplitude de cosseno por amplitude de seno sem mudar $A_n$. É por isso que o espectro
+de **amplitude** não muda quando o sinal é deslocado no tempo — só o de fase muda.
+
+**Simetria de meia onda** — $v(t + T/2) = -v(t)$: a segunda metade do período é a primeira
+invertida. **Todos os harmônicos pares somem.** Essa é a que importa, porque não depende da
+origem do tempo e porque explica os dois casos mais comuns.
+
+A onda quadrada simétrica tem simetria de meia onda: só ímpares. A triangular também: só
+ímpares. O dente de serra **não** tem: a segunda metade não é a primeira invertida, e por
+isso aparecem todos.
+
+E o trem de pulsos com $D \neq 0{,}5$ também não tem — é por isso que o painel do pulso na
+@fig-040-espectros mostra harmônicos pares que a quadrada não tinha. **Assimetria de ciclo
+de trabalho gera harmônicos pares.** Numa fonte chaveada, num amplificador classe D ou num
+inversor, o aparecimento de segundo harmônico é o sintoma direto de que os dois semiciclos
+não estão iguais.
+
+Para o trem de pulsos, o resultado geral vale a pena escrever:
+
+$$ A_n = 2AD\left|\frac{\sin(n\pi D)}{n\pi D}\right|, \qquad A_0 = AD. $$
+
+A função $\sin x / x$ chama-se **seno cardinal** ou $\mathrm{sinc}$, e ela é o envelope
+tracejado da figura. Os zeros acontecem quando $n\pi D$ é múltiplo de $\pi$, isto é, em
+$n = 1/D,\ 2/D,\ 3/D,\dots$ Para $D = 0{,}2$, em $n = 5$, 10, 15 — exatamente o que a
+figura mostra.
+
+Traduzindo para frequência, o primeiro zero está em $f = 1/(D\,T) = 1/t_{\text{on}}$. **A
+largura do espectro é o inverso da largura do pulso.** Pulso estreito, espectro largo. Essa
+é a mesma reciprocidade que vai reaparecer, com outro nome, na relação entre tempo de
+subida e largura de banda.
+
+## Reconstrução e o fenômeno de Gibbs {#sec-040-gibbs}
+
+Somar os primeiros harmônicos e ver a forma aparecer é o experimento mental que fixa a
+ideia. E ele traz um resultado que surpreende quem o vê pela primeira vez.
+
+::: {#fig-040-reconstrucao}
+
+```{.tikz}
+%%| filename: 040-reconstrucao
+%%| alt: Quatro gráficos dispostos em duas colunas e duas linhas, cada um mostrando um período e meio de uma onda quadrada ideal desenhada em cinza claro e, sobreposta, a soma parcial da série de Fourier em azul. No primeiro, só a fundamental: uma senoide pura, bem diferente da quadrada. No segundo, a soma até o terceiro harmônico: já aparecem patamares. No terceiro, até o sétimo: a forma é reconhecivelmente quadrada, com ondulação visível nos patamares. No quarto, até o vigésimo primeiro: os patamares estão quase planos e as bordas quase verticais, mas junto de cada descontinuidade persiste um pico estreito que ultrapassa o valor final em cerca de nove por cento. Uma anotação indica que esse pico não diminui por mais harmônicos que se somem.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- N = 1 ----------------
+  \begin{axis}[
+      at={(0cm,0cm)}, anchor=north west,
+      width=7.6cm, height=4.8cm,
+      xmin=0, xmax=1.5, ymin=-1.55, ymax=1.55,
+      title={somando até $n = 1$ \quad (só a fundamental)},
+      title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5}, xticklabels={{0},{$T/2$},{$T$},{}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualgray!55, very thick, forget plot] coordinates
+      {(0,1) (0.5,1) (0.5,-1) (1,-1) (1,1) (1.5,1)};
+    \addplot[manualblue, very thick, domain=0:1.5, samples=300]
+      {1.27324*sin(360*x)};
+  \end{axis}
+
+  % ---------------- N = 3 ----------------
+  \begin{axis}[
+      at={(8.9cm,0cm)}, anchor=north west,
+      width=7.6cm, height=4.8cm,
+      xmin=0, xmax=1.5, ymin=-1.55, ymax=1.55,
+      title={somando até $n = 3$}, title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5}, xticklabels={{0},{$T/2$},{$T$},{}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualgray!55, very thick, forget plot] coordinates
+      {(0,1) (0.5,1) (0.5,-1) (1,-1) (1,1) (1.5,1)};
+    \addplot[manualblue, very thick, domain=0:1.5, samples=400]
+      {1.27324*(sin(360*x) + sin(3*360*x)/3)};
+  \end{axis}
+
+  % ---------------- N = 7 ----------------
+  \begin{axis}[
+      at={(0cm,-6.1cm)}, anchor=north west,
+      width=7.6cm, height=4.8cm,
+      xmin=0, xmax=1.5, ymin=-1.55, ymax=1.55,
+      title={somando até $n = 7$}, title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5}, xticklabels={{0},{$T/2$},{$T$},{}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualgray!55, very thick, forget plot] coordinates
+      {(0,1) (0.5,1) (0.5,-1) (1,-1) (1,1) (1.5,1)};
+    \addplot[manualblue, very thick, domain=0:1.5, samples=600]
+      {1.27324*(sin(360*x) + sin(3*360*x)/3 + sin(5*360*x)/5
+                + sin(7*360*x)/7)};
+  \end{axis}
+
+  % ---------------- N = 21 ----------------
+  \begin{axis}[
+      at={(8.9cm,-6.1cm)}, anchor=north west,
+      width=7.6cm, height=4.8cm,
+      xmin=0, xmax=1.5, ymin=-1.55, ymax=1.90,
+      title={somando até $n = 21$}, title style={font=\scriptsize},
+      xtick={0,0.5,1,1.5}, xticklabels={{0},{$T/2$},{$T$},{}},
+      ytick={-1,0,1,1.09}, yticklabels={{$-A$},{0},{$+A$},{}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualgray!55, very thick, forget plot] coordinates
+      {(0,1) (0.5,1) (0.5,-1) (1,-1) (1,1) (1.5,1)};
+    \addplot[manualblue, very thick, domain=0:1.5, samples=1200]
+      {1.27324*(sin(360*x) + sin(3*360*x)/3 + sin(5*360*x)/5
+                + sin(7*360*x)/7 + sin(9*360*x)/9 + sin(11*360*x)/11
+                + sin(13*360*x)/13 + sin(15*360*x)/15
+                + sin(17*360*x)/17 + sin(19*360*x)/19
+                + sin(21*360*x)/21)};
+    \node[manualred, anchor=north east, font=\scriptsize, align=right]
+         at (axis cs:1.46,1.86) {Gibbs: $+9$ \%\\e não diminui nunca};
+    \draw[manualred, thick, ->] (axis cs:0.66,1.55) -- (axis cs:0.48,1.14);
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+A onda quadrada sendo montada harmônico a harmônico. A forma converge, mas o pico junto às
+descontinuidades **não**: ele só fica mais estreito.
+
+:::
+
+O que se vê nos patamares vale a pena traduzir em palavras.
+
+**Com só a fundamental**, o sinal é uma senoide com 27 % mais amplitude que a quadrada. O
+fator $4/\pi = 1{,}273$ é o preço de aproximar um patamar por um arco.
+
+**Com três harmônicos**, os patamares começam a aparecer. Com sete, a forma é
+reconhecivelmente quadrada. **A informação de "forma" está nos primeiros poucos
+harmônicos.**
+
+**Com vinte e um**, os patamares estão planos e as bordas quase verticais — mas o pico
+junto à descontinuidade continua lá, com a mesma altura. Ele vale 8,95 % do salto, e não
+diminui por mais termos que se somem: apenas fica mais estreito. Esse é o **fenômeno de
+Gibbs**, e ele é uma propriedade matemática da série, não um defeito de cálculo.
+
+O Gibbs tem consequência prática direta. Todo filtro digital de corte abrupto e todo
+conversor com filtro antialiasing íngreme produz sobressinal em degraus do sinal — o
+"pré-eco" que se ouve em compressão de áudio agressiva, e o sobressinal que aparece na tela
+de um osciloscópio digital com interpolação $\sin x / x$ mal ajustada. Quando um sobressinal
+aparece exatamente igual dos dois lados da borda, com simetria perfeita, a suspeita
+principal não é o circuito: é o processamento.
+
+## O que um filtro faz com uma quadrada {#sec-040-filtro}
+
+Agora a pergunta que abriu o capítulo tem resposta mecânica. Passar uma onda quadrada por um
+filtro é passar cada harmônico pelo filtro e somar de volta.
+
+::: {#fig-040-filtro}
+
+```{.tikz}
+%%| filename: 040-filtro
+%%| alt: Dois gráficos lado a lado, cada um mostrando um período e meio de sinal. No da esquerda, uma onda quadrada de entrada em cinza claro e duas saídas de filtro passa-baixas: com constante de tempo pequena, a saída é quase quadrada com cantos arredondados; com constante de tempo grande, a saída vira quase uma onda triangular de amplitude bem menor. No da direita, a mesma quadrada de entrada em cinza e duas saídas de filtro passa-altas: com constante de tempo grande, a saída mantém a forma quadrada mas com os patamares inclinados descendo lentamente; com constante de tempo pequena, a saída vira picos estreitos e altos em cada borda, positivos na subida e negativos na descida, que decaem rapidamente para zero.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- passa-baixas ----------------
+  \begin{axis}[
+      at={(0cm,0cm)}, anchor=north west,
+      width=7.6cm, height=6.4cm,
+      xmin=0, xmax=1.5, ymin=-1.7, ymax=1.7,
+      title={\textbf{passa-baixas RC}}, title style={font=\scriptsize},
+      xlabel={$t/T$}, ylabel={$v$},
+      xtick={0,0.5,1,1.5}, xticklabels={{0},{$0{,}5$},{1},{$1{,}5$}},
+      ytick={-1,0,1}, yticklabels={{$-A$},{0},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+      legend style={at={(0.5,-0.30)}, anchor=north, font=\scriptsize,
+                    draw=manualgray!50, legend columns=1},
+      declare function={
+        pb(\t,\tc,\vm) = (\t < 0.5) * (1 - (1+\vm)*exp(-\t/\tc))
+                       + (\t >= 0.5 && \t < 1)
+                         * (-1 + (1+\vm)*exp(-(\t-0.5)/\tc))
+                       + (\t >= 1) * (1 - (1+\vm)*exp(-(\t-1)/\tc));},
+    ]
+    \addplot[manualgray!55, very thick] coordinates
+      {(0,1) (0.5,1) (0.5,-1) (1,-1) (1,1) (1.5,1)};
+    \addlegendentry{entrada (quadrada)}
+
+    \addplot[manualblue, very thick, domain=0:1.499, samples=600]
+      {pb(x,0.05,1.0)};
+    \addlegendentry{$\tau = 0{,}05\,T$ \quad (cantos arredondados)}
+
+    \addplot[manualred, very thick, domain=0:1.499, samples=600]
+      {pb(x,0.30,0.6822)};
+    \addlegendentry{$\tau = 0{,}30\,T$ \quad (quase triangular)}
+  \end{axis}
+
+  % ---------------- passa-altas ----------------
+  \begin{axis}[
+      at={(8.9cm,0cm)}, anchor=north west,
+      width=7.6cm, height=6.4cm,
+      xmin=0, xmax=1.5, ymin=-2.4, ymax=2.4,
+      title={\textbf{passa-altas RC}}, title style={font=\scriptsize},
+      xlabel={$t/T$}, ylabel={$v$},
+      xtick={0,0.5,1,1.5}, xticklabels={{0},{$0{,}5$},{1},{$1{,}5$}},
+      ytick={-2,-1,0,1,2},
+      yticklabels={{$-2A$},{$-A$},{0},{$+A$},{$+2A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+      legend style={at={(0.5,-0.30)}, anchor=north, font=\scriptsize,
+                    draw=manualgray!50, legend columns=1},
+      declare function={
+        pa(\t,\tc,\vp) = (\t < 0.5) * (\vp*exp(-\t/\tc))
+                       + (\t >= 0.5 && \t < 1) * (-\vp*exp(-(\t-0.5)/\tc))
+                       + (\t >= 1) * (\vp*exp(-(\t-1)/\tc));},
+    ]
+    \addplot[manualgray!55, very thick] coordinates
+      {(0,1) (0.5,1) (0.5,-1) (1,-1) (1,1) (1.5,1)};
+    \addlegendentry{entrada (quadrada)}
+
+    \addplot[manualblue, very thick, domain=0:1.499, samples=600]
+      {pa(x,2.0,1.1243)};
+    \addlegendentry{$\tau = 2\,T$ \quad (inclinação de topo)}
+
+    \addplot[manualred, very thick, domain=0:1.499, samples=600]
+      {pa(x,0.05,2.0)};
+    \addlegendentry{$\tau = 0{,}05\,T$ \quad (derivador: só as bordas)}
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+A mesma quadrada, quatro filtros. Nenhuma dessas formas é misteriosa depois de Fourier: o
+passa-baixas atenua os harmônicos altos, que são exatamente os que fazem as quinas; o
+passa-altas atenua os baixos, que são exatamente os que sustentam os patamares.
+
+:::
+
+**Passa-baixas.** Os harmônicos altos são os que constroem as bordas verticais — comparar os
+painéis da @fig-040-reconstrucao mostra isso diretamente. Tirá-los arredonda as bordas.
+Levado ao extremo, sobra praticamente só a fundamental, e a saída é uma senoide de amplitude
+reduzida. No meio do caminho, com $\tau$ da ordem de $T/3$, a saída se parece com uma
+triangular: o passa-baixas está funcionando como **integrador**, e a integral de uma
+quadrada é mesmo uma triangular.
+
+**Passa-altas.** Os harmônicos baixos são os que sustentam os patamares. Tirá-los faz o
+patamar escorregar — a **inclinação de topo** do @sec-cap-034. No extremo, sobram só as
+bordas, cada uma virando um pico que decai: o passa-altas está funcionando como
+**derivador**, e a derivada de uma quadrada é mesmo um par de impulsos.
+
+Isso fecha um raciocínio que estava pendente desde o Volume 6. Integrador e derivador não
+são um segundo comportamento do RC além da filtragem: são o **mesmo** comportamento, visto
+no domínio do tempo em vez do da frequência.
+
+## Largura de banda e tempo de subida {#sec-040-banda}
+
+Aqui está o número mais útil do capítulo, e talvez do volume.
+
+Considere um sistema cuja limitação de banda é dominada por um único polo — um RC, o
+estágio de entrada de um osciloscópio, um amplificador com um polo dominante. A resposta ao
+degrau é a exponencial do @sec-cap-033, e o tempo entre 10 % e 90 % dela é
+
+$$ t_r = \tau\ln 9 = 2{,}197\,\tau. $$
+
+A frequência de corte do mesmo circuito é $f_c = 1/(2\pi\tau)$. Multiplicando as duas:
+
+$$ \boxed{\;t_r \, f_c = \frac{2{,}197}{2\pi} = 0{,}35
+   \qquad\Longleftrightarrow\qquad
+   f_c \approx \frac{0{,}35}{t_r}\;} $$
+
+O produto é constante e vale 0,35. **Não há como ter borda rápida sem largura de banda, e
+não há como ter largura de banda sem passar borda rápida.** As duas coisas são a mesma
+coisa medida em eixos diferentes.
+
+| $t_r$ do sinal | banda necessária | Onde aparece |
+|---|---|---|
+| 1 ms | 350 Hz | contato mecânico, relé |
+| 10 µs | 35 kHz | saída de amplificador operacional lento |
+| 1 µs | 350 kHz | comparador de uso geral, PWM de motor |
+| 100 ns | 3,5 MHz | saída de microcontrolador de 8 bits |
+| 10 ns | 35 MHz | porta 74HC |
+| 5 ns | 70 MHz | porta 74AC, 74LVC |
+| 1 ns | 350 MHz | interface serial rápida |
+
+: Tempo de subida contra largura de banda necessária, pela regra dos 0,35. A coluna da
+direita é a razão de a bancada precisar de instrumento cada vez mais caro à medida que a
+lógica fica mais rápida. {#tbl-040-banda}
+
+O número 0,35 vale para sistema de um polo. Para osciloscópios de banda larga, com resposta
+mais próxima da gaussiana, o fator vai a 0,40 ou 0,45, e a folha de dados diz qual. A ordem
+de grandeza não muda, e é ela que se usa em bancada.
+
+Duas consequências que reaparecem nos próximos capítulos:
+
+**Cascata de blocos: os tempos de subida somam em quadratura.**
+
+$$ t_{r,\text{total}} \approx \sqrt{t_{r,1}^2 + t_{r,2}^2 + t_{r,3}^2 + \cdots} $$
+
+Isso vale, com boa aproximação, quando cada bloco tem um polo dominante. É a fórmula que se
+usa para descontar a contribuição do próprio instrumento de uma medida de tempo de subida,
+e ela volta no @sec-cap-043.
+
+**A regra dos cinco.** Para que a leitura de $t_r$ tenha erro menor que 2 %, a banda do
+instrumento precisa ser cerca de cinco vezes a banda do sinal. Medir uma borda de 10 ns
+(35 MHz) exige um osciloscópio de pelo menos 175 MHz. Com um osciloscópio de 35 MHz — banda
+igual à do sinal —, a leitura sairia $\sqrt{2}$ vezes maior, isto é, 41 % de erro,
+inteiramente fabricado pelo instrumento.
+
+## Distorção harmônica {#sec-040-thd}
+
+Até aqui, os harmônicos estavam no sinal desde o início. Falta o caso em que eles são
+**criados** pelo circuito.
+
+Um circuito linear obedece à superposição: entrada senoidal, saída senoidal de mesma
+frequência. **Um circuito não linear não.** Alimentado com uma senoide pura, ele devolve
+uma senoide deformada — e o que deforma tem, por Fourier, harmônicos que não existiam.
+
+::: {#fig-040-thd}
+
+```{.tikz}
+%%| filename: 040-thd
+%%| alt: Dois gráficos lado a lado. No da esquerda, um período de uma senoide pura desenhada em cinza claro e, sobreposta em vermelho, a mesma senoide com os picos ceifados horizontalmente no nível de zero vírgula sete, formando patamares planos no topo e no fundo. No da direita, o espectro da senoide ceifada em decibéis relativos à fundamental, mostrando barras nas ordens ímpares: a fundamental em zero decibel, o terceiro harmônico em menos dezessete vírgula cinco decibéis, o quinto em menos trinta e dois, o sétimo em menos trinta e quatro e o nono em menos quarenta e dois. Não há barras nas ordens pares.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- senoide ceifada ----------------
+  \begin{axis}[
+      at={(0cm,0cm)}, anchor=north west,
+      width=7.6cm, height=6.0cm,
+      xmin=0, xmax=1, ymin=-1.3, ymax=1.3,
+      title={\textbf{senoide ceifada} em $0{,}7A$}, title style={font=\scriptsize},
+      xlabel={$t/T$}, ylabel={$v$},
+      xtick={0,0.25,0.5,0.75,1},
+      xticklabels={{0},{$0{,}25$},{$0{,}5$},{$0{,}75$},{1}},
+      ytick={-1,-0.7,0,0.7,1},
+      yticklabels={{$-A$},{$-0{,}7A$},{0},{$0{,}7A$},{$+A$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualgray!55, very thick, domain=0:1, samples=300]
+      {sin(360*x)};
+    \addplot[manualred, very thick, domain=0:1, samples=600]
+      {min(max(sin(360*x),-0.7),0.7)};
+  \end{axis}
+
+  % ---------------- espectro ----------------
+  \begin{axis}[
+      at={(8.9cm,0cm)}, anchor=north west,
+      width=7.6cm, height=6.0cm,
+      xmin=0, xmax=12, ymin=-60, ymax=8,
+      title={\textbf{espectro}, dB relativos à fundamental},
+      title style={font=\scriptsize},
+      xlabel={ordem $n$}, ylabel={dB},
+      xtick={1,2,3,4,5,6,7,8,9,10},
+      ytick={0,-20,-40,-60},
+      yticklabels={{0},{$-20$},{$-40$},{$-60$}},
+      grid=both, grid style={manualgray!20}, font=\scriptsize,
+    ]
+    \addplot[manualred, line width=2.6pt] coordinates {(1,-60) (1,0)};
+    \addplot[manualred, line width=2.6pt] coordinates {(3,-60) (3,-17.5)};
+    \addplot[manualred, line width=2.6pt] coordinates {(5,-60) (5,-32.2)};
+    \addplot[manualred, line width=2.6pt] coordinates {(7,-60) (7,-34.1)};
+    \addplot[manualred, line width=2.6pt] coordinates {(9,-60) (9,-42.1)};
+    \node[manualgray, anchor=north east, font=\scriptsize, align=right]
+         at (axis cs:11.8,-3) {só ímpares:\\o ceifamento\\é simétrico};
+  \end{axis}
+
+\end{tikzpicture}
+```
+
+Uma senoide pura entrando num circuito que ceifa em 70 % da amplitude. A saída tem THD de
+cerca de 14 %, e todos os harmônicos são ímpares porque o ceifamento é igual nos dois
+semiciclos.
+
+:::
+
+A medida padrão é a **distorção harmônica total**:
+
+$$ \boxed{\;\text{THD} = \frac{\sqrt{A_2^2 + A_3^2 + A_4^2 + \cdots}}{A_1}\;} $$
+
+expressa em porcentagem ou em dB. Alguns instrumentos usam o total no denominador em vez da
+fundamental — a diferença é desprezível abaixo de 10 % e não é abaixo de 30 %; a folha de
+dados diz qual convenção foi usada.
+
+Ordens de grandeza para calibrar a intuição:
+
+- Amplificador operacional de áudio bem projetado: 0,001 % a 0,01 %.
+- Amplificador de potência doméstico: 0,05 % a 0,5 %.
+- Amplificador valvulado tocando alto: 1 % a 10 % — e o timbre resultante é o motivo de ele
+  existir.
+- Rede elétrica urbana: 3 % a 8 % de distorção de tensão, com o 5.º harmônico dominando.
+- Corrente de entrada de fonte chaveada sem correção: acima de 100 %, o caso do
+  @sec-cap-032.
+
+**Qual harmônico aparece diz o que está errado.** Não linearidade **simétrica** — ceifamento
+igual nos dois lados, saturação de transformador — gera só harmônicos ímpares, porque
+preserva a simetria de meia onda. Não linearidade **assimétrica** — um transistor em classe
+A mal polarizado, um semiciclo ceifando antes do outro — gera harmônicos **pares**, e o
+segundo harmônico é o primeiro a aparecer. Em análise de falha, um segundo harmônico
+crescente é sinal de polarização deslocada; um terceiro crescente é sinal de saturação.
+
+## 🧪 Laboratório {#sec-040-lab}
+
+**Extrair um harmônico de uma onda quadrada com um filtro e medi-lo, verificando na bancada
+os coeficientes $4/(n\pi)$ da série de Fourier.**
+
+O experimento clássico usaria um analisador de espectro, que ninguém tem. A saída é usar o
+que já existe: um filtro passa-baixas de ordem alta serve de "peneira" para separar os
+harmônicos, e um aplicativo de FFT no celular resolve o resto.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital *true RMS* com escala CA
+- 1 gerador de sinal: aplicativo de gerador de funções no celular ou no computador (saída
+  de fone), com forma quadrada e senoidal
+- Resistores 1/4 W: 1,5 kΩ, 3,3 kΩ, 10 kΩ (dois), 22 kΩ
+- Capacitores: 10 nF poliéster (dois), 100 nF poliéster
+- 1 indutor de 10 mH e 1 capacitor de 100 nF (filtro sintonizado, opcional)
+- 1 celular com aplicativo de analisador de espectro por FFT (qualquer um que mostre o
+  espectro do microfone; há vários gratuitos)
+- 1 alto-falante pequeno ou fone de ouvido velho, para acoplar ao microfone
+- Protoboard, jumpers, papel monolog
+:::
+
+::: {.callout-note}
+## A saída de áudio como gerador
+
+A saída de fone de um computador ou celular é um gerador de funções de 20 Hz a 20 kHz com
+resolução de amplitude excelente e impedância de saída de 1 a 32 Ω. Ela **não** produz
+bordas rápidas — o conversor tem filtro de reconstrução —, então a "onda quadrada" que sai
+já vem com harmônicos acima de 20 kHz cortados. Para este roteiro isso é irrelevante,
+porque só interessam os primeiros harmônicos, mas é bom saber antes de estranhar.
+:::
+
+### Parte 1 — O fator $4/\pi$
+
+1. Gere uma senoide de 1 kHz e ajuste a amplitude até o multímetro em CA ler exatamente
+   1,000 V eficaz. Anote a posição do controle de volume e **não mexa mais nele**.
+2. Troque a forma para quadrada, mantendo tudo o mais igual.
+3. Meça de novo.
+
+O aplicativo, na maioria dos casos, mantém a mesma amplitude de **pico**. Então a quadrada
+tem $V_{\text{ef}} = A$ e a senoide tinha $V_{\text{ef}} = A/\sqrt{2}$: a leitura sobe por
+um fator próximo de $\sqrt{2} = 1{,}41$. Confirme.
+
+4. A fundamental da quadrada tem amplitude $4A/\pi$, ou seja, valor eficaz
+   $4A/(\pi\sqrt{2}) = 0{,}900\,A$. **Guarde este número: 0,900 vezes o eficaz da quadrada.**
+   É o que a Parte 2 vai medir.
+
+### Parte 2 — Peneirar a fundamental
+
+1. Monte um passa-baixas RC de dois estágios com $R = 10$ kΩ e $C = 10$ nF em cada estágio:
+   $f_c \approx 1{,}6$ kHz por estágio.
+2. Alimente com a quadrada de 200 Hz. Nessa frequência, a fundamental está bem dentro da
+   banda passante e o terceiro harmônico (600 Hz) também — o filtro não peneira nada.
+   Confirme que a saída é praticamente igual à entrada.
+3. Suba a frequência da quadrada para 1,6 kHz. Agora a fundamental está no corte e os
+   harmônicos estão todos bem atenuados. Meça a saída em CA.
+4. Compare com a previsão: a saída deve valer aproximadamente
+   $0{,}900 \times V_{\text{ef,entrada}} \times |H(f_0)|$, com $|H(f_0)|$ calculado para os
+   dois estágios em cascata carregados (@sec-cap-036).
+
+O resultado não fecha em 1 %, e não é para fechar: o carregamento entre estágios e a
+tolerância dos componentes são reais. O que ele mostra é que **a saída de um passa-baixas
+alimentado por quadrada tende a $0{,}900$ do eficaz de entrada**, e não a 1 — porque o que
+sobrou é só a fundamental.
+
+### Parte 3 — Ver o espectro com o celular
+
+1. Ligue o alto-falante ou fone à saída do gerador, através de um resistor de 1,5 kΩ para
+   não estourar o volume. Aponte o microfone do celular para ele, bem perto.
+2. Abra o analisador de FFT.
+3. Gere uma **senoide** de 1 kHz. Deve aparecer uma raia em 1 kHz e pouco mais. Anote o
+   nível dos harmônicos em 2, 3 e 4 kHz — é a distorção somada do amplificador, do
+   alto-falante e do microfone.
+4. Troque para **quadrada** de 1 kHz. Devem aparecer raias em 1, 3, 5, 7 e 9 kHz, e as
+   pares devem ficar bem abaixo.
+5. Meça, na tela, a diferença entre a fundamental e o terceiro harmônico. A previsão é
+   $20\log_{10}(1/3) = -9{,}5$ dB.
+6. Troque para **triangular**. A previsão para o terceiro harmônico é
+   $20\log_{10}(1/9) = -19{,}1$ dB — dez decibéis abaixo do caso da quadrada.
+7. Troque para **dente de serra**. Agora os harmônicos **pares** aparecem, com o segundo em
+   $-6{,}0$ dB.
+
+Esta é a @fig-040-espectros medida. O alto-falante e o microfone distorcem e coloram tudo,
+mas o **padrão** — quais raias existem e qual a razão entre elas — atravessa a bagunça.
+
+### Parte 4 — Assimetria fabrica harmônicos pares
+
+1. Volte à quadrada de 1 kHz e confirme que os pares estão baixos.
+2. Se o aplicativo permitir ajustar o ciclo de trabalho, mude para 40 %. Se não permitir,
+   use o astável a 555 do @sec-cap-039 acoplado ao alto-falante por um capacitor de 100 nF.
+3. Observe o segundo harmônico subir.
+
+Para $D = 0{,}40$, a previsão da fórmula do seno cardinal dá o segundo harmônico a
+$-13{,}2$ dB da fundamental, onde antes ele era desprezível. **Assimetria de ciclo é
+harmônico par**, e agora isso está medido.
+
+### Parte 5 — Tempo de subida e banda, com uma conta só
+
+1. Monte um passa-baixas RC com $R = 3{,}3$ kΩ e $C = 10$ nF: $f_c = 4{,}8$ kHz.
+2. Preveja o tempo de subida da saída para um degrau: $t_r = 0{,}35/f_c = 73$ µs.
+3. Alimente com uma quadrada de 200 Hz (período de 5 ms, muito maior que $5\tau = 165$ µs,
+   de modo que a saída chega a se acomodar).
+4. Sem osciloscópio, esta parte se faz de cabeça: o objetivo é ter o número 73 µs anotado
+   antes do @sec-cap-043, onde ele será medido na tela. Guarde o circuito montado, ou pelo
+   menos os valores.
+
+**Variante simulada (plano B).** No ngspice, `.tran` com uma fonte `PULSE` e depois
+`.four 1k v(out)` imprime os primeiros nove harmônicos e o THD, com o valor exato de cada
+coeficiente — é a @fig-040-espectros numérica. No Falstad, o osciloscópio embutido tem
+opção de mostrar o espectro, e arrastar o ciclo de trabalho da fonte quadrada reproduz a
+Parte 4 ao vivo.
+
+## 🔥 Onde Queima {#sec-040-queima}
+
+**Achar que uma onda quadrada de 1 kHz é um sinal de 1 kHz e projetar o circuito para
+1 kHz.** Ela contém energia significativa até dezenas de kHz. Amplificador, filtro e cabo
+precisam ser dimensionados pelo conteúdo, não pela fundamental.
+
+**Confundir a fundamental com o sinal.** A amplitude da fundamental de uma quadrada é
+$4/\pi = 1{,}27$ vezes a amplitude da quadrada, não igual. Medir a saída de um filtro e
+compará-la com a entrada sem esse fator dá 27 % de erro sistemático.
+
+**Esquecer que o valor eficaz soma em quadratura sobre os harmônicos.** Vale
+$V_{\text{ef}}^2 = A_0^2 + \sum A_n^2/2$ (teorema de Parseval), não a soma simples das
+amplitudes.
+
+**Numerar harmônicos com o vocabulário errado.** Segundo harmônico é $2f_0$. "Primeira
+harmônica" em texto de áudio às vezes quer dizer $2f_0$. Sempre confirme a convenção antes
+de comparar números.
+
+**Supor que ausência de harmônico par significa circuito bom.** Significa apenas que a não
+linearidade é simétrica. Um estágio ceifando os dois lados igualmente tem THD alto e
+nenhum harmônico par.
+
+**Medir THD com um multímetro em CA.** Ele mede o eficaz total, que muda pouquíssimo com
+distorção: 10 % de THD altera o eficaz em 0,5 %. THD exige separar a fundamental, e isso é
+o que um medidor de distorção ou uma FFT faz.
+
+**Usar a regra $t_r f_c = 0{,}35$ fora de sistema de um polo.** Osciloscópio de banda larga
+usa 0,40 a 0,45; filtro de ordem alta com sobressinal não obedece a nenhuma constante
+simples.
+
+**Medir tempo de subida com instrumento de banda insuficiente.** Sem a regra dos cinco, a
+leitura é a do instrumento, não a do sinal. Com banda igual à do sinal, o erro é de 41 %,
+para mais.
+
+**Somar tempos de subida em série linearmente.** A soma é em quadratura. Dois blocos de
+10 ns em cascata dão 14 ns, não 20 ns.
+
+**Achar que o sobressinal de Gibbs é defeito do circuito.** Se ele aparece simétrico e com
+9 % do salto em um sinal que passou por processamento digital, a origem é o filtro de corte
+abrupto, não o hardware analógico.
+
+**Esperar espectro contínuo de um sinal periódico.** Sinal periódico tem raias em múltiplos
+inteiros de $f_0$, e nada entre elas. Se a tela mostra uma faixa contínua, ou o sinal não é
+periódico, ou a janela de análise não é múltipla do período — e o segundo caso é
+vazamento espectral, um artefato do instrumento.
+
+**Ignorar que reduzir a largura do pulso alarga o espectro.** O primeiro zero está em
+$1/t_{\text{on}}$. Um pulso de disparo de 1 µs espalha energia até 1 MHz, com todas as
+consequências de interferência do @sec-cap-042.
+
+## O que fica deste capítulo {#sec-040-resumo}
+
+Todo sinal periódico é uma soma de senoides em múltiplos inteiros da fundamental. Isso
+devolve a validade de toda a análise do Volume 6 para sinais de qualquer forma: decompor,
+aplicar a resposta do filtro a cada harmônico, somar de volta.
+
+O **espectro** de um sinal periódico é um conjunto de raias. A **componente contínua** é o
+harmônico de ordem zero e vale o valor médio.
+
+**Aspereza no tempo é riqueza em frequência.** Quadrada, com descontinuidade de valor, cai
+com $1/n$; triangular, com descontinuidade só de inclinação, cai com $1/n^2$; senoide não
+tem harmônico.
+
+**Simetria de meia onda mata os harmônicos pares.** Quadrada simétrica e triangular só têm
+ímpares. Dente de serra e pulso com $D \neq 0{,}5$ têm todos. Para o pulso,
+$A_n = 2AD\,|\mathrm{sinc}(n\pi D)|$, com zeros nos múltiplos de $1/D$: **a largura do
+espectro é o inverso da largura do pulso**.
+
+Somar harmônicos reconstrói a forma, mas o pico de **Gibbs** junto à descontinuidade não
+desaparece: fica em 8,95 % do salto e só estreita.
+
+Um passa-baixas alimentado por quadrada tira os harmônicos altos e arredonda as bordas —
+até virar integrador. Um passa-altas tira os baixos e inclina os patamares — até virar
+derivador. São o mesmo fenômeno em eixos diferentes.
+
+A relação central da instrumentação:
+
+$$ t_r\,f_c \approx 0{,}35,
+   \qquad
+   t_{r,\text{total}} \approx \sqrt{\textstyle\sum_i t_{r,i}^2},
+   \qquad
+   \text{banda do instrumento} \geq 5\times\text{banda do sinal}. $$
+
+E a **distorção harmônica** é o caso em que o circuito cria harmônicos que não existiam.
+THD é a razão entre o eficaz dos harmônicos e o da fundamental; não linearidade simétrica
+dá ímpares, assimétrica dá pares, e qual aparece diz o que está errado.
+
+Duas coisas ficaram penduradas. Os espectros deste capítulo foram desenhados ora em escala
+linear, ora em decibéis, sem que a razão da escolha fosse dita — e a diferença entre
+$-9{,}5$ dB e "um terço" é justamente o que separa ler um espectro de decifrá-lo. Além
+disso, "dB" apareceu aqui como razão pura, mas em instrumentação ele quase sempre vem com
+uma letra colada: dBm, dBV, dBu. Essa letra é uma referência absoluta, e sem ela metade das
+folhas de dados fica ilegível. É o @sec-cap-041.
