@@ -1,3 +1,622 @@
 # Pontas de prova, compensação e artefatos de medição {#sec-cap-044}
 
-*(em elaboração)*
+O @sec-cap-043 tratou a ponta de prova como um pedaço de fio. Ela não é.
+
+A ponta é um circuito — resistores, capacitores, um cabo coaxial com capacitância
+distribuída e um fio de terra com indutância — que fica **entre** o circuito sob teste e o
+instrumento. Ela altera o que mede, precisa ser ajustada antes de cada sessão, e fabrica
+sozinha boa parte do sobressinal e da oscilação que aparecem na tela.
+
+Este capítulo é curto em teoria e longo em consequência. A tese é uma frase: **a maioria das
+medidas de osciloscópio que dão errado dá errado na ponta, não no osciloscópio**. Quem
+entende a ponta economiza mais horas de bancada do que quem entende qualquer outro capítulo
+deste volume.
+
+## O problema: a entrada é uma carga {#sec-044-carga}
+
+A entrada de um osciloscópio é 1 MΩ em paralelo com 15 a 30 pF. Um megaohm parece
+desprezível ao lado de quase qualquer circuito, e é. O problema são os picofarads.
+
+Pior: o cabo da ponta é coaxial, e coaxial tem cerca de **100 pF por metro**. Um cabo de
+1,2 m acrescenta 120 pF. Ligado direto — o que se chama de ponta **1×**, ou "ponta de
+prova" no sentido literal —, o conjunto apresenta ao circuito algo como **1 MΩ em paralelo
+com 130 pF**.
+
+Cento e trinta picofarads não são desprezíveis em lugar nenhum acima de alguns quilohertz:
+
+| Frequência | $X_C$ de 130 pF |
+|---|---|
+| 1 kHz | 1,2 MΩ |
+| 10 kHz | 122 kΩ |
+| 100 kHz | 12,2 kΩ |
+| 1 MHz | 1,22 kΩ |
+| 10 MHz | 122 Ω |
+
+: Reatância da capacitância de uma ponta 1× com 1,2 m de cabo. Compare com a impedância do nó
+que se pretende medir. {#tbl-044-carga}
+
+Ligar isso na saída de um oscilador de 1 MHz com impedância de 10 kΩ é pôr 1,2 kΩ em
+paralelo com ela: o sinal cai para um oitavo, e é bem possível que o oscilador pare. **A
+ponta 1× não mede circuitos rápidos; ela os modifica.**
+
+## A ponta 10×: o divisor compensado {#sec-044-10x}
+
+A solução é antiga e elegante: pôr um divisor de tensão dentro da ponta, com 9 MΩ em série,
+de modo que o osciloscópio veja um décimo do sinal — e o circuito veja 10 MΩ em vez de 1 MΩ.
+
+Só que um divisor puramente resistivo não funciona: a capacitância do cabo, em paralelo com o
+1 MΩ do instrumento, faz do conjunto um **passa-baixas** com corte em poucos quilohertz. O
+sinal seria dividido por 10 em contínua e por muito mais em alta frequência.
+
+O truque é pôr um capacitor em paralelo com os 9 MΩ, escolhido de forma que a divisão
+capacitiva seja **igual** à divisão resistiva. Aí o divisor divide por 10 em todas as
+frequências.
+
+::: {#fig-044-divisor}
+
+```{.tikz}
+%%| filename: 044-divisor
+%%| alt: Esquemático do modelo elétrico de uma ponta de prova dez vezes ligada a um osciloscópio. À esquerda, o ponto de medição no circuito sob teste. A ponta contém um resistor de nove megaohms em paralelo com um capacitor ajustável de treze picofarads, que forma o braço superior do divisor. A saída desse braço segue por um cabo coaxial, representado por uma capacitância distribuída de cerca de cem picofarads ao terra. Na entrada do osciloscópio há um resistor de um megaohm em paralelo com um capacitor de vinte picofarads, formando o braço inferior. Uma anotação registra a condição de compensação, que é o produto da resistência pela capacitância de cada braço ser igual, e o resultado visto pelo circuito, que é dez megaohms em paralelo com cerca de doze picofarads.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---- ponto de medicao ----
+  \draw (0,0) node[circ]{} -- (0.9,0);
+  \node[anchor=east, font=\scriptsize, align=right] at (-0.15,0)
+       {ponta no\\circuito};
+
+  % ---- braco superior: 9 M em paralelo com C1 ----
+  \draw (0.9,0) -- (0.9,1.2) to[R, l={$R_1 = 9$ M$\Omega$}] (4.1,1.2) -- (4.1,0);
+  \draw (0.9,0) -- (0.9,-1.2) to[vC, l_={$C_1 \approx 13$ pF (ajustável)}]
+        (4.1,-1.2) -- (4.1,0);
+  \draw (4.1,0) -- (5.6,0);
+
+  % ---- cabo ----
+  \draw[manualgray, thick, dashed] (4.55,0.9) rectangle (7.7,-2.7);
+  \node[manualgray, anchor=south, font=\scriptsize] at (6.1,0.95)
+       {cabo coaxial};
+  \draw (5.85,0) to[C, l={$C_{\text{cabo}} \approx 100$ pF}] (5.85,-2.3);
+
+  % ---- entrada do osciloscopio ----
+  \draw (5.6,0) -- (8.4,0) node[circ]{};
+  \draw (8.4,0) -- (8.4,1.2) to[R, l={$R_2 = 1$ M$\Omega$}] (10.6,1.2) -- (10.6,0);
+  \draw (8.4,0) -- (8.4,-1.2) to[C, l_={$C_{\text{osc}} \approx 20$ pF}]
+        (10.6,-1.2) -- (10.6,0);
+  \draw (10.6,0) -- (10.6,-2.3);
+  \draw[manualblue, thick, dashed] (7.9,1.9) rectangle (11.3,-2.7);
+  \node[manualblue, anchor=south, font=\scriptsize] at (9.6,1.95)
+       {entrada do osciloscópio};
+
+  % ---- terra ----
+  \draw (0.9,-2.3) -- (10.6,-2.3);
+  \draw (0.9,0) -- (0.9,0);
+  \node[ground] at (0.9,-2.3) {};
+  \node[anchor=north, font=\scriptsize] at (2.6,-2.45)
+       {fio de terra da ponta};
+
+  % ---- anotacao ----
+  \node[anchor=north west, font=\scriptsize, align=left] at (0.0,-3.5)
+       {\textbf{condição de compensação:}\quad
+        $R_1 C_1 = R_2 (C_{\text{cabo}} + C_{\text{osc}})$
+        \quad$\Rightarrow$\quad $C_1 = \dfrac{120\ \text{pF}}{9} \approx 13$ pF};
+  \node[anchor=north west, font=\scriptsize, align=left] at (0.0,-4.35)
+       {\textbf{o circuito enxerga:}\quad
+        $10$ M$\Omega$ em paralelo com $\dfrac{C_1 \cdot 120}{C_1 + 120}
+        \approx 12$ pF \quad --- dez vezes menos capacitância que a ponta $1\times$};
+
+\end{tikzpicture}
+```
+
+O modelo elétrico de uma ponta 10×. O capacitor ajustável não é acessório: sem ele o divisor
+teria uma frequência de corte de poucos quilohertz, e a ponta seria um filtro.
+
+:::
+
+Impondo que a constante de tempo dos dois braços seja igual,
+
+$$ \boxed{\;R_1 C_1 = R_2 C_2\;} $$
+
+com $C_2 = C_{\text{cabo}} + C_{\text{osc}}$, o divisor passa a ser **independente da
+frequência**, e a razão vale $R_2/(R_1+R_2) = 1/10$ em qualquer lugar.
+
+O que o circuito sob teste enxerga é a série de $C_1$ com $C_2$:
+
+$$ C_{\text{entrada}} = \frac{C_1 C_2}{C_1 + C_2}
+   = \frac{13 \times 120}{133} \approx 12\ \text{pF}. $$
+
+**Doze picofarads em vez de cento e trinta, e dez megaohms em vez de um.** É por isso que a
+ponta 10× é o padrão, é por isso que ela vem no chaveador em 10× de fábrica, e é por isso
+que deixá-la em 1× por comodidade é quase sempre um erro.
+
+## Compensação {#sec-044-compensacao}
+
+A igualdade $R_1C_1 = R_2C_2$ tem um problema óbvio: $C_2$ depende do osciloscópio, e cada
+osciloscópio é um pouco diferente. Por isso $C_1$ é um capacitor **ajustável**, com um
+parafuso na ponta ou no conector, e por isso todo osciloscópio tem um terminal marcado
+"CAL" ou "PROBE COMP" entregando uma **onda quadrada de 1 kHz**.
+
+::: {#fig-044-compensacao}
+
+```{.tikz}
+%%| filename: 044-compensacao
+%%| alt: Gráfico de tensão contra tempo mostrando dois períodos de uma onda quadrada de um quilohertz vista através de uma ponta de prova em três estados de ajuste. A curva cinza fina é a onda quadrada ideal de referência. A curva verde, com a ponta corretamente compensada, coincide com a referência: patamares planos e bordas verticais. A curva azul, subcompensada, tem as bordas arredondadas e os patamares subindo lentamente para o valor final, parecendo o resultado de um filtro passa-baixas. A curva vermelha, sobrecompensada, tem picos altos em cada borda que decaem depressa para o valor final, parecendo o resultado de um filtro passa-altas. Uma anotação indica que a constante de tempo do transitório é de cerca de cento e vinte microssegundos, e que é por isso que o sinal de calibração é de um quilohertz.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.4cm, height=8.6cm,
+  xmin=0, xmax=2, ymin=-2.1, ymax=2.5,
+  xlabel={$t$ (ms)}, ylabel={saída da ponta (normalizada)},
+  xtick={0,0.5,1,1.5,2},
+  xticklabels={{0},{$0{,}5$},{1},{$1{,}5$},{2}},
+  ytick={-1.6,-1,0,1,1.6},
+  yticklabels={{$-1{,}6$},{$-1$},{0},{$+1$},{$+1{,}6$}},
+  grid=both, grid style={manualgray!20}, font=\footnotesize,
+  legend style={at={(0.5,-0.20)}, anchor=north, font=\scriptsize,
+                draw=manualgray!50, legend columns=2},
+  declare function={
+    ptn(\t,\k) = (\t < 0.5) * ( 1 + \k*exp(-\t/0.12))
+               + (\t >= 0.5 && \t < 1)   * (-1 - \k*exp(-(\t-0.5)/0.12))
+               + (\t >= 1   && \t < 1.5) * ( 1 + \k*exp(-(\t-1)/0.12))
+               + (\t >= 1.5)             * (-1 - \k*exp(-(\t-1.5)/0.12));},
+]
+  \addplot[manualgray!55, thick] coordinates
+    {(0,1) (0.5,1) (0.5,-1) (1,-1) (1,1) (1.5,1) (1.5,-1) (2,-1)};
+  \addlegendentry{quadrada ideal de 1 kHz}
+
+  \addplot[manualgreen, very thick, domain=0:1.999, samples=700]
+    {ptn(x,0)};
+  \addlegendentry{\textbf{compensada}: $R_1C_1 = R_2C_2$}
+
+  \addplot[manualblue, very thick, domain=0:1.999, samples=700]
+    {ptn(x,-0.55)};
+  \addlegendentry{\textbf{subcompensada}: $C_1$ pequeno demais}
+
+  \addplot[manualred, very thick, domain=0:1.999, samples=700]
+    {ptn(x,0.6)};
+  \addlegendentry{\textbf{sobrecompensada}: $C_1$ grande demais}
+
+  \node[manualgray, anchor=north east, font=\scriptsize, align=right]
+       at (axis cs:1.97,2.42)
+       {$\tau = (R_1 \!\parallel\! R_2)(C_1 + C_2) \approx 120$ µs\\
+        — daí o sinal de calibração ser de 1 kHz};
+\end{axis}
+\end{tikzpicture}
+```
+
+As três formas que a onda quadrada de calibração assume. Reconhecer qual delas está na tela é
+o primeiro reflexo de quem usa osciloscópio, e o ajuste leva quinze segundos.
+
+:::
+
+O procedimento é este, e ele se repete a cada troca de canal ou de instrumento:
+
+1. Ponta em **10×**, ligada ao terminal de calibração, garra no terminal de terra ao lado.
+2. Enquadre a quadrada: 4 a 6 divisões de altura, 2 a 3 períodos de largura.
+3. Gire o parafuso de ajuste com uma chave **plástica** — chave de metal acrescenta a própria
+   capacitância e altera o ajuste enquanto você o faz.
+4. Pare quando os patamares estiverem planos.
+
+O que cada forma significa:
+
+- **Patamares subindo devagar, bordas arredondadas** — $C_1$ pequeno demais. O braço superior
+  passa alta frequência de menos, e a ponta virou um passa-baixas. **Subcompensada.**
+- **Picos nas bordas decaindo para o patamar** — $C_1$ grande demais. O braço superior passa
+  alta frequência de mais. **Sobrecompensada.**
+- **Patamares planos** — certo.
+
+A constante de tempo do transitório é $(R_1\parallel R_2)(C_1 + C_2) \approx 0{,}9$ MΩ
+$\times$ 133 pF $\approx 120$ µs. Um período de 1 kHz dura 1 ms, isto é, cerca de oito
+constantes de tempo: tempo suficiente para o transitório aparecer inteiro e acabar. **O 1 kHz
+do terminal de calibração não é arbitrário** — é a frequência em que o defeito é mais
+visível.
+
+::: {.callout-warning}
+## Uma ponta descompensada erra amplitude e forma
+
+A tentação de "deixar como está, o erro é pequeno" custa caro. Uma ponta subcompensada em 30 %
+atenua um sinal de 100 kHz em vários decibéis e arredonda toda borda. Uma sobrecompensada
+fabrica sobressinal que não existe — e quem estiver caçando *ringing* num projeto vai passar
+a tarde procurando um problema criado pelo parafuso.
+
+Recompense a ponta **sempre** que trocar de canal, de osciloscópio ou de ponta. Leva quinze
+segundos e é a diferença entre medir e imaginar.
+:::
+
+## O que a ponta 10× custa {#sec-044-custo}
+
+Nada é de graça, e aqui o preço são 20 dB de sinal.
+
+| | Ponta 1× | Ponta 10× | Ponta 100× |
+|---|---|---|---|
+| Resistência de entrada | 1 MΩ | 10 MΩ | 10 MΩ |
+| Capacitância de entrada | 100–150 pF | 10–15 pF | 3–5 pF |
+| Banda típica | 6–20 MHz | 100–500 MHz | 100–250 MHz |
+| Atenuação do sinal | nenhuma | 20 dB | 40 dB |
+| Tensão máxima típica | 300 V | 300–600 V | 1,5–5 kV |
+| Uso natural | sinal pequeno e lento | **padrão** | alta tensão |
+
+: As três pontas passivas. A escolha é sempre um compromisso entre carga no circuito e ruído
+na tela. {#tbl-044-pontas}
+
+**Quando a 1× ainda é a escolha certa.** Medindo 20 mV de ondulação numa alimentação de
+baixa impedância, a 10× obriga o osciloscópio a trabalhar em 2 mV/div, onde o ruído próprio
+do instrumento é comparável ao sinal. A 1×, com o mesmo sinal em 20 mV/div, dá uma tela dez
+vezes mais limpa. Como a impedância da fonte é baixa e o sinal é lento, os 130 pF não
+atrapalham.
+
+**Quando é sempre errada.** Qualquer nó de alta impedância, qualquer sinal acima de umas
+poucas centenas de quilohertz, qualquer medida de tempo de subida.
+
+E lembre do @sec-cap-043: **a banda da ponta entra em quadratura com a do osciloscópio**.
+Uma ponta de 60 MHz num instrumento de 200 MHz entrega
+$1/\sqrt{1/60^2 + 1/200^2} \approx 57$ MHz. A ponta que vem na caixa costuma ser dimensionada
+para a banda do instrumento; a ponta genérica comprada avulsa, frequentemente não.
+
+## A impedância da ponta contra a frequência {#sec-044-impedancia}
+
+Os "10 MΩ" da folha de dados são um valor de corrente contínua. Acima de alguns quilohertz,
+quem manda é o capacitor.
+
+::: {#fig-044-impedancia}
+
+```{.tikz}
+%%| filename: 044-impedancia
+%%| alt: Gráfico com eixo horizontal logarítmico de frequência de cem hertz a cem megahertz e eixo vertical logarítmico do módulo da impedância de entrada, de dez ohms a cem megaohms. A curva vermelha da ponta um vezes parte de um megaohm em baixa frequência, começa a cair a partir de cerca de mil e trezentos hertz e chega a treze ohms em cem megahertz. A curva azul da ponta dez vezes parte de dez megaohms, começa a cair na mesma frequência de cerca de mil e trezentos hertz e chega a cento e trinta ohms em cem megahertz, mantendo-se dez vezes acima da outra em toda a faixa. Uma linha horizontal cinza tracejada marca dez quilohertz de impedância como referência de um nó típico de circuito, e ela é cruzada pela curva da ponta um vezes por volta de cem quilohertz e pela da ponta dez vezes só por volta de um megahertz.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log, ymode=log,
+  width=15.4cm, height=8.6cm,
+  xmin=100, xmax=1e8, ymin=10, ymax=2e7,
+  xlabel={frequência (Hz)}, ylabel={$|Z|$ de entrada ($\Omega$)},
+  xtick={100,1000,1e4,1e5,1e6,1e7,1e8},
+  xticklabels={{100},{1 k},{10 k},{100 k},{1 M},{10 M},{100 M}},
+  ytick={10,100,1000,1e4,1e5,1e6,1e7},
+  yticklabels={{10},{100},{1 k},{10 k},{100 k},{1 M},{10 M}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.03,0.03)}, anchor=south west, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    zin(\f,\r,\c) = \r/sqrt(1 + (6.2832*\f*\r*\c)^2);},
+]
+  \addplot[manualblue, very thick, domain=2:8, samples=280]
+    ({10^x}, {zin(10^x, 1e7, 12e-12)});
+  \addlegendentry{ponta $10\times$: 10 M$\Omega \parallel 12$ pF}
+
+  \addplot[manualred, very thick, domain=2:8, samples=280]
+    ({10^x}, {zin(10^x, 1e6, 120e-12)});
+  \addlegendentry{ponta $1\times$: 1 M$\Omega \parallel 120$ pF}
+
+  \addplot[manualgray, thick, dashed, domain=2:8, samples=2, forget plot]
+    ({10^x}, {1e4});
+  \node[manualgray, anchor=south west, font=\scriptsize]
+       at (axis cs:130,1.15e4) {impedância de um nó típico: 10 k$\Omega$};
+
+  \node[manualgray, anchor=north east, font=\scriptsize, align=right]
+       at (axis cs:9e7,1.2e7)
+       {a partir do joelho, quem manda é\\
+        a capacitância — e ela é dez vezes\\
+        menor na ponta $10\times$};
+\end{axis}
+\end{tikzpicture}
+```
+
+A impedância de entrada das duas pontas. As duas têm o joelho na mesma frequência, porque o
+produto $RC$ é o mesmo; o que muda é o **nível** da assíntota capacitiva, e a ponta 10× fica
+dez vezes acima em toda a faixa útil.
+
+:::
+
+A leitura prática: assim que a curva da ponta cruzar a impedância do nó que se quer medir, a
+medida deixa de ser observação e passa a ser participação. Num nó de 10 kΩ, isso acontece por
+volta de 100 kHz com a ponta 1× e por volta de 1 MHz com a 10×.
+
+## O fio de terra é uma indutância {#sec-044-terra}
+
+O fio com a garra jacaré que sai da ponta parece um detalhe de conveniência. Ele é o
+componente que mais estraga medidas rápidas.
+
+Um fio tem cerca de **1 nH por milímetro**. O rabicho de 15 cm que acompanha toda ponta vale,
+portanto, uns **150 nH** — e essa indutância está em série com os 12 pF da ponta, formando um
+circuito ressonante do @sec-cap-036:
+
+$$ f_{\text{ressonância}} = \frac{1}{2\pi\sqrt{LC}}
+   = \frac{1}{2\pi\sqrt{150\ \text{nH} \times 12\ \text{pF}}} \approx 119\ \text{MHz}. $$
+
+Com pouco amortecimento — e há pouco, porque a resistência do laço é de miliohms —, esse LC
+toca. Toda borda rápida o excita, e a tela mostra sobressinal e oscilação amortecida que
+**não existem no circuito**.
+
+::: {#fig-044-terra}
+
+```{.tikz}
+%%| filename: 044-terra
+%%| alt: Gráfico de amplitude em porcentagem do valor final contra tempo em nanossegundos, de menos dois a quarenta nanossegundos, mostrando a mesma borda medida de duas formas. A curva vermelha, medida com o rabicho de terra de quinze centímetros, dispara muito acima do valor final atingindo cento e sessenta por cento e depois oscila com amplitude decrescente por cerca de vinte nanossegundos, com período de oito vírgula cinco nanossegundos correspondendo a cento e dezenove megahertz. A curva azul, medida com a mola de terra de dois centímetros encaixada no corpo da ponta, sobe limpa até cem por cento em cerca de dois nanossegundos, sem sobressinal nem oscilação. Uma anotação registra que o sinal é o mesmo nos dois casos e que a diferença inteira é fabricada pelo fio de terra.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.4cm, height=8.2cm,
+  xmin=-2, xmax=40, ymin=-25, ymax=195,
+  xlabel={$t$ (ns)}, ylabel={amplitude (\% do valor final)},
+  xtick={0,5,10,15,20,25,30,35,40},
+  ytick={0,50,100,160},
+  yticklabels={{0},{50},{100},{160}},
+  grid=both, grid style={manualgray!20}, font=\footnotesize,
+  legend style={at={(0.97,0.03)}, anchor=south east, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    lon(\t) = 100*(1 - exp(-0.11*\t)*(cos(deg(0.745*\t))
+              + 0.1477*sin(deg(0.745*\t))));
+    cur(\t) = 100*(1 - exp(-\t/0.91));},
+]
+  \addplot[manualgray, thick, dashed, domain=-2:40, samples=2, forget plot]
+    {100};
+
+  \addplot[manualred, very thick, forget plot] coordinates {(-2,0) (0,0)};
+  \addplot[manualred, very thick, domain=0:40, samples=700] ({x}, {lon(x)});
+  \addlegendentry{rabicho de terra de 15 cm ($\approx 150$ nH)}
+
+  \addplot[manualblue, very thick, forget plot] coordinates {(-2,0) (0,0)};
+  \addplot[manualblue, very thick, domain=0:40, samples=500] ({x}, {cur(x)});
+  \addlegendentry{mola de terra de 2 cm ($\approx 20$ nH)}
+
+  \draw[manualred, thick, <->] (axis cs:4.2,168) -- (axis cs:12.6,168);
+  \node[manualred, anchor=south, font=\scriptsize] at (axis cs:8.4,170)
+       {$T = 8{,}4$ ns $\Rightarrow$ 119 MHz};
+
+  \node[manualgray, anchor=north west, font=\scriptsize, align=left]
+       at (axis cs:19,72)
+       {o sinal é o mesmo nos dois casos:\\
+        a diferença inteira é do fio de terra};
+\end{axis}
+\end{tikzpicture}
+```
+
+A mesma borda, dois fios de terra. O sobressinal de 60 % e a oscilação de 119 MHz não estão
+no circuito: estão na medida. Trocar o rabicho pela mola de terra é o ajuste mais barato de
+toda a bancada rápida.
+
+:::
+
+Três remédios, em ordem de preferência:
+
+1. **Mola de terra.** Retire o corpo plástico da ponta e encaixe a mola metálica curta que
+   acompanha o kit. O laço cai para 1 ou 2 cm, a indutância para 20 nH, e a ressonância sobe
+   para acima de 300 MHz — fora da banda de quase qualquer instrumento de bancada.
+2. **Ponto de terra mais próximo.** Se o rabicho for inevitável, prenda-o no terra mais
+   próximo possível do ponto medido, nunca no terra da fonte de alimentação a 20 cm.
+3. **Técnica ponta-e-anel** (*tip and barrel*). Sem garra nenhuma: encoste a ponta no sinal e
+   o anel metálico do corpo da ponta diretamente no terra da placa. É o menor laço possível, e
+   é o que se usa para medir ondulação de alimentação em placa rápida.
+
+**A regra de bolso:** a banda útil de uma medida é cerca de um terço da frequência de
+ressonância do laço de terra. Com 15 cm de rabicho, isso dá 40 MHz — independentemente de o
+osciloscópio ser de 200 MHz.
+
+## As outras pontas {#sec-044-outras}
+
+| Tipo | Como funciona | Para quê | Cuidado |
+|---|---|---|---|
+| Passiva 1× / 10× | divisor RC compensado | uso geral | compensar sempre |
+| Passiva 100× / AT | divisor com mais atenuação | alta tensão | conferir a tensão máxima |
+| Ativa (FET) | seguidor de tensão na ponta | 1–2 pF, banda de GHz | cara, frágil, precisa de alimentação |
+| Diferencial | amplificador diferencial na ponta | medir em circuito ligado à rede, medir sobre um resistor *shunt* | conferir a tensão de modo comum máxima |
+| De corrente por transformador | laço em torno do fio | corrente alternada, alta banda | não mede contínua |
+| De corrente por efeito Hall | sensor magnético no núcleo | corrente contínua e alternada | banda menor, offset a zerar |
+| Lógica | comparador com limiar | sinais digitais lentos, continuidade | não mostra forma de onda |
+
+: A família das pontas de prova. A diferencial é a única resposta correta para medir num
+circuito alimentado diretamente pela rede — ver a advertência do @sec-cap-043.
+{#tbl-044-outras}
+
+## Artefatos que a ponta fabrica {#sec-044-artefatos}
+
+Um catálogo de coisas que aparecem na tela e não existem no circuito.
+
+**Sobressinal e oscilação de alta frequência.** Rabicho de terra. É o caso da
+@fig-044-terra, e é o mais comum de todos.
+
+**Bordas arredondadas ou patamares inclinados numa quadrada.** Ponta descompensada. Confira
+no terminal de calibração antes de acreditar.
+
+**Amplitude que muda quando a ponta é encostada.** Carregamento. A capacitância da ponta
+mudou a frequência de um oscilador, ou o divisor de 12 pF derrubou o sinal num nó de alta
+impedância. Teste: encoste uma segunda ponta no mesmo nó — se a amplitude cair mais, o nó é
+sensível à carga.
+
+**Zumbido de 60 Hz que aparece com a ponta no ar.** A ponta é uma antena com 10 MΩ de
+impedância, e o @sec-cap-042 explica o resto. Não é defeito: é a demonstração de que a ponta
+funciona.
+
+**Sinal aparecendo no canal desligado.** Diafonia entre canais, ou a segunda ponta captando
+o mesmo campo. Teste: curto-circuite a segunda ponta na garra dela.
+
+**Traço "sujo" que some ao mudar a posição do cabo.** Acoplamento indutivo no laço formado
+pelo cabo da ponta. Afaste-o de transformadores e de cabos de potência.
+
+**Duas medidas que discordam entre si em circuito ligado à rede.** Provavelmente uma das duas
+garras está num ponto que não é terra, e a malha está curto-circuitando algo. Pare e releia a
+advertência do @sec-cap-043.
+
+## 🧪 Laboratório {#sec-044-lab}
+
+**Compensar a ponta e ver as três formas da quadrada; medir o mesmo sinal com 1× e com 10× e
+flagrar o carregamento; e fabricar oscilação com o fio de terra.**
+
+### Material
+
+::: {.lab-material}
+- 1 osciloscópio com terminal de calibração de 1 kHz e ao menos uma ponta 10× compensável
+- 1 chave de ajuste plástica (vem no kit da ponta; um palito de churrasco lixado serve)
+- 1 gerador de sinal com saída de onda quadrada, ou o astável a 555 do @sec-cap-039
+- 1 multímetro digital
+- Resistores 1/4 W: 1 kΩ, 100 kΩ, 1 MΩ
+- Capacitor: 100 pF cerâmico
+- Fio rígido fino, uns 20 cm, para fabricar um rabicho de terra longo
+- Protoboard, jumpers
+:::
+
+### Parte 1 — As três formas da quadrada
+
+1. Ponta em 10×, ligada ao terminal de calibração, garra no terra ao lado dele.
+2. Enquadre a quadrada em 4 a 6 divisões e 2 a 3 períodos.
+3. Gire o parafuso de ajuste **deliberadamente para os dois extremos** e desenhe (ou
+   fotografe) as três formas: subcompensada, correta, sobrecompensada.
+4. Deixe-a corretamente compensada.
+5. Meça a constante de tempo do transitório na condição descompensada, com os cursores.
+   A previsão é de cerca de 120 µs, e ela depende dos valores reais da sua ponta.
+
+Guarde as três imagens. Reconhecê-las na tela, depois, leva um segundo.
+
+### Parte 2 — Carregamento, medido
+
+1. Monte um divisor: 100 kΩ do gerador ao nó de saída, 100 kΩ do nó ao terra. A impedância do
+   nó é 50 kΩ.
+2. Com o gerador em senoide de 1 kHz, meça a amplitude no nó com a ponta **10×**.
+3. Passe para **1×** (mude também a escala vertical e o fator de ponta no menu do
+   osciloscópio, se ele tiver essa opção).
+4. Suba a frequência para 10 kHz, 50 kHz e 100 kHz, medindo com as duas pontas em cada
+   frequência.
+
+| $f$ | 10× (12 pF) | 1× (120 pF) | previsão de queda com 1× |
+|---|---|---|---|
+| 1 kHz | | | 0,2 % |
+| 10 kHz | | | 2 % |
+| 50 kHz | | | 32 % |
+| 100 kHz | | | 62 % |
+
+: Tabela da Parte 2. A previsão sai de $|H| = 1/\sqrt{1 + (2\pi f R_{\text{th}} C)^2}$ com
+$R_{\text{th}} = 50$ kΩ. {#tbl-044-lab}
+
+Em 100 kHz, a ponta 1× come quase dois terços do sinal — e o circuito não tem nada de errado.
+
+5. Repita a medida de 1 kHz com um resistor de 1 kΩ no lugar dos dois de 100 kΩ. Agora as
+   duas pontas concordam, porque a impedância do nó ficou baixa. **Carregamento é sempre uma
+   relação entre a ponta e o nó, nunca uma propriedade só da ponta.**
+
+### Parte 3 — Fabricar oscilação com o fio de terra
+
+1. Ligue a ponta 10× à saída de onda quadrada mais rápida disponível — o terminal de
+   calibração serve, e uma saída de porta lógica serve melhor.
+2. Com a garra de terra padrão presa perto do ponto medido, olhe a borda de subida com a base
+   de tempo bem rápida.
+3. Agora **estenda o terra**: prenda um fio de 20 cm entre a garra e o ponto de terra, e faça
+   dele um laço grande.
+4. Olhe a borda de novo.
+
+Deve aparecer sobressinal e oscilação amortecida. Meça o período da oscilação e calcule a
+frequência; com o valor de 12 pF da ponta, estime a indutância pelo
+$f = 1/(2\pi\sqrt{LC})$ e compare com a regra de 1 nH por milímetro.
+
+5. Se a ponta tiver mola de terra, encaixe-a e repita. O sobressinal cai drasticamente.
+
+**Nada mudou no circuito nos quatro passos.** Toda a diferença está no fio de terra, e é isso
+que a @fig-044-terra afirma.
+
+### Parte 4 — A ponta como antena
+
+1. Desligue a ponta de tudo e deixe-a no ar, com a garra solta.
+2. Ganho vertical em 50 mV/div, acoplamento CC, gatilho na rede (se o osciloscópio tiver essa
+   fonte de gatilho) ou em auto.
+3. Observe o zumbido de 60 Hz. Meça a amplitude e a frequência.
+4. Prenda a garra de terra em algum terra. A amplitude cai.
+5. Segure a ponta com a mão. A amplitude sobe.
+
+Este é o experimento da Parte 1 do laboratório do @sec-cap-042, refeito com um instrumento
+que mostra a **forma** — e a forma revela mais do que o número: dá para ver a distorção da
+rede, isto é, os harmônicos que o @sec-cap-040 previu.
+
+### Parte 5 — Medir a capacitância da própria ponta
+
+1. Monte um passa-baixas RC com $R = 100$ kΩ e $C$ **nenhum** — apenas o resistor entre o
+   gerador e o nó de medida, com o nó em aberto.
+2. Meça a resposta em frequência do nó com a ponta 10×: varra de 1 kHz a 500 kHz e ache o
+   ponto de −3 dB.
+3. A única capacitância do circuito é a da própria ponta. Calcule-a por
+   $C = 1/(2\pi f_c R)$.
+
+Para 12 pF e 100 kΩ, $f_c = 133$ kHz. O valor medido inclui a capacitância da protoboard —
+que é de vários picofarads e é outra lição.
+
+**Variante simulada (plano B).** Sem osciloscópio, as Partes 1 e 2 se fazem em simulador: no
+LTspice, monte o divisor de 9 MΩ ∥ $C_1$ com 1 MΩ ∥ 120 pF e faça uma análise transitória com
+`PULSE`, variando $C_1$ com `.step`. As três curvas da @fig-044-compensacao saem exatamente.
+A Parte 3 exige o instrumento físico e a indutância física — e é por isso que ela é a mais
+instrutiva do capítulo.
+
+## 🔥 Onde Queima {#sec-044-queima}
+
+**Usar a ponta sem compensar.** Erro de amplitude e de forma em todo sinal com conteúdo
+acima de alguns quilohertz. Quinze segundos resolvem.
+
+**Compensar com chave de metal.** A mão e a chave acrescentam capacitância, e o ajuste some
+quando você tira a chave. Use a chave plástica.
+
+**Deixar em 1× por comodidade.** Cento e trinta picofarads no circuito. Acima de 100 kHz, a
+medida é sobre a ponta, não sobre o circuito.
+
+**Esquecer de trocar o fator de ponta no menu do osciloscópio.** Todos os números da tela
+saem dez vezes errados, e nada indica isso.
+
+**Usar o rabicho de terra de 15 cm em medida rápida.** Ressonância em torno de 120 MHz e
+sobressinal que não existe. Mola de terra, ou ponta-e-anel.
+
+**Prender a garra de terra longe do ponto medido.** Aumenta o laço e piora tudo. E, se o
+ponto não for terra de verdade, é o curto-circuito do @sec-cap-043.
+
+**Medir alta tensão com ponta de 300 V.** A tensão máxima cai com a frequência, e a folha de
+dados traz a curva. Ultrapassá-la fura o isolamento — e o outro lado do isolamento é a sua
+mão.
+
+**Achar que "10 MΩ" vale em qualquer frequência.** Vale em contínua. Em 1 MHz, a ponta 10×
+apresenta 13 kΩ.
+
+**Usar ponta genérica de banda desconhecida num instrumento rápido.** A banda do conjunto é
+a soma em quadratura das duas, e a ponta costuma ser o gargalo.
+
+**Culpar o circuito pelo sobressinal.** Antes de qualquer coisa, encurte o terra, recompense
+a ponta e repita. Metade dos *ringings* de bancada é fabricada pela medida.
+
+**Encostar duas garras em pontos diferentes de um circuito ligado à rede.** Curto-circuito
+pelo chassi do instrumento. Só com ponta diferencial.
+
+**Confiar num nó de alta impedância medido a frio.** Encoste a ponta e veja se o
+comportamento muda. Se mudar, a medida está participando do circuito.
+
+## O que fica deste capítulo {#sec-044-resumo}
+
+A ponta de prova é um circuito, e ele entra em série com toda medida. Ligada direto, ela põe
+**1 MΩ em paralelo com 120 a 150 pF** no nó — inaceitável acima de alguns quilohertz.
+
+A ponta **10×** resolve com um divisor compensado: 9 MΩ ∥ $C_1$ ajustável no braço superior,
+1 MΩ ∥ ($C_{\text{cabo}} + C_{\text{osc}}$) no inferior, e a condição
+
+$$ R_1 C_1 = R_2 C_2 $$
+
+que torna a divisão independente da frequência. O circuito passa a enxergar **10 MΩ em
+paralelo com cerca de 12 pF**, ao custo de 20 dB de sinal.
+
+A **compensação** se ajusta na onda quadrada de 1 kHz do terminal de calibração, com chave
+plástica: patamar subindo é $C_1$ pequeno demais, pico na borda é $C_1$ grande demais,
+patamar plano está certo. A constante de tempo do transitório é de cerca de 120 µs, e é por
+isso que o sinal de calibração é de 1 kHz.
+
+Os 10 MΩ são de corrente contínua. **Acima do joelho, quem manda é a capacitância**, e a
+ponta 10× fica dez vezes acima da 1× em toda a faixa. Assim que a impedância da ponta cruzar
+a do nó, a medida vira participação.
+
+O **fio de terra é uma indutância** de cerca de 1 nH por milímetro. Os 150 nH do rabicho
+padrão, com os 12 pF da ponta, ressoam por volta de 120 MHz, e toda borda rápida excita esse
+LC: o sobressinal e a oscilação que aparecem na tela são fabricados pela medida. Mola de
+terra ou técnica ponta-e-anel. **Banda útil da medida $\approx$ um terço da ressonância do
+laço.**
+
+E há uma família inteira de pontas para os casos que a passiva não cobre: ativa, diferencial,
+de corrente por transformador ou por efeito Hall, lógica.
+
+Falta uma peça para o volume fechar. Todos os laboratórios deste manual, do @sec-cap-027 em
+diante, pediram "um gerador de sinal" sem nunca examinar o que ele é, que erros ele introduz
+e por que a amplitude que ele mostra no display quase nunca é a que chega ao circuito. E
+falta o procedimento completo: com gerador, osciloscópio e ponta compensada na mão, **como se
+levanta a resposta em frequência de um circuito do começo ao fim**, com o rigor que os
+diagramas de Bode do @sec-cap-035 mereciam. É o @sec-cap-045, e ele fecha o Volume 7.
