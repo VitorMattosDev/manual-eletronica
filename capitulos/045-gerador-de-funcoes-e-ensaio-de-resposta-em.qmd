@@ -1,3 +1,649 @@
 # Gerador de funções e ensaio de resposta em frequência {#sec-cap-045}
 
-*(em elaboração)*
+Desde o @sec-cap-027, todo laboratório deste manual começou com a mesma linha na lista de
+material: "um gerador de sinal". Nunca foi dito o que ele é por dentro, que erros ele
+introduz, nem por que a amplitude que ele mostra no display quase nunca é a que chega ao
+circuito.
+
+E há uma segunda dívida, maior. O @sec-cap-035 ensinou a **desenhar** diagramas de Bode e o
+Volume 6 inteiro os usou; nenhum capítulo mostrou como **levantar** um, do começo ao fim,
+com rigor. Os roteiros pediam "meça em 500 Hz, 1 kHz, 2 kHz" e seguiam adiante, deixando de
+fora as três ou quatro decisões que separam uma curva confiável de uma curva bonita e
+errada.
+
+Este capítulo paga as duas dívidas e fecha o Volume 7. Ao final, a bancada estará completa:
+multímetro, fonte, gerador, osciloscópio e ponta compensada, com o vocabulário do
+@sec-cap-039 ao @sec-cap-044 para descrever o que se vê. É com esse equipamento que o
+Volume 8 abre os semicondutores.
+
+## O gerador por dentro {#sec-045-dentro}
+
+Geradores analógicos clássicos produziam a onda triangular com um integrador e um
+comparador, e a moldavam em senoide com uma rede de diodos. Funcionavam, e a distorção não
+baixava de 1 %.
+
+O gerador moderno é **DDS**, de *direct digital synthesis*, e o princípio é bonito: em vez de
+gerar a forma, gera-se a **fase**.
+
+::: {#fig-045-blocos}
+
+```{.tikz}
+%%| filename: 045-blocos
+%%| alt: Diagrama de blocos de um gerador de funções por síntese digital direta. Da esquerda para a direita, um relógio de referência alimenta um acumulador de fase, que a cada pulso soma um incremento fixo, determinado pela frequência escolhida, a um registrador de fase. O valor da fase endereça uma tabela de forma de onda em memória, que entrega a amostra correspondente a um conversor digital-analógico. A saída do conversor passa por um filtro de reconstrução passa-baixas, depois por um amplificador com controle de amplitude e de nível contínuo, depois por um atenuador em degraus, e finalmente sai por um resistor de cinquenta ohms até o conector de saída. Anotações indicam que a frequência de saída é o produto do incremento pelo relógio dividido por dois elevado ao número de bits do acumulador, e que o resistor de cinquenta ohms em série é a origem do erro de fator dois na amplitude.
+
+\begin{tikzpicture}[font=\footnotesize,
+  bloco/.style={draw, thick, rounded corners=2pt, minimum height=1.0cm,
+                minimum width=1.95cm, align=center, font=\scriptsize,
+                fill=white},
+  seta/.style={-{Latex[length=2mm]}, thick}]
+
+  \node[bloco] (clk)  at (0,0)    {relógio\\$f_{\text{clk}}$};
+  \node[bloco] (acum) at (2.25,0) {acumulador\\de fase ($N$ bits)};
+  \node[bloco] (tab)  at (4.55,0) {tabela da\\forma de onda};
+  \node[bloco] (dac)  at (6.85,0) {conversor\\D/A};
+  \node[bloco] (filt) at (9.15,0) {filtro de\\reconstrução};
+  \node[bloco] (amp)  at (11.45,0) {amplitude\\e offset};
+
+  \draw[seta] (clk)  -- (acum);
+  \draw[seta] (acum) -- (tab);
+  \draw[seta] (tab)  -- (dac);
+  \draw[seta] (dac)  -- (filt);
+  \draw[seta] (filt) -- (amp);
+
+  % incremento
+  \node[anchor=south, font=\scriptsize, manualblue, align=center]
+       at (2.25,1.2) {incremento $M$\\(a frequência pedida)};
+  \draw[manualblue, seta] (2.25,1.1) -- (2.25,0.52);
+
+  % saida com 50 ohm
+  \draw (amp.east) -- (12.8,0);
+  \draw (12.8,0) to[R, l={$50\ \Omega$}] (14.4,0);
+  \draw (14.4,0) -- (14.9,0) node[circ]{};
+  \node[anchor=north, font=\scriptsize] at (14.9,-0.22) {saída};
+
+  \node[manualred, anchor=north, font=\scriptsize, align=center]
+       at (13.6,-0.95) {a origem do erro\\de fator 2};
+
+  \node[anchor=north, font=\scriptsize, align=center] at (5.2,-1.35)
+       {$f_{\text{saída}} = \dfrac{M}{2^{N}}\,f_{\text{clk}}$
+        \quad --- com $N = 32$ e $f_{\text{clk}} = 100$ MHz,
+        a resolução é de $0{,}023$ Hz};
+
+\end{tikzpicture}
+```
+
+Um gerador DDS. A frequência não é ajustada por nenhum componente analógico: ela é um número
+somado a cada pulso de relógio, e é por isso que a estabilidade dela é a do cristal.
+
+:::
+
+Um **acumulador de fase** de $N$ bits soma um incremento $M$ a cada pulso do relógio. O valor
+acumulado representa a fase instantânea; ele endereça uma tabela com a forma de onda
+desejada, e a amostra vai ao conversor digital-analógico. A frequência de saída é
+
+$$ \boxed{\;f_{\text{saída}} = \frac{M}{2^{N}}\,f_{\text{clk}}\;} $$
+
+Com $N = 32$ bits e um relógio de 100 MHz, a resolução de frequência é
+$100\times10^6/2^{32} = 0{,}023$ Hz, e a exatidão é a do cristal de referência — tipicamente
+alguns partes por milhão. **Um gerador DDS é um instrumento de frequência excelente**, muito
+melhor do que qualquer coisa analógica, e é por isso que ele também serve de referência para
+calibrar frequencímetro.
+
+Depois do conversor vem o **filtro de reconstrução**, que remove as raias de amostragem, e é
+ele que impõe o limite superior de frequência. Depois vêm o amplificador de amplitude e
+offset, o atenuador em degraus e — o detalhe da próxima seção — um resistor de **50 Ω em
+série com a saída**.
+
+## Os 50 Ω e o erro de fator 2 {#sec-045-50ohm}
+
+Esta é a armadilha que mais aparece em bancada, e ela é simples de entender e fácil de
+esquecer.
+
+A saída do gerador tem 50 Ω em série. Isso existe por duas boas razões: casar com cabo
+coaxial de 50 Ω (o que evita reflexão em alta frequência, assunto do Volume 14) e proteger o
+amplificador de saída contra curto-circuito.
+
+E os fabricantes calibram o display supondo que a carga seja de **50 Ω**. Nessa condição, o
+divisor entre os 50 Ω internos e os 50 Ω da carga corta a tensão pela metade — e o display
+mostra a metade, que é o que a carga recebe.
+
+::: {#fig-045-50ohm}
+
+```{.tikz}
+%%| filename: 045-50ohm
+%%| alt: Dois esquemáticos lado a lado, cada um com uma fonte de tensão de dez volts pico a pico em série com um resistor de cinquenta ohms representando a saída do gerador. No da esquerda, a carga é um resistor de cinquenta ohms, e a anotação indica que o divisor corta a tensão pela metade, de modo que a carga recebe cinco volts pico a pico, que é exatamente o valor mostrado no display do gerador. No da direita, a carga é a entrada de alta impedância de um osciloscópio, representada por um milhão de ohms, e a anotação indica que praticamente não há queda no resistor interno, de modo que o circuito recebe dez volts pico a pico, o dobro do que o display do gerador indica.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- carga de 50 ohm ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,0) to[sV, l={$10\ V_{pp}$}, invert] (0,3.2);
+    \draw (0,3.2) to[R, l={$50\ \Omega$ interno}] (3.4,3.2);
+    \draw (3.4,3.2) to[R, l={carga $50\ \Omega$}] (3.4,0);
+    \node[manualred, anchor=east, font=\scriptsize] at (3.2,1.6) {$5\ V_{pp}$};
+    \draw (0,0) -- (3.4,0);
+    \node[ground] at (1.7,0) {};
+    \node[anchor=north, font=\scriptsize, align=center] at (1.7,-0.75)
+         {\textbf{carga casada de 50 $\Omega$}\\
+          o display mostra $5\ V_{pp}$ --- e é isso que chega};
+  \end{scope}
+
+  % ---------------- carga de alta impedancia ----------------
+  \begin{scope}[shift={(8.8,0)}]
+    \draw (0,0) to[sV, l={$10\ V_{pp}$}, invert] (0,3.2);
+    \draw (0,3.2) to[R, l={$50\ \Omega$ interno}] (3.4,3.2);
+    \draw (3.4,3.2) to[R, l={carga $1$ M$\Omega$}] (3.4,0);
+    \node[manualred, anchor=east, font=\scriptsize] at (3.2,1.6) {$10\ V_{pp}$};
+    \draw (0,0) -- (3.4,0);
+    \node[ground] at (1.7,0) {};
+    \node[anchor=north, font=\scriptsize, align=center] at (1.7,-0.75)
+         {\textbf{alta impedância}\\
+          o display mostra $5\ V_{pp}$ --- e chegam $10\ V_{pp}$};
+  \end{scope}
+
+  \node[manualred, anchor=north, font=\scriptsize, align=center] at (6.1,-2.0)
+       {\textbf{fator 2 de erro} --- o display supõe carga de 50 $\Omega$};
+
+\end{tikzpicture}
+```
+
+O mesmo gerador, duas cargas. A tensão interna não mudou; o que mudou foi o divisor. Como
+quase todo circuito de bancada tem impedância muito maior que 50 Ω, **a regra prática é que o
+gerador entrega o dobro do que o display diz**.
+
+:::
+
+Três modos de lidar com isso:
+
+1. **Configurar o gerador para "alta impedância".** Quase todo instrumento moderno tem essa
+   opção no menu de saída (*Output Load: High-Z*). Escolhida ela, o display passa a mostrar o
+   valor correto para carga alta. **É a solução certa, e ela é esquecida o tempo todo.**
+2. **Medir a amplitude com o osciloscópio** e ignorar o display. Sempre correto, e é o que
+   este manual recomenda em qualquer medida que dependa de amplitude.
+3. **Lembrar do fator 2 de cabeça.** Funciona até a primeira vez que não funcionar.
+
+E há um efeito de segunda ordem que importa em circuitos de baixa impedância: **os 50 Ω
+internos estão em série com o circuito sob teste**. Ao medir um filtro RC com $R = 100\ \Omega$,
+os 50 Ω do gerador entram na conta e deslocam a frequência de corte em 50 %. É o problema de
+fonte real do @sec-cap-020, com nome e valor conhecidos. A saída é usar $R$ pelo menos vinte
+vezes maior que 50 Ω, ou incluir os 50 Ω no cálculo.
+
+## Os controles, e o que cada um esconde {#sec-045-controles}
+
+**Frequência.** Exato e estável, pelas razões do @sec-045-dentro. É o parâmetro em que mais
+se pode confiar num gerador.
+
+**Amplitude.** Em $V_{pp}$, quase sempre, e sujeita ao fator 2 acima. A **planura** da
+amplitude com a frequência é uma especificação real: geradores de bancada mantêm ±0,5 dB até
+alguns megahertz e pioram depois. Num ensaio de resposta em frequência, isso significa que
+**a entrada precisa ser medida em cada ponto**, não ajustada uma vez e esquecida.
+
+**Offset.** Soma-se à forma de onda. Atenção: a soma de amplitude e offset não pode
+ultrapassar a excursão máxima do amplificador de saída; ao pedir 5 V de offset com 10 $V_{pp}$
+de amplitude, muitos geradores recortam sem avisar.
+
+**Simetria ou ciclo de trabalho.** Ajusta $D$ na quadrada e a assimetria na triangular
+(transformando-a em rampa). É o controle que gera os harmônicos pares do @sec-cap-040.
+
+**Fase.** Em geradores de dois canais, permite defasar um canal em relação ao outro — útil
+para testar detectores de fase e circuitos diferenciais.
+
+**Saída ligada/desligada.** Um botão separado. Ajustar a amplitude com a saída desligada e só
+depois ligá-la é hábito que evita queimar circuito.
+
+## Modos além da senoide contínua {#sec-045-modos}
+
+**Varredura (*sweep*).** A frequência percorre uma faixa, linear ou logaritmicamente, em um
+tempo ajustado. Com o osciloscópio disparado pelo sinal de sincronismo da varredura, a tela
+mostra **a resposta em frequência inteira de uma vez**. É rápido, é excelente para achar o
+ponto de ressonância, e é impreciso: cada frequência é visitada por um instante, e circuitos
+de $Q$ alto não têm tempo de se acomodar. **Varredura acha; medida ponto a ponto quantifica.**
+
+**Rajada (*burst*).** Emite $n$ ciclos e para. Serve para medir resposta transitória sem que a
+resposta em regime mascare o começo, e para testar circuitos de contagem.
+
+**Modulação.** AM, FM, PM, FSK. Necessária no Volume 13; irrelevante antes dele.
+
+**Saída de sincronismo (TTL/*sync*).** Uma onda quadrada de nível lógico, na mesma frequência
+do sinal principal. É a fonte de gatilho ideal para o osciloscópio: limpa, com bordas rápidas
+e amplitude fixa, independentemente de quanto o sinal principal tenha sido atenuado pelo
+circuito sob teste. **Usar a saída de sincronismo como gatilho e observar o sinal atenuado no
+canal é a técnica que salva a medida da banda de rejeição**, onde o sinal fica pequeno demais
+para disparar.
+
+## Limitações reais {#sec-045-limites}
+
+**A quadrada não é quadrada.** Se a forma vier da tabela e passar pelo filtro de
+reconstrução, as bordas saem com tempo de subida limitado pelo filtro — dezenas de
+nanossegundos num gerador de 20 MHz. Muitos instrumentos contornam isso gerando a quadrada
+por um comparador separado, com bordas de poucos nanossegundos. Confira na folha de dados
+qual é o caso, porque isso decide se o gerador serve para testar circuito digital.
+
+**Raias espúrias.** O DDS produz componentes indesejadas em frequências relacionadas ao
+relógio, tipicamente 50 a 70 dB abaixo da fundamental. Irrelevante em bancada geral; fatal em
+medida de distorção, onde o gerador precisa ser mais limpo do que o circuito sob teste.
+
+**Distorção da senoide.** THD típico de 0,1 % a 1 % em gerador de bancada comum. Medir 0,05 %
+de distorção de um amplificador com um gerador de 0,3 % é impossível.
+
+**Corrente de saída.** Alguns miliampères a algumas dezenas. Um gerador não alimenta carga
+de potência, e ligar um alto-falante de 8 Ω diretamente é pedir proteção térmica — ou pior.
+
+**Offset de contínua residual.** Poucos milivolts, e eles importam ao alimentar circuitos de
+alto ganho ou entradas sensíveis a nível.
+
+## O ensaio de resposta em frequência {#sec-045-ensaio}
+
+Aqui está o procedimento completo. Ele parece longo escrito e leva vinte minutos na bancada.
+
+::: {#fig-045-ensaio}
+
+```{.tikz}
+%%| filename: 045-ensaio
+%%| alt: Esquemático da montagem de um ensaio de resposta em frequência. À esquerda, o gerador de funções representado por uma fonte de sinal em série com seu resistor interno de cinquenta ohms. Sua saída vai ao nó de entrada do circuito sob teste, desenhado como uma caixa retangular no centro, cuja saída segue para um nó à direita. Um trilho de terra corre por baixo de tudo, e a caixa se liga a ele por um único ponto marcado como o terra do circuito, onde vão as garras das duas pontas. Do nó de entrada sobe a ponta do canal um do osciloscópio, e do nó de saída sobe a ponta do canal dois. Uma ligação vermelha sai da saída de sincronismo do gerador, contorna o desenho por baixo e sobe do lado direito até a entrada de gatilho externo do osciloscópio. Uma anotação registra que o ganho é a razão entre a leitura do canal dois e a do canal um, medidas na mesma varredura, e que a fase sai da diferença de tempo entre os dois traços.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---- gerador ----
+  \draw[thick] (-3.0,1.7) rectangle (-0.8,4.1);
+  \node[align=center, font=\scriptsize] at (-1.9,2.9) {gerador de\\funções};
+  \draw (-0.8,2.9) -- (0,2.9);
+  \draw (0,2.9) to[R, l={$50\ \Omega$}] (2.4,2.9);
+  \draw (2.4,2.9) -- (4.0,2.9);
+  \node[circ] at (3.0,2.9) {};
+  \draw (-1.9,1.7) -- (-1.9,0);
+
+  % ---- circuito sob teste ----
+  \draw[thick] (4.0,1.7) rectangle (7.4,4.1);
+  \node[align=center, font=\scriptsize] at (5.7,2.9) {circuito\\sob teste};
+  \draw (7.4,2.9) -- (9.0,2.9);
+  \node[circ] at (8.4,2.9) {};
+
+  % ---- terra ----
+  \draw (-1.9,0) -- (9.0,0);
+  \draw (5.7,1.7) -- (5.7,0);
+  \node[ground] at (5.7,0) {};
+  \node[anchor=north, font=\scriptsize, align=center] at (5.7,-0.55)
+       {terra do circuito\\(as duas garras aqui)};
+
+  % ---- pontas ----
+  \draw[manualblue, very thick] (3.0,2.9) -- (3.0,5.3);
+  \node[manualblue, anchor=south, font=\scriptsize, align=center] at (3.0,5.35)
+       {canal 1\\(entrada)};
+  \draw[manualgreen!60!black, very thick] (8.4,2.9) -- (8.4,5.3);
+  \node[manualgreen!60!black, anchor=south, font=\scriptsize, align=center]
+       at (8.4,5.35) {canal 2\\(saída)};
+
+  % ---- sincronismo, roteado por baixo ----
+  \draw[manualred, thick] (-3.0,2.2) -- (-3.8,2.2) -- (-3.8,-1.7)
+        -- (11.0,-1.7) -- (11.0,5.3);
+  \node[manualred, anchor=south, font=\scriptsize, align=center]
+       at (11.0,5.35) {gatilho\\externo};
+  \node[manualred, anchor=north, font=\scriptsize] at (3.6,-1.8)
+       {saída de sincronismo do gerador $\rightarrow$ gatilho externo};
+
+  % ---- anotacao ----
+  \node[anchor=north west, font=\scriptsize, align=left] at (-3.8,-2.7)
+       {$|H| = \dfrac{V_{\text{canal 2}}}{V_{\text{canal 1}}}$,
+        com os dois medidos \textbf{na mesma varredura};
+        \quad fase pelo $\Delta t$ entre os dois traços};
+
+\end{tikzpicture}
+```
+
+A montagem completa. O canal 1 medindo a entrada não é redundância: a amplitude do gerador
+varia com a frequência, e o circuito a carrega de forma diferente em cada ponto.
+
+:::
+
+**Antes de começar:**
+
+1. Compense as duas pontas na quadrada de 1 kHz (@sec-cap-044).
+2. Configure o gerador para carga de alta impedância, ou aceite o fator 2 conscientemente.
+3. Confira que a impedância do circuito sob teste é bem maior que 50 Ω, ou inclua os 50 Ω na
+   previsão.
+4. Calcule a curva **antes** de medir. Sem previsão, não há como perceber que a medida está
+   errada.
+
+**A varredura de reconhecimento:**
+
+5. Ponha o gerador em varredura logarítmica cobrindo três décadas em torno da frequência
+   esperada, e olhe a tela. Em dez segundos você sabe onde estão o joelho, o pico e a região
+   plana — e sabe se o circuito está fazendo alguma coisa completamente diferente do previsto.
+
+**A medida ponto a ponto:**
+
+6. Escolha os pontos em progressão **logarítmica**: 4 a 6 por década, mais densos perto do
+   joelho. Uma década com pontos em 1, 1,5, 2, 3, 5, 7 e 10 é o padrão.
+7. Em cada frequência: ajuste a base de tempo para ver 2 a 3 períodos, meça $V_{\text{in}}$ no
+   canal 1 e $V_{\text{out}}$ no canal 2 **na mesma varredura**, e anote os dois.
+8. Meça também o $\Delta t$ entre os dois traços, para a fase.
+9. Mantenha a amplitude de entrada constante ao longo do ensaio, dentro do possível — e, mais
+   importante, **anote o valor medido, não o pedido**.
+
+**O cálculo:**
+
+$$ |H|_{\text{dB}} = 20\log_{10}\frac{V_{\text{out}}}{V_{\text{in}}},
+   \qquad
+   \phi = -360^{\circ} \times \frac{\Delta t}{T}. $$
+
+10. Marque em papel monolog, ou numa planilha com eixo logarítmico.
+11. Compare com a previsão. Divergências sistemáticas apontam para carregamento, impedância
+    de fonte ou tolerância de componente; divergências erráticas apontam para ruído ou erro
+    de leitura.
+
+::: {.callout-note}
+## Quando o sinal fica pequeno demais
+
+Na banda de rejeição, a saída pode cair abaixo do ruído do osciloscópio. Três recursos, em
+ordem:
+
+- **Disparar pelo sincronismo do gerador**, não pelo sinal. Com gatilho estável, a imagem se
+  mantém mesmo com o sinal minúsculo.
+- **Ligar a média** (@sec-cap-043). O sinal é repetitivo e o ruído não: 64 médias ganham
+  18 dB de faixa dinâmica.
+- **Aumentar a amplitude de entrada**, se o circuito permanecer linear. Confira que a saída
+  continua senoidal: se aparecer distorção, o ganho medido deixa de ter sentido.
+
+Se os três acabarem, o ensaio atingiu o piso do @sec-cap-042 — e o número certo a anotar é
+"abaixo de −X dB", não uma leitura de ruído.
+:::
+
+## Medir fase {#sec-045-fase}
+
+Há dois métodos, e vale conhecer os dois.
+
+**Pelo $\Delta t$**, com dois canais. Meça o intervalo entre dois cruzamentos de zero
+correspondentes — o da entrada e o da saída — e converta:
+
+$$ \phi = -360^{\circ}\,\frac{\Delta t}{T}. $$
+
+É direto, é preciso e exige dois canais. Cuidado com o sinal: saída **atrasada** em relação à
+entrada é fase **negativa**, que é o caso de todo passa-baixas.
+
+**Por figuras de Lissajous**, com o modo X–Y. O canal 1 vai ao eixo horizontal, o canal 2 ao
+vertical, e a base de tempo é desligada. Duas senoides de mesma frequência desenham uma elipse
+cuja forma revela a defasagem.
+
+::: {#fig-045-lissajous}
+
+```{.tikz}
+%%| filename: 045-lissajous
+%%| alt: Seis pequenos gráficos quadrados dispostos em duas linhas de três, cada um mostrando a figura de Lissajous formada por duas senoides de mesma frequência com defasagens diferentes, com o sinal de entrada no eixo horizontal e o de saída no vertical. Em zero grau a figura é uma reta diagonal inclinada para a direita. Em trinta graus é uma elipse estreita inclinada para a direita. Em sessenta graus é uma elipse mais aberta, ainda inclinada. Em noventa graus é um círculo perfeito. Em cento e vinte graus é uma elipse aberta inclinada para a esquerda. Em cento e oitenta graus é uma reta diagonal inclinada para a esquerda. Em cada figura está marcado o ponto em que a curva cruza o eixo vertical, e uma anotação indica que o seno da defasagem é a razão entre esse cruzamento e a altura máxima da figura.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \foreach \fase/\col/\lin in {0/0/0, 30/1/0, 60/2/0, 90/0/1, 120/1/1, 180/2/1}{
+    \begin{scope}[shift={(\col*5.55, -\lin*5.5)}]
+      \draw[manualgray!35, thin] (-1.75,0) -- (1.75,0);
+      \draw[manualgray!35, thin] (0,-1.75) -- (0,1.75);
+      \draw[manualgray!60, thin] (-1.75,-1.75) rectangle (1.75,1.75);
+      \draw[manualblue, very thick, smooth, samples=200, domain=0:360]
+           plot ({1.5*sin(\x)}, {1.5*sin(\x + \fase)});
+      \draw[manualred, fill=manualred] (0,{1.5*sin(\fase)}) circle (1.6pt);
+      \node[anchor=north, font=\scriptsize] at (0,-1.95)
+           {$\phi = \fase^{\circ}$};
+    \end{scope}}
+
+  \node[anchor=north, font=\scriptsize, align=center] at (5.55,-9.1)
+       {$\sin\phi = \dfrac{y_0}{y_{\max}}$
+        \quad --- $y_0$ é o ponto vermelho, onde a figura cruza o eixo vertical;
+        $y_{\max}$ é a altura total da figura};
+
+\end{tikzpicture}
+```
+
+Figuras de Lissajous para seis defasagens. Reta inclinada para a direita é fase zero; círculo
+é 90°; reta inclinada para a esquerda é 180°. A elipse não distingue $+\phi$ de $-\phi$ nem
+$\phi$ de $180^{\circ}-\phi$ — para isso é preciso saber de que lado o circuito atrasa.
+
+:::
+
+O método de Lissajous funciona com **um canal só de base de tempo** e era o padrão na era do
+osciloscópio analógico. Hoje ele é útil por dois motivos: é imediato para reconhecer 0°, 90° e
+180°, e é excelente para achar a frequência de ressonância de um circuito RLC, onde a fase
+passa por zero e a elipse degenera numa reta.
+
+## O ensaio por resposta ao degrau {#sec-045-degrau}
+
+Existe um atalho, e ele é rápido o bastante para valer sempre a pena como primeira
+aproximação.
+
+Alimente o circuito com uma **onda quadrada** de frequência bem baixa — período de pelo menos
+dez constantes de tempo — e meça o tempo de subida da saída entre 10 % e 90 %. Pelo
+@sec-cap-040,
+
+$$ f_c \approx \frac{0{,}35}{t_r}. $$
+
+Uma medida, um número, trinta segundos. Vale para sistemas de um polo dominante, que é a
+maioria dos casos práticos, e não vale para filtros de ordem alta, para circuitos
+ressonantes nem quando há sobressinal — mas o próprio sobressinal já avisa que a fórmula não
+se aplica, o que é uma vantagem honesta.
+
+A forma da resposta ao degrau diz mais do que o número:
+
+- **Exponencial limpa** — um polo. Use $0{,}35/t_r$.
+- **Sobressinal e oscilação** — polos complexos. A frequência da oscilação é próxima de $f_0$,
+  e o tamanho do sobressinal dá o $Q$ pela fórmula do @sec-cap-036.
+- **Patamar que desce** — há um passa-altas em algum lugar (@sec-cap-034), e a constante de
+  tempo da descida é a dele.
+- **Dois degraus em tempos diferentes** — dois polos bem separados.
+
+Ler a resposta ao degrau é a habilidade que fecha o Volume 7, porque exige o vocabulário
+inteiro dele: forma de onda (@sec-cap-039), conteúdo espectral (@sec-cap-040), banda
+(@sec-cap-043) e artefato de medida (@sec-cap-044).
+
+## 🧪 Laboratório {#sec-045-lab}
+
+**Levantar o diagrama de Bode completo — módulo e fase — de um filtro RC e de um filtro LC,
+com o rigor deste capítulo, e comparar com a previsão calculada antes.**
+
+Este é o laboratório de encerramento do volume. Ele reúne o gerador, o osciloscópio, a ponta
+compensada e as contas do Volume 6.
+
+### Material
+
+::: {.lab-material}
+- 1 osciloscópio de dois canais com pontas 10× compensadas (ou o de placa de som, para as
+  frequências de áudio)
+- 1 gerador de funções com saída de sincronismo (ou aplicativo gerador no computador)
+- 1 multímetro digital
+- Resistores 1/4 W: 1,5 kΩ, 3,3 kΩ, 220 Ω
+- Capacitores: 10 nF poliéster, 100 nF poliéster
+- 1 indutor de 10 mH
+- Papel monolog, ou planilha
+- Protoboard, jumpers
+:::
+
+### Parte 1 — Preparar o instrumento antes de medir
+
+1. Compense as **duas** pontas na quadrada de 1 kHz. Guarde as três formas da
+   @fig-044-compensacao na memória.
+2. Configure a saída do gerador para **alta impedância**. Se o instrumento não tiver a opção,
+   anote que todo valor de display vale o dobro.
+3. Ligue a saída de sincronismo do gerador ao gatilho externo do osciloscópio e selecione essa
+   fonte de gatilho.
+4. Com os dois canais na mesma ponta do mesmo nó, confira que eles leem o mesmo valor. Se
+   discordarem mais de 3 %, o problema é de compensação ou de calibração vertical, e ele vai
+   contaminar todo o ensaio.
+
+### Parte 2 — Prever
+
+Filtro RC passa-baixas com $R = 3{,}3$ kΩ e $C = 10$ nF:
+
+$$ f_c = \frac{1}{2\pi RC} = 4{,}82\ \text{kHz}. $$
+
+Preencha a coluna de previsão antes de ligar o gerador.
+
+| $f$ | $f/f_c$ | $|H|$ previsto (dB) | $\phi$ previsto | $|H|$ medido | $\phi$ medido |
+|---|---|---|---|---|---|
+| 500 Hz | 0,104 | −0,05 | −5,9° | | |
+| 1 kHz | 0,207 | −0,19 | −11,7° | | |
+| 2 kHz | 0,415 | −0,71 | −22,5° | | |
+| 3 kHz | 0,622 | −1,49 | −31,9° | | |
+| 4,82 kHz | 1,000 | −3,01 | −45,0° | | |
+| 7 kHz | 1,452 | −5,08 | −55,4° | | |
+| 10 kHz | 2,074 | −7,25 | −64,3° | | |
+| 20 kHz | 4,149 | −12,6 | −76,4° | | |
+| 50 kHz | 10,37 | −20,3 | −84,5° | | |
+
+: Tabela do ensaio da Parte 3. Os valores previstos saem de
+$|H| = 1/\sqrt{1+(f/f_c)^2}$ e $\phi = -\arctan(f/f_c)$. {#tbl-045-lab}
+
+Note que os 50 Ω do gerador entram em série com os 3,3 kΩ: eles deslocam $f_c$ em 1,5 %, o que
+está dentro da tolerância dos componentes e pode ser ignorado. Com $R = 220\ \Omega$ não
+poderia.
+
+### Parte 3 — Medir
+
+1. Para cada frequência da tabela: ajuste o gerador, ajuste a base de tempo para 2 a 3
+   períodos, meça $V_{\text{in}}$ (canal 1) e $V_{\text{out}}$ (canal 2).
+2. Calcule $20\log_{10}(V_{\text{out}}/V_{\text{in}})$.
+3. Meça o $\Delta t$ entre os cruzamentos de zero de subida dos dois traços e converta em
+   graus.
+4. Preencha a tabela e marque os pontos.
+
+O ponto de −3 dB medido deve cair a menos de 10 % de 4,82 kHz. Se cair sistematicamente
+**abaixo**, suspeite de capacitância parasita somada ao $C$ — a da ponta, a da protoboard, ou
+as duas.
+
+### Parte 4 — O mesmo filtro pelo degrau, em trinta segundos
+
+1. Ponha o gerador em quadrada de 200 Hz.
+2. Meça o tempo de subida da saída entre 10 % e 90 %.
+3. Calcule $f_c = 0{,}35/t_r$.
+4. Compare com o resultado da Parte 3.
+
+A previsão é $t_r = 73$ µs. Dois métodos, o mesmo circuito, e uma diferença de tempo de
+bancada de vinte minutos para meio minuto. **O ensaio ponto a ponto é o que quantifica; o
+degrau é o que se usa o tempo todo.**
+
+### Parte 5 — O filtro LC, onde a fase fica interessante
+
+Monte o passa-baixas LC do @sec-cap-036: $L = 10$ mH em série, $C = 100$ nF ao terra,
+$R_L = 220\ \Omega$ em paralelo com o capacitor. A previsão é $f_0 = 5{,}03$ kHz e
+$Q = 0{,}70$.
+
+1. Faça uma **varredura** de 500 Hz a 50 kHz e olhe a tela. Localize o joelho.
+2. Meça ponto a ponto em 1, 2, 3, 4, 5, 6, 8, 10, 15, 20 e 30 kHz.
+3. Meça a fase em cada ponto. Ela deve ir de 0° a −180°, passando por **−90° exatamente em
+   $f_0$** — e essa é a maneira mais precisa de achar $f_0$, muito melhor que procurar o pico
+   do módulo.
+4. Troque $R_L$ por 1 kΩ ($Q = 3{,}16$) e repita alguns pontos perto de $f_0$. O pico de
+   +10 dB aparece, e a transição de fase fica muito mais abrupta.
+
+### Parte 6 — Lissajous
+
+1. Ponha o osciloscópio em modo **X–Y**, canal 1 no horizontal e canal 2 no vertical.
+2. Com o filtro LC de $Q = 0{,}70$, varra a frequência lentamente à mão.
+3. Observe: reta inclinada em baixa frequência (0°), elipse abrindo, **círculo** em $f_0$
+   (−90°), elipse fechando na direção oposta, reta inclinada para o outro lado em alta
+   frequência (−180°).
+4. Ajuste a frequência até obter o círculo mais perfeito possível e leia a frequência. É
+   $f_0$, medida por um método que não depende de amplitude nenhuma.
+
+Essa é a técnica clássica de achar ressonância, e ela continua sendo a mais precisa que se faz
+sem instrumento dedicado.
+
+**Variante simulada (plano B).** No ngspice, uma análise `.ac dec 20 100 1e6` sobre os dois
+circuitos produz as duas curvas inteiras, módulo e fase, em um comando — e comparar a curva
+simulada com os pontos medidos é o melhor uso possível das duas ferramentas. No LTspice, a
+mesma análise sai clicando; no Falstad, o osciloscópio embutido tem modo X–Y para reproduzir a
+Parte 6.
+
+## 🔥 Onde Queima {#sec-045-queima}
+
+**Acreditar no display de amplitude do gerador.** Ele supõe carga de 50 Ω. Em alta impedância
+a saída é o dobro. Configure "High-Z" ou meça com o osciloscópio.
+
+**Esquecer os 50 Ω de saída em circuito de baixa impedância.** Eles entram em série e
+deslocam a frequência de corte. Com $R$ do filtro abaixo de 1 kΩ, inclua-os na conta.
+
+**Ajustar a entrada uma vez e medir só a saída.** A amplitude do gerador varia com a
+frequência e o circuito a carrega de forma diferente em cada ponto. Meça os dois canais em
+cada frequência.
+
+**Levantar Bode com pontos igualmente espaçados em escala linear.** O gráfico é logarítmico:
+1, 2, 3, ..., 20 kHz concentra tudo numa década e deixa o resto vazio. Use 4 a 6 pontos por
+década.
+
+**Confiar na varredura para quantificar.** Cada frequência é visitada por um instante, e
+circuito de $Q$ alto não se acomoda. Varredura acha; ponto a ponto mede.
+
+**Disparar o osciloscópio pelo sinal de saída na banda de rejeição.** O sinal é pequeno demais
+e a imagem some. Dispare pelo sincronismo do gerador.
+
+**Aumentar a amplitude para vencer o ruído sem conferir a linearidade.** Se a saída distorcer,
+a razão medida deixa de ser um ganho.
+
+**Medir fase e esquecer o sinal.** Saída atrasada é fase negativa. Todo passa-baixas atrasa.
+
+**Ler fase em Lissajous sem saber o quadrante.** A elipse não distingue $+\phi$ de $-\phi$ nem
+$\phi$ de $180^{\circ}-\phi$. Use-a para reconhecer 0°, 90° e 180°, e o $\Delta t$ para o resto.
+
+**Usar $0{,}35/t_r$ em circuito com sobressinal.** A fórmula é de um polo. Sobressinal
+significa polos complexos, e aí o número certo vem do $Q$.
+
+**Medir distorção com um gerador mais sujo que o circuito.** Gerador de bancada tem THD de
+0,1 % a 1 %. Ele não mede um amplificador de 0,01 %.
+
+**Alimentar carga de potência com o gerador.** Alguns miliampères de saída. Alto-falante
+direto é proteção térmica no melhor caso.
+
+**Pedir amplitude e offset que somados estouram a excursão de saída.** Muitos geradores
+recortam sem avisar, e a distorção resultante é atribuída ao circuito.
+
+## O que fica deste capítulo {#sec-045-resumo}
+
+O gerador moderno é **DDS**: a frequência é um número somado a cada pulso de relógio,
+$f = (M/2^N)f_{\text{clk}}$, com resolução de centésimos de hertz e exatidão de cristal.
+**Frequência é o parâmetro em que se pode confiar; amplitude, não.**
+
+A saída tem **50 Ω em série**, e o display é calibrado supondo carga de 50 Ω. Em alta
+impedância, **o gerador entrega o dobro do que o display diz**. Configure a saída para
+alta impedância, ou meça com o osciloscópio. E lembre que esses 50 Ω entram em série com o
+circuito sob teste.
+
+Os modos que importam: **varredura** para achar, **rajada** para transitório, e **saída de
+sincronismo** como fonte de gatilho — o recurso que salva a medida na banda de rejeição.
+
+O **ensaio de resposta em frequência** completo: compensar as pontas, configurar a carga do
+gerador, **calcular a previsão antes**, fazer uma varredura de reconhecimento, medir ponto a
+ponto com 4 a 6 pontos por década (mais densos no joelho), **medir entrada e saída na mesma
+varredura**, e converter:
+
+$$ |H|_{\text{dB}} = 20\log_{10}\frac{V_{\text{out}}}{V_{\text{in}}},
+   \qquad
+   \phi = -360^{\circ}\frac{\Delta t}{T}. $$
+
+Perto do piso de ruído: disparar pelo sincronismo, ligar a média, e anotar "abaixo de −X dB"
+em vez de uma leitura de ruído.
+
+**Fase** pelo $\Delta t$ entre dois canais, ou por **Lissajous** em modo X–Y: reta é 0°,
+círculo é 90°, reta invertida é 180°. E a fase é o método mais preciso de achar $f_0$ num
+circuito ressonante, porque ela passa por −90° exatamente ali, enquanto o pico do módulo é
+achatado.
+
+E o atalho que se usa a vida inteira: **quadrada na entrada, $t_r$ na saída,
+$f_c \approx 0{,}35/t_r$** — válido para um polo dominante, e a própria forma da resposta ao
+degrau avisa quando não vale.
+
+## O Volume 7, e o que vem depois {#sec-045-fecho}
+
+Sete capítulos atrás, a bancada tinha um multímetro e uma fonte, e o manual sabia descrever
+senoides. Agora ela tem um instrumento que desenha o tempo, uma linguagem para descrever
+qualquer forma de onda, o método para decompô-la em senoides, a escala em que ganhos e níveis
+se comunicam, o critério para separar ruído de interferência, e o procedimento para levantar
+a resposta em frequência de qualquer coisa.
+
+Isso encerra a **Fase 2**. Tudo até aqui — resistores, capacitores, indutores, filtros,
+instrumentos — é linear e passivo. Um circuito passivo pode selecionar, atrasar, dividir e
+somar; ele nunca pode entregar mais potência do que recebeu, e nunca pode decidir nada.
+
+O que falta para a eletrônica existir é um componente que **não** seja linear: que conduza
+num sentido e não no outro, que controle uma corrente grande com uma pequena, que tenha dois
+estados estáveis. Esse componente é o **semicondutor**, e ele é a Fase 3 inteira — seis
+volumes, do diodo ao amplificador operacional.
+
+E o primeiro deles começa onde este parou: com um cristal de silício, uma junção, e uma curva
+característica que finalmente não é uma reta.

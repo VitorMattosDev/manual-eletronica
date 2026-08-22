@@ -8,7 +8,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 ---
 
-**Progresso: 40/104**
+**Progresso: 41/104**
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -87,7 +87,7 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 - [x] 042 — Ruído: térmico, de disparo e interferência externa — `capitulos/042-ruido-termico-de-disparo-e-interferencia-externa.qmd`
 - [x] 043 — O osciloscópio: base de tempo, ganho vertical e gatilho — `capitulos/043-o-osciloscopio-base-de-tempo-ganho-vertical-e.qmd`
 - [x] 044 — Pontas de prova, compensação e artefatos de medição — `capitulos/044-pontas-de-prova-compensacao-e-artefatos-de-medicao.qmd`
-- [ ] 045 — Gerador de funções e ensaio de resposta em frequência — `capitulos/045-gerador-de-funcoes-e-ensaio-de-resposta-em.qmd`
+- [x] 045 — Gerador de funções e ensaio de resposta em frequência — `capitulos/045-gerador-de-funcoes-e-ensaio-de-resposta-em.qmd`
 
 
 ## Fase 3 — Semicondutores e Eletrônica Analógica
