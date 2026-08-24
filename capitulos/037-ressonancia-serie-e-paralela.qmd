@@ -1,3 +1,808 @@
 # Ressonância série e paralela {#sec-cap-037}
 
-*(em elaboração)*
+O @sec-cap-036 terminou com uma curva incômoda. Com $Q$ alto, o filtro LC deixava de
+atenuar suavemente e passava a **erguer** a resposta perto de $f_0$: +10 dB, +14 dB, e
+subindo conforme a carga saía. Um filtro que amplifica no meio da faixa é um filtro
+ruim — mas é um circuito sintonizado excelente.
+
+Este capítulo troca o ponto de vista. Em vez de tratar o pico como defeito a domar, vamos
+tratá-lo como o efeito principal e perguntar o que ele faz. A resposta é curta e tem
+consequências longas: na frequência em que $X_L = X_C$, o par LC deixa de se comportar
+como dois componentes e passa a se comportar como um só — um curto-circuito, se estiverem
+em série; um circuito aberto, se estiverem em paralelo. Tudo o mais no capítulo decorre
+disso.
+
+E há uma consequência que costuma pegar o leitor de surpresa na primeira medição: num
+circuito série ressonante, a tensão sobre o indutor e sobre o capacitor é **maior que a
+tensão da fonte**. Não um pouco maior — dez, vinte, cinquenta vezes maior. Não há erro de
+medida nem violação de lei nenhuma, e a @fig-037-tensoes mostra de onde vem.
+
+## A ressonância série {#sec-037-serie}
+
+::: {#fig-037-circuitos}
+
+```{.tikz}
+%%| filename: 037-circuitos
+%%| alt: Dois esquemáticos lado a lado. À esquerda, o circuito ressonante série: uma fonte de tensão alternada v subscrito in liga-se a um resistor R, depois a um indutor L, depois a um capacitor C que retorna ao terra, formando uma única malha percorrida pela corrente i. Anotações indicam que na ressonância a impedância é mínima e vale apenas R, e que a corrente é máxima. À direita, o circuito ressonante paralelo: a mesma fonte liga-se por um resistor de fonte R subscrito s a um nó de onde partem, em paralelo para o terra, um indutor L e um capacitor C. Setas curvas entre o indutor e o capacitor indicam a corrente que circula entre os dois. Anotações indicam que na ressonância a impedância é máxima e a corrente de linha é mínima.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- serie ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,0) to[sV, l={$v_{\mathrm{in}}$}] (0,3.4);
+    \draw (0,3.4) to[R, l={$R$}] (2.2,3.4);
+    \draw (2.2,3.4) to[L, l={$L$}] (4.4,3.4);
+    \draw (4.4,3.4) to[C, l={$C$}] (4.4,0);
+    \draw (0,0) -- (4.4,0);
+    \draw[vetor, manualblue] (1.70,3.78) -- (2.35,3.78)
+          node[midway, above, font=\scriptsize] {$i$};
+    \node[anchor=north, align=center, font=\scriptsize] at (2.2,-0.6)
+         {\textbf{ressonância série}};
+    \node[manualred, anchor=north west, align=left, font=\scriptsize,
+          text width=4.6cm] at (-0.4,-1.15)
+         {em $f_0$: $X_L$ e $X_C$ se cancelam.\\[2pt]
+          $Z$ é \textbf{mínima} e vale só $R$.\\[2pt]
+          A corrente é \textbf{máxima}.};
+  \end{scope}
+
+  % ---------------- paralelo ----------------
+  \begin{scope}[shift={(9.4,0)}]
+    \draw (0,0) to[sV, l={$v_{\mathrm{in}}$}] (0,3.4);
+    \draw (0,3.4) to[R, l={$R_s$}] (2.2,3.4);
+    \draw (2.2,3.4) -- (3.1,3.4);
+    \draw (3.1,3.4) to[L, l_={$L$}] (3.1,0);
+    \draw (3.1,3.4) -- (4.9,3.4);
+    \draw (4.9,3.4) to[C, l={$C$}] (4.9,0);
+    \draw (0,0) -- (4.9,0);
+    \node[ponto] at (3.1,3.4) {};
+    \draw[->,>=stealth, manualgreen, thick]
+          (3.45,2.6) to[bend left=32] (4.55,2.6);
+    \draw[->,>=stealth, manualgreen, thick]
+          (4.55,1.0) to[bend left=32] (3.45,1.0);
+    \node[manualgreen, font=\scriptsize] at (4.0,1.8) {$i_{\mathrm{circ}}$};
+    \node[anchor=north, align=center, font=\scriptsize] at (2.4,-0.6)
+         {\textbf{ressonância paralela} (tanque)};
+    \node[manualred, anchor=north west, align=left, font=\scriptsize,
+          text width=5.0cm] at (-0.4,-1.15)
+         {em $f_0$: as correntes se cancelam.\\[2pt]
+          $Z$ é \textbf{máxima}.\\[2pt]
+          A corrente de linha é \textbf{mínima}.};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+Os mesmos dois componentes, duas ligações, dois comportamentos opostos. Em série o par
+LC vira um curto na ressonância; em paralelo, vira um aberto. Qual dos dois se quer
+decide a topologia, e é o erro mais comum do assunto trocar um pelo outro.
+
+:::
+
+No circuito série da @fig-037-circuitos, a impedância total é a soma direta, porque os
+três elementos compartilham a mesma corrente:
+
+$$ \mathbf{Z} = R + j\omega L + \frac{1}{j\omega C}
+   = R + j\left(\omega L - \frac{1}{\omega C}\right)
+   = R + j\left(X_L - X_C\right). $$
+
+A parte reativa é uma diferença, e diferenças se anulam. O que se anula aqui é o termo
+inteiro que carrega o $j$, o que acontece exatamente quando
+
+$$ \omega_0 L = \frac{1}{\omega_0 C}
+   \qquad\Longrightarrow\qquad
+   \boxed{\;f_0 = \frac{1}{2\pi\sqrt{LC}}\;} $$
+
+que é a mesma frequência natural do @sec-036-lc e do RLC no tempo do @sec-cap-026 — e
+não é coincidência: são o mesmo circuito visto de dois ângulos. Lá, $f_0$ era a
+frequência com que o circuito oscilava sozinho depois de um degrau. Aqui, é a frequência
+em que ele responde melhor a um estímulo externo. Um sistema oscila na frequência em que
+responde melhor; é a mesma propriedade.
+
+Em $f_0$ a impedância cai para $\mathbf{Z} = R$: puramente resistiva, mínima, e — o ponto
+que costuma escapar — **independente de $L$ e de $C$**. Os dois somem do resultado. Um
+LC de 10 mH com 100 nF e um LC de 100 µH com 10 nF, ambos em série com o mesmo resistor,
+apresentam a mesma impedância na respectiva ressonância. O que os distingue é como
+respondem *fora* dela, e isso é o assunto do @sec-cap-038.
+
+### As reatâncias, vistas de perto
+
+::: {#fig-037-reatancias}
+
+```{.tikz}
+%%| filename: 037-reatancias
+%%| alt: Gráfico com eixo horizontal logarítmico de frequência, de um a vinte e cinco quilohertz, e eixo vertical linear de impedância em ohms, de zero a mil e setecentos. A reatância indutiva é uma reta crescente que parte de sessenta e três ohms em um quilohertz. A reatância capacitiva é uma curva decrescente que parte de mil quinhentos e noventa ohms em um quilohertz. As duas se cruzam em cinco vírgula zero três quilohertz no valor de trezentos e dezesseis ohms, que é a impedância característica. A curva do módulo da impedância total do circuito série tem a forma de um V muito acentuado, descendo de mil e quinhentos ohms até cem ohms exatamente no cruzamento e subindo de novo. Uma linha vertical tracejada marca a frequência de ressonância.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log,
+  width=15.2cm, height=9.2cm,
+  xmin=1, xmax=25, ymin=0, ymax=1750,
+  xlabel={frequência (kHz)}, ylabel={impedância ($\Omega$)},
+  xtick={1,2,3,5,7,10,15,25},
+  xticklabels={{1},{2},{3},{5},{7},{10},{15},{25}},
+  ytick={0,316,500,1000,1500},
+  yticklabels={{0},{$Z_0 = 316$},{500},{1000},{1500}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.5,0.98)}, anchor=north, font=\scriptsize,
+                draw=manualgray!50, legend columns=3},
+  declare function={
+    xl(\u)=62.832*\u;
+    xc(\u)=1591.55/\u;
+    zs(\u)=sqrt(100^2+(xl(\u)-xc(\u))^2);},
+]
+  \addplot[auxiliar, forget plot] coordinates {(5.033,0) (5.033,1750)};
+
+  \addplot[manualgreen, very thick, domain=0:1.4, samples=200]
+          ({10^x}, {xl(10^x)});
+  \addlegendentry{$X_L = 2\pi f L$}
+
+  \addplot[manualyellow, very thick, domain=0:1.4, samples=300]
+          ({10^x}, {xc(10^x)});
+  \addlegendentry{$X_C = 1/2\pi f C$}
+
+  \addplot[manualblue, ultra thick, domain=0:1.4, samples=400]
+          ({10^x}, {zs(10^x)});
+  \addlegendentry{$|Z|$ do circuito série}
+
+  \node[ponto] at (axis cs:5.033,316) {};
+  \node[manualred, font=\scriptsize, anchor=south west,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:5.6,400) {$X_L = X_C = Z_0 = 316\ \Omega$};
+  \node[manualblue, font=\scriptsize, anchor=north west,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:5.6,150) {$|Z| = R = 100\ \Omega$};
+  \node[manualgray, font=\scriptsize, anchor=south,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:5.033,1120) {$f_0 = 5{,}03$ kHz};
+\end{axis}
+\end{tikzpicture}
+```
+
+$L = 10$ mH, $C = 100$ nF, $R = 100\ \Omega$. As duas reatâncias se cruzam em 316 Ω —
+esse valor é a impedância característica $Z_0 = \sqrt{L/C}$ — e nesse ponto a impedância
+total desaba para o valor do resistor. Note que a escala vertical é linear: o V não é
+artefato do gráfico, é o circuito.
+
+:::
+
+Três leituras da @fig-037-reatancias valem o tempo gasto nela.
+
+**Abaixo de $f_0$, o circuito é capacitivo.** $X_C > X_L$, a parte imaginária de
+$\mathbf{Z}$ é negativa, a corrente adianta a tensão. Muito abaixo, o capacitor domina
+por completo e o indutor é um pedaço de fio.
+
+**Acima de $f_0$, o circuito é indutivo.** $X_L > X_C$, a corrente atrasa. Muito acima, o
+capacitor é um curto e sobra o indutor.
+
+**No cruzamento, as duas reatâncias valem $Z_0 = \sqrt{L/C}$.** Isso não é óbvio e é
+útil. Em $f_0$,
+
+$$ X_L = \omega_0 L = \frac{L}{\sqrt{LC}} = \sqrt{\frac{L}{C}} = Z_0. $$
+
+A impedância característica não é apenas um parâmetro de projeto do @sec-036-lc: é
+literalmente o valor que cada reatância assume na ressonância. Para 10 mH e 100 nF, 316 Ω.
+Guarde o número — ele reaparece em todas as contas do capítulo.
+
+### A tensão que passa da fonte
+
+Em $f_0$ a corrente da malha vale $I = V/R$, o máximo possível. Essa corrente atravessa o
+indutor, e a tensão sobre ele é
+
+$$ V_L = I \cdot X_L = \frac{V}{R}\cdot Z_0 = V \cdot \frac{Z_0}{R}. $$
+
+O fator $Z_0/R$ é o **fator de qualidade** $Q$ do circuito série:
+
+$$ \boxed{\;Q_{\text{série}} = \frac{Z_0}{R} = \frac{1}{R}\sqrt{\frac{L}{C}}
+   = \frac{\omega_0 L}{R} = \frac{1}{\omega_0 C R}\;} $$
+
+e portanto $V_L = V_C = Q \cdot V$. As quatro formas são a mesma coisa; a que se usa
+depende de quais valores estão à mão.
+
+Repare na inversão em relação ao @sec-cap-036. Lá, no filtro LC passa-baixas, $Q = R_L/Z_0$
+— resistência **dividida** pela impedância característica. Aqui, $Q = Z_0/R$ — o
+inverso. Não é contradição: são resistências em posições diferentes do circuito. No
+filtro, $R_L$ está em paralelo com o elemento de saída e drena energia por *tensão*; aqui,
+$R$ está em série e drena energia por *corrente*. Em ambos os casos $Q$ mede a mesma
+coisa — quanta energia o circuito guarda contra quanta ele perde por ciclo — mas a
+fórmula se inverte conforme a resistência esteja em série ou em paralelo. Confundir as
+duas é o erro de conta mais frequente do assunto, e o @sec-cap-038 volta a ele com a
+definição energética, que não depende de topologia.
+
+Com $L = 10$ mH, $C = 100$ nF e um resistor real de 24 Ω (a resistência do próprio fio da
+bobina, medida com o ohmímetro), $Q = 316{,}2/24 = 13{,}2$. Uma fonte de 5 V produz
+66 V sobre o indutor e 66 V sobre o capacitor.
+
+::: {#fig-037-tensoes}
+
+```{.tikz}
+%%| filename: 037-tensoes
+%%| alt: Gráfico com eixo horizontal linear de frequência, de três a oito quilohertz, e eixo vertical de tensão eficaz, de zero a setenta e dois volts. Três curvas para um circuito ressonante série alimentado por cinco volts. A tensão no resistor tem um pico estreito de cinco volts na ressonância, igual à tensão da fonte. As tensões no indutor e no capacitor têm picos estreitos de sessenta e seis volts na mesma frequência, treze vezes maiores que a fonte. Longe da ressonância a tensão no capacitor tende à tensão da fonte pela esquerda e a tensão no indutor tende à tensão da fonte pela direita. Uma linha horizontal tracejada em cinco volts marca a tensão da fonte, e a região acima dela está destacada.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.2cm, height=9.2cm,
+  xmin=3, xmax=8, ymin=0, ymax=74,
+  xlabel={frequência (kHz)}, ylabel={tensão eficaz (V)},
+  xtick={3,4,5,6,7,8},
+  xticklabels={{3},{4},{5},{6},{7},{8}},
+  ytick={0,5,20,40,60,66},
+  yticklabels={{0},{5},{20},{40},{60},{66}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.98,0.5)}, anchor=east, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    xl(\u)=62.832*\u;
+    xc(\u)=1591.55/\u;
+    zt(\u)=sqrt(24^2+(xl(\u)-xc(\u))^2);},
+]
+  \addplot[auxiliar, forget plot, domain=3:8, samples=2] {5};
+
+  \addplot[manualgreen, very thick, domain=3:8, samples=600]
+          {5*xl(x)/zt(x)};
+  \addlegendentry{$V_L$ sobre o indutor}
+
+  \addplot[manualyellow, very thick, domain=3:8, samples=600]
+          {5*xc(x)/zt(x)};
+  \addlegendentry{$V_C$ sobre o capacitor}
+
+  \addplot[manualblue, very thick, domain=3:8, samples=600]
+          {5*24/zt(x)};
+  \addlegendentry{$V_R$ sobre o resistor}
+
+  \node[manualred, font=\scriptsize, anchor=west, align=left]
+       at (axis cs:5.6,64)
+       {$V_L = V_C = Q\,V = 13{,}2 \times 5 = 66$ V};
+  \node[manualgray, font=\scriptsize, anchor=north east,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:7.95,4.2) {5 V da fonte};
+  \node[manualgray, font=\scriptsize, anchor=north west, align=left,
+        text width=4.4cm]
+       at (axis cs:3.1,46)
+       {a energia não vem do nada: ela vai e volta entre $L$ e $C$, e a fonte só repõe
+        o que $R$ dissipa};
+\end{axis}
+\end{tikzpicture}
+```
+
+$L = 10$ mH, $C = 100$ nF, $R = 24\ \Omega$ (a resistência do fio da bobina), fonte de
+5 V. Sobre o indutor e sobre o capacitor aparecem 66 V. A tensão no resistor nunca passa
+dos 5 V da fonte — e é ela, não as outras duas, que segue a intuição.
+
+:::
+
+De onde vem a energia? De lugar nenhum novo. As tensões $V_L$ e $V_C$ são iguais em
+módulo e **opostas em fase**: uma vale $+66$ V no instante em que a outra vale $-66$ V.
+Somadas, dão zero, e é por isso que a fonte só enxerga o resistor. O que existe de fato é
+uma quantidade grande de energia circulando entre o campo magnético do indutor e o campo
+elétrico do capacitor — os dois reservatórios da @fig-026-rlc — e a fonte apenas repõe,
+a cada ciclo, a fração que o resistor converte em calor. Quanto menor essa fração, maior
+a razão entre a energia circulante e a energia entregue, e maior o $Q$.
+
+O detalhe fino: os picos de $V_L$ e $V_C$ não caem exatamente em $f_0$. O de $V_C$ fica
+em $f_0\sqrt{1 - 1/2Q^2}$ e o de $V_L$ em $f_0/\sqrt{1 - 1/2Q^2}$. Com $Q = 13{,}2$ isso
+dá 5025 Hz e 5040 Hz contra os 5033 Hz de $f_0$ — 0,15 % de diferença, invisível na
+figura e irrelevante na bancada. Para $Q < 2$ o desvio já importa, e abaixo de
+$Q = 1/\sqrt{2}$ os picos deixam de existir.
+
+::: {.callout-warning}
+## Ressonância série multiplica tensão, e ela não avisa
+
+Um circuito série ressonante alimentado por 12 V pode ter 300 V sobre o capacitor. O
+componente não sabe que a fonte é de 12 V: ele vê os 300 V e decide se aguenta pela sua
+tensão de trabalho, não pela da fonte.
+
+Isso deixa de ser curiosidade de bancada em três situações concretas:
+
+- **Capacitor de correção de fator de potência** (@sec-cap-032) ligado a uma rede com
+  indutância de linha apreciável. Se $f_0$ do conjunto cair sobre um harmônico presente na
+  instalação — o quinto, 300 Hz, é o suspeito habitual — o banco entra em ressonância
+  série com a rede e capacitores dimensionados para 440 V estouram.
+- **Fonte chaveada com filtro LC de entrada**, cuja ressonância pode ser excitada pela
+  ondulação da própria rede retificada.
+- **Cabo longo alimentando carga capacitiva**, em que a indutância do cabo e a capacitância
+  da carga formam um série que ninguém desenhou. É o mesmo mecanismo da
+  @fig-026-parasita, agora em regime permanente em vez de transitório.
+
+Antes de ligar qualquer circuito ressonante à rede, calcule $Q \cdot V$ e compare com a
+tensão de trabalho de cada componente. Na bancada, com fonte isolada de baixa tensão, o
+risco é para o componente; ligado à rede, é para você.
+:::
+
+## A ressonância paralela {#sec-037-paralelo}
+
+Agora os mesmos dois componentes, ligados um ao lado do outro. O que se soma agora são as
+**admitâncias**, do @sec-030-admitancia, porque os dois elementos compartilham a tensão:
+
+$$ \mathbf{Y} = \frac{1}{R_p} + j\omega C + \frac{1}{j\omega L}
+   = \frac{1}{R_p} + j\left(\omega C - \frac{1}{\omega L}\right). $$
+
+A parte imaginária volta a ser uma diferença, e volta a se anular quando
+$\omega C = 1/\omega L$ — a mesma condição de antes, a mesma $f_0$. Mas o resultado se
+inverte: se a admitância é mínima, a **impedância é máxima**.
+
+Um tanque LC ideal na ressonância é um circuito aberto. Um tanque real tem
+impedância finita, chamada **impedância dinâmica** $R_d$, e ela é o que mais importa
+saber sobre um circuito sintonizado.
+
+### De onde vem $R_d$
+
+Na prática a perda quase nunca está desenhada em paralelo: ela está na resistência do fio
+da bobina, em série com $L$. Transformando essa perda série $r$ na perda paralela
+equivalente, para $Q$ razoavelmente alto,
+
+$$ \boxed{\;R_d = \frac{L}{r\,C} = Q\,Z_0 = Q^2 r\;} $$
+
+e as três formas dão o mesmo número. Com $L = 10$ mH, $C = 100$ nF e $r = 24\ \Omega$:
+
+$$ R_d = \frac{10^{-2}}{24 \times 10^{-7}} = 4167\ \Omega,
+   \qquad Q\,Z_0 = 13{,}2 \times 316{,}2 = 4174\ \Omega,
+   \qquad Q^2 r = 174 \times 24 = 4176\ \Omega. $$
+
+A diferença de alguns ohms é arredondamento. O resultado desconcerta na primeira vez:
+uma bobina de 24 Ω de fio, em paralelo com um capacitor, apresenta 4,2 kΩ na
+ressonância. A resistência que **existe** é 24 Ω; a que o circuito **mostra** é 4,2 kΩ.
+Não há nenhum truque — é o mesmo mecanismo da tensão multiplicada da seção anterior,
+visto pela corrente: a corrente que circula entre $L$ e $C$ vale $Q$ vezes a corrente que
+a fonte entrega.
+
+$$ I_{\mathrm{circ}} = Q \cdot I_{\mathrm{linha}}. $$
+
+Uma bobina de tanque pode aquecer com o gerador entregando alguns miliampères, porque
+internamente circulam centenas.
+
+::: {#fig-037-paralelo}
+
+```{.tikz}
+%%| filename: 037-paralelo
+%%| alt: Gráfico com eixo horizontal logarítmico de frequência, de um a vinte e cinco quilohertz, e eixo vertical linear de impedância em ohms, de zero a quatro mil e seiscentos. Três curvas do módulo da impedância de um tanque LC paralelo, em forma de pico invertido em V, todas com máximo em cinco vírgula zero três quilohertz. A de resistência de perda de vinte e quatro ohms atinge quatro mil cento e sessenta e sete ohms e é muito estreita. A de cem ohms atinge mil ohms e é mais larga. A de trezentos e dezesseis ohms atinge trezentos e dezesseis ohms e é larga e achatada. Longe da ressonância as três curvas coincidem, porque ali quem manda são o indutor à esquerda e o capacitor à direita.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log,
+  width=15.2cm, height=9.2cm,
+  xmin=1, xmax=25, ymin=0, ymax=4700,
+  xlabel={frequência (kHz)}, ylabel={$|Z|$ do tanque ($\Omega$)},
+  xtick={1,2,3,5,7,10,15,25},
+  xticklabels={{1},{2},{3},{5},{7},{10},{15},{25}},
+  ytick={0,316,1000,2000,3000,4167},
+  yticklabels={{0},{316},{1000},{2000},{3000},{4167}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.98,0.98)}, anchor=north east, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    susc(\u)=6.2832e-4*\u-1/(62.832*\u);
+    zp(\u,\rd)=1/sqrt(1/(\rd*\rd)+susc(\u)*susc(\u));},
+]
+  \addplot[auxiliar, forget plot] coordinates {(5.033,0) (5.033,4700)};
+
+  \addplot[manualred, ultra thick, domain=0:1.4, samples=700]
+          ({10^x}, {zp(10^x,4167)});
+  \addlegendentry{$r = 24\ \Omega$ \quad ($Q = 13{,}2$, $R_d = 4167\ \Omega$)}
+
+  \addplot[manualblue, very thick, domain=0:1.4, samples=500]
+          ({10^x}, {zp(10^x,1000)});
+  \addlegendentry{$r = 100\ \Omega$ \quad ($Q = 3{,}16$, $R_d = 1000\ \Omega$)}
+
+  \addplot[manualgreen, very thick, domain=0:1.4, samples=400]
+          ({10^x}, {zp(10^x,316)});
+  \addlegendentry{$r = 316\ \Omega$ \quad ($Q = 1$, $R_d = 316\ \Omega$)}
+
+  \node[manualgray, font=\scriptsize, anchor=north east, align=right]
+       at (axis cs:2.7,2900)
+       {aqui manda $L$:\\ $|Z| \approx X_L$};
+  \node[manualgray, font=\scriptsize, anchor=north west, align=left]
+       at (axis cs:11,1500)
+       {aqui manda $C$:\\ $|Z| \approx X_C$};
+  \node[manualgray, font=\scriptsize, anchor=east,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:4.85,4350) {$f_0$};
+\end{axis}
+\end{tikzpicture}
+```
+
+O mesmo $L$ e o mesmo $C$, três perdas diferentes. Quanto menor a perda, mais alto e mais
+estreito o pico — e é essa dupla consequência, altura e largura andando juntas, que o
+@sec-cap-038 transforma em número.
+
+:::
+
+### A frequência do pico, com perdas
+
+Um detalhe que aparece em prova e raramente na bancada: num tanque cuja perda está em
+série com o indutor, a frequência de $|Z|$ máximo e a frequência de fase zero não
+coincidem exatamente com $f_0$. A correção é
+
+$$ f_p = f_0\sqrt{1 - \frac{1}{Q^2}}. $$
+
+Com $Q = 13{,}2$, o fator vale 0,9971 — um desvio de 0,3 %, menor que a tolerância de
+qualquer indutor comercial. Com $Q = 2$, vale 0,968: 3 % de desvio, já comparável à
+tolerância. Com $Q = 1$, o pico simplesmente deixa de existir.
+
+A regra prática: **para $Q > 10$, ignore a correção**; abaixo disso, o circuito já não é
+um circuito sintonizado no sentido útil da palavra, e a pergunta relevante deixa de ser
+onde está o pico.
+
+## Série e paralelo, lado a lado {#sec-037-comparacao}
+
+| | **série** | **paralelo (tanque)** |
+|---|---|---|
+| Em $f_0$, o par LC é | um curto-circuito | um circuito aberto |
+| Impedância em $f_0$ | mínima, $Z = R$ | máxima, $Z = R_d$ |
+| Corrente em $f_0$ | máxima | mínima (na linha) |
+| $Q$ vale | $Z_0/r$ | $R_d/Z_0$ |
+| O que se multiplica por $Q$ | a **tensão** sobre $L$ e $C$ | a **corrente** que circula em $L$ e $C$ |
+| $Q$ alto pede | $r$ pequeno, $Z_0$ grande | $R_d$ grande, $Z_0$ pequeno |
+| Excitado bem por | fonte de **tensão** (baixa impedância) | fonte de **corrente** (alta impedância) |
+| Uso típico | *trap*, rejeita-faixa, aceitação de sinal | tanque de oscilador, carga sintonizada |
+
+: Ressonância série contra ressonância paralela. A linha da excitação é a que mais custa
+caro esquecer: um tanque alimentado por uma fonte de impedância baixa tem seu $R_d$
+curto-circuitado e não ressoa coisa nenhuma. {#tbl-037-comparacao}
+
+A última linha merece parágrafo próprio, porque é onde projetos falham em silêncio. Um
+tanque só mostra os seus 4,2 kΩ se quem o alimenta tiver impedância comparável ou maior.
+Ligue-o direto na saída de um gerador de 50 Ω e o que se mede é 50 Ω em paralelo com
+4167 Ω, ou seja, 49,4 Ω: o tanque desaparece. O dual vale para o série — um *trap* série
+só produz um vale profundo se estiver em série com uma impedância bem maior que $r$.
+
+É a mesma lição do @sec-cap-020 e do @sec-036-lc, aplicada mais uma vez: **um circuito
+ressonante não tem $Q$ próprio; ele tem o $Q$ que a vizinhança deixa.** O @sec-cap-038
+dá nome a isso — $Q$ carregado e $Q$ descarregado — e mostra como calcular um a partir
+do outro.
+
+## A ressonância que ninguém pediu {#sec-037-srf}
+
+Todo capacitor real tem indutância. Ela vem dos terminais, das placas enroladas e do
+caminho até a solda, chama-se ESL e vale de 1 nH num cerâmico SMD pequeno a dezenas de nH
+num eletrolítico de terminais longos. Isso significa que **todo capacitor é um circuito
+ressonante série**, com o próprio $C$ e a própria ESL, e que acima dessa frequência ele
+se comporta como indutor.
+
+Simetricamente, todo indutor real tem capacitância entre espiras. Ela chama-se $C_p$ e
+vale alguns picofarads. Portanto **todo indutor é um tanque paralelo**, e acima dessa
+frequência ele se comporta como capacitor.
+
+A frequência em que isso acontece é a **frequência de auto-ressonância** — SRF, de
+*self-resonant frequency* — e ela é a fronteira de validade do componente, do mesmo jeito
+que a tensão de trabalho e a corrente máxima são.
+
+$$ f_{\mathrm{SRF}} = \frac{1}{2\pi\sqrt{L_{\text{parasita}}\;C_{\text{parasita}}}} $$
+
+com a convenção de que, no capacitor, o $L$ é a ESL e o $C$ é o valor nominal; no indutor,
+o $L$ é o valor nominal e o $C$ é a capacitância entre espiras.
+
+::: {#fig-037-srf}
+
+```{.tikz}
+%%| filename: 037-srf
+%%| alt: Gráfico com os dois eixos logarítmicos. O horizontal vai de um quilohertz a cem megahertz e o vertical vai de um centésimo de ohm a um megaohm. Duas curvas de capacitor de cem nanofarads descem como reta de inclinação negativa, atingem um mínimo muito estreito e voltam a subir: a versão com terminais longos tem mínimo em cinco vírgula seis megahertz e a versão de montagem em superfície tem mínimo em quatorze vírgula cinco megahertz. Uma curva de indutor de dez milihenries sobe como reta de inclinação positiva, atinge um máximo agudo de quatrocentos e quarenta e sete quiloohms em setecentos e doze quilohertz e volta a descer. Anotações indicam que à direita do mínimo o capacitor é um indutor e à direita do máximo o indutor é um capacitor.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log, ymode=log,
+  width=15.4cm, height=9.6cm,
+  xmin=1, xmax=1e5, ymin=1e-3, ymax=1e6,
+  xlabel={frequência (kHz)}, ylabel={$|Z|$ ($\Omega$)},
+  xtick={1,10,100,1000,1e4,1e5},
+  xticklabels={{1 kHz},{10 kHz},{100 kHz},{1 MHz},{10 MHz},{100 MHz}},
+  ytick={1e-3,0.01,0.1,1,10,100,1000,1e4,1e5,1e6},
+  yticklabels={{$0{,}001$},{$0{,}01$},{$0{,}1$},{1},{10},{100},{1 k},{10 k},
+               {100 k},{1 M}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.02,0.02)}, anchor=south west, font=\scriptsize,
+                draw=manualgray!50, legend columns=1},
+  declare function={
+    zcap(\u,\esl,\esr)=sqrt(\esr*\esr+(6.2832e-6*\esl*\u-1591.55/\u)^2);
+    bind(\u)=3.1416e-8*\u-1/(62.832*\u);
+    zind(\u)=1/sqrt((1/447000)^2+bind(\u)*bind(\u));},
+]
+  \addplot[manualyellow, very thick, domain=0:5, samples=700]
+          ({10^x}, {zcap(10^x,8,0.05)});
+  \addlegendentry{capacitor 100 nF, terminais longos (ESL 8 nH)}
+
+  \addplot[manualgreen, very thick, domain=0:5, samples=700]
+          ({10^x}, {zcap(10^x,1.2,0.02)});
+  \addlegendentry{capacitor 100 nF, SMD 0603 (ESL 1,2 nH)}
+
+  \addplot[manualblue, very thick, domain=0:5, samples=700]
+          ({10^x}, {zind(10^x)});
+  \addlegendentry{indutor 10 mH, $C_p = 5$ pF}
+
+  \node[manualblue, font=\scriptsize, anchor=east]
+       at (axis cs:350,3e5) {SRF do indutor: 712 kHz};
+  \node[manualblue, font=\scriptsize, anchor=north east, align=right,
+        text width=2.6cm]
+       at (axis cs:9e4,5e4) {daqui para a direita ele é um \textbf{capacitor}};
+  \node[manualyellow, font=\scriptsize, anchor=north east,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:5000,0.03) {SRF: 5,6 MHz};
+  \node[manualgreen, font=\scriptsize, anchor=north west,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:1.5e4,0.008) {SRF: 14,5 MHz};
+  \node[manualgray, font=\scriptsize, anchor=north east, align=right,
+        text width=2.6cm]
+       at (axis cs:1e5,30) {daqui para a direita eles são \textbf{indutores}};
+\end{axis}
+\end{tikzpicture}
+```
+
+Os dois componentes, medidos ao longo de cinco décadas. Cada um funciona como o que
+promete apenas de um lado da própria auto-ressonância. Encurtar os terminais do capacitor
+de 8 nH para 1,2 nH move a SRF de 5,6 para 14,5 MHz — é por isso que se briga por
+milímetros de trilha em placa de alta frequência.
+
+:::
+
+Duas consequências práticas saem direto da @fig-037-srf.
+
+**Um capacitor de desacoplamento só desacopla abaixo da própria SRF.** Acima dela, sua
+impedância *sobe* com a frequência, e ele deixa de fornecer o pulso de corrente rápido
+que o circuito digital pede. É por isso que se colocam capacitores de valores diferentes
+em paralelo perto de um circuito integrado: o de 100 nF cobre até alguns megahertz, o de
+1 nF assume a partir dali, porque com a mesma ESL a SRF sobe dez vezes quando a
+capacitância cai cem vezes.
+
+**Um choque de RF só bloqueia abaixo da própria SRF.** O indutor de 10 mH da bancada,
+excelente em 5 kHz, é inútil acima de 712 kHz. Escolher um choque "bem grande" para
+filtrar interferência costuma piorar o resultado, porque indutância grande vem com mais
+espiras e mais $C_p$, e a SRF cai. Filtro de EMI de banda larga se faz com vários
+estágios de valores diferentes exatamente por isso — o mesmo argumento que aparecia no
+@sec-036-reais, agora com o mecanismo à vista.
+
+E há a nota desagradável: em paralelo, dois capacitores de valores muito diferentes
+formam **eles mesmos** um tanque, entre a ESL do menor e a capacitância do maior, com um
+pico de impedância na faixa entre as duas SRFs. O efeito é real, tem nome
+(*antirressonância*) e é a razão pela qual a receita de "muitos valores em paralelo" tem
+de ser aplicada com moderação, não como reflexo.
+
+## Onde a ressonância é a ferramenta {#sec-037-usos}
+
+Vale listar, porque quase toda a eletrônica de rádio é uma aplicação de uma dessas quatro
+ideias.
+
+**Sintonizar.** Um tanque como carga de um amplificador dá ganho alto só na frequência
+desejada. É o seletor de estação de todo receptor, do galena ao superheteródino.
+
+**Rejeitar.** Um LC série ligado do sinal ao terra é um caminho de baixíssima impedância
+em $f_0$ e um caminho quase aberto no resto — um *notch*. Serve para tirar 60 Hz de uma
+medida, para eliminar uma portadora interferente, para bloquear a frequência de imagem.
+
+**Casar impedâncias.** As redes L, T e π de casamento de RF são circuitos ressonantes
+usados fora da ressonância exata, explorando o fato de que $Q$ transforma resistências
+por $Q^2$ — a mesma relação $R_d = Q^2 r$ desta seção. Assunto de RF, fora do escopo
+deste manual, mas a origem é esta.
+
+**Oscilar.** Um tanque com $Q$ alto, mais um elemento ativo que reponha a energia perdida
+a cada ciclo, é um oscilador. O tanque decide a frequência; o $Q$ decide a pureza. A parte
+ativa depende de transistor, e por isso o assunto espera pelo Volume 9.
+
+## 🧪 Laboratório {#sec-037-lab}
+
+**Encontrar a ressonância série pelo pico de corrente, medir com o multímetro uma tensão
+maior que a da fonte, montar o tanque paralelo e medir a impedância dinâmica que a
+bobina de 24 Ω apresenta como 4 kΩ.**
+
+O @sec-030-lab já pediu para achar o cruzamento $X_L = X_C$ com um multímetro, três
+volumes atrás. Aqui usamos o mesmo par LC e vamos além do cruzamento.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala de tensão CA (a maioria mede bem de 50 Hz a 1 kHz;
+  ver a ressalva da Parte 0)
+- 1 gerador de sinal: celular ou computador com aplicativo gerador de tom senoidal
+  e ajuste fino de frequência
+- 1 indutor de 10 mH (qualquer indutor da gaveta serve, com os cálculos refeitos)
+- 1 capacitor de 100 nF, poliéster ou cerâmico NP0 — **não** eletrolítico
+- Resistores de 10 Ω, 100 Ω, 1 kΩ e 10 kΩ, 1/4 W
+- Protoboard, jumpers, papel para anotar
+- Opcional: osciloscópio, que torna a Parte 3 imediata em vez de trabalhosa
+:::
+
+### Parte 0 — Descobrir se o seu multímetro serve
+
+1. Ligue o gerador a um resistor de 1 kΩ e ajuste para 1 V em 100 Hz.
+2. Meça a tensão em 100 Hz, 1 kHz, 5 kHz e 10 kHz **sem mexer no volume**.
+3. Se a leitura cair mais de 10 % entre 100 Hz e 5 kHz, o multímetro está limitando a
+   banda e todas as medidas seguintes sairão baixas.
+
+Um multímetro barato costuma especificar a escala CA para 40–400 Hz. Muitos funcionam bem
+até 5 kHz, e alguns despencam em 1 kHz. Descobrir isso agora custa três minutos; descobrir
+na Parte 3 custa uma tarde de conclusões erradas. Se o seu cair, baixe a frequência de
+trabalho aumentando $C$: com 1 µF em vez de 100 nF, $f_0$ cai para 1,59 kHz.
+
+### Parte 1 — Prever antes de medir
+
+1. Meça a resistência do indutor com o ohmímetro, em escala baixa. Anote como $r$.
+   Valores típicos de um indutor de 10 mH: 15 a 40 Ω.
+2. Calcule $f_0 = 1/(2\pi\sqrt{LC})$. Para 10 mH e 100 nF: 5,03 kHz.
+3. Calcule $Z_0 = \sqrt{L/C}$. Para os mesmos valores: 316 Ω.
+4. Calcule $Q$ para cada resistor externo, lembrando de somar $r$:
+   $Q = Z_0/(R_{\mathrm{ext}} + r)$.
+5. Calcule a faixa de $f_0$ que a tolerância permite. Com indutor de 10 % e capacitor
+   de 5 %, $f_0$ pode estar entre 4,7 e 5,4 kHz. Anote a faixa — você vai procurar dentro
+   dela, não em cima de 5,03 kHz.
+
+| $R_{\mathrm{ext}}$ | $R_{\mathrm{ext}} + r$ | $Q$ previsto | $V_L$ com 1 V de entrada |
+|---|---|---|---|
+| 1 kΩ | 1024 Ω | 0,31 | 0,31 V |
+| 100 Ω | 124 Ω | 2,55 | 2,6 V |
+| 10 Ω | 34 Ω | 9,3 | 9,3 V |
+| 0 Ω | 24 Ω | 13,2 | 13,2 V |
+
+: Previsões da Parte 1, para $r = 24\ \Omega$. Refaça a coluna com o seu $r$ medido. A
+última linha é otimista: sem resistor externo, quem limita passa a ser a impedância de
+saída do gerador, que se soma a $r$. {#tbl-037-lab1}
+
+### Parte 2 — Achar $f_0$ pelo pico de corrente
+
+1. Monte a malha série: gerador → resistor de 100 Ω → indutor → capacitor → terra.
+2. Meça a tensão **sobre o resistor de 100 Ω**. Ela é proporcional à corrente da malha.
+3. Varra a frequência de 3 a 8 kHz procurando o **máximo**. Refine com passos de 50 Hz.
+4. Anote $f_{0,\text{medida}}$ e compare com a faixa de tolerância da Parte 1.
+
+O máximo é nítido e não deixa dúvida. Se você não encontrar máximo nenhum, ou o gerador
+não está entregando sinal (confira com o resistor sozinho) ou a frequência real está fora
+da faixa varrida — indutores de gaveta às vezes têm indutância bem diferente do rótulo.
+
+5. Calcule $L$ real a partir de $f_0$ medida: $L = 1/(4\pi^2 f_0^2 C)$. Compare com o
+   rótulo. Esse é, aliás, o jeito mais preciso de medir indutância sem instrumento
+   dedicado, e ele reaparece no @sec-026-lab-medirL feito no domínio do tempo.
+
+### Parte 3 — A tensão maior que a fonte
+
+Esta é a parte que vale o capítulo.
+
+1. Com a malha ainda montada e o gerador em $f_0$, meça e anote: $v_{\mathrm{in}}$ (na
+   entrada da malha), $V_R$ (sobre os 100 Ω), $V_L$ (sobre o indutor), $V_C$ (sobre o
+   capacitor).
+2. Confira: $V_L$ e $V_C$ devem ser aproximadamente iguais entre si, e **maiores** que
+   $v_{\mathrm{in}}$.
+3. Calcule duas razões, que medem coisas diferentes:
+
+$$ \frac{V_L}{V_R} = \frac{X_L}{R_{\mathrm{ext}}}
+   \qquad\text{e}\qquad
+   Q_{\text{carregado}} = \frac{V_L}{v_{\mathrm{in}}}. $$
+
+A primeira razão é ouro: ela **não depende** nem da impedância do gerador nem da
+resistência do fio, porque as duas tensões são produzidas pela mesma corrente atravessando
+duas impedâncias conhecidas. Multiplicada por 100 Ω, ela dá $X_L$ direto, e daí $L$.
+
+A segunda dá o $Q$ que o circuito realmente tem, com tudo incluído. Ela virá **menor** que
+a previsão da @tbl-037-lab1, e a diferença não é erro de medição: é a impedância de saída
+do gerador, somada em série com tudo o mais. Some $r$ e $R_{\mathrm{ext}}$, calcule
+$Z_0/Q_{\text{carregado}}$, subtraia os dois — o que sobrar é a impedância de saída do
+seu gerador, medida de graça.
+
+4. Troque o resistor por 10 Ω e repita. $V_L$ deve subir bastante. Com 1 V de entrada,
+   espere algo entre 4 e 7 V, não os 9,3 V da tabela — de novo por causa do gerador.
+5. Troque por 1 kΩ e repita. Agora $Q < 1$: $V_L$ fica **menor** que a entrada e o pico
+   praticamente desaparece. O mesmo LC, sem ressonância útil.
+
+Três montagens, o mesmo indutor e o mesmo capacitor, e o comportamento indo de ressonante
+a inerte só pela resistência em série. É a @fig-037-paralelo vista pelo lado série.
+
+### Parte 4 — O tanque paralelo e a impedância dinâmica
+
+1. Monte: gerador → resistor de 10 kΩ → nó → (indutor e capacitor em paralelo) → terra.
+2. Meça $v_{\mathrm{in}}$ na saída do gerador e $V_{\mathrm{tanque}}$ no nó.
+3. Varre a frequência procurando o **máximo** de $V_{\mathrm{tanque}}$. Deve cair na mesma
+   $f_0$ da Parte 2.
+4. No máximo, calcule a impedância dinâmica pelo divisor de tensão:
+
+$$ R_d = R_{\mathrm{série}} \cdot
+   \frac{V_{\mathrm{tanque}}}{v_{\mathrm{in}} - V_{\mathrm{tanque}}}. $$
+
+Com $R_d \approx 4{,}2$ kΩ e resistor de 10 kΩ, espere $V_{\mathrm{tanque}}$ perto de
+0,29 V para 1 V de entrada.
+
+5. Compare o $R_d$ medido com $L/(rC)$ calculado na Parte 1. Devem bater dentro de 20 %.
+   Se o medido vier bem **menor**, a perda do capacitor está contribuindo — troque um
+   cerâmico comum por poliéster e refaça.
+6. Agora o experimento do erro clássico: troque o resistor de 10 kΩ por 100 Ω e repita a
+   varredura. O pico quase some. **O tanque não mudou; quem o alimenta mudou.** É a última
+   linha da @tbl-037-comparacao, na bancada.
+
+### Parte 5 — O *trap*: rejeitar em vez de aceitar
+
+1. Monte: gerador → resistor de 1 kΩ → nó de saída, e do nó de saída ao terra, o
+   **LC em série**.
+2. Meça a tensão no nó de saída em 1, 3, 4,5, $f_0$, 5,5, 7 e 15 kHz.
+3. Em $f_0$, o LC série é praticamente um curto para o terra, e a saída deve cair para
+   perto de $r/(R + r) = 24/1024 = 0{,}023$ da entrada — cerca de 23 mV para 1 V, ou
+   −33 dB.
+
+Um rejeita-faixa de 33 dB com dois componentes. Compare com o esforço que o @sec-cap-036
+exigiu para conseguir atenuação equivalente com filtros passa-baixas: fora da faixa
+estreita o *trap* não atenua nada, e é exatamente isso que se quer dele.
+
+### Variante simulada (plano B)
+
+No ngspice, o capítulo inteiro cabe em poucas linhas. A malha série com
+`.ac dec 200 1k 25k` e um `.step` no resistor reproduz a @fig-037-tensoes com as três
+tensões plotadas juntas; trocar a topologia para paralelo e plotar `v(no)/i(vfonte)`
+dá a @fig-037-paralelo. Para a @fig-037-srf, monte o capacitor como `C` em série com uma
+`L` de 8 nH e uma `R` de 0,05 Ω, e varra até 100 MHz — o V aparece sozinho.
+
+No Falstad, monte o série, ative o gráfico de tensão sobre o capacitor e arraste a
+frequência da fonte com o mouse: a subida abrupta perto de $f_0$ é mais convincente vista
+ao vivo do que em qualquer figura.
+
+## 🔥 Onde Queima {#sec-037-queima}
+
+**Achar que a tensão sobre $L$ ou $C$ não pode passar da tensão da fonte.** Pode, e passa
+por $Q$. Um capacitor de 63 V num circuito série alimentado por 12 V com $Q = 10$ vê
+120 V e estoura. Dimensione pela tensão que o componente vê, não pela da fonte.
+
+**Trocar série por paralelo no papel.** As duas ressonâncias têm a mesma $f_0$ e efeitos
+opostos: uma é curto, a outra é aberto. Um *trap* montado em paralelo com o sinal, em vez
+de em série com o terra, não rejeita — deixa passar exatamente o que se queria bloquear.
+
+**Alimentar um tanque com fonte de baixa impedância.** Os 4,2 kΩ de $R_d$ ficam em
+paralelo com os 50 Ω do gerador, e o resultado é 49,4 Ω. Nada ressoa, e a conclusão errada
+é que o circuito está com defeito. Tanque quer ser excitado por corrente.
+
+**Usar eletrolítico num circuito ressonante.** ESR alta destrói o $Q$, a capacitância varia
+com tensão e temperatura, e a indutância dos terminais desloca $f_0$. Em ressonância use
+poliéster, polipropileno ou cerâmico NP0/C0G. Cerâmico X7R e Y5V perdem metade da
+capacitância sob tensão nominal e movem $f_0$ enquanto o circuito funciona.
+
+**Esquecer a corrente circulante do tanque.** A fonte entrega 5 mA e a bobina conduz
+66 mA. Dimensionar o fio pela corrente de linha queima a bobina, e o núcleo pode saturar
+com a fonte marcando quase nada.
+
+**Medir o tanque com uma ponta de prova comum.** Uma ponta 1× tem 100 pF ou mais de
+capacitância de entrada; ligada num tanque de 100 nF isso muda $f_0$ em 0,05 % e não
+importa, mas num tanque de RF com 100 pF a ponta **dobra** o capacitor e joga $f_0$ para
+70 % do valor. Use ponta 10× e leia o @sec-cap-044 antes de acreditar na medida.
+
+**Confundir a $f$ de $|Z|$ máximo com a $f$ de fase zero, em tanque de $Q$ baixo.** Com
+$Q > 10$ elas coincidem para todos os efeitos. Com $Q = 2$ estão a 3 % uma da outra, e um
+oscilador projetado por uma e travado na outra sai de frequência.
+
+**Usar um indutor acima da SRF dele.** Acima da auto-ressonância o choque é capacitor e o
+filtro para de filtrar — pior, a impedância *cai* com a frequência, e o ruído de alta
+frequência passa melhor do que passaria sem o choque.
+
+**Empilhar valores de capacitor de desacoplamento sem pensar.** 100 nF com 1 nF em
+paralelo criam antirressonância entre as duas SRFs, com pico de impedância justamente na
+faixa que se queria cobrir. Poucos valores bem escolhidos e terminais curtos valem mais
+que muitos valores.
+
+**Deixar um circuito ressonante ligado à rede sem verificar os harmônicos.** Banco de
+capacitores mais indutância de linha formam um série cuja $f_0$ pode cair sobre o quinto
+ou o sétimo harmônico. A corrente harmônica encontra impedância quase nula e o banco
+morre — às vezes de forma espetacular.
+
+## O que fica deste capítulo {#sec-037-resumo}
+
+Em $f_0 = 1/(2\pi\sqrt{LC})$, as duas reatâncias se igualam ao valor comum
+$Z_0 = \sqrt{L/C}$ e se cancelam. O par LC deixa de ser dois componentes: em série vira
+um curto-circuito, em paralelo vira um circuito aberto.
+
+No **série**, a impedância cai para $R$ — e $L$ e $C$ somem do resultado. A corrente é
+máxima, e as tensões sobre $L$ e sobre $C$ valem $Q$ vezes a tensão da fonte, com
+$Q = Z_0/R$. Elas são iguais e opostas em fase; por isso a fonte só enxerga o resistor, e
+por isso não há energia saindo do nada — o que há é energia circulando entre os dois
+campos, com a fonte repondo apenas a perda.
+
+No **paralelo**, a impedância sobe até a impedância dinâmica
+$R_d = L/(rC) = Q\,Z_0 = Q^2 r$. A corrente de linha é mínima e a corrente que circula
+entre $L$ e $C$ vale $Q$ vezes ela. Uma bobina de 24 Ω de fio apresenta 4,2 kΩ.
+
+$Q$ inverte de fórmula conforme a resistência esteja em série ($Q = Z_0/r$) ou em paralelo
+($Q = R_d/Z_0$), e em nenhum dos dois casos ele pertence ao par LC: pertence ao circuito
+inteiro, vizinhança incluída. Tanque alimentado por fonte de baixa impedância não ressoa;
+*trap* em série com impedância baixa não rejeita.
+
+E há a ressonância que ninguém desenhou. Todo capacitor tem ESL e é um série; todo indutor
+tem $C_p$ e é um tanque. Acima da SRF cada um vira o oposto do que promete, e essa é uma
+especificação tão obrigatória de conferir quanto a tensão de trabalho.
+
+Ficou uma pergunta pendente, e ela é a inteira. Nas figuras deste capítulo, o pico alto
+veio sempre acompanhado do pico estreito, e o pico baixo veio sempre largo. Altura e
+largura andaram juntas nas três curvas da @fig-037-paralelo, e nunca foram anunciadas
+como relacionadas. Elas são — pelo mesmo $Q$ que já apareceu multiplicando tensão e
+corrente, agora numa terceira função. Quantificar essa ligação, dizer quantos hertz de
+largura um dado $Q$ produz, e usar isso para separar uma estação de rádio da vizinha é o
+@sec-cap-038.
