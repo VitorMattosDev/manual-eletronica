@@ -1,3 +1,822 @@
 # Transitórios RL e circuitos RLC no domínio do tempo {#sec-cap-026}
 
-*(em elaboração)*
+O @sec-cap-025 resolveu a primeira equação diferencial do manual e saiu de lá com um
+parâmetro, $\tau = RC$, e uma forma, a exponencial. Este capítulo faz duas coisas com
+esse resultado.
+
+A primeira é barata: trocar o capacitor pelo indutor. A dualidade da
+@tbl-023-dualidade entrega quase tudo pronto, e a única surpresa está no lugar do $R$
+— a constante de tempo do indutor é $L/R$, com o resistor **dividindo**. Aumentar o
+resistor deixa um RC mais lento e um RL mais **rápido**, o que parece errado até a
+gente entender por quê.
+
+A segunda é a novidade estrutural do volume: pôr os dois componentes reativos na mesma
+malha. A equação sobe para **segunda ordem**, e com isso aparece um comportamento que
+nenhum RC tem, por mais RCs que se empilhem — o circuito passa a **oscilar**. A partir
+daí o repertório deixa de ser "sobe e assenta" e passa a incluir sobressinal, toque,
+amortecimento crítico e as três palavras que descrevem metade das falhas de bancada:
+*ringing*, *overshoot* e *snubber*.
+
+## O circuito RL {#sec-026-rl}
+
+::: {#fig-026-rl}
+
+```{.tikz}
+%%| filename: 026-rl
+%%| alt: Esquemático de um circuito RL série. Uma fonte de tensão contínua V liga-se por uma chave S a um resistor R em série com um indutor L. A corrente da malha chama-se i e a tensão sobre o indutor chama-se v subscrito L. Em paralelo com o indutor há um diodo de roda livre desenhado em traço fino, com a anotação de que ele só entra em ação quando a chave abre. Duas anotações laterais indicam que no instante em que a chave fecha a corrente é nula e o indutor comporta-se como circuito aberto, com toda a tensão da fonte sobre ele, e que depois de muito tempo a tensão sobre o indutor é nula e ele comporta-se como um curto-circuito, com a corrente valendo V dividido por R.
+
+\begin{circuitikz}[american, font=\footnotesize]
+
+  \draw (0,0) to[battery1, l=$V$] (0,3.2);
+  \draw (0,3.2) to[switch, l=$S$] (2.4,3.2);
+  \draw (2.4,3.2) to[R, l=$R$, i>^=$i$] (5.0,3.2);
+  \draw (5.0,3.2) to[L, l_=$L$, v^>=$v_L$] (7.4,3.2);
+  \draw (7.4,3.2) -- (7.4,0) -- (0,0);
+  \draw (2.6,0) node[ground]{};
+
+  % diodo de roda livre: anodo no lado direito, para conduzir na abertura
+  \draw[manualgreen!55!black, thin] (7.4,3.2) -- (7.4,4.9);
+  \draw[manualgreen!55!black, thin] (7.4,4.9) to[D, l_=$D$] (5.0,4.9);
+  \draw[manualgreen!55!black, thin] (5.0,4.9) -- (5.0,3.2);
+  \node[manualgreen!55!black, font=\scriptsize, anchor=west]
+       at (7.7,4.9) {só trabalha na \textbf{abertura}};
+
+  \node[manualred, font=\scriptsize, anchor=west, align=left]
+       at (8.9,2.9) {em $t = 0^{+}$:\\$i = 0$, e o indutor\\é um \textbf{aberto}.\\Toda a tensão está sobre ele.};
+  \node[manualblue, font=\scriptsize, anchor=west, align=left]
+       at (8.9,0.7) {em $t \to \infty$:\\$v_L = 0$, e o indutor\\é um \textbf{curto}.\\A corrente vale $V/R$.};
+
+\end{circuitikz}
+```
+
+O circuito RL série. Compare com a @fig-025-circuito: os papéis de curto e aberto
+estão **trocados**. É a dualidade em uma frase — o capacitor começa curto e termina
+aberto, o indutor começa aberto e termina curto.
+
+:::
+
+A Lei das Malhas, com a chave fechada:
+
+$$ V = R\,i + L\,\frac{di}{dt}
+   \qquad\Longrightarrow\qquad
+   \frac{L}{R}\,\frac{di}{dt} + i = \frac{V}{R}. $$
+
+É a mesma equação do @sec-cap-025 com outros nomes. A variável de estado agora é a
+**corrente** (que é o que o indutor não deixa saltar), o valor final é $V/R$, e a
+constante de tempo é
+
+$$ \boxed{\;\tau = \frac{L}{R}\;} $$
+
+A conferência de unidades: henry é volt-segundo por ampère, então
+$[\text{H}]/[\Omega] = (\text{V}\cdot\text{s}/\text{A})/(\text{V}/\text{A}) = \text{s}$.
+
+A solução, e a tensão sobre o indutor que sai dela:
+
+$$ i(t) = \frac{V}{R}\left(1 - e^{-t/\tau}\right),
+   \qquad
+   v_L(t) = L\,\frac{di}{dt} = V\,e^{-t/\tau}. $$
+
+A tensão sobre o indutor **começa valendo a fonte inteira e decai**. É o espelho da
+corrente no RC, que também começava no máximo e decaía. Toda a tabela de percentuais
+do @tbl-025-tau continua valendo, sem uma vírgula de mudança — 63,2 % em $\tau$, 95 %
+em $3\tau$, 99,3 % em $5\tau$. O que muda é o **nome** da grandeza que segue a curva.
+
+| Grandeza | Circuito RC | Circuito RL |
+|---|---|---|
+| Não pode saltar | tensão $v_C$ | corrente $i_L$ |
+| Em $t = 0^{+}$ o componente é | curto | aberto |
+| Em $t \to \infty$ o componente é | aberto | curto |
+| Constante de tempo | $\tau = RC$ | $\tau = L/R$ |
+| Aumentar $R$ deixa o circuito | mais **lento** | mais **rápido** |
+| Energia armazenada | $\tfrac{1}{2}Cv^2$ | $\tfrac{1}{2}Li^2$ |
+| Resistor que conta | $R_{\text{th}}$ visto pelo $C$ | $R_{\text{th}}$ visto pelo $L$ |
+
+: RC e RL lado a lado. A quinta linha é a que causa erro; as demais são tradução
+direta da @tbl-023-dualidade. {#tbl-026-dualidade}
+
+### Por que $R$ divide
+
+A quinta linha da tabela merece explicação, porque ela realmente parece errada.
+
+O indutor demora a estabelecer corrente. Quanto de corrente? $V/R$. Se $R$ é grande, a
+corrente final é pequena, e portanto há **menos corrente a estabelecer** — o indutor
+chega lá antes. Se $R$ é pequeno, a corrente final é grande, e leva mais tempo para
+construir todo aquele fluxo.
+
+O caso extremo confirma: com $R \to 0$ a corrente final é infinita e o transitório
+nunca termina. Um indutor supercondutor ligado a uma fonte ideal é exatamente isso —
+a corrente sobe em rampa para sempre. E um indutor de fonte chaveada, com DCR de
+50 mΩ e 100 µH, tem $\tau = 2$ ms: enorme na escala de um conversor que chaveia a
+cada 10 µs, e é por isso que a corrente dele parece uma rampa reta, e não uma
+exponencial. Um pedaço muito curto de exponencial é indistinguível de uma reta — o
+mesmo argumento que fez o RC virar integrador no @sec-cap-025.
+
+### A escala de tempo do RL é curta
+
+Vale fazer as contas com componentes reais, porque elas mudam a intuição:
+
+| Componente | $L$ | $R$ da malha | $\tau = L/R$ |
+|---|---|---|---|
+| Choque de 100 µH em conversor | 100 µH | 50 mΩ | 2 ms |
+| Choque de 10 mH em filtro | 10 mH | 25 Ω | 400 µs |
+| Bobina de relé de 12 V | 1 H | 400 Ω | 2,5 ms |
+| Enrolamento de motor CC pequeno | 5 mH | 1,5 Ω | 3,3 ms |
+| Trilha de 5 cm numa placa | 50 nH | 0,5 Ω | 100 ns |
+| Primário de transformador de rede | 3 H | 30 Ω | 100 ms |
+
+: Constantes de tempo RL de coisas que existem. Note a faixa: de nanossegundos a
+décimos de segundo, mas concentrada nos milissegundos. {#tbl-026-escalas}
+
+Compare com o RC, que vai de nanossegundos a **minutos** com componentes de gaveta. A
+razão é econômica antes de ser física: existe capacitor de 4700 µF por alguns reais e
+não existe indutor de 4700 H por preço nenhum. Daí uma consequência prática que vale
+guardar:
+
+> **Temporização se faz com RC.** Circuito de atraso, *debounce*, partida suave e
+> oscilador usam capacitor. O indutor entra no domínio do tempo por outro motivo — não
+> pelo atraso que ele causa ao ligar, mas pelo estrago que ele faz ao **desligar**.
+
+## A abertura, com números {#sec-026-abertura}
+
+O @sec-cap-024 apresentou o diodo de roda livre e a @tbl-024-grampos comparou as
+opções de grampo em palavras: "tempo mínimo", "tempo máximo", "intermediário". Agora
+dá para pôr números, porque o cálculo é um transitório RL.
+
+Tome o relé típico: bobina de 1 H e 400 Ω, alimentada com 12 V, portanto conduzindo
+30 mA em regime. A chave abre em $t = 0$.
+
+**Sem grampo nenhum**, a resistência da malha é a do ar entre os contatos, que começa
+praticamente infinita. Como $v_L = L\,di/dt$ e a corrente é obrigada a ir a zero num
+tempo curtíssimo, a tensão dispara até o ar ionizar. É o arco: centenas de volts,
+contatos corroídos, e um pulso de interferência que se propaga pela alimentação
+inteira.
+
+**Com diodo simples**, a malha se fecha por dentro: indutor, DCR da bobina e diodo. A
+resistência é 400 Ω mais a do diodo, então
+
+$$ \tau = \frac{L}{R} = \frac{1\ \text{H}}{400\ \Omega} = 2{,}5\ \text{ms}, $$
+
+e a corrente decai exponencialmente de 30 mA. A tensão sobre a chave fica em
+$12 + 0{,}7 = 12{,}7$ V, que é seguro para qualquer transistor.
+
+**Com zener de 24 V em série com o diodo**, o grampo passa a valer 24,7 V. A corrente
+ainda decai com $\tau = 2{,}5$ ms, mas agora rumo a uma assíntota **negativa** de
+$-24{,}7/400 = -61{,}8$ mA, que ela nunca alcança porque o diodo bloqueia quando $i$
+chega a zero:
+
+$$ i(t) = 91{,}8\,e^{-t/2{,}5\,\text{ms}} - 61{,}8\ \text{mA}
+   \qquad\Longrightarrow\qquad
+   i = 0 \ \text{em}\ t = 2{,}5\ln\!\frac{91{,}8}{61{,}8} = 0{,}99\ \text{ms}. $$
+
+::: {#fig-026-abertura}
+
+```{.tikz}
+%%| filename: 026-abertura
+%%| alt: Gráfico da corrente na bobina de um relé em função do tempo depois da abertura da chave, do instante zero a seis milissegundos. A curva do grampo por diodo simples decai exponencialmente de trinta miliampères com constante de tempo de dois vírgula cinco milissegundos e ainda tem corrente apreciável em seis milissegundos. A curva do grampo por zener de vinte e quatro volts decai muito mais depressa, quase em linha reta, e atinge zero em zero vírgula noventa e nove milissegundo. Uma linha horizontal tracejada em doze miliampères marca a corrente de manutenção da armadura, e as duas curvas a cruzam em dois vírgula três milissegundos e em zero vírgula cinco e cinco milissegundo respectivamente.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=14.0cm, height=7.6cm,
+  xlabel={tempo depois da abertura (ms)}, ylabel={corrente na bobina (mA)},
+  xmin=0, xmax=6, ymin=0, ymax=34,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  legend style={at={(0.98,0.98)}, anchor=north east, font=\scriptsize,
+                draw=manualgray!50},
+]
+  \addplot[auxiliar, forget plot] coordinates {(0,12) (6,12)};
+
+  \addplot[curva, very thick, domain=0:6, samples=200] {30*exp(-x/2.5)};
+  \addlegendentry{diodo simples (grampo em 12,7 V)}
+
+  \addplot[destaque, very thick, domain=0:0.99, samples=200]
+    {91.8*exp(-x/2.5) - 61.8};
+  \addlegendentry{diodo + zener 24 V (grampo em 36,7 V)}
+
+  \node[ponto] at (axis cs:2.29,12) {};
+  \node[ponto] at (axis cs:0.55,12) {};
+  \node[font=\scriptsize, anchor=south west] at (axis cs:2.36,12.6)
+       {solta em $2{,}3$ ms};
+  \node[manualred, font=\scriptsize, anchor=west] at (axis cs:0.66,6.2)
+       {solta em $0{,}55$ ms};
+  \node[manualgray, font=\scriptsize, anchor=north west] at (axis cs:0.12,11.4)
+       {corrente de manutenção da armadura};
+  \node[manualgray, font=\scriptsize, anchor=north west, align=left]
+       at (axis cs:2.6,25.6)
+       {mesma energia nos dois casos:\\[2pt]
+        $\frac{1}{2}LI^2 = 0{,}45$ mJ.\\[2pt]
+        O que muda é a \textbf{potência},\\[2pt]
+        e portanto o tempo.};
+\end{axis}
+\end{tikzpicture}
+```
+
+Os dois grampos, com a mesma bobina. O zener libera o relé quatro vezes mais depressa
+ao custo de triplicar a tensão sobre a chave. A energia dissipada é idêntica —
+0,45 mJ nos dois casos — porque ela é $\frac{1}{2}LI^2$ e não depende do caminho.
+
+:::
+
+O relé solta quando a corrente cai abaixo da corrente de manutenção da armadura, tipicamente
+uns 40 % da nominal, ou 12 mA. Com o diodo simples isso leva
+$2{,}5\ln(30/12) = 2{,}3$ ms; com o zener, $2{,}5\ln(91{,}8/73{,}8) = 0{,}55$ ms. Quatro
+vezes mais rápido, exatamente como prometia a coluna "tempo de liberação" da
+@tbl-024-grampos — e agora com o número no lugar do adjetivo.
+
+A regra por trás disso: **a energia é fixa, o tempo é comprado com tensão.** Grampear
+em $V_g$ dissipa $\frac{1}{2}LI^2$ à potência $V_g \cdot i$, então o tempo cai
+aproximadamente na proporção de $V_g$. Não existe grampo baixo e rápido; a escolha é
+onde ficar na reta.
+
+## Segunda ordem: o circuito RLC {#sec-026-rlc}
+
+Ponha $R$, $L$ e $C$ em série e feche a chave sobre uma fonte de $V$ volts.
+
+::: {#fig-026-rlc}
+
+```{.tikz}
+%%| filename: 026-rlc
+%%| alt: Esquemático de um circuito RLC série. Uma fonte de tensão contínua V liga-se por uma chave a um resistor R, depois a um indutor L, depois a um capacitor C ligado ao terra. A tensão de saída é medida sobre o capacitor. À direita há um desenho conceitual de dois reservatórios ligados, um representando a energia no campo elétrico do capacitor e o outro a energia no campo magnético do indutor, com setas curvas indicando que a energia vai e volta entre os dois, e uma seta menor apontando para fora indicando que o resistor retira energia do sistema a cada ida e volta.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+\begin{scope}
+  \draw[thick] (0,0) to[battery1, l=$V$] (0,3.2);
+  \draw[thick] (0,3.2) to[switch] (1.6,3.2);
+  \draw[thick] (1.6,3.2) to[R, l=$R$, i>^=$i$] (3.9,3.2);
+  \draw[thick] (3.9,3.2) to[L, l=$L$] (6.2,3.2);
+  \draw[thick] (6.2,3.2) to[C, l_=$C$] (6.2,0);
+  \draw[thick] (6.2,0) -- (0,0);
+  \draw (3.0,0) node[ground]{};
+  \node[ponto] at (6.2,3.2) {};
+  \draw[thick] (6.2,3.2) -- (7.1,3.2) node[right] {$v_C$};
+\end{scope}
+
+\begin{scope}[xshift=9.6cm, yshift=0.3cm]
+  \draw[manualblue, very thick] (0,0) rectangle (2.0,1.5);
+  \fill[manualblue!25] (0,0) rectangle (2.0,0.9);
+  \node[font=\scriptsize, align=center] at (1.0,-0.45)
+       {campo elétrico\\$\tfrac{1}{2}Cv^2$};
+
+  \draw[manualred, very thick] (3.6,0) rectangle (5.6,1.5);
+  \fill[manualred!25] (3.6,0) rectangle (5.6,0.6);
+  \node[font=\scriptsize, align=center] at (4.6,-0.45)
+       {campo magnético\\$\tfrac{1}{2}Li^2$};
+
+  \draw[manualgray, very thick, ->, >=stealth]
+       (2.1,1.15) to[bend left=32] (3.5,1.15);
+  \draw[manualgray, very thick, ->, >=stealth]
+       (3.5,0.35) to[bend left=32] (2.1,0.35);
+
+  \draw[manualgreen!55!black, very thick, ->, >=stealth]
+       (2.8,1.85) -- (2.8,2.7);
+  \node[manualgreen!55!black, font=\scriptsize, anchor=south, align=center]
+       at (2.8,2.75) {$R$ retira energia\\a cada ida e volta};
+\end{scope}
+
+\end{tikzpicture}
+```
+
+O RLC série e o que ele faz com energia. Sem o resistor, os dois reservatórios trocam
+conteúdo para sempre: é um oscilador. O resistor é o que transforma a troca eterna
+numa oscilação que morre — ou que nem chega a começar.
+
+:::
+
+Aplicando a Lei das Malhas e substituindo $i = C\,dv_C/dt$:
+
+$$ L\,\frac{di}{dt} + R\,i + v_C = V
+   \qquad\Longrightarrow\qquad
+   LC\,\frac{d^{2}v_C}{dt^{2}} + RC\,\frac{dv_C}{dt} + v_C = V. $$
+
+Uma derivada **segunda**. É a assinatura de todo sistema com dois reservatórios de
+energia que trocam conteúdo entre si — e é a mesma equação do pêndulo, da suspensão do
+carro e da massa presa na mola. A forma canônica, dividindo por $LC$:
+
+$$ \frac{d^{2}v_C}{dt^{2}}
+   + 2\alpha\,\frac{dv_C}{dt}
+   + \omega_0^{2}\,v_C
+   = \omega_0^{2}\,V, $$
+
+com dois parâmetros que valem a pena nomear separadamente:
+
+$$ \omega_0 = \frac{1}{\sqrt{LC}} \quad\text{(rad/s)},
+   \qquad
+   \alpha = \frac{R}{2L} \quad\text{(1/s)}. $$
+
+$\omega_0$ é a **frequência natural**: a taxa com que a energia iria e voltaria entre
+$L$ e $C$ se não houvesse perda. $\alpha$ é o **coeficiente de amortecimento**: a taxa
+com que o resistor consome a energia. Tudo depende da razão entre os dois, e essa razão
+tem nome:
+
+$$ \boxed{\;\zeta = \frac{\alpha}{\omega_0} = \frac{R}{2}\sqrt{\frac{C}{L}}\;}
+   \qquad\text{e}\qquad
+   Q = \frac{1}{2\zeta} = \frac{1}{R}\sqrt{\frac{L}{C}}. $$
+
+O grupo $\sqrt{L/C}$ tem unidade de ohm e aparece o tempo todo: é a **impedância
+característica** $Z_0$ do par LC. Com ela, tudo fica limpo:
+
+$$ \zeta = \frac{R}{2 Z_0}, \qquad Q = \frac{Z_0}{R}. $$
+
+Repare no que isso significa: $\zeta$ e $Q$ **não são propriedades do par LC**. São a
+comparação entre a resistência da malha e $Z_0$. O mesmo indutor e o mesmo capacitor
+oscilam ou não conforme o resistor que estiver junto — e o Volume 6 chega à mesma
+conclusão por outro caminho, no domínio da frequência.
+
+### Os três regimes
+
+Para 10 mH e 100 nF, valores de gaveta: $\omega_0 = 31\,623$ rad/s, ou
+$f_0 = 5{,}03$ kHz, e $Z_0 = \sqrt{10^{-2}/10^{-7}} = 316\ \Omega$.
+
+**Subamortecido ($\zeta < 1$, isto é $R < 2Z_0 = 632\ \Omega$).** O circuito oscila
+numa frequência ligeiramente abaixo da natural,
+
+$$ \omega_d = \omega_0\sqrt{1 - \zeta^{2}}, $$
+
+com a amplitude morrendo dentro de um envelope $e^{-\alpha t}$. A saída **ultrapassa**
+o valor final antes de voltar.
+
+**Criticamente amortecido ($\zeta = 1$, $R = 632\ \Omega$).** A fronteira exata. É o
+regime mais rápido possível **sem** ultrapassar o valor final, e por isso é o alvo de
+projeto de tudo que precisa assentar depressa e não pode passar do ponto: braço de
+disco rígido, servo de posição, resposta de um regulador de tensão.
+
+**Superamortecido ($\zeta > 1$, $R > 632\ \Omega$).** Duas exponenciais reais, sem
+oscilação. Fica mais lento à medida que $R$ cresce e, no limite, degenera num RC comum
+com o indutor virando um curto irrelevante.
+
+::: {#fig-026-amortecimento}
+
+```{.tikz}
+%%| filename: 026-amortecimento
+%%| alt: Gráfico da resposta ao degrau de um circuito RLC série, com o tempo normalizado pela frequência natural no eixo horizontal, de zero a doze, e a tensão no capacitor em fração do valor final no eixo vertical, de zero a dois. Cinco curvas. Com amortecimento zero vírgula um a curva oscila fortemente, ultrapassando o valor final em setenta e três por cento, e leva mais de dez unidades de tempo para assentar. Com zero vírgula três ultrapassa trinta e sete por cento. Com zero vírgula sete zero sete ultrapassa apenas quatro por cento e assenta rápido. Com um, o amortecimento crítico, a curva sobe até o valor final sem ultrapassar. Com dois, superamortecida, a curva sobe devagar e é a mais lenta de todas a chegar perto do valor final.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=15.0cm, height=8.4cm,
+  trig format plots=rad,
+  xlabel={$\omega_0 t$ (tempo normalizado)},
+  ylabel={$v_C$ (fração do valor final)},
+  xmin=0, xmax=12, ymin=0, ymax=2.0,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  legend style={at={(0.5,-0.17)}, anchor=north, legend columns=2,
+                font=\scriptsize, draw=manualgray!50,
+                /tikz/every even column/.append style={column sep=8pt}},
+]
+  \addplot[auxiliar, forget plot] coordinates {(0,1) (12,1)};
+
+  \addplot[manualred, very thick, domain=0:12, samples=400]
+    {1 - exp(-0.1*x)*(cos(0.99499*x) + 0.10050*sin(0.99499*x))};
+  \addlegendentry{$\zeta = 0{,}1$ \ ($Q = 5$) — sobressinal 73 \%}
+
+  \addplot[manualyellow, very thick, domain=0:12, samples=400]
+    {1 - exp(-0.3*x)*(cos(0.95394*x) + 0.31449*sin(0.95394*x))};
+  \addlegendentry{$\zeta = 0{,}3$ \ ($Q = 1{,}67$) — sobressinal 37 \%}
+
+  \addplot[curva, very thick, domain=0:12, samples=400]
+    {1 - exp(-0.70711*x)*(cos(0.70711*x) + 1.0*sin(0.70711*x))};
+  \addlegendentry{$\zeta = 0{,}707$ \ ($Q = 0{,}707$) — sobressinal 4,3 \%}
+
+  \addplot[manualgreen!55!black, very thick, domain=0:12, samples=400]
+    {1 - exp(-x)*(1 + x)};
+  \addlegendentry{$\zeta = 1$ \ — crítico, sem sobressinal}
+
+  \addplot[manualgray, very thick, dashed, domain=0:12, samples=400]
+    {1 - (1.07735*exp(-0.26795*x) - 0.07735*exp(-3.73205*x))};
+  \addlegendentry{$\zeta = 2$ \ — superamortecido}
+
+  \node[manualred, font=\scriptsize, anchor=south] at (axis cs:6.3,1.80)
+       {envelope $e^{-\zeta\omega_0 t}$};
+  \addplot[manualred, thin, dotted, forget plot, domain=0:12, samples=100]
+    {1 + exp(-0.1*x)};
+  \addplot[manualred, thin, dotted, forget plot, domain=0:12, samples=100]
+    {1 - exp(-0.1*x)};
+\end{axis}
+\end{tikzpicture}
+```
+
+Resposta ao degrau do RLC série para cinco amortecimentos. O eixo do tempo está
+normalizado por $\omega_0$, então o gráfico serve para qualquer $L$ e $C$: só o
+$\zeta$ muda a forma. O caso $\zeta = 0{,}707$ é o compromisso favorito da engenharia
+— assenta quase tão rápido quanto o crítico e ultrapassa só 4 %.
+
+:::
+
+### Ler o amortecimento na tela
+
+Duas medidas tiram $\zeta$ de uma forma de onda, sem saber $L$, $C$ nem $R$.
+
+A primeira é o **sobressinal** — quanto o primeiro pico ultrapassa o valor final:
+
+$$ M_p = \exp\!\left(\frac{-\pi\zeta}{\sqrt{1-\zeta^{2}}}\right). $$
+
+| $\zeta$ | $Q$ | Sobressinal | Como aparece |
+|---|---|---|---|
+| 0,1 | 5,0 | 72,9 % | toque longo e evidente |
+| 0,2 | 2,5 | 52,7 % | toque de três ou quatro ciclos |
+| 0,3 | 1,67 | 37,2 % | dois ciclos visíveis |
+| 0,5 | 1,0 | 16,3 % | um "ombro" e pouco mais |
+| 0,707 | 0,707 | 4,3 % | quase imperceptível |
+| 1,0 | 0,5 | 0 % | nenhum |
+
+: Sobressinal contra amortecimento. A coluna da direita é o que se vê no
+osciloscópio, e ela permite estimar $\zeta$ de olho com uns 20 % de
+erro. {#tbl-026-sobressinal}
+
+A segunda é mais precisa e é a que se usa de verdade: o **decremento logarítmico**.
+Meça a altura de dois picos consecutivos, $A_1$ e $A_2$, medidos a partir do valor
+final. Então
+
+$$ \delta = \ln\frac{A_1}{A_2} = \frac{2\pi\zeta}{\sqrt{1-\zeta^{2}}}
+   \qquad\Longrightarrow\qquad
+   \zeta = \frac{\delta}{\sqrt{4\pi^{2} + \delta^{2}}}. $$
+
+Duas alturas com uma régua, um logaritmo, e sai o amortecimento. E há uma regra de
+bolso que vale guardar: o envelope cai a $1/e$ depois de aproximadamente $Q/\pi$
+ciclos. Se o toque tem quatro ciclos visíveis, $Q$ anda pela casa de 12.
+
+## O RLC que ninguém desenhou {#sec-026-parasita}
+
+Quase todo RLC que causa problema na vida real é **acidental**. Nenhum esquemático o
+contém; ele está nas trilhas, nos fios e nos parasitas do @sec-cap-022 e do
+@sec-cap-024.
+
+O caso mais comum: uma trilha de placa tem cerca de 1 nH por milímetro. Cinco
+centímetros de trilha até um capacitor de desacoplamento de 100 nF formam um tanque
+com
+
+$$ f_0 = \frac{1}{2\pi\sqrt{50\ \text{nH} \times 100\ \text{nF}}} = 2{,}25\ \text{MHz}, $$
+
+e uma resistência de malha de poucas dezenas de miliohms. $Z_0 = \sqrt{L/C} = 0{,}7\ \Omega$,
+então $Q = 0{,}7/0{,}03 \approx 23$: um toque de umas sete oscilações a cada borda de
+comutação. Isso é ruído irradiado, é erro de leitura de conversor, e é a razão de o
+capacitor de desacoplamento ter de ficar **junto** do pino.
+
+::: {#fig-026-parasita}
+
+```{.tikz}
+%%| filename: 026-parasita
+%%| alt: Gráfico de tensão contra tempo em microssegundos mostrando duas versões de uma borda de subida. A primeira, sem amortecimento, ultrapassa o valor final em mais de sessenta por cento e oscila por vários microssegundos antes de assentar, com a região acima do limite máximo do componente marcada em vermelho. A segunda, com um resistor de amortecimento em série, sobe até o valor final com apenas um pequeno ombro e sem ultrapassar o limite. Uma linha horizontal tracejada marca a tensão máxima suportada pelo componente alimentado.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=14.4cm, height=7.6cm,
+  trig format plots=rad,
+  xlabel={tempo ($\mu$s)}, ylabel={tensão no ponto de carga (V)},
+  xmin=0, xmax=6, ymin=0, ymax=44,
+  axis lines=left, grid=both, grid style={manualgray!22},
+  font=\footnotesize,
+  legend style={at={(0.98,0.05)}, anchor=south east, font=\scriptsize,
+                draw=manualgray!50},
+]
+  \addplot[destaque, thick, dashed, forget plot] coordinates {(0,30) (6,30)};
+  \node[manualred, font=\scriptsize, anchor=south east] at (axis cs:5.9,30.4)
+       {máximo do componente alimentado: 30 V};
+
+  \addplot[manualred, very thick, domain=0:6, samples=500]
+    {24*(1 - exp(-0.9*x)*(cos(5.93*x) + 0.15177*sin(5.93*x)))};
+  \addlegendentry{filtro LC de entrada sem amortecimento ($\zeta = 0{,}15$)}
+
+  \addplot[curva, very thick, domain=0:6, samples=500]
+    {24*(1 - exp(-4.243*x)*(cos(4.243*x) + 1.0*sin(4.243*x)))};
+  \addlegendentry{o mesmo, com resistor de amortecimento ($\zeta = 0{,}707$)}
+
+  \node[manualred, font=\scriptsize, anchor=west, align=left]
+       at (axis cs:1.35,39.4)
+       {$38{,}9$ V num barramento de 24 V.\\
+        Nada no esquemático tem 38 V —\\
+        e ainda assim o capacitor de 35 V morre.};
+
+  \node[manualblue, font=\scriptsize, anchor=west]
+       at (axis cs:3.5,18.6) {mesmos $L$ e $C$, mais um resistor};
+\end{axis}
+\end{tikzpicture}
+```
+
+O sobressinal de um filtro LC de entrada sem amortecimento, aplicado a um barramento de
+24 V. O pico não vem de fora: é o próprio filtro, respondendo ao degrau de energização.
+Com $\zeta \to 0$ o limite é **o dobro** da tensão de entrada.
+
+:::
+
+Vale destacar o item da figura, porque ele destrói equipamento em campo: **um filtro LC
+sem amortecimento entrega até o dobro da tensão de entrada** ao ser energizado. Um
+barramento de 24 V produz 48 V no pior caso; um de 12 V produz 24 V. O capacitor
+eletrolítico de 35 V que parecia folgado não é.
+
+Onde mais o RLC acidental aparece:
+
+- **Cabo longo até uma carga capacitiva.** Alguns metros de cabo têm centenas de
+  nanohenries; a entrada da carga tem microfarads. O toque acontece no instante da
+  energização e a cada degrau de consumo.
+- **Diodo de roda livre a meio metro da bobina.** A indutância do próprio fio de
+  ligação forma um tanque com a capacitância parasita do relé, e o grampo deixa de
+  grampear a borda rápida. Roda livre é componente de proximidade, não de esquemático.
+- **Ponta de prova de osciloscópio.** A indutância da garra de terra com a
+  capacitância de entrada dá um toque que **não existe no circuito** — é do
+  instrumento. O Volume 7 mede isso, no capítulo sobre pontas de prova.
+- **Fonte de bancada com fios compridos.** Ligar uma carga chaveada por 1 m de fio
+  ressoa com o capacitor de saída da fonte, e o que se vê no osciloscópio é atribuído
+  ao circuito.
+
+E a cura, em três formas, todas equivalentes a "aumentar $\zeta$":
+
+1. **Resistor em série** com o elemento reativo — o mais simples, e custa queda de
+   tensão.
+2. **Snubber RC** em paralelo com a chave ou com a fonte de ruído: um resistor em
+   série com um capacitor, dimensionado para dissipar sem carregar o circuito em CC.
+   Ponto de partida usual: $R = Z_0 = \sqrt{L/C}$ e $C_s$ de três a cinco vezes o $C$
+   parasita.
+3. **Conta de ferrite**, que é resistência **só** em alta frequência (@sec-cap-024) e
+   por isso amortece o toque sem custar nada em CC.
+
+## 🧪 Laboratório {#sec-026-lab}
+
+**Ver um circuito oscilar, medir o amortecimento e — a promessa que ficou de pé desde
+o @sec-cap-023 — medir indutância pelo período da oscilação, que é o método mais
+preciso que uma bancada modesta consegue.**
+
+O obstáculo é honesto: transitórios RL e RLC acontecem em microssegundos a
+milissegundos, e o cronômetro do @sec-cap-025 não serve. Só que existe, em cima da
+mesa, um instrumento capaz de gerar e registrar formas de onda até uns 20 kHz com
+resolução de microssegundos: a **placa de som do computador**. Ela é um gerador de
+funções e um osciloscópio de dois canais, de banda limitada, e é grátis. Escolhendo
+$L$ e $C$ para que $f_0$ caia na faixa de áudio, todo este roteiro sai sem
+osciloscópio.
+
+### Material
+
+::: {.lab-material}
+- 1 computador com entrada de microfone ou de linha, e um programa livre de gravação
+  que mostre a forma de onda (Audacity serve)
+- 1 cabo P2 estéreo com as pontas descascadas, ou dois cabos P2–P2 e um adaptador de
+  bancada
+- 1 multímetro digital
+- 1 indutor de 10 mH (choque radial; anote a DCR)
+- 1 relé de 12 V com bobina acessível
+- 1 capacitor de filme de 100 nF, 1 de 470 nF e 1 de 1 µF
+- 1 capacitor eletrolítico de 100 µF, 25 V
+- Resistores de 1/4 W: 100 Ω, 220 Ω, 620 Ω, 1,5 kΩ, 4,7 kΩ, 10 kΩ
+- As bobinas de **50, 100 e 200 espiras** do @sec-cap-023 e o bastão de ferrite
+- 1 diodo 1N4148 e 1 diodo zener de 24 V, 1/2 W
+- 1 fonte de bancada de 12 V
+- Protoboard, jumpers
+:::
+
+::: {.callout-warning}
+## A placa de som é frágil, e o terra dela é o terra do computador
+
+A entrada de linha aceita da ordem de 1 V de pico e **nenhuma tensão contínua**. Ligar
+os 12 V da fonte de bancada nela destrói a entrada, e às vezes mais do que ela.
+
+Três regras que tornam este roteiro seguro:
+
+1. Toda ligação à entrada passa por um **divisor** que traga o sinal para abaixo de
+   1 V e por um **capacitor de 1 µF em série**, que bloqueia a componente contínua.
+2. O terra da placa de som é o chassi do computador, que costuma estar aterrado pela
+   rede. Nunca ligue esse terra a nenhum ponto de um circuito alimentado pela rede sem
+   isolação — só a fonte de bancada flutuante ou pilha.
+3. Faça a primeira ligação com o volume no mínimo e suba devagar, olhando o nível de
+   entrada.
+
+Na dúvida, use um cabo velho e um computador que não faça falta.
+:::
+
+### Parte 1 — Calibrar o instrumento improvisado
+
+1. Ligue a saída de fone do computador à entrada de linha (ou de microfone) por um
+   divisor de 10 kΩ e 1 kΩ, com um capacitor de 1 µF em série na entrada.
+2. Gere uma onda quadrada de 200 Hz no programa e grave. Confirme que a onda aparece
+   com bordas nítidas.
+3. Meça o período na tela: 5,0 ms. Se der outra coisa, a taxa de amostragem do
+   programa está diferente da que você supõe.
+4. Anote a taxa de amostragem (44,1 kHz ou 48 kHz) e calcule a resolução temporal:
+   $1/44\,100 = 22{,}7$ µs por amostra.
+
+Essa resolução é o limite do método. Ela permite medir períodos de umas dez amostras
+para cima com erro de poucos por cento, ou seja, frequências até uns 4 kHz com
+conforto, e até uns 15 kHz com cuidado.
+
+### Parte 2 — O toque do RLC, e os três regimes
+
+1. Monte, a partir da saída do computador: resistor de 4,7 kΩ em série, e sobre ele o
+   paralelo do indutor de 10 mH com o capacitor de 100 nF, indo ao terra. Meça a tensão
+   sobre o tanque.
+2. Calcule antes: $f_0 = 5{,}03$ kHz, $Z_0 = 316\ \Omega$.
+3. Gere uma onda quadrada de 100 Hz e grave. Cada borda deve produzir um trem de
+   oscilações amortecidas de cerca de 5 kHz.
+4. Amplie a tela em uma das bordas e conte quantos ciclos são visíveis.
+5. Agora acrescente resistores **em série com o indutor**, dentro do tanque: 100 Ω,
+   220 Ω, 620 Ω e 1,5 kΩ. Grave uma borda com cada um.
+
+O que você vai ver, em ordem: com 100 Ω o toque encolhe mas continua; com 220 Ω sobra
+pouco mais de um ciclo; com **620 Ω** o toque desaparece e a borda vira uma subida
+limpa — é o amortecimento crítico, e o valor calculado era $2Z_0 = 632\ \Omega$; com
+1,5 kΩ tudo fica mais lento, sem melhorar nada.
+
+Não passe direto pelo resultado da conta: você previu 632 Ω num papel e o resistor
+comercial de 620 Ω fez exatamente o que estava previsto.
+
+### Parte 3 — Medir o amortecimento pelo decremento logarítmico
+
+1. Volte ao caso sem resistor extra (só a DCR do choque).
+2. Meça a altura de dois picos consecutivos do toque, $A_1$ e $A_2$, contadas a partir
+   do valor final.
+3. Calcule $\delta = \ln(A_1/A_2)$ e depois
+   $\zeta = \delta/\sqrt{4\pi^{2}+\delta^{2}}$.
+4. De $\zeta$, tire $R_{\text{total}} = 2\zeta Z_0$.
+5. Meça a DCR do choque com o ohmímetro e compare.
+
+$R_{\text{total}}$ vai dar **maior** que a DCR medida em CC, e a diferença é
+informação real: são as perdas no núcleo e o efeito pelicular a 5 kHz
+(@sec-cap-024). Você acabou de medir, com um cabo de áudio, uma coisa que o ohmímetro
+não mede.
+
+### Parte 4 — Medir indutância pelo período {#sec-026-lab-medirL}
+
+Esta é a Parte 3 do laboratório do @sec-cap-023, que ficou suspensa por falta de
+escala de indutância no multímetro.
+
+1. Ponha o bastão de ferrite dentro da bobina de **100 espiras** e fixe com fita. Sem
+   o núcleo, a indutância de 20 µH é baixa demais para oscilar na faixa de áudio; com
+   ele, sobe uma ou duas ordens de grandeza.
+2. Ligue essa bobina em paralelo com o capacitor de filme de 470 nF e excite o tanque
+   pelo resistor de 4,7 kΩ, com onda quadrada de 100 Hz.
+3. Meça o **período** da oscilação na tela, sobre **dez ciclos**, e divida por dez. Um
+   erro de uma amostra em dez ciclos é um erro de 0,2 %.
+4. Calcule:
+   $$ L = \frac{1}{4\pi^{2}f_0^{2}\,C}. $$
+5. Use o valor **medido** do capacitor, não o nominal — se você fez a Parte 4 do
+   laboratório do @sec-cap-025, tem esse número.
+6. Repita com as bobinas de 50 e de 200 espiras, com o **mesmo** bastão na mesma
+   posição.
+
+Duas coisas saem daqui. A primeira é a lei do quadrado prometida no @sec-cap-023:
+como $L \propto N^{2}$ e $f_0 \propto 1/\sqrt{L}$, dobrar as espiras deve **dividir a
+frequência por dois**. Confira o par 100/200 espiras e o par 50/100.
+
+A segunda é a permeabilidade efetiva do bastão: divida o $L$ medido com ferrite pelos
+20 µH calculados sem núcleo no @sec-cap-023. O resultado é $\mu_{\text{ef}}$, e ele
+será **muito menor** que o $\mu_r$ do material — a razão é geométrica, e é a mesma que
+faz um bastão aberto valer bem menos que um toroide fechado.
+
+Por que este método é o mais preciso da bancada modesta: a grandeza que ele mede é
+**tempo**, e tempo é a grandeza que se mede melhor em qualquer laboratório do mundo.
+Medindo sobre dez ciclos numa placa de 44,1 kHz, o erro de temporização fica em uns
+2 % a 10 kHz e cai para menos de 1 % se você baixar $f_0$ escolhendo um capacitor
+maior. Daí em diante quem manda é a tolerância do capacitor de referência — com um
+filme de 1 %, o resultado é melhor que o de qualquer escala de indutância de
+multímetro barato, e é medido na frequência que você escolheu, e não na que o
+fabricante do instrumento escolheu.
+
+### Parte 5 — O transitório RL, e o grampo com números
+
+1. Monte a bobina do relé de 12 V com a fonte de bancada, uma chave e o diodo 1N4148
+   de roda livre, como na @fig-026-rl.
+2. Meça a DCR da bobina e estime $L$ pelo método da Parte 4 (ligue um capacitor de
+   1 µF em paralelo com a bobina do relé; o $f_0$ resultante cai na faixa de áudio).
+3. Calcule $\tau = L/R$ e o tempo de liberação previsto,
+   $t = \tau\ln(I_{\text{nominal}}/I_{\text{manutenção}})$, supondo manutenção em 40 %.
+4. Abra a chave e **ouça**. Depois troque o diodo pelo conjunto diodo + zener de 24 V
+   e ouça de novo.
+5. Se conseguir gravar o clique com o microfone do computador, dá para medir o atraso
+   entre a abertura e o clique da armadura na tela: é uma medida de milissegundos com
+   um microfone.
+
+O passo 5 é o fecho do capítulo: você previu 2,3 ms e 0,55 ms com uma conta de duas
+linhas, e mediu os dois com um microfone.
+
+### Parte 6 — Ver o sobressinal do filtro LC
+
+1. Monte o indutor de 10 mH em série, com o capacitor de 100 µF do nó de saída ao
+   terra: é um filtro LC de entrada em miniatura. $Z_0 = \sqrt{10^{-2}/10^{-4}} = 10\ \Omega$.
+2. Alimente com a fonte de bancada em 5,0 V, ligando pela chave, e meça a tensão de
+   saída com o multímetro na escala de pico, se houver — ou com a placa de som, através
+   do divisor.
+3. A resistência da malha é a DCR do choque, uns 20 Ω. Calcule
+   $\zeta = R/(2Z_0) = 20/20 = 1{,}0$: criticamente amortecido, sem sobressinal.
+4. Agora curto-circuite parte da resistência usando um choque de DCR baixa, ou reduza
+   a resistência da malha o quanto puder, e repita.
+
+O que este experimento ensina por não dar sobressinal: **a DCR do indutor é o
+amortecedor**, e é por isso que o problema da @fig-026-parasita aparece justamente nos
+projetos bem feitos, com indutor de baixa DCR e capacitor de baixa ESR. Componente
+melhor, $\zeta$ menor, sobressinal maior. Filtro de entrada de fonte é o caso clássico
+de circuito que precisa de um resistor **de propósito**.
+
+### Variante simulada (plano B)
+
+No simulador, tudo isto sai em análise transiente e sem risco para a placa de som:
+
+- **Varredura de $R$.** Faça uma varredura paramétrica de 10 Ω a 2 kΩ no RLC série e
+  reproduza a @fig-026-amortecimento com os seus próprios componentes. Ache o valor em
+  que o sobressinal some e compare com $2\sqrt{L/C}$.
+- **Energia trocando de lado.** Plote $\frac{1}{2}Cv_C^2$ e $\frac{1}{2}Li^2$ na mesma
+  tela. As duas curvas são espelhos defasados de um quarto de período, e a soma decai
+  suavemente: é a @fig-026-rlc animada.
+- **O grampo do relé.** Chave ideal, 1 H com 400 Ω, e compare diodo, diodo + zener e
+  nada. Ponha 1 MΩ em paralelo com a chave para o simulador convergir — sem isso a
+  tensão de abertura é infinita e o que aparece é o limite numérico.
+- **A trilha que ressoa.** Ponha 50 nH em série com o capacitor de desacoplamento de
+  100 nF e excite com uma borda de 10 ns. O toque de 2,25 MHz aparece na hora, e
+  encurtar a indutância para 5 nH mostra por que o capacitor tem de ficar junto do pino.
+
+O que o simulador não dá de graça: os parasitas. Ele só ressoa nos elementos que você
+desenhou, e o problema real da @fig-026-parasita é justamente o elemento que ninguém
+desenhou.
+
+## 🔥 Onde Queima {#sec-026-queima}
+
+**Usar $\tau = RC$ no lugar de $\tau = L/R$.** É o erro número um do capítulo. No RL o
+resistor divide: aumentar $R$ **acelera** o circuito e reduz a corrente final.
+
+**Achar que o diodo de roda livre protege o relé.** Ele protege o **transistor** ou o
+contato que chaveia. O relé, com o diodo, solta mais devagar — e um relé lento mantém
+o arco por mais tempo nos próprios contatos de saída. Se o relé chaveia carga
+indutiva, o grampo rápido (zener) vale mais que o barato.
+
+**Deixar o filtro LC de entrada sem amortecimento.** O degrau de energização entrega
+até **duas vezes** a tensão de entrada. Barramento de 24 V, capacitor de 35 V,
+sobressinal para 48 V: o capacitor morre na primeira vez que alguém liga a chave. O
+amortecimento é componente de projeto, não folga de fabricação.
+
+**Especificar amortecimento crítico e conviver com a tolerância.** $\zeta = 1$ é um
+ponto, não uma faixa. Com indutor de 20 % e capacitor de 10 %, $\zeta$ passeia de 0,85
+a 1,2. Se o sobressinal é proibido, projete em $\zeta = 1{,}3$ e aceite ficar um pouco
+mais lento.
+
+**Ligar a placa de som direto no circuito.** Tensão contínua na entrada de linha
+destrói a entrada; 12 V destroem mais. Divisor e capacitor de bloqueio em série,
+sempre — e nunca ligue o terra da placa a circuito referenciado à rede.
+
+**Medir indutância com a escala do multímetro e confiar.** Ela mede numa frequência
+fixa, com corrente desprezível e sem núcleo saturado. Para indutor com núcleo, o valor
+que interessa é na frequência e na corrente de trabalho. O método do período (Parte 4)
+mede na frequência que você escolher.
+
+**Esquecer a capacitância parasita da bobina no método do período.** A capacitância
+entre espiras do @sec-cap-024 entra em paralelo com o seu capacitor de referência.
+Escolha $C$ pelo menos cem vezes maior que a capacitância parasita estimada, e o erro
+some.
+
+**Concluir que "não tem ressonância" porque não se vê toque.** $Q$ baixo esconde a
+ressonância no domínio do tempo sem eliminá-la. O tanque continua lá, e no domínio da
+frequência ele aparece de qualquer jeito — assunto do Volume 6.
+
+**Pôr o diodo de roda livre longe da bobina.** A indutância dos fios de ligação forma
+um segundo tanque, e a borda rápida passa por cima do grampo. Roda livre vai nos
+terminais do componente, não do outro lado da placa.
+
+**Dimensionar o zener de grampo pela tensão e esquecer a energia.** Ele absorve
+$\frac{1}{2}LI^2$ a cada abertura. Num relé de 0,45 mJ comutado a cada segundo, isso
+é meio miliwatt e não importa; num solenoide de 50 mJ comutado a 100 Hz, são 5 W e o
+zener de 1/2 W vira fumaça.
+
+**Confundir o toque do circuito com o toque da ponta de prova.** A garra de terra
+comprida ressoa com a capacitância de entrada e desenha na tela um toque que não
+existe. Antes de caçar um RLC parasita, encoste a ponta na sua própria garra e veja o
+que aparece — o Volume 7 trata disso em detalhe.
+
+**Supor que a corrente do indutor pode saltar.** Não pode: exigiria tensão infinita.
+Se a sua análise pede um salto, existe um caminho para a corrente que você não
+desenhou — e na vida real ele costuma ser um arco.
+
+## O que fica deste capítulo {#sec-026-resumo}
+
+O circuito RL é o RC com os papéis trocados: a corrente é que não pode saltar, o
+indutor começa aberto e termina curto, e a constante de tempo é $\tau = L/R$ — com o
+resistor **dividindo**, de modo que aumentar $R$ acelera o transitório. Todos os
+percentuais do @tbl-025-tau valem sem mudança.
+
+Na prática, transitórios RL são curtos, entre microssegundos e alguns milissegundos,
+porque não existe indutor grande e barato. Temporização se faz com RC; o indutor
+importa no domínio do tempo pelo que acontece na **abertura**, onde
+$v_L = L\,di/dt$ produz centenas de volts e o grampo decide entre tensão baixa e
+liberação rápida — 2,3 ms com diodo e 0,55 ms com zener de 24 V, no relé típico.
+
+Com $L$ e $C$ na mesma malha a equação vira de segunda ordem, e aparecem dois
+parâmetros: $\omega_0 = 1/\sqrt{LC}$, a frequência natural, e
+$\zeta = (R/2)\sqrt{C/L}$, o amortecimento. Escrito com a impedância característica
+$Z_0 = \sqrt{L/C}$, fica $\zeta = R/(2Z_0)$ e $Q = Z_0/R$ — o que deixa explícito que
+oscilar ou não **não é propriedade do par LC**, mas da comparação entre a resistência
+da malha e $Z_0$.
+
+Abaixo de $\zeta = 1$ o circuito toca, com sobressinal
+$e^{-\pi\zeta/\sqrt{1-\zeta^2}}$ e envelope $e^{-\zeta\omega_0 t}$; em $\zeta = 1$
+assenta o mais rápido possível sem ultrapassar; acima disso fica lento à toa. O
+decremento logarítmico entre dois picos entrega $\zeta$ com uma régua, e $Q/\pi$ dá o
+número de ciclos visíveis.
+
+O RLC que dá trabalho é o que ninguém desenhou: trilha com capacitor de desacoplamento,
+cabo com carga capacitiva, filtro de entrada de fonte. O mais perigoso deles entrega o
+**dobro** da tensão de entrada ao ser energizado, e a cura é sempre a mesma — aumentar
+$\zeta$, com resistor série, snubber RC ou conta de ferrite.
+
+Com isto o Volume 4 fecha, e com ele a Fase 1. Os quatro passivos estão descritos como
+componentes reais e como equações no tempo. Mas repare no que a
+@fig-026-amortecimento insinua: o circuito de segunda ordem tem uma frequência
+**própria**, e responde muito mais a ela do que a qualquer outra. Descrever isso
+degrau por degrau é possível e é trabalhoso. O Volume 5 troca de ferramenta — em vez
+de excitar com degraus e resolver equações diferenciais, excita com **senoides** e
+transforma o problema em álgebra. É a mesma física, com um custo de conta muito menor.

@@ -12,23 +12,26 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 42/104 |
-| **Contíguos até** | **025** — daqui em diante a numeração tem buracos |
-| **Lacunas abertas** | **026** (Volume 4) e **037, 038** (Volume 6) |
-| **Próximo capítulo: 026** | Transitórios RL e circuitos RLC no domínio do tempo |
+| **Progresso** | 45/104 |
+| **Contíguos até** | **045** — sem nenhum buraco no meio do livro |
+| **Lacunas abertas** | **nenhuma** |
+| **Próximo capítulo: 046** | Semicondutores, dopagem e a junção PN (abre o Volume 8) |
 
-As lacunas restantes **já são referenciadas por texto publicado** — quatro chamadas de
-`@sec-`, algumas com contrato de conteúdo explícito (o 023 deixa um laboratório
-suspenso até o 026; o 036 promete que o 038 explica seletividade).
-Para ver a lista completa e atual:
+As três lacunas que existiam — 026 no Volume 4, 037 e 038 no Volume 6 — foram fechadas.
+Com isso as Fases 1 e 2 estão completas: Volumes 1 a 7, capítulos 001 a 045, contíguos.
+A Fase 3 começa no Volume 8, e nele o capítulo 048 (retificadores) exige o bloco
+`.callout-warning` de rede elétrica antes de qualquer roteiro, conforme o `CLAUDE.md`.
+
+Para confirmar o estado a qualquer momento:
 
 ```
 python ferramentas/verificar-lacunas.py
 ```
 
-Elas não vieram de decisão editorial: as sessões de escrita terminaram no meio do
-Volume 4 e do Volume 6, e a sessão seguinte reancorou na fronteira do **volume** em vez
-do próximo capítulo pendente. Ver a lição 11 do `LICOES-MANUAIS.md`.
+O histórico de como as lacunas apareceram — sessões que terminaram no meio de um volume e
+a sessão seguinte reancorando na fronteira do **volume** em vez do próximo capítulo
+pendente — está na lição 11 do `LICOES-MANUAIS.md`, e a trava contra a repetição é o
+verificador acima, rodado na abertura de cada sessão.
 
 **Pendência separada, de outra natureza:** os capítulos 033 e 035 usam `@sec-` para
 apontar a 065, 069 e 070 — conteúdo do Volume 11, ainda não escrito. Isso viola a regra
@@ -78,7 +81,7 @@ cinco ocorrências como aviso.
 - [x] 023 — Campo magnético e indutância — `capitulos/023-campo-magnetico-e-indutancia.qmd`
 - [x] 024 — O indutor real e a energia armazenada — `capitulos/024-o-indutor-real-e-a-energia-armazenada.qmd`
 - [x] 025 — Transitórios RC: carga, descarga e constante de tempo — `capitulos/025-transitorios-rc-carga-descarga-e-constante-de-tempo.qmd`
-- [ ] 026 — Transitórios RL e circuitos RLC no domínio do tempo — `capitulos/026-transitorios-rl-e-circuitos-rlc-no-dominio-do-tempo.qmd`
+- [x] 026 — Transitórios RL e circuitos RLC no domínio do tempo — `capitulos/026-transitorios-rl-e-circuitos-rlc-no-dominio-do-tempo.qmd`
 
 
 ## Fase 2 — Corrente Alternada e Sinais
@@ -100,8 +103,8 @@ cinco ocorrências como aviso.
 - [x] 034 — Filtro RC passa-altas e acoplamento — `capitulos/034-filtro-rc-passa-altas-e-acoplamento.qmd`
 - [x] 035 — Diagramas de Bode: ganho e fase — `capitulos/035-diagramas-de-bode-ganho-e-fase.qmd`
 - [x] 036 — Filtros LC e ordem do filtro — `capitulos/036-filtros-lc-e-ordem-do-filtro.qmd`
-- [ ] 037 — Ressonância série e paralela — `capitulos/037-ressonancia-serie-e-paralela.qmd`
-- [ ] 038 — Fator de qualidade, largura de banda e seletividade — `capitulos/038-fator-de-qualidade-largura-de-banda-e-seletividade.qmd`
+- [x] 037 — Ressonância série e paralela — `capitulos/037-ressonancia-serie-e-paralela.qmd`
+- [x] 038 — Fator de qualidade, largura de banda e seletividade — `capitulos/038-fator-de-qualidade-largura-de-banda-e-seletividade.qmd`
 
 
 ### Volume 7 — Sinais, Ruído e Instrumentação
