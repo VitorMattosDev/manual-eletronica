@@ -1,3 +1,773 @@
 # Fator de qualidade, largura de banda e seletividade {#sec-cap-038}
 
-*(em elaboração)*
+$Q$ já apareceu três vezes neste manual, em três disfarces. No @sec-cap-036 decidia se um
+filtro LC era plano ou tinha pico. No @sec-cap-037 multiplicava a tensão sobre o indutor
+de um circuito série e a corrente que circula num tanque. E na @fig-037-paralelo fez uma
+quarta coisa sem ser anunciado: quanto maior o $Q$, mais **estreito** o pico.
+
+Este capítulo fecha a conta. Vamos mostrar que essas manifestações são a mesma grandeza,
+definir $Q$ de um jeito que não dependa de topologia, e converter $Q$ em algo que se mede
+diretamente com um gerador e um multímetro: a **largura de banda** em hertz. Daí sai o
+critério de projeto que faltava — dado que se quer receber a estação de 1000 kHz e rejeitar
+a de 1010 kHz, que $Q$ é preciso? — e a resposta, quase sempre decepcionante, de que um
+único LC não dá conta, e por quê.
+
+Ao final, $Q$ terá deixado de ser um número de fórmula e virado uma pergunta de bancada:
+quanto do que entra neste circuito volta na próxima meia-onda, e quanto vira calor?
+
+## A definição que não depende de topologia {#sec-038-energia}
+
+O problema com as fórmulas do @sec-cap-037 é que elas se invertem: $Q = Z_0/r$ no série,
+$Q = R_d/Z_0$ no paralelo. Quem decora as duas troca uma pela outra mais cedo ou mais
+tarde. A definição de raiz não tem esse defeito:
+
+$$ \boxed{\;Q = 2\pi\,\frac{\text{energia armazenada no circuito}}
+                          {\text{energia dissipada por ciclo}}\;} $$
+
+Nada aqui menciona série, paralelo, indutor ou capacitor. Vale para um circuito LC, para
+um cristal de quartzo, para um ressonador de microondas, para um diapasão e para um
+pêndulo. É por isso que o mesmo símbolo aparece em contextos tão distantes.
+
+Vamos conferir que ela reproduz o resultado do série. No pico da corrente,
+$i(t) = I\sqrt{2}\sin\omega_0 t$, a energia máxima armazenada é toda magnética no instante
+em que a corrente é máxima:
+
+$$ W = \tfrac{1}{2}L\,(I\sqrt{2})^2 = L I^2. $$
+
+A energia dissipada num ciclo é a potência média vezes o período:
+
+$$ W_{\text{diss}} = R I^2 \cdot T = \frac{R I^2}{f_0}. $$
+
+Dividindo e multiplicando por $2\pi$:
+
+$$ Q = 2\pi\,\frac{L I^2}{R I^2 / f_0} = \frac{2\pi f_0 L}{R} = \frac{\omega_0 L}{R}, $$
+
+que é exatamente a fórmula do série. A corrente $I$ sumiu — $Q$ não depende do nível de
+excitação, só do circuito. Repetindo a conta para o tanque, com a energia elétrica no
+capacitor e a perda na resistência paralela, sai $Q = R_d/Z_0$. Uma definição, dois
+resultados, nenhuma decoreba.
+
+Vale mais um enunciado da mesma ideia, que é o que fica na cabeça: **$Q$ é o número de
+radianos de oscilação que o circuito consegue sustentar antes de a energia cair para
+$1/e$ do valor inicial.** Um circuito com $Q = 50$ toca por umas oito oscilações antes de
+perder a maior parte da energia. Um com $Q = 2$ mal completa uma.
+
+::: {#fig-038-tres-caras}
+
+```{.tikz}
+%%| filename: 038-tres-caras
+%%| alt: Diagrama conceitual com um retângulo central contendo a definição energética do fator de qualidade como duas pi vezes a energia armazenada dividida pela energia dissipada por ciclo. Do retângulo central saem três setas para três retângulos ao redor. O primeiro, no domínio da frequência, diz que a largura de banda de três decibéis é a frequência de ressonância dividida pelo fator de qualidade. O segundo, no domínio do tempo, diz que o número de oscilações até a amplitude cair para um sobre e é o fator de qualidade dividido por pi. O terceiro, nas amplitudes, diz que a tensão sobre o indutor no circuito série e a corrente circulante no tanque valem o fator de qualidade vezes o valor de entrada.
+
+\begin{tikzpicture}[font=\footnotesize, >=stealth]
+
+  \node[draw=manualred, very thick, rounded corners=3pt, fill=manualred!6,
+        align=center, inner sep=8pt, text width=5.6cm]
+       (centro) at (0,0)
+       {\textbf{a definição}\\[4pt]
+        $Q = 2\pi\,\dfrac{\text{energia armazenada}}{\text{energia perdida por ciclo}}$};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, fill=manualblue!6,
+        align=center, inner sep=7pt, text width=4.6cm]
+       (freq) at (-6.4,-4.2)
+       {\textbf{no domínio da frequência}\\[3pt]
+        $\mathrm{BW}_{-3\,\mathrm{dB}} = \dfrac{f_0}{Q}$\\[3pt]
+        largura do pico};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, fill=manualgreen!6,
+        align=center, inner sep=7pt, text width=4.6cm]
+       (tempo) at (0,-4.6)
+       {\textbf{no domínio do tempo}\\[3pt]
+        $N_{1/e} = \dfrac{Q}{\pi}$\\[3pt]
+        ciclos até a amplitude cair a $1/e$};
+
+  \node[draw=manualyellow, thick, rounded corners=3pt, fill=manualyellow!6,
+        align=center, inner sep=7pt, text width=4.6cm]
+       (ampl) at (6.4,-4.2)
+       {\textbf{nas amplitudes}\\[3pt]
+        $V_L = Q\,V$ \quad (série)\\[2pt]
+        $I_{\mathrm{circ}} = Q\,I$ \quad (tanque)};
+
+  \draw[->, thick, manualblue]   (centro.south west) -- (freq.north east);
+  \draw[->, thick, manualgreen]  (centro.south)      -- (tempo.north);
+  \draw[->, thick, manualyellow] (centro.south east) -- (ampl.north west);
+
+  \node[manualgray, font=\scriptsize, align=center, text width=13cm]
+       at (0,-6.6)
+       {As três são consequências, não definições. Medir qualquer uma delas mede $Q$ —
+        e as três têm de dar o mesmo número no mesmo circuito.};
+
+\end{tikzpicture}
+```
+
+Uma grandeza, três manifestações mensuráveis. A do meio é a mais fácil de ver num
+osciloscópio; a da esquerda, a mais fácil de medir com gerador e multímetro; a da direita,
+a que queima componentes.
+
+:::
+
+## Largura de banda {#sec-038-banda}
+
+A manifestação útil para projeto é a da esquerda. Retome o circuito série do
+@sec-cap-037: a corrente é máxima em $f_0$ e cai dos dois lados. As frequências em que a
+corrente cai para $1/\sqrt{2}$ do máximo — ou seja, em que a **potência** entregue cai
+para metade — chamam-se frequências de meia potência, $f_1$ e $f_2$. A distância entre
+elas é a largura de banda:
+
+$$ \mathrm{BW} = f_2 - f_1. $$
+
+Como a potência caiu à metade, o módulo caiu 3,01 dB. É o mesmo −3 dB do @sec-cap-033 e
+do @sec-cap-035, aplicado agora a um pico em vez de a um joelho, e pela mesma razão: é o
+ponto em que metade da potência se foi.
+
+O resultado central do capítulo é a relação entre essa largura e $Q$:
+
+$$ \boxed{\;\mathrm{BW} = \frac{f_0}{Q}
+   \qquad\Longleftrightarrow\qquad
+   Q = \frac{f_0}{\mathrm{BW}}\;} $$
+
+Duas leituras. A primeira: $Q$ **é** a razão entre a frequência central e a largura, o que
+faz dele uma medida direta de quão seletivo o circuito é. A segunda, mais útil na bancada:
+$Q$ pode ser medido sem conhecer $L$, sem conhecer $C$ e sem conhecer resistência nenhuma
+— basta achar três frequências com um gerador.
+
+Com os valores da bancada do capítulo anterior, $f_0 = 5{,}03$ kHz e $Q = 13{,}2$:
+
+$$ \mathrm{BW} = \frac{5033}{13{,}2} = 381 \text{ Hz}. $$
+
+O circuito responde bem entre 4,85 e 5,23 kHz e ignora o resto.
+
+::: {#fig-038-banda}
+
+```{.tikz}
+%%| filename: 038-banda
+%%| alt: Gráfico da resposta normalizada de um circuito ressonante em função da frequência, de quatro a seis quilohertz, com o eixo vertical de zero a um vírgula um. Três curvas de sino, todas centradas em cinco vírgula zero três quilohertz e todas de altura um. A de fator de qualidade cinquenta é muito estreita, com largura de cem hertz. A de fator de qualidade treze vírgula dois tem largura de trezentos e oitenta e um hertz. A de fator de qualidade cinco é larga, com mil e sete hertz. Uma linha horizontal tracejada em zero vírgula setecentos e sete marca o nível de meia potência, e as larguras são medidas na altura dessa linha. Setas horizontais com extremidades duplas indicam as três larguras de banda.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.2cm, height=9.2cm,
+  xmin=4, xmax=6, ymin=0, ymax=1.14,
+  xlabel={frequência (kHz)}, ylabel={resposta normalizada $I/I_{\max}$},
+  xtick={4,4.5,5,5.5,6},
+  xticklabels={{4},{$4{,}5$},{5},{$5{,}5$},{6}},
+  ytick={0,0.25,0.5,0.707,1},
+  yticklabels={{0},{$0{,}25$},{$0{,}5$},{$0{,}707$},{1}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.02,0.98)}, anchor=north west, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    resp(\u,\q)=1/sqrt(1+(\q*(\u/5.033-5.033/\u))^2);},
+]
+  \addplot[auxiliar, forget plot, domain=4:6, samples=2] {0.7071};
+
+  \addplot[manualred, very thick, domain=4:6, samples=800] {resp(x,50)};
+  \addlegendentry{$Q = 50$ \quad BW $= 101$ Hz}
+
+  \addplot[manualblue, very thick, domain=4:6, samples=800] {resp(x,13.2)};
+  \addlegendentry{$Q = 13{,}2$ \quad BW $= 381$ Hz}
+
+  \addplot[manualgreen, very thick, domain=4:6, samples=600] {resp(x,5)};
+  \addlegendentry{$Q = 5$ \quad BW $= 1007$ Hz}
+
+  \draw[<->, >=stealth, manualgreen, thick]
+       (axis cs:4.555,0.7071) -- (axis cs:5.561,0.7071);
+  \draw[<->, >=stealth, manualblue, thick]
+       (axis cs:4.846,0.62) -- (axis cs:5.227,0.62);
+  \node[manualgreen, font=\scriptsize, anchor=south,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:5.05,0.735) {BW de $Q = 5$};
+  \node[manualblue, font=\scriptsize, anchor=east,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:4.80,0.62) {BW de $Q = 13{,}2$};
+  \node[manualgray, font=\scriptsize, anchor=west,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:4.02,0.775) {meia potência: $-3$ dB};
+  \node[manualred, font=\scriptsize, anchor=west, align=left]
+       at (axis cs:5.15,1.02) {$Q = 50$: 101 Hz de largura,\\ estreito demais para
+                               desenhar aqui};
+\end{axis}
+\end{tikzpicture}
+```
+
+A mesma $f_0$, três valores de $Q$. A altura foi normalizada para que só a largura seja
+comparada — na prática, um $Q$ maior também dá um pico mais alto, e as duas coisas são o
+mesmo fato visto de ângulos diferentes.
+
+:::
+
+### Onde ficam $f_1$ e $f_2$
+
+Para $Q$ alto, as duas frequências de meia potência ficam praticamente simétricas em torno
+de $f_0$:
+
+$$ f_{1,2} \approx f_0 \mp \frac{\mathrm{BW}}{2} = f_0\left(1 \mp \frac{1}{2Q}\right). $$
+
+Para $Q$ baixo essa aproximação se degrada, e a relação exata é
+
+$$ f_0 = \sqrt{f_1 f_2}, $$
+
+isto é, $f_0$ é a **média geométrica** de $f_1$ e $f_2$, não a média aritmética. Com
+$Q = 13{,}2$, a média aritmética dá 5033,3 Hz contra 5033,0 Hz da geométrica — 0,3 Hz de
+diferença, irrelevante. Com $Q = 1$, $f_1 = 3110$ Hz e $f_2 = 8143$ Hz: a média aritmética
+daria 5627 Hz e a geométrica dá os 5033 Hz corretos, com 12 % de erro entre elas.
+
+A média geométrica não é capricho matemático. É a assinatura de um eixo logarítmico: em
+escala de oitavas, $f_0$ está exatamente no meio entre $f_1$ e $f_2$, e é assim que o
+ouvido e o rádio enxergam frequência. Um filtro de áudio de "uma oitava" tem
+$f_2/f_1 = 2$, o que corresponde a $Q = \sqrt{2}/(2-1) \approx 1{,}41$; um de "um terço de
+oitava", $f_2/f_1 = 2^{1/3}$ e $Q \approx 4{,}3$.
+
+## $Q$ carregado e $Q$ descarregado {#sec-038-carregado}
+
+Aqui está a distinção que separa quem calculou de quem mediu.
+
+O **$Q$ descarregado**, $Q_u$ (de *unloaded*), é o do circuito ressonante sozinho, com
+suas perdas próprias: resistência do fio, perdas no núcleo, perdas dielétricas do
+capacitor. É o teto — nenhuma ligação externa vai melhorá-lo.
+
+O **$Q$ carregado**, $Q_L$ (de *loaded*), é o que o circuito exibe com a fonte e a carga
+ligadas. É sempre menor, porque toda resistência externa é mais um caminho de perda. E é
+ele quem determina a largura de banda real:
+
+$$ \mathrm{BW}_{\text{real}} = \frac{f_0}{Q_L}, \qquad Q_L \le Q_u. $$
+
+Para um tanque de impedância dinâmica $R_d$ alimentado por uma fonte de impedância $R_g$ e
+carregado por $R_c$, as três resistências estão em paralelo e as condutâncias somam. Como
+$Q$ é proporcional à resistência paralela, os **inversos** de $Q$ somam:
+
+$$ \boxed{\;\frac{1}{Q_L} = \frac{1}{Q_u} + \frac{1}{Q_{\text{fonte}}}
+   + \frac{1}{Q_{\text{carga}}}\;} $$
+
+com $Q_{\text{fonte}} = R_g/Z_0$ e $Q_{\text{carga}} = R_c/Z_0$. A fórmula é a mesma de
+resistores em paralelo, e a moral também: **quem manda é o menor**.
+
+Um exemplo que dói. Tanque com $L = 10$ mH, $C = 100$ nF, $r = 24\ \Omega$: $Z_0 = 316$ Ω
+e $Q_u = 13{,}2$. Ligue-o à saída de um gerador de 50 Ω:
+
+$$ Q_{\text{fonte}} = \frac{50}{316} = 0{,}158,
+   \qquad
+   \frac{1}{Q_L} = \frac{1}{13{,}2} + \frac{1}{0{,}158} = 0{,}0758 + 6{,}33 = 6{,}41, $$
+
+de onde $Q_L = 0{,}156$. O tanque tinha $Q$ de 13; ligado ao gerador, tem 0,156 — quase
+cem vezes menos. Não sobrou ressonância nenhuma. É a última linha da @tbl-037-comparacao
+transformada em número, e explica por que o experimento da Parte 4 do laboratório do
+@sec-037-lab pede um resistor de 10 kΩ em série: sem ele, não há o que medir.
+
+::: {#fig-038-carregado}
+
+```{.tikz}
+%%| filename: 038-carregado
+%%| alt: Gráfico da impedância do mesmo tanque LC em função da frequência, de dois a treze quilohertz, com eixo horizontal logarítmico e eixo vertical de zero a quatro mil e trezentos ohms. Quatro curvas mostram a resposta do mesmo circuito com quatro impedâncias de fonte diferentes. Com fonte ideal de corrente, o pico atinge quatro mil cento e sessenta e sete ohms e é estreito. Com fonte de cem quiloohms o pico cai pouco. Com fonte de dez quiloohms o pico cai para cerca de dois mil e novecentos ohms e alarga bastante. Com fonte de mil ohms o pico cai para oitocentos ohms e fica muito largo. O circuito ressonante é o mesmo nas quatro curvas.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  xmode=log,
+  width=15.2cm, height=9.0cm,
+  xmin=2, xmax=13, ymin=0, ymax=4400,
+  xlabel={frequência (kHz)}, ylabel={$|Z|$ vista pelo tanque ($\Omega$)},
+  xtick={2,3,4,5,7,9,13},
+  xticklabels={{2},{3},{4},{5},{7},{9},{13}},
+  ytick={0,800,2000,2900,4167},
+  yticklabels={{0},{800},{2000},{2900},{4167}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.98,0.98)}, anchor=north east, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    susc(\u)=6.2832e-4*\u-1/(62.832*\u);
+    zc(\u,\rg)=1/sqrt((1/4167+1/\rg)^2+susc(\u)*susc(\u));},
+]
+  \addplot[auxiliar, forget plot] coordinates {(5.033,0) (5.033,4400)};
+
+  \addplot[manualred, very thick, domain=0.301:1.114, samples=700]
+          ({10^x}, {zc(10^x,1e9)});
+  \addlegendentry{fonte ideal de corrente \quad $Q_L = 13{,}2$}
+
+  \addplot[manualblue, very thick, domain=0.301:1.114, samples=700]
+          ({10^x}, {zc(10^x,1e5)});
+  \addlegendentry{$R_g = 100$ k$\Omega$ \quad $Q_L = 12{,}7$}
+
+  \addplot[manualgreen, very thick, domain=0.301:1.114, samples=600]
+          ({10^x}, {zc(10^x,1e4)});
+  \addlegendentry{$R_g = 10$ k$\Omega$ \quad $Q_L = 9{,}3$}
+
+  \addplot[manualyellow, very thick, domain=0.301:1.114, samples=600]
+          ({10^x}, {zc(10^x,1e3)});
+  \addlegendentry{$R_g = 1$ k$\Omega$ \quad $Q_L = 2{,}6$}
+
+  \node[manualgray, font=\scriptsize, anchor=north west, align=left,
+        text width=4.4cm]
+       at (axis cs:2.1,3400)
+       {o indutor, o capacitor e a perda do fio são \textbf{os mesmos} nas quatro
+        curvas. Só mudou quem alimenta.};
+\end{axis}
+\end{tikzpicture}
+```
+
+$Q$ não é propriedade do par LC. Nas quatro curvas o circuito ressonante é idêntico; o que
+muda é a impedância de quem o excita, e ela derruba o $Q$ e alarga a banda.
+
+:::
+
+Há uma consequência de projeto que parece paradoxal e não é: **em circuito sintonizado,
+extrair sinal custa seletividade**. Quanto mais potência se tira do tanque, menor o $R$
+paralelo efetivo, menor o $Q_L$ e mais larga a banda. Um receptor com etapas fortemente
+acopladas é sensível e pouco seletivo; com acoplamento fraco, é seletivo e surdo. Toda a
+arte do projeto de RF mora nesse compromisso, e ele não tem solução — tem escolha.
+
+## O $Q$ dos componentes {#sec-038-componentes}
+
+$Q_u$ não cai do céu: ele vem dos componentes, e quase sempre do indutor.
+
+O **$Q$ do indutor** é a razão entre a reatância e a resistência série efetiva na
+frequência de trabalho:
+
+$$ Q_L = \frac{\omega L}{R_s}. $$
+
+$R_s$ não é a DCR medida com o ohmímetro. Ela é a DCR **mais** o efeito pelicular, que
+cresce com $\sqrt{f}$, mais as perdas do núcleo, que crescem mais depressa ainda. Por isso
+$Q$ de indutor sobe com a frequência, atinge um máximo e depois desaba — e o datasheet
+sempre informa em que frequência o $Q$ foi medido, porque fora dali o número não vale.
+
+Ordens de grandeza que valem memorizar:
+
+| Elemento ressonante | $Q$ típico |
+|---|---|
+| Indutor com núcleo de ferrite, uso geral | 30 a 80 |
+| Indutor com núcleo de ar, bem enrolado | 100 a 300 |
+| Capacitor cerâmico NP0/C0G | 1000 a 10 000 |
+| Capacitor de poliéster | 100 a 1000 |
+| Capacitor eletrolítico | 1 a 20 |
+| Circuito LC completo, bancada modesta | 10 a 60 |
+| Ressonador cerâmico | 300 a 1500 |
+| Cristal de quartzo | 10 000 a 200 000 |
+
+: Ordens de grandeza de $Q$. A linha do cristal é a razão de ele existir: nenhum arranjo
+de $L$ e $C$ chega perto, e por isso todo relógio, todo microcontrolador e todo rádio
+decente têm um pedaço de quartzo dentro. {#tbl-038-componentes}
+
+O **$Q$ do capacitor** é o inverso da tangente de perdas, $Q_C = 1/\tan\delta$, e
+equivale a $1/(\omega C \cdot \mathrm{ESR})$. Como a @tbl-038-componentes mostra, um
+capacitor decente tem $Q$ uma ou duas ordens de grandeza acima do indutor, e por isso
+**a perda de um circuito LC é, quase sempre, a perda do indutor**. A exceção é o
+eletrolítico, que arruína qualquer coisa: com $Q_C = 5$, o $Q$ do conjunto não passa de 5,
+por mais perfeito que seja o indutor.
+
+Os $Q$ dos elementos se combinam pela mesma regra do @sec-038-carregado:
+
+$$ \frac{1}{Q_u} = \frac{1}{Q_{\text{indutor}}} + \frac{1}{Q_{\text{capacitor}}}. $$
+
+Com $Q_L = 40$ e $Q_C = 1000$: $1/Q_u = 0{,}025 + 0{,}001 = 0{,}026$, $Q_u = 38{,}5$. O
+capacitor tirou 4 % — desprezível. Troque por um eletrolítico de $Q_C = 5$:
+$1/Q_u = 0{,}025 + 0{,}2 = 0{,}225$, $Q_u = 4{,}4$. O indutor bom virou irrelevante.
+
+## Seletividade: o que $Q$ não resolve {#sec-038-seletividade}
+
+Chega-se enfim à pergunta prometida no @sec-036-queima. **Seletividade** é a capacidade de
+aceitar uma frequência e rejeitar uma vizinha. $Q$ mede a largura em −3 dB, mas nenhum
+rádio se contenta com −3 dB de rejeição: o canal adjacente precisa cair 40, 60, 80 dB.
+
+O problema é que a saia de um ressonador simples cai devagar. Longe de $f_0$, a resposta
+de um circuito de segunda ordem tende a
+
+$$ \frac{|H|}{|H|_{\max}} \approx \frac{1}{2Q}\cdot\frac{f_0}{|f - f_0|}
+   \qquad\text{para } |f-f_0| \ll f_0, $$
+
+o que significa queda de 6 dB cada vez que a distância até $f_0$ dobra — e apenas
+20 dB/década. Segunda ordem no total, mas **primeira ordem em relação à distância do
+centro**, porque o pico tem dois lados.
+
+Vamos aos números que decidem projeto. Tome um tanque com $Q = 100$ centrado em 1 MHz — o
+meio da faixa de AM, e um $Q$ melhor que qualquer coisa que se enrole na bancada deste
+manual. A banda passante vale $\mathrm{BW} = 10$ kHz, que é exatamente o espaçamento entre
+estações de AM. Já começa apertado. A rejeição da estação vizinha, a 10 kHz de distância,
+vale
+
+$$ \frac{1}{2 \times 100}\cdot\frac{1000}{10} = 0{,}5
+   \;\Rightarrow\; -6 \text{ dB} $$
+
+pela aproximação, e −7,0 dB pela conta exata. **Sete decibéis.** A estação vizinha chega
+com quase metade da tensão da desejada, e as duas se ouvem juntas.
+
+Para atenuá-la 40 dB seria preciso $Q = 5000$, o que não existe em circuito LC de
+nenhuma bancada e de nenhuma fábrica.
+
+::: {#fig-038-seletividade}
+
+```{.tikz}
+%%| filename: 038-seletividade
+%%| alt: Gráfico com eixo horizontal de frequência de novecentos e oitenta e cinco a mil e quinze quilohertz e eixo vertical de atenuação em decibéis, de menos oitenta a mais cinco. Três curvas centradas em mil quilohertz. A de um único circuito ressonante de fator de qualidade cem cai muito devagar e está em apenas menos sete decibéis a dez quilohertz do centro. A de três circuitos iguais em cascata cai três vezes mais depressa e chega a menos vinte e um decibéis no mesmo ponto. A de um filtro a cristal de oito polos mantém o topo plano e depois cai quase verticalmente, atingindo menos setenta decibéis a dez quilohertz do centro. Duas linhas verticais tracejadas marcam as estações vizinhas a menos e mais dez quilohertz do centro, e anotações comparam a rejeição das três soluções nesses pontos.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.2cm, height=9.4cm,
+  xmin=985, xmax=1015, ymin=-82, ymax=6,
+  xlabel={frequência (kHz)}, ylabel={resposta (dB)},
+  xtick={985,990,995,1000,1005,1010,1015},
+  xticklabels={{985},{990},{995},{1000},{1005},{1010},{1015}},
+  ytick={0,-7,-21,-40,-60,-70,-80},
+  yticklabels={{0},{$-7$},{$-21$},{$-40$},{$-60$},{$-70$},{$-80$}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.02,0.03)}, anchor=south west, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    db1(\u)=-10*log10(1+(100*(\u/1000-1000/\u))^2);
+    db3(\u)=3*db1(\u);
+    dbx(\u)=-10*log10(1+(abs(\u-1000)/3.7)^16);},
+]
+  \addplot[auxiliar, forget plot] coordinates {(990,-82) (990,6)};
+  \addplot[auxiliar, forget plot] coordinates {(1010,-82) (1010,6)};
+
+  \addplot[manualred, very thick, domain=985:1015, samples=600] {db1(x)};
+  \addlegendentry{1 tanque LC, $Q = 100$}
+
+  \addplot[manualyellow, very thick, domain=985:1015, samples=600] {db3(x)};
+  \addlegendentry{3 tanques iguais em cascata}
+
+  \addplot[manualblue, very thick, domain=985:1015, samples=900] {dbx(x)};
+  \addlegendentry{filtro a cristal, 8 polos}
+
+  \node[manualgray, font=\scriptsize, anchor=south,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:990,0.8) {estação a $-10$ kHz};
+  \node[manualgray, font=\scriptsize, anchor=south,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:1010,0.8) {estação a $+10$ kHz};
+  \node[manualred, font=\scriptsize, anchor=east,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:1014.6,-4.2) {$-7$ dB: não separa nada};
+  \node[manualyellow, font=\scriptsize, anchor=east,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:1014.6,-17.8) {$-21$ dB: ainda não};
+  \node[manualblue, font=\scriptsize, anchor=east,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:1014.6,-65.5) {$-70$ dB: separa};
+\end{axis}
+\end{tikzpicture}
+```
+
+Rejeição da estação vizinha em 1 MHz, com espaçamento de 10 kHz. Empilhar tanques triplica
+a inclinação e ainda não basta; o salto de qualidade vem da ordem alta com $Q$ de cristal,
+não de mais $Q$ num ressonador só. A curva do filtro a cristal é idealizada — o ponto é a
+forma da saia, não o valor exato de cada decibel.
+
+:::
+
+Daí saem as duas saídas que a engenharia de fato usa, e nenhuma delas é "aumentar o $Q$".
+
+**Subir a ordem.** Vários ressonadores acoplados, como no @sec-cap-036. Três tanques de
+$Q = 100$ em cascata triplicam a inclinação da saia, e a @fig-038-seletividade mostra que
+os −7 dB viram −21 dB. Ainda insuficiente para AM, mas é a direção certa: é o velho
+"filtro de FI" de três ou quatro bobinas dos rádios antigos.
+
+**Baixar a frequência central.** A conta que mata é $f_0/\mathrm{BW}$, e ela pune quem
+filtra alto. Separar 10 kHz em 1 MHz exige $Q = 100$ só para acertar a banda passante;
+separar os mesmos 10 kHz em 455 kHz exige $Q = 45$. Em FM a diferença é brutal: 200 kHz
+em 100 MHz pedem $Q = 500$; os mesmos 200 kHz em 10,7 MHz pedem $Q = 53$.
+
+Por isso todo receptor decente é **superheteródino**: ele translada o sinal para uma
+frequência intermediária fixa e baixa — 455 kHz em AM, 10,7 MHz em FM, não por acaso os
+dois números mais repetidos da eletrônica de rádio — e faz a filtragem lá, onde a mesma
+seletividade custa um $Q$ várias vezes menor e onde um filtro a cristal ou cerâmico de
+ordem alta pode ser fabricado em série para aquela frequência única. É a ideia mais
+importante da história do rádio, e ela existe por causa da @fig-038-seletividade.
+
+O parâmetro que resume tudo isso num número é o **fator de forma**:
+
+$$ \text{fator de forma} = \frac{\mathrm{BW}_{-60\,\mathrm{dB}}}{\mathrm{BW}_{-3\,\mathrm{dB}}}. $$
+
+Um ressonador simples tem fator de forma pavoroso, na casa de 1000. Um filtro a cristal de
+oito polos chega a 2, e um filtro digital pode chegar a 1,1. Quanto mais perto de 1, mais
+"parede" é a saia. Note que o fator de forma é **independente de $Q$**: ele mede a forma,
+não a largura, e é por isso que ele — e não $Q$ — é o número que aparece no datasheet de
+um filtro de canal.
+
+## $Q$ no domínio do tempo {#sec-038-tempo}
+
+Volte ao @sec-cap-026. Lá, um RLC excitado por um degrau oscilava e a oscilação morria,
+com envelope $e^{-\zeta\omega_0 t}$, e $\zeta$ era o coeficiente de amortecimento. A ponte
+com este capítulo é de uma linha:
+
+$$ \boxed{\;Q = \frac{1}{2\zeta}\;} $$
+
+Todo o vocabulário se traduz. $\zeta = 1$ (crítico) é $Q = 0{,}5$. $\zeta = 0{,}707$
+(Butterworth) é $Q = 0{,}707$ — o único valor que é igual nas duas notações, e daí a
+confusão frequente. $\zeta = 0{,}1$ é $Q = 5$, e a @fig-026-amortecimento mostra os 73 %
+de sobressinal que isso produz.
+
+E há uma medida de bancada excelente que decorre disso. Excite o circuito com uma onda
+quadrada de frequência bem menor que $f_0$: cada borda dá um "toque", e o circuito responde
+com uma oscilação amortecida. Conte quantos ciclos a amplitude leva para cair à metade.
+Como o envelope é exponencial,
+
+$$ Q \approx \frac{\pi\,N_{1/2}}{\ln 2} = 4{,}53\,N_{1/2}. $$
+
+Dez ciclos até a metade significam $Q \approx 45$. Nenhuma varredura de frequência,
+nenhum gerador de precisão — um osciloscópio, uma onda quadrada e a paciência de contar.
+É o **decremento logarítmico**, o mesmo método do @sec-026-lab, medindo agora a grandeza
+deste capítulo.
+
+::: {#fig-038-ringdown}
+
+```{.tikz}
+%%| filename: 038-ringdown
+%%| alt: Gráfico de tensão contra tempo em milissegundos, de zero a quatro. Duas oscilações amortecidas partem da mesma amplitude inicial e oscilam na mesma frequência de cinco quilohertz. A de fator de qualidade quarenta e cinco leva dez ciclos para cair à metade da amplitude e ainda oscila visivelmente ao final do gráfico. A de fator de qualidade nove leva dois ciclos para cair à metade e já está quase parada em um milissegundo. Curvas pontilhadas mostram os envelopes exponenciais de cada uma, e linhas horizontais tracejadas marcam a amplitude inicial e a metade dela.
+
+\begin{tikzpicture}[font=\footnotesize]
+\begin{axis}[
+  width=15.2cm, height=8.4cm,
+  xmin=0, xmax=4, ymin=-1.15, ymax=1.35,
+  xlabel={tempo (ms)}, ylabel={amplitude (normalizada)},
+  xtick={0,0.5,1,1.5,2,2.5,3,3.5,4},
+  xticklabels={{0},{$0{,}5$},{1},{$1{,}5$},{2},{$2{,}5$},{3},{$3{,}5$},{4}},
+  ytick={-1,-0.5,0,0.5,1},
+  yticklabels={{$-1$},{$-0{,}5$},{0},{$0{,}5$},{1}},
+  grid=both, grid style={manualgray!22}, font=\footnotesize,
+  legend style={at={(0.98,0.03)}, anchor=south east, font=\scriptsize,
+                draw=manualgray!50},
+  declare function={
+    env(\t,\q)=exp(-pi*5.033*\t/\q);},
+]
+  \addplot[auxiliar, forget plot, domain=0:4, samples=2] {0.5};
+
+  \addplot[manualblue, very thick, domain=0:4, samples=1000]
+          {env(x,45)*cos(deg(2*pi*5.033*x))};
+  \addlegendentry{$Q = 45$ \quad ($\zeta = 0{,}011$)}
+
+  \addplot[manualblue!45, dotted, thick, forget plot, domain=0:4, samples=200]
+          {env(x,45)};
+
+  \addplot[manualred, very thick, domain=0:4, samples=1000]
+          {env(x,9)*cos(deg(2*pi*5.033*x))};
+  \addlegendentry{$Q = 9$ \quad ($\zeta = 0{,}056$)}
+
+  \addplot[manualred!45, dotted, thick, forget plot, domain=0:4, samples=200]
+          {env(x,9)};
+
+  \node[manualred, font=\scriptsize, anchor=north west]
+       at (axis cs:0.42,1.33) {2 ciclos até a metade};
+  \node[manualblue, font=\scriptsize, anchor=north west]
+       at (axis cs:1.90,1.33) {10 ciclos até a metade};
+  \node[manualgray, font=\scriptsize, anchor=south west,
+        fill=white, inner sep=1.5pt]
+       at (axis cs:0.05,-1.13)
+       {$Q \approx 4{,}53 \times N_{1/2}$: contar ciclos mede $Q$};
+\end{axis}
+\end{tikzpicture}
+```
+
+Os dois circuitos ressoam em 5,03 kHz. O que os separa é quantos ciclos duram — e essa
+contagem, feita na tela do osciloscópio, dá o mesmo $Q$ que a varredura de frequência dá.
+
+:::
+
+## 🧪 Laboratório {#sec-038-lab}
+
+**Medir $Q$ de três maneiras independentes no mesmo circuito — pela largura de banda, pela
+multiplicação de tensão e pela contagem de ciclos — e verificar que dão o mesmo número.
+Depois, derrubar esse $Q$ de propósito e ver a banda alargar.**
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala de tensão CA (aplique a Parte 0 do @sec-037-lab antes)
+- 1 gerador de sinal com ajuste fino: celular ou computador com aplicativo gerador de tom
+- 1 indutor de 10 mH
+- 1 capacitor de 100 nF, poliéster ou cerâmico NP0
+- 1 capacitor eletrolítico de 100 nF ou o valor mais próximo que houver na gaveta
+  (só para estragar o $Q$ na Parte 5 — é esse o objetivo)
+- Resistores de 10 Ω, 47 Ω, 100 Ω, 220 Ω e 1 kΩ, 1/4 W
+- Protoboard, jumpers, papel milimetrado
+- Osciloscópio para a Parte 4; sem ele, faça as Partes 1 a 3 e a variante simulada
+:::
+
+### Parte 1 — $Q$ pela largura de banda
+
+1. Monte a malha série: gerador → resistor de 47 Ω → indutor → capacitor → terra.
+2. Meça a tensão sobre o resistor de 47 Ω, que é proporcional à corrente.
+3. Ache $f_0$ pelo máximo, com passos de 25 Hz perto do pico. Anote $V_{\max}$.
+4. Calcule $0{,}707 \times V_{\max}$.
+5. Suba a frequência até a leitura cair para esse valor. É $f_2$. Anote.
+6. Desça abaixo de $f_0$ até cair de novo para esse valor. É $f_1$. Anote.
+7. Calcule $\mathrm{BW} = f_2 - f_1$ e $Q_1 = f_0/\mathrm{BW}$.
+8. Confira a média geométrica: $\sqrt{f_1 f_2}$ deve reproduzir $f_0$ com folga de alguns
+   hertz. Se não reproduzir, uma das três frequências está mal lida.
+
+**Não mexa no volume do gerador entre as leituras.** A impedância de saída de uma saída de
+fone varia com o nível, e alterá-la no meio da medida move $f_1$ e $f_2$ sem que nada no
+circuito tenha mudado.
+
+### Parte 2 — $Q$ pela multiplicação de tensão
+
+1. Sem mudar nada, volte o gerador para $f_0$.
+2. Meça $v_{\mathrm{in}}$ na entrada da malha e $V_C$ sobre o capacitor.
+3. $Q_2 = V_C/v_{\mathrm{in}}$.
+
+Compare $Q_2$ com $Q_1$. Devem bater dentro de 10 a 15 %. Se $Q_2$ vier bem menor, o
+provável culpado é a impedância de saída do gerador, que faz $v_{\mathrm{in}}$ cair no
+pico — meça $v_{\mathrm{in}}$ **com o circuito ligado**, nunca em aberto, e refaça.
+
+Essa discrepância não é um estorvo: é o @sec-038-carregado aparecendo. $Q_1$ mede o $Q$
+carregado do laço inteiro; $Q_2$ mede a razão de tensões no ponto de medida. Quando as
+duas convergem, o gerador está se comportando como fonte ideal de tensão.
+
+### Parte 3 — Alargar a banda de propósito
+
+1. Repita a Parte 1 com 10 Ω, 100 Ω, 220 Ω e 1 kΩ no lugar dos 47 Ω.
+2. Preencha a tabela.
+
+| $R_{\mathrm{ext}}$ | $f_1$ | $f_0$ | $f_2$ | BW | $Q = f_0/\mathrm{BW}$ | $Z_0/(R+r)$ previsto |
+|---|---|---|---|---|---|---|
+| 10 Ω | | | | | | 9,3 |
+| 47 Ω | | | | | | 4,5 |
+| 100 Ω | | | | | | 2,6 |
+| 220 Ω | | | | | | 1,3 |
+| 1 kΩ | | | | | | 0,31 |
+
+: Tabela da Parte 3, com $r = 24\ \Omega$ e $Z_0 = 316\ \Omega$. Refaça a última coluna
+com o seu $r$ medido. {#tbl-038-lab}
+
+3. Marque $Q$ medido contra $Q$ previsto em papel milimetrado. Os pontos devem cair sobre
+   uma reta que **não passa pela origem** — o desvio na altura de $R = 0$ é a impedância
+   de saída do gerador, medida de graça.
+4. Note que $f_0$ **não** se move ao longo da tabela, embora BW mude por um fator de 30.
+   $L$ e $C$ fixam onde; $R$ fixa quão estreito.
+
+### Parte 4 — $Q$ contando ciclos (com osciloscópio)
+
+1. Monte o tanque: indutor em paralelo com o capacitor, alimentado pelo gerador através de
+   um resistor de 10 kΩ.
+2. Ponha o gerador em **onda quadrada**, 200 Hz — bem abaixo de $f_0$, para que cada borda
+   funcione como um toque isolado.
+3. Ponha a ponta de prova em 10× sobre o tanque e ajuste a base de tempo para ver a
+   oscilação amortecida depois de cada borda.
+4. Meça o período da oscilação: $1/T$ deve ser a mesma $f_0$ das Partes 1 a 3.
+5. Conte os ciclos até a amplitude cair à metade. Chame de $N_{1/2}$.
+6. $Q_3 = 4{,}53 \times N_{1/2}$.
+
+Compare $Q_3$ com $Q_1$ e $Q_2$. **Atenção:** $Q_3$ virá bem **maior**, e não é erro.
+Aqui o tanque está sendo alimentado por 10 kΩ e observado por uma ponta de alta
+impedância — está quase descarregado, e o que se mede é $Q_u$. Nas Partes 1 e 2 havia um
+resistor em série drenando energia, e o que se media era $Q_L$. Duas grandezas diferentes,
+medidas corretamente. Use $1/Q_L = 1/Q_u + 1/Q_{\text{externo}}$ para reconciliar os
+números e confirme que fecha.
+
+### Parte 5 — Estragar o $Q$ com um capacitor ruim
+
+1. Volte à malha série da Parte 1 com 47 Ω.
+2. Troque o capacitor de poliéster pelo **eletrolítico** de valor equivalente, respeitando
+   a polaridade — ou, melhor, use dois eletrolíticos em série em oposição, que é como se
+   monta capacitor não polarizado improvisado.
+3. Refaça a medida de $f_1$, $f_0$, $f_2$.
+
+$f_0$ vai se deslocar (a capacitância do eletrolítico tem tolerância de −20 %/+80 %) e a
+banda vai alargar muito. Calcule o novo $Q$ e, a partir dele, o $Q$ do capacitor pela
+regra dos inversos. Você acabou de medir a ESR de um eletrolítico sem medidor de ESR.
+
+Esse é o argumento da @tbl-038-componentes em forma de experimento: o capacitor que não
+importava passa a mandar, quando é ruim o bastante.
+
+### Variante simulada (plano B)
+
+No ngspice, a Parte 1 inteira é uma varredura `.ac dec 500 3k 8k` com `.step` no resistor,
+e o `meas` acha $f_1$, $f_0$ e $f_2$ sozinho:
+
+```
+.meas ac vmax MAX  mag(v(saida))
+.meas ac f1   WHEN mag(v(saida))=0.707*vmax RISE=1
+.meas ac f2   WHEN mag(v(saida))=0.707*vmax FALL=1
+```
+
+`vmax` é a **tensão** máxima, não uma frequência: as duas linhas seguintes procuram onde
+a curva cruza 70,7 % dela, subindo e descendo. $f_0$ sai da média geométrica das duas, ou
+de um terceiro `.meas ... WHEN` no ponto de fase zero.
+
+A Parte 4 sai de uma `.tran` com fonte `PULSE`, e contar os ciclos na tela do plot dá
+exatamente o mesmo $Q$ — o que é, no fundo, o ponto do capítulo.
+
+No Falstad, monte o tanque, ative o gráfico de corrente no indutor e chaveie a fonte: a
+oscilação amortecida aparece na hora, e arrastar o valor da resistência série da bobina
+mostra a duração do toque encurtando ao vivo.
+
+## 🔥 Onde Queima {#sec-038-queima}
+
+**Calcular a banda com $Q_u$ em vez de $Q_L$.** O filtro projetado para 10 kHz de banda
+sai com 200 kHz porque a fonte e a carga entraram na conta e ninguém as somou. Sempre
+calcule com $1/Q_L = \sum 1/Q_i$.
+
+**Achar que $Q$ alto resolve seletividade.** Resolve a largura da banda passante, não a
+inclinação da saia. Rejeitar o canal adjacente pede **ordem**, não $Q$. Quem confunde os
+dois projeta um receptor que ouve tudo ao mesmo tempo.
+
+**Usar média aritmética para achar $f_0$ a partir de $f_1$ e $f_2$.** Com $Q$ alto o erro
+é invisível; com $Q$ perto de 1, passa de 10 %. A relação certa é $f_0 = \sqrt{f_1 f_2}$.
+
+**Medir $Q$ com o multímetro em frequência fora da banda dele.** O instrumento atenua, o
+pico sai achatado, $f_1$ e $f_2$ saem largas e o $Q$ medido sai baixo. O circuito está
+ótimo; o instrumento é que está mentindo. É o caso clássico do @sec-cap-004 aplicado a
+CA — faça a Parte 0 do @sec-037-lab.
+
+**Medir $Q$ de tanque com ponta de prova 1×.** Os 100 pF da ponta entram em paralelo com
+o capacitor do tanque, movendo $f_0$ e carregando o circuito. Em tanque de RF a medida
+fica sem sentido. Ponta 10× e @sec-cap-044.
+
+**Ignorar que o $Q$ do indutor depende da frequência.** O datasheet informa $Q = 60$ e o
+projeto usa o indutor uma década acima da frequência de teste, onde o $Q$ real é 15. Perda
+de núcleo e efeito pelicular crescem com a frequência.
+
+**Usar eletrolítico em qualquer coisa ressonante.** $Q_C$ de 5 impõe teto de 5 ao conjunto.
+Nem o melhor indutor do mundo salva. Poliéster, polipropileno ou NP0.
+
+**Aumentar o acoplamento para ganhar sinal e não notar a banda alargando.** Todo
+miliwatt tirado do tanque é energia dissipada por ciclo, e $Q_L$ cai na mesma proporção.
+Sensibilidade e seletividade puxam para lados opostos; o projeto escolhe, não otimiza os
+dois.
+
+**Especificar $Q$ quando o que importa é o fator de forma.** Dois filtros com o mesmo $Q$
+podem ter saias completamente diferentes. Em filtro de canal, a especificação é
+$\mathrm{BW}_{-60}/\mathrm{BW}_{-3}$.
+
+**Esquecer que $Q$ alto significa transitório longo.** Um filtro estreitíssimo demora
+para assentar: o tempo de acomodação é da ordem de $Q/f_0$. Um filtro de $Q = 1000$ em
+1 kHz leva cerca de um segundo para responder — inútil para qualquer sinal que mude
+depressa. É o mesmo compromisso do @sec-cap-040 entre duração e largura espectral, e ele
+não tem escapatória.
+
+## O que fica deste capítulo {#sec-038-resumo}
+
+$Q$ tem uma definição só, e ela é energética: $2\pi$ vezes a energia armazenada dividida
+pela energia perdida por ciclo. Tudo o mais é consequência — as fórmulas $Z_0/r$ e
+$R_d/Z_0$, a multiplicação de tensão e de corrente, a largura do pico e a duração do
+toque.
+
+A consequência que vira projeto é
+
+$$ \mathrm{BW} = \frac{f_0}{Q}, $$
+
+com $f_0 = \sqrt{f_1 f_2}$ ligando as três frequências. Isso torna $Q$ mensurável com um
+gerador e um multímetro, sem conhecer $L$, $C$ nem resistência nenhuma.
+
+$Q$ **carregado** e $Q$ **descarregado** são grandezas diferentes e os inversos somam:
+$1/Q_L = \sum 1/Q_i$, onde entram as perdas do indutor, as do capacitor, a impedância da
+fonte e a da carga. Manda o menor. Um tanque de $Q_u = 13$ ligado a um gerador de 50 Ω
+fica com $Q_L = 0{,}16$ — nenhuma ressonância sobra.
+
+Nos componentes, a perda quase sempre é do indutor: capacitor decente tem $Q$ na casa dos
+milhares, indutor de ferrite fica entre 30 e 80, e cristal de quartzo chega a $10^5$ — que
+é a razão de o quartzo existir. A exceção é o eletrolítico, que impõe teto de uns poucos
+por conta da ESR.
+
+E o limite: $Q$ define a largura da banda passante, **não** a inclinação da saia. Um
+ressonador simples cai apenas 6 dB por oitava de distância do centro, o que não separa
+canal de rádio nenhum. As saídas reais são subir a **ordem** — vários ressonadores
+acoplados — e baixar a **frequência central**, que é a razão de todo receptor decente ser
+superheteródino. O número que descreve a forma da saia é o fator de forma
+$\mathrm{BW}_{-60}/\mathrm{BW}_{-3}$, e ele é independente de $Q$.
+
+No tempo, $Q = 1/2\zeta$ traduz tudo isto para o vocabulário do @sec-cap-026, e contar
+ciclos num toque amortecido mede $Q$ tão bem quanto varrer a frequência.
+
+Com isto o Volume 6 se fecha. Da constante de tempo do RC ao fator de forma de um filtro
+de canal, todo o assunto foi resposta em frequência de circuitos passivos: o que passa, o
+que não passa, e com que forma na fronteira. O Volume 7 muda a pergunta. Em vez de
+perguntar o que o circuito faz com um sinal, passa a perguntar **o que é o sinal** — que
+harmônicos ele contém, quanto ruído carrega, e como enxergá-lo de verdade num
+osciloscópio, que é o instrumento que o @sec-cap-043 finalmente coloca na bancada.

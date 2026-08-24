@@ -115,6 +115,13 @@ Vale para todos os manuais da série. Entradas novas vão no fim da seção corr
       vazia) e viola a regra de referência cruzada. É defeito de outra natureza —
       o script reporta como aviso, separado das lacunas.
 
+    **Encerramento:** as quatro lacunas foram fechadas — 025 e 026 no Volume 4,
+    037 e 038 no Volume 6 —, e o `verificar-lacunas.py` passou a devolver código 0
+    com os capítulos 001 a 045 contíguos. A lição fica registrada porque a causa
+    (emenda fria de sessão reancorando em número redondo) não foi eliminada: só
+    ganhou detector. Vale conferir o script na abertura de cada sessão, não só
+    quando algo parecer errado.
+
 ---
 
 ## CI / GitHub Actions (`publish.yml`)
