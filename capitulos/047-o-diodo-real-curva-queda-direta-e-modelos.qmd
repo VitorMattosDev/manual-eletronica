@@ -1,3 +1,843 @@
 # O diodo real: curva, queda direta e modelos {#sec-cap-047}
 
-*(em elaboração)*
+O @sec-cap-046 terminou com uma equação:
+
+$$ I = I_S\left(e^{\,V/(nV_T)} - 1\right). $$
+
+Ela é exata o bastante para a maioria dos propósitos e inútil para quase todos eles. Tente
+usá-la num circuito com um resistor em série e uma fonte, o mais simples que existe, e a lei
+de Kirchhoff do @sec-cap-013 produz
+
+$$ V_{\text{fonte}} = R\,I_S\left(e^{\,V/(nV_T)} - 1\right) + V, $$
+
+uma equação **transcendental**: $V$ aparece dentro e fora de uma exponencial, e não existe
+fórmula fechada para isolá-lo. Um circuito com dois diodos tem duas dessas. Uma ponte
+retificadora tem quatro.
+
+Nenhum engenheiro resolve isso à mão, e ninguém precisa. A saída é a mesma que a engenharia
+usa em todo lugar: **trocar a curva exata por um modelo suficientemente bom, e saber
+exatamente quando ele deixa de valer**. Este capítulo apresenta quatro modelos de diodo,
+em ordem crescente de fidelidade e decrescente de conveniência, e — o que importa mais — o
+critério para escolher entre eles.
+
+Ao final, calcular uma fonte retificada de cabeça em cinco minutos deixa de ser truque e
+vira procedimento. E, como bônus, a **reta de carga** que aparece aqui é a mesma ferramenta
+gráfica que vai polarizar todo transistor do Volume 9.
+
+## O componente: símbolo, polaridade e encapsulamento {#sec-047-componente}
+
+O diodo é o primeiro componente deste manual que **tem lado**. Resistor, capacitor cerâmico
+e indutor entram na protoboard em qualquer orientação; diodo invertido não funciona, e às
+vezes queima o resto do circuito junto.
+
+::: {#fig-047-componente}
+
+```{.tikz}
+%%| filename: 047-componente
+%%| alt: Painel com quatro partes explicando a identificação do diodo. À esquerda, o símbolo esquemático: um triângulo apontando para a direita encostado numa barra vertical, com o terminal da esquerda rotulado ânodo e o da direita rotulado cátodo, e uma seta indicando que a corrente convencional flui no sentido do triângulo, isto é, do ânodo para o cátodo. Ao lado, uma nota de que o triângulo é uma seta que aponta o sentido permitido, e a barra é a parede que bloqueia o sentido contrário. No centro, três desenhos de encapsulamentos reais em corte lateral: um corpo cilíndrico de vidro pequeno rotulado DO-35, típico do 1N4148, um corpo cilíndrico plástico maior rotulado DO-41, típico do 1N4007, e um retângulo de montagem em superfície rotulado SMA. Em todos os três, uma faixa impressa numa das extremidades marca o cátodo, e uma anotação enfatiza que a faixa é sempre o cátodo, isto é, o lado da barra do símbolo. À direita, um circuito de teste com o multímetro na escala de diodo mostrando que a ponta vermelha no ânodo produz leitura de cerca de seiscentos milivolts e a ponta preta no ânodo produz a indicação de circuito aberto.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- simbolo ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw[thick] (0,0) -- (0.9,0);
+    \draw[thick, fill=manualgray!20] (0.9,-0.42) -- (0.9,0.42) -- (1.75,0) -- cycle;
+    \draw[thick, manualred, line width=1.4pt] (1.75,-0.45) -- (1.75,0.45);
+    \draw[thick] (1.75,0) -- (2.65,0);
+    \node[anchor=north, font=\scriptsize] at (0.35,-0.5) {ânodo (A)};
+    \node[anchor=north, font=\scriptsize, manualred] at (2.35,-0.5) {cátodo (K)};
+    \draw[manualblue, -{Latex[length=2mm]}, thick] (0.45,0.75) -- (2.2,0.75);
+    \node[manualblue, anchor=south, font=\scriptsize] at (1.32,0.8) {$I$ permitida};
+    \node[anchor=north, align=center, font=\scriptsize] at (1.32,-1.15)
+         {o triângulo é a \textbf{seta} do sentido permitido;\\
+          a barra é a \textbf{parede} do sentido bloqueado};
+  \end{scope}
+
+  % ---------------- encapsulamentos ----------------
+  \begin{scope}[shift={(5.3,0)}]
+    % DO-35
+    \draw[thick] (0,0) -- (0.45,0);
+    \draw[thick, fill=manualgray!8, rounded corners=1.2pt] (0.45,-0.28) rectangle (2.05,0.28);
+    \draw[thick, fill=manualred] (1.72,-0.28) rectangle (1.92,0.28);
+    \draw[thick] (2.05,0) -- (2.5,0);
+    \node[anchor=west, font=\scriptsize, align=left] at (2.65,0)
+         {\textbf{DO-35} --- vidro\\1N4148};
+
+    % DO-41
+    \draw[thick] (0,-1.35) -- (0.35,-1.35);
+    \draw[thick, fill=manualgray!25, rounded corners=1.2pt]
+         (0.35,-1.75) rectangle (2.15,-0.95);
+    \draw[thick, fill=manualred] (1.80,-1.75) rectangle (2.05,-0.95);
+    \draw[thick] (2.15,-1.35) -- (2.5,-1.35);
+    \node[anchor=west, font=\scriptsize, align=left] at (2.65,-1.35)
+         {\textbf{DO-41} --- plástico\\1N4007, 1N5408};
+
+    % SMA
+    \draw[thick, fill=manualgray!35] (0.6,-3.05) rectangle (1.9,-2.45);
+    \draw[thick, fill=manualgray!60] (0.35,-2.95) rectangle (0.6,-2.55);
+    \draw[thick, fill=manualgray!60] (1.9,-2.95) rectangle (2.15,-2.55);
+    \draw[thick, fill=manualred] (1.65,-3.05) rectangle (1.9,-2.45);
+    \node[anchor=west, font=\scriptsize, align=left] at (2.65,-2.75)
+         {\textbf{SMA} --- montagem\\em superfície};
+
+    \node[manualred, anchor=north, align=center, font=\scriptsize] at (2.3,-3.55)
+         {a \textbf{faixa} é sempre o cátodo\\
+          --- o lado da barra do símbolo};
+  \end{scope}
+
+  % ---------------- teste com multimetro ----------------
+  \begin{scope}[shift={(12.3,0)}]
+    \node[draw, thick, rounded corners=2pt, minimum width=2.1cm,
+          minimum height=1.15cm, align=center, font=\scriptsize] (mm) at (1.0,0.35)
+         {multímetro\\escala de diodo};
+    \draw[manualred, thick] (0.45,-0.23) -- (0.45,-1.05);
+    \draw[thick] (1.55,-0.23) -- (1.55,-1.05);
+    \draw[thick] (0.45,-1.05) -- (0.6,-1.05);
+    \draw[thick, fill=manualgray!20] (0.6,-1.47) -- (0.6,-0.63) -- (1.4,-1.05) -- cycle;
+    \draw[thick, manualred, line width=1.4pt] (1.4,-1.5) -- (1.4,-0.6);
+    \draw[thick] (1.4,-1.05) -- (1.55,-1.05);
+    \node[manualred, anchor=east, font=\tiny] at (0.4,-0.6) {vermelha};
+    \node[anchor=west, font=\tiny] at (1.6,-0.6) {preta};
+    \node[anchor=north, align=center, font=\scriptsize] at (1.0,-1.75)
+         {vermelha no ânodo: $\approx 600$ mV\\
+          invertido: \texttt{OL}};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O símbolo, os encapsulamentos e o teste de trinta segundos. A regra que resolve 99 % dos
+casos: **faixa = cátodo = barra do símbolo**. A exceção que aparece de vez em quando são
+diodos de vidro antigos com faixa dupla ou faixa de cor — na dúvida, o multímetro decide.
+
+:::
+
+**Ânodo** é o terminal por onde a corrente convencional **entra**; **cátodo**, por onde ela
+sai. O triângulo do símbolo aponta no sentido permitido. Nos encapsulamentos com terminais
+axiais, a **faixa impressa marca o cátodo**, e essa convenção é praticamente universal.
+
+A nomenclatura tem uma armadilha de origem histórica: nas válvulas, o cátodo era o eletrodo
+aquecido que **emitia** elétrons, e o ânodo os recebia. Fisicamente, num diodo em condução,
+os elétrons entram pelo cátodo e saem pelo ânodo — sentido contrário ao da corrente
+convencional, exatamente como o @sec-cap-008 já havia alertado. **A convenção vale; a
+intuição de "cátodo é negativo" não.** Num diodo em condução direta, o cátodo é o terminal
+de potencial mais baixo; num Zener em ruptura, também. Fixe-se na corrente, não no sinal.
+
+## A curva característica completa {#sec-047-curva}
+
+A curva de um diodo real tem três regiões, e desenhá-las na mesma escala é impossível: a
+corrente direta está em miliampères, a reversa em nanoampères, e a de ruptura em
+miliampères de novo, com a tensão sessenta vezes maior. Toda figura honesta de curva de
+diodo usa **escalas diferentes em cada quadrante**, e é assim que a folha de dados também
+faz.
+
+::: {#fig-047-curva}
+
+```{.tikz}
+%%| filename: 047-curva
+%%| alt: Curva característica completa de um diodo de silício, desenhada com escalas diferentes nos dois quadrantes para que as três regiões apareçam juntas. O eixo horizontal é a tensão sobre o diodo: à direita da origem, em volts, de zero a um; à esquerda, comprimido, de zero a menos oitenta volts. O eixo vertical é a corrente: para cima, em miliampères, de zero a vinte; para baixo, em microampères, de zero a menos vinte. No primeiro quadrante aparece a curva exponencial de condução direta, que fica colada no eixo horizontal até cerca de meio volt e depois sobe quase verticalmente; dois pontos estão marcados sobre ela, um em zero vírgula setenta volt com quatro vírgula um miliampères e outro em zero vírgula setenta e nove volt com vinte miliampères, e uma seta entre os dois registra que noventa milivolts de diferença multiplicam a corrente por cinco. No terceiro quadrante, à esquerda, a curva é uma linha praticamente horizontal muito próxima de zero, correspondendo à corrente de saturação reversa de poucos nanoampères, até que em menos setenta e cinco volts ela despenca verticalmente, marcando a ruptura. Anotações marcam as três regiões, indicam que a mudança de escala está sinalizada por um corte no eixo, e destacam que o joelho não é um ponto físico, mas o efeito visual de uma exponencial vista em escala linear.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ===== eixos =====
+  % direita: 1 V -> 5 cm ; esquerda: 80 V -> 6 cm (comprimido)
+  \draw[eixo] (-6.6,0) -- (5.9,0) node[anchor=north west, font=\scriptsize] {$V$};
+  \draw[eixo] (0,-3.2) -- (0,4.5) node[anchor=south east, font=\scriptsize] {$I$};
+
+  % marca de corte de escala
+  \draw[manualgray, thick] (-0.28,-0.22) -- (-0.12,0.22);
+  \draw[manualgray, thick] (-0.42,-0.22) -- (-0.26,0.22);
+
+  % ===== escalas =====
+  \foreach \v/\x in {0.2/1.0, 0.4/2.0, 0.6/3.0, 0.8/4.0, 1.0/5.0}{
+    \draw[manualgray] (\x,0.09) -- (\x,-0.09);
+    \node[anchor=north, font=\tiny] at (\x,-0.12) {$\v$};}
+  \foreach \v/\x in {20/-1.5, 40/-3.0, 60/-4.5, 80/-6.0}{
+    \draw[manualgray] (\x,0.09) -- (\x,-0.09);
+    \node[anchor=north, font=\tiny] at (\x,-0.12) {$-\v$};}
+  \foreach \i/\y in {5/1.0, 10/2.0, 15/3.0, 20/4.0}{
+    \draw[manualgray] (0.09,\y) -- (-0.09,\y);
+    \node[anchor=east, font=\tiny] at (-0.12,\y) {$\i$};}
+  \foreach \i/\y in {10/-1.4, 20/-2.8}{
+    \draw[manualgray] (0.09,\y) -- (-0.09,\y);
+    \node[anchor=west, font=\tiny] at (0.12,\y) {$-\i$};}
+
+  \node[anchor=south, font=\tiny, manualgray, align=center] at (-0.95,4.15) {mA};
+  \node[anchor=north, font=\tiny, manualgray, align=center] at (0.95,-3.0) {$\mu$A};
+
+  % ===== ramo direto: I = Is exp(V/(n VT)) =====
+  % V (volts) -> x = 5V ; I (mA) -> y = 0.2 I
+  % y = 0,2 x 1,7e-5 x exp(v/0,0565), reescrito como uma exponencial unica:
+  % o pgfmath satura em 16384 e o produto intermediario estouraria.
+  % dominio limitado a 0,793 V, onde a curva chega aos 20 mA do topo do eixo.
+  \draw[curva, samples=200, domain=0:0.793, variable=\v, smooth]
+       plot ({\v*5}, {exp(\v/0.0565 - 12.591)});
+
+  % ===== ramo reverso: praticamente zero =====
+  \draw[curva] (-5.63,-0.035) -- (0,0);
+
+  % ===== ruptura em -75 V =====
+  \draw[curva] (-5.63,-0.035) .. controls (-5.68,-0.6) and (-5.70,-1.6) .. (-5.70,-3.05);
+
+  % ===== anotacoes =====
+  % dois pontos sobre a curva: 0,70 V -> 4,1 mA   e   0,79 V -> 20 mA
+  \draw[auxiliar] (3.5,0) -- (3.5,0.82) -- (0,0.82);
+  \draw[auxiliar] (3.965,0) -- (3.965,4.02) -- (0,4.02);
+  \node[ponto] at (3.5,0.82) {};
+  \node[ponto] at (3.965,4.02) {};
+  \node[manualred, anchor=north west, font=\scriptsize, align=left] at (3.6,0.72)
+       {$0{,}70$ V $\rightarrow$ $4{,}1$ mA};
+  \node[manualred, anchor=west, font=\scriptsize, align=left] at (4.1,4.0)
+       {$0{,}79$ V $\rightarrow$ $20$ mA};
+  \draw[destaque, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}] (3.5,4.35) -- (3.965,4.35);
+  \node[manualred, anchor=south, font=\tiny, align=center] at (3.7,4.4)
+       {90 mV};
+
+  \node[manualgreen!55!black, anchor=west, font=\scriptsize, align=left] at (0.35,3.3)
+       {\textbf{condução direta}\\exponencial: cada\\
+        década de $I$ custa\\60--120 mV};
+
+  \node[manualblue, anchor=south, font=\scriptsize, align=center] at (-3.0,0.35)
+       {\textbf{bloqueio} --- $I \approx -I_S$, alguns nA\\
+        (aqui seriam $0{,}005$ divisão: invisível)};
+
+  \node[manualred, anchor=east, font=\scriptsize, align=right] at (-5.85,-2.2)
+       {\textbf{ruptura}\\$V_{RRM} = 75$ V\\no 1N4148};
+
+  \node[anchor=north, font=\scriptsize, align=center, manualgray] at (-0.35,-3.3)
+       {as escalas dos dois lados são \textbf{diferentes} --- o corte no eixo avisa};
+
+  \node[anchor=north, font=\scriptsize, align=center] at (0,-4.0)
+       {O ``joelho'' \textbf{não é um ponto físico}: a curva passa suavemente pela origem.
+        Ele é o que uma\\ exponencial parece quando desenhada em escala linear ---
+        e por isso ele \emph{anda} com a escala escolhida.};
+
+\end{tikzpicture}
+```
+
+A curva completa de um 1N4148. Três regiões, duas escalas, e um detalhe que engana muita
+gente: o joelho aparente em 0,7 V é um artefato da escala linear, não uma propriedade da
+junção.
+
+:::
+
+Vale insistir no último ponto, porque ele é a raiz de quase todo mal-entendido sobre diodos.
+**Não existe tensão abaixo da qual o diodo não conduz.** Em 0,4 V um 1N4148 conduz cerca de
+1 µA; em 0,5 V, cerca de 9 µA; em 0,6 V, cerca de 80 µA. Tudo isso é rigorosamente maior que
+zero e rigorosamente invisível num gráfico cuja escala vai até 20 mA. O joelho é onde a
+exponencial cruza a resolução do desenho — e se o desenho fosse até 20 A, o joelho pareceria
+estar em 1 V.
+
+## Os quatro modelos {#sec-047-modelos}
+
+::: {#fig-047-modelos}
+
+```{.tikz}
+%%| filename: 047-modelos
+%%| alt: Quatro painéis lado a lado, cada um com um circuito equivalente em cima e a curva corrente por tensão correspondente embaixo. No primeiro painel, modelo de chave ideal: o equivalente é apenas uma chave fechada, e a curva é uma linha vertical sobre o eixo da corrente em tensão zero, com corrente nula para tensão negativa. No segundo painel, modelo de queda constante: o equivalente é uma chave em série com uma bateria de zero vírgula sete volt, e a curva é nula até zero vírgula sete volt e depois sobe verticalmente. No terceiro painel, modelo de queda mais resistência: o equivalente é uma chave em série com a bateria de zero vírgula sete volt e mais um resistor pequeno, e a curva é nula até zero vírgula sete volt e depois sobe como uma reta inclinada, cuja inclinação é o inverso dessa resistência. No quarto painel, modelo exponencial completo: o equivalente é o próprio símbolo do diodo, e a curva é a exponencial suave que passa pela origem sem nenhum joelho brusco. Sob cada painel há a faixa de erro típica e a situação em que o modelo se aplica.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \foreach \k/\dx/\titulo in {1/0/{1. chave ideal},
+                              2/4.4/{2. queda constante},
+                              3/8.8/{3. queda $+$ $r_d$},
+                              4/13.2/{4. exponencial}}{
+    \node[anchor=south, font=\scriptsize\bfseries] at (\dx+1.5,3.55) {\titulo};
+    % moldura do painel
+    \draw[manualgray!35, rounded corners=3pt] (\dx-0.35,-3.55) rectangle (\dx+3.4,3.45);
+  }
+
+  % ================= 1: chave ideal =================
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,2.5) -- (0.6,2.5);
+    \draw (0.6,2.5) to[switch] (2.4,2.5);
+    \draw (2.4,2.5) -- (3.0,2.5);
+    \node[anchor=north, font=\tiny, manualgray] at (1.5,2.28) {$V_D = 0$ sempre};
+    % curva
+    \draw[eixo] (0.2,0) -- (3.05,0) node[anchor=north, font=\tiny] {$V$};
+    \draw[eixo] (1.5,-0.35) -- (1.5,1.55) node[anchor=south east, font=\tiny] {$I$};
+    \draw[curva] (0.3,0) -- (1.5,0) -- (1.5,1.45);
+    \node[anchor=north, align=center, font=\tiny] at (1.5,-0.75)
+         {erro: $0{,}7$ V\\
+          use quando\\$V_{\text{fonte}} > 15$ V};
+    \node[anchor=north, align=center, font=\tiny, manualgreen!55!black] at (1.5,-2.15)
+         {triagem, análise\\de sentido,\\lógica de diodo};
+  \end{scope}
+
+  % ================= 2: queda constante =================
+  \begin{scope}[shift={(4.4,0)}]
+    \draw (0,2.5) -- (0.35,2.5);
+    \draw (0.35,2.5) to[switch] (1.5,2.5);
+    \draw (1.5,2.5) to[battery1, l_={$0{,}7$ V}] (2.65,2.5);
+    \draw (2.65,2.5) -- (3.0,2.5);
+    % curva
+    \draw[eixo] (0.2,0) -- (3.05,0) node[anchor=north, font=\tiny] {$V$};
+    \draw[eixo] (1.0,-0.35) -- (1.0,1.75) node[anchor=east, font=\tiny] {$I$};
+    \draw[curva] (0.3,0) -- (1.85,0) -- (1.85,1.6);
+    \draw[auxiliar] (1.85,0) -- (1.85,-0.25);
+    \node[anchor=north, font=\tiny] at (1.85,-0.22) {$0{,}7$};
+    \node[anchor=north, align=center, font=\tiny] at (1.5,-0.75)
+         {erro: 5--10 \%\\
+          use quando\\$V_{\text{fonte}} > 3$ V};
+    \node[anchor=north, align=center, font=\tiny, manualgreen!55!black] at (1.5,-2.15)
+         {\textbf{o cavalo de batalha}\\retificador, ceifador,\\
+          proteção, projeto\\de bancada};
+  \end{scope}
+
+  % ================= 3: queda + rd =================
+  \begin{scope}[shift={(8.8,0)}]
+    \draw (0,2.5) -- (0.2,2.5);
+    \draw (0.2,2.5) to[switch] (1.1,2.5);
+    \draw (1.1,2.5) to[battery1, l_={$0{,}7$ V}] (2.0,2.5);
+    \draw (2.0,2.5) to[R, l_={$r_d$}] (2.9,2.5);
+    \draw (2.9,2.5) -- (3.0,2.5);
+    % curva
+    \draw[eixo] (0.2,0) -- (3.05,0) node[anchor=north, font=\tiny] {$V$};
+    \draw[eixo] (1.0,-0.35) -- (1.0,1.75) node[anchor=east, font=\tiny] {$I$};
+    \draw[curva] (0.3,0) -- (1.85,0) -- (2.75,1.6);
+    \draw[auxiliar] (1.85,0) -- (1.85,-0.25);
+    \node[anchor=north, font=\tiny] at (1.85,-0.22) {$0{,}7$};
+    \node[manualred, anchor=east, font=\tiny] at (2.30,1.35) {inclinação $1/r_d$};
+    \node[anchor=north, align=center, font=\tiny] at (1.5,-0.75)
+         {erro: 1--3 \%\\
+          use com corrente alta\\ou fonte baixa};
+    \node[anchor=north, align=center, font=\tiny, manualgreen!55!black] at (1.5,-2.15)
+         {regulação, pequenos\\sinais, fonte de\\
+          bateria de 3 V};
+  \end{scope}
+
+  % ================= 4: exponencial =================
+  \begin{scope}[shift={(13.2,0)}]
+    \draw (0,2.5) -- (0.9,2.5);
+    \draw (0.9,2.5) to[D, l_={$I_S$, $n$}] (2.1,2.5);
+    \draw (2.1,2.5) -- (3.0,2.5);
+    % curva
+    \draw[eixo] (0.2,0) -- (3.05,0) node[anchor=north, font=\tiny] {$V$};
+    \draw[eixo] (1.0,-0.35) -- (1.0,1.75) node[anchor=east, font=\tiny] {$I$};
+    \draw[curva, samples=100, domain=0:0.82, variable=\v, smooth]
+         plot ({1.0 + \v*1.9}, {exp(\v/0.0565 - 13.284)});
+    \draw[curva] (0.3,0) -- (1.0,0);
+    \node[anchor=north, align=center, font=\tiny] at (1.5,-0.75)
+         {erro: só o do modelo\\
+          exige iteração\\ou simulador};
+    \node[anchor=north, align=center, font=\tiny, manualgreen!55!black] at (1.5,-2.15)
+         {SPICE, referência\\de tensão, circuito\\
+          logarítmico, sensor\\de temperatura};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+Os quatro modelos. Da esquerda para a direita, cada um acrescenta um detalhe e cobra em
+trabalho. **O modelo 2 resolve a esmagadora maioria dos problemas de bancada**, e saber isso
+é mais útil do que saber os outros três.
+
+:::
+
+### Modelo 1 — chave ideal
+
+O diodo é um curto-circuito em direta e um circuito aberto em reversa. $V_D = 0$.
+
+Parece grosseiro e não é. Ele responde à pergunta que mais se faz na frente de um esquemático:
+**por onde a corrente pode ir?** Em lógica de diodo, em análise de sentido, em circuito de
+proteção, e em qualquer conta de ordem de grandeza com fonte acima de uns 15 V, o erro de
+0,7 V não muda nenhuma decisão.
+
+### Modelo 2 — queda constante
+
+O diodo é uma chave em série com uma bateria de $V_F$. Em silício, $V_F = 0{,}7$ V; em
+Schottky, 0,3 V; em germânio, 0,3 V; num LED vermelho, 1,8 V.
+
+Regra de operação, e ela é a mesma para todo circuito com diodos:
+
+1. **Suponha** o estado de cada diodo (conduzindo ou bloqueado).
+2. **Substitua**: conduzindo vira bateria de 0,7 V; bloqueado vira circuito aberto.
+3. **Resolva** o circuito linear resultante com as ferramentas do Volume 3.
+4. **Verifique**: todo diodo suposto conduzindo deve dar corrente **positiva** no sentido do
+   símbolo; todo diodo suposto bloqueado deve dar tensão **reversa** sobre ele. Se alguma
+   verificação falhar, a suposição estava errada — troque e repita.
+
+O passo 4 não é opcional. Ele é o que transforma um chute em resultado, e é o que a maioria
+dos erros de aluno pula.
+
+### Modelo 3 — queda constante mais resistência dinâmica
+
+O diodo é uma chave, uma bateria e um resistor $r_d$. Ele existe porque a curva real, depois
+do joelho, **não é vertical**: a corrente cresce muito, mas não infinitamente.
+
+A resistência dinâmica sai de derivar a equação do diodo:
+
+$$ r_d = \frac{dV}{dI} = \boxed{\;\frac{n V_T}{I}\;} $$
+
+Com $n = 1$ e 26 mV, isso dá **26 Ω a 1 mA, 2,6 Ω a 10 mA, 0,26 Ω a 100 mA**. É um resistor
+que **muda com o ponto de operação** — a definição de componente não linear, e a razão pela
+qual esse modelo só vale em torno de uma corrente escolhida.
+
+Dois usos práticos:
+
+- **Ondulação sobre um diodo de polarização.** Um diodo conduzindo 5 mA tem $r_d \approx 5$ Ω,
+  e ondulação de corrente de ±0,5 mA produz ±2,5 mV de ondulação de tensão. Isso importa muito
+  em referência de tensão e em polarização de amplificador classe AB (Volume 10).
+- **Corrente alta.** A 1 A, a resistência ôhmica do corpo e dos terminais — dezenas de
+  miliohms, e **não** o $nV_T/I$, que seria 0,026 Ω — passa a dominar. É a soma das duas que
+  faz a queda de um retificador chegar a 1,1 V em plena carga.
+
+### Modelo 4 — a exponencial completa
+
+Usado por simulador e por quem projeta circuito em que a exponencialidade **é o ponto**:
+amplificador logarítmico, multiplicador analógico, referência de banda proibida, sensor de
+temperatura. Fora desses casos, é trabalho desperdiçado.
+
+Quando é preciso resolver à mão, o método que converge em duas ou três voltas é a
+**iteração**:
+
+**Exemplo.** $V_{\text{fonte}} = 5$ V, $R = 1$ kΩ, diodo com
+$I_S = 1{,}7\times10^{-8}$ A e $nV_T = 56{,}5$ mV.
+
+- Chute: $V_D = 0{,}7$ V → $I = (5 - 0{,}7)/1000 = 4{,}30$ mA.
+- Corrija: $V_D = 0{,}0565\,\ln(4{,}30\times10^{-3}/1{,}7\times10^{-8}) = 0{,}0565 \times 12{,}44 = 0{,}703$ V.
+- Recorrija: $I = (5 - 0{,}703)/1000 = 4{,}297$ mA, e $V_D$ praticamente não muda.
+
+Convergiu na primeira volta, e o resultado ficou a 3 mV do chute inicial. **Esse é o
+argumento a favor do modelo 2**, demonstrado em vez de afirmado: numa fonte de 5 V com 1 kΩ,
+o modelo mais simples já estava certo dentro de 0,5 %.
+
+Agora o mesmo cálculo com $V_{\text{fonte}} = 1$ V:
+
+- Chute: $V_D = 0{,}7$ V → $I = 0{,}30$ mA.
+- Corrija: $V_D = 0{,}0565\,\ln(3{,}0\times10^{-4}/1{,}7\times10^{-8}) = 0{,}0565 \times 9{,}78 = 0{,}553$ V.
+- Recorrija: $I = (1 - 0{,}553)/1000 = 0{,}447$ mA → $V_D = 0{,}0565 \times 10{,}18 = 0{,}575$ V.
+- De novo: $I = 0{,}425$ mA → $V_D = 0{,}572$ V. Convergiu.
+
+Resultado: 0,57 V, não 0,70 V — um erro de 130 mV, que sobre uma fonte de 1 V é **13 %**. É
+exatamente o caso em que o modelo 2 não serve, e a regra que vem a seguir é a que avisa.
+
+## Qual modelo usar {#sec-047-escolha}
+
+A pergunta certa não é "qual é o modelo mais preciso", e sim **"o erro do modelo é pequeno
+comparado com o que estou tentando calcular?"**.
+
+| Situação | Modelo | Por quê |
+|---|---|---|
+| $V_{\text{fonte}} \ge 15$ V | 1 — ideal | 0,7 V em 15 V é menos de 5 % |
+| $V_{\text{fonte}}$ de 3 a 15 V | 2 — queda constante | erro de poucos por cento |
+| $V_{\text{fonte}} < 3$ V | 3 ou 4 | 0,7 V já é parcela grande da fonte |
+| Corrente acima de 100 mA | 3 — com $r_d$ e resistência ôhmica | a queda real passa de 0,9 V |
+| Ondulação, pequenos sinais | 3 — $r_d = nV_T/I$ | é a inclinação no ponto de operação |
+| Circuito logarítmico, referência | 4 — exponencial | a exponencial é o mecanismo |
+| Tolerância dos outros componentes > 5 % | 2 | refinar o diodo não melhora nada |
+
+: Escolher modelo é comparar o erro dele com a incerteza do resto do circuito. {#tbl-047-escolha}
+
+A última linha merece ênfase, porque é a mais esquecida. Um circuito com resistores de 5 % de
+tolerância e um capacitor eletrolítico de $-20\%/+80\%$ **não fica mais exato** porque o
+diodo foi modelado com exponencial. Refinar o modelo mais preciso de um sistema cujo erro
+está em outro lugar é trabalho que não produz nada — e o @sec-cap-006 já tinha dito de onde
+vem a tolerância dos passivos.
+
+## A reta de carga {#sec-047-retacarga}
+
+Existe um método gráfico que resolve o circuito não linear **exatamente**, sem iteração e sem
+modelo, e vale aprendê-lo aqui porque ele reaparece em cada capítulo do Volume 9.
+
+O circuito é fonte, resistor e diodo em série. Duas equações descrevem o mesmo par $(V_D, I)$:
+
+$$ I = I_S\left(e^{\,V_D/(nV_T)} - 1\right)
+   \qquad\text{(o diodo)} $$
+
+$$ I = \frac{V_{\text{fonte}} - V_D}{R}
+   \qquad\text{(o resto do circuito, por Kirchhoff)} $$
+
+A segunda é uma **reta**. Desenhe as duas no mesmo par de eixos: a solução é o **cruzamento**.
+
+::: {#fig-047-retacarga}
+
+```{.tikz}
+%%| filename: 047-retacarga
+%%| alt: Gráfico com a corrente em miliampères no eixo vertical, de zero a doze, e a tensão sobre o diodo em volts no eixo horizontal, de zero a um vírgula um. Uma curva azul exponencial representa o diodo, subindo com força a partir de cerca de meio volt. Três retas descendentes cruzam essa curva: cada uma parte de um ponto no eixo vertical, correspondente à razão entre a tensão da fonte e o resistor, e desce até o ponto no eixo horizontal correspondente à tensão da fonte. A reta central corresponde a cinco volts com um quilo-ohm e cruza a curva do diodo num ponto marcado como Q, em torno de zero vírgula setenta volt e quatro vírgula três miliampères. As outras duas correspondem a cinco volts com quatrocentos e setenta ohms e a cinco volts com dois quilo-ohms, cruzando a curva em correntes maior e menor. Uma anotação explica que a inclinação da reta é menos um sobre o resistor, que o ponto onde ela corta o eixo horizontal é a tensão da fonte e o ponto onde corta o vertical é a corrente de curto, e que o cruzamento com a curva é a solução exata do circuito, sem nenhuma aproximação de modelo.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=12.5cm, height=8.6cm,
+  xlabel={$V_D$ (V)}, ylabel={$I$ (mA)},
+  xmin=0, xmax=1.15, ymin=0, ymax=12,
+  xtick={0,0.2,0.4,0.6,0.8,1.0},
+  xticklabel style={/pgf/number format/fixed,
+                    /pgf/number format/precision=1,
+                    /pgf/number format/use comma},
+  ytick={0,2,4,6,8,10,12},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+]
+
+% curva do diodo (mA) --- dominio ate onde ela chega aos 12 mA do topo
+\addplot[manualblue, very thick, domain=0:0.762, samples=200]
+  {1.7e-5*exp(x/0.0565)};
+\node[manualblue, anchor=east, font=\scriptsize, align=right]
+     at (axis cs:0.60,6.6) {diodo:\\$I = I_S(e^{V/nV_T}-1)$};
+
+% retas de carga: I = (Vf - V)/R, em mA, com Vf = 5 V
+% R = 470: corta y em 10,64 mA
+\addplot[manualgreen!55!black, thick, dashed, domain=0:1.15, samples=2]
+  {(5-x)/0.470};
+\node[manualgreen!55!black, anchor=north west, font=\scriptsize]
+     at (axis cs:0.03,10.3) {reta de $470\ \Omega$};
+
+% R = 1k: corta y em 5 mA
+\addplot[manualred, very thick, domain=0:1.15, samples=2]
+  {(5-x)/1.0};
+\node[manualred, anchor=north west, font=\scriptsize]
+     at (axis cs:0.03,4.75) {reta de $1$ k$\Omega$};
+
+% R = 2k2: corta y em 2,27 mA
+\addplot[manualyellow, thick, dashed, domain=0:1.15, samples=2]
+  {(5-x)/2.2};
+\node[manualyellow, anchor=north west, font=\scriptsize]
+     at (axis cs:0.03,2.0) {reta de $2{,}2$ k$\Omega$};
+
+% os tres pontos de operacao, um por reta
+\addplot[only marks, mark=*, mark size=2.2pt, black]
+  coordinates {(0.745, 9.05) (0.703, 4.297) (0.659, 1.973)};
+\node[anchor=south east, font=\scriptsize] at (axis cs:0.735,9.2)
+     {$Q_{470}$: $9{,}05$ mA};
+\node[anchor=south east, font=\scriptsize\bfseries] at (axis cs:0.695,4.45)
+     {$Q_{1k}$: $4{,}30$ mA};
+\node[anchor=south east, font=\scriptsize] at (axis cs:0.650,2.10)
+     {$Q_{2k2}$: $1{,}97$ mA};
+
+\end{axis}
+
+\node[anchor=north, font=\scriptsize, align=center] at (6.2,-1.1)
+     {A reta corta o eixo horizontal em $V_{\text{fonte}}$ e o vertical em
+      $V_{\text{fonte}}/R$; a inclinação é $-1/R$.\\
+      \textbf{O cruzamento é a solução exata} --- sem modelo, sem iteração,
+      sem equação transcendental.};
+\node[anchor=north, font=\scriptsize, align=center, manualred] at (6.2,-2.0)
+     {Trocar $R$ desliza o ponto de operação \emph{sobre a curva do diodo} ---
+      e é assim que se polariza qualquer\\ dispositivo não linear, diodo hoje
+      e transistor no Volume 9.};
+
+\end{tikzpicture}
+```
+
+A reta de carga. A parte do circuito que é linear vira uma reta; a parte que não é vira uma
+curva; a solução é onde elas se encontram. **Nenhuma aproximação foi feita.**
+
+:::
+
+Repare no que a figura mostra e a álgebra esconde: a reta de carga é quase **vertical** na
+região do joelho, o que significa que mudar $R$ por um fator de cinco muda a corrente por um
+fator de cinco e a tensão por apenas 80 mV. É a explicação gráfica de por que o modelo de
+queda constante funciona tão bem.
+
+A reta de carga também dá o vocabulário: o ponto de cruzamento é o **ponto quiescente** ou
+**ponto Q**, e a expressão "deslocar o ponto Q" — que vai dominar o Volume 9 — significa
+exatamente "mudar a reta e ver onde ela passa a cruzar".
+
+## A folha de dados {#sec-047-datasheet}
+
+Escolher diodo é ler seis linhas de uma folha de dados. Elas são sempre as mesmas.
+
+| Parâmetro | Significa | Onde queima se ignorar |
+|---|---|---|
+| $V_{RRM}$ | tensão reversa repetitiva máxima | ruptura, e o diodo vira curto |
+| $I_{F(AV)}$ | corrente direta média retificada | superaquecimento contínuo |
+| $I_{FSM}$ | corrente de surto não repetitiva | ligar a fonte com o capacitor descarregado |
+| $V_F$ @ $I_F$ | queda direta na corrente especificada | conta de dissipação errada |
+| $I_R$ @ $V_R$, $T$ | corrente reversa | fuga em circuito de alta impedância |
+| $t_{rr}$ | tempo de recuperação reversa | condução no sentido errado em alta frequência |
+| $C_j$ | capacitância de junção | perda de retificação em radiofrequência |
+| $R_{\theta JA}$ | resistência térmica junção-ambiente | cálculo de temperatura da junção |
+
+: As oito linhas que decidem a escolha de um diodo. {#tbl-047-datasheet}
+
+E os quatro diodos que resolvem quase tudo na bancada:
+
+| | 1N4148 | 1N4007 | 1N5408 | 1N5819 |
+|---|---|---|---|---|
+| Tipo | sinal, Si | retificador, Si | retificador, Si | Schottky |
+| $V_{RRM}$ | 75 V | 1000 V | 1000 V | 40 V |
+| $I_{F(AV)}$ | 150 mA | 1 A | 3 A | 1 A |
+| $I_{FSM}$ | 1 A (1 s) | 30 A (8,3 ms) | 200 A (8,3 ms) | 25 A (8,3 ms) |
+| $V_F$ típica | 0,72 V @ 5 mA | 0,9 V @ 1 A | 0,95 V @ 3 A | 0,35 V @ 1 A |
+| $I_R$ a 25 °C | 25 nA @ 20 V | 5 µA @ 1000 V | 5 µA @ 1000 V | **1 mA @ 40 V** |
+| $t_{rr}$ | 4 ns | ~2 µs (não especificado) | ~2 µs | < 10 ns |
+| $C_j$ | 4 pF | ~15 pF | ~30 pF | ~110 pF |
+| Encapsulamento | DO-35 | DO-41 | DO-201AD | DO-41 |
+
+: Os quatro diodos de uso geral. Valores típicos de folhas de dados correntes; confira sempre
+a do fabricante que você tem em mãos. {#tbl-047-diodos}
+
+Três leituras dessa tabela valem mais do que a tabela:
+
+**O 1N4007 é o retificador padrão e não serve para alta frequência.** Ele tem 1000 V de
+tensão reversa por dois dólares o cento, e um $t_{rr}$ de microssegundos que o torna inútil
+acima de alguns quilohertz. Numa fonte chaveada de 50 kHz — período de 20 µs — ele conduz no
+sentido errado durante 10 % do ciclo e esquenta absurdamente. É o erro do @sec-cap-046 com
+consequência medida.
+
+**O Schottky troca queda por fuga.** 0,35 V em vez de 0,9 V é uma economia enorme em fonte de
+baixa tensão: numa saída de 5 V, retificar com Schottky em vez de silício recupera mais de
+10 % do rendimento. O preço está escrito em negrito na tabela: a corrente reversa é **quarenta
+mil vezes maior**, e ela cresce com a temperatura como qualquer outra. Em circuito de alta
+impedância, essa fuga é fatal.
+
+**A corrente de surto é uma especificação separada, e é ela que queima diodo de fonte.** O
+@sec-cap-049 mostra por quê: no primeiro semiciclo depois de ligar, o capacitor de filtro
+está descarregado e se comporta como curto, de modo que a corrente de pico é limitada apenas
+pela resistência do enrolamento do transformador. Dezenas de ampères num diodo de 1 A é
+normal — e é por isso que $I_{FSM}$ existe.
+
+## Diodos em série e em paralelo {#sec-047-associacao}
+
+**Em série**, para dobrar a tensão reversa suportada: funciona, mas a divisão da tensão
+reversa entre eles é feita pelas correntes de fuga, que são diferentes de exemplar para
+exemplar. O diodo de menor fuga fica com quase toda a tensão e rompe primeiro. A solução
+clássica é um resistor de equalização em paralelo com cada diodo, escolhido para conduzir uns
+dez vezes a fuga máxima.
+
+**Em paralelo**, para dobrar a corrente: **não funciona**, e a razão é bonita e perigosa.
+Suponha dois diodos, um com $V_F$ 20 mV menor que o outro na mesma corrente. Como a relação é
+exponencial com $nV_T \approx 56$ mV, esse diodo conduz $e^{20/56} = 1{,}43$ vez mais
+corrente. Conduzindo mais, ele esquenta mais; esquentando mais, seu $V_F$ cai 2 mV/°C; caindo
+mais, ele conduz ainda mais. É **realimentação positiva térmica**, o mesmo mecanismo do
+@sec-cap-046, e ela termina com um diodo carregando tudo e queimando.
+
+A solução, quando não há alternativa, é um resistor de alguns décimos de ohm em série com cada
+diodo, dimensionado para cair uns 100 mV na corrente nominal — o que domina a diferença de
+$V_F$ e força a partilha. Custa rendimento, e é por isso que a solução de verdade é comprar um
+diodo com a corrente necessária.
+
+## 🧪 Laboratório {#sec-047-lab}
+
+**Levantar a curva $I$–$V$ real de um diodo, resolver o mesmo circuito pelos quatro modelos, e
+descobrir na bancada qual deles bastava.**
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital
+- 1 fonte ajustável de bancada de 0 a 12 V (ou pilhas: 1,5 V, 3 V, 4,5 V, 9 V)
+- Diodos: 2 × 1N4148, 2 × 1N4007, 1 × 1N5819 (Schottky, se houver)
+- Resistores 1/4 W: 470 Ω, 1 kΩ, 2,2 kΩ, 10 kΩ, 100 kΩ
+- 1 resistor de 100 Ω / 1 W (ou dois de 47 Ω / 1/2 W em série)
+- Papel milimetrado, ou planilha
+- Protoboard, jumpers
+:::
+
+### Parte 1 — A curva, ponto a ponto
+
+Monte fonte → resistor de 1 kΩ → diodo 1N4148 → terra. Meça **as duas** tensões: sobre o
+resistor (para obter a corrente) e sobre o diodo.
+
+Varra a fonte e preencha:
+
+| $V_{\text{fonte}}$ | $V_R$ medida | $I = V_R/R$ | $V_D$ medida |
+|---|---|---|---|
+| 0,5 V | | | |
+| 0,7 V | | | |
+| 1,0 V | | | |
+| 1,5 V | | | |
+| 2,0 V | | | |
+| 3,0 V | | | |
+| 5,0 V | | | |
+| 8,0 V | | | |
+| 12,0 V | | | |
+
+: Nove pontos, três décadas e meia de corrente. Meça $V_R$ e $V_D$ separadamente; a soma tem
+de dar $V_{\text{fonte}}$, e conferir isso pega erro de contato na protoboard.
+{#tbl-047-lab1}
+
+1. Marque $I$ contra $V_D$ em papel milimetrado. Você acabou de desenhar a
+   @fig-047-curva com a sua junção.
+2. Observe onde $V_D$ está em cada linha. **De 1 V a 12 V de fonte — doze vezes mais
+   tensão — a queda no diodo varia menos de 150 mV.**
+3. Marque os mesmos pontos com o eixo de corrente logarítmico. Vira uma reta, e a inclinação
+   dá $nV_T$ como no @sec-cap-046.
+
+### Parte 2 — Os quatro modelos contra a medida
+
+Tome a linha de $V_{\text{fonte}} = 5$ V com $R = 1$ kΩ e calcule a corrente pelos quatro
+modelos:
+
+| Modelo | Cálculo | $I$ prevista | Erro vs. medida |
+|---|---|---|---|
+| 1 — ideal | $5/1000$ | 5,00 mA | |
+| 2 — queda 0,7 V | $(5-0{,}7)/1000$ | 4,30 mA | |
+| 3 — com $r_d$ | $r_d = 56{,}5\ \text{mV}/4{,}3\ \text{mA} = 13\ \Omega$ | 4,24 mA | |
+| 4 — exponencial | iteração da @sec-047-modelos | 4,30 mA | |
+
+: O ensaio decisivo do capítulo. {#tbl-047-lab2}
+
+Agora repita para $V_{\text{fonte}} = 1$ V:
+
+| Modelo | $I$ prevista | Erro vs. medida |
+|---|---|---|
+| 1 — ideal | 1,00 mA | |
+| 2 — queda 0,7 V | 0,30 mA | |
+| 4 — exponencial | 0,43 mA | |
+
+: O mesmo circuito, fonte doze vezes menor, e os modelos deixam de concordar. {#tbl-047-lab3}
+
+**Este é o resultado que o capítulo inteiro existe para produzir.** A 5 V, os modelos 2, 3 e 4
+concordam dentro de 1,5 % e o modelo 1 erra 16 %. A 1 V, o modelo 2 erra 30 % para menos e o
+modelo 1 erra 130 % para mais. O modelo não é uma propriedade do diodo; é uma propriedade da
+**pergunta**.
+
+### Parte 3 — A resistência dinâmica, medida
+
+1. Monte com $R = 1$ kΩ e $V_{\text{fonte}} = 5$ V. Anote $V_D$.
+2. Troque para $R = 470\ \Omega$ (dobra a corrente). Anote $V_D$.
+3. Calcule $r_d = \Delta V_D / \Delta I$ e compare com $nV_T/I$ tomado na corrente média.
+
+Espere algo entre 8 e 15 Ω. Depois repita o par com 10 kΩ e 4,7 kΩ, onde a corrente é dez
+vezes menor: $r_d$ deve ficar dez vezes maior. **A resistência dinâmica é inversamente
+proporcional à corrente**, e essa é a medida que prova.
+
+### Parte 4 — A reta de carga, na bancada
+
+1. Com o gráfico da Parte 1 em mãos, trace a reta de $V_{\text{fonte}} = 5$ V e $R = 1$ kΩ:
+   de $(0;\ 5\ \text{mA})$ até $(5\ \text{V};\ 0)$ — este último ponto fica fora do papel, mas
+   dois pontos definem a reta, e $(1\ \text{V};\ 4\ \text{mA})$ serve.
+2. Leia o cruzamento. Compare com o que você mediu.
+3. Trace as retas de 470 Ω e de 2,2 kΩ e leia os cruzamentos. Compare com as medidas.
+
+A concordância costuma ficar dentro de 3 %, e a fonte de erro dominante é a leitura do
+gráfico, não o método. Esta é a mesma construção que vai polarizar transistor no Volume 9,
+com a curva trocada.
+
+### Parte 5 — Materiais e famílias, no mesmo circuito
+
+Com $R = 1$ kΩ e $V_{\text{fonte}} = 5$ V, meça $V_D$ trocando o diodo:
+
+| Diodo | $V_D$ esperada | $V_D$ medida |
+|---|---|---|
+| 1N4148 | 0,70 V | |
+| 1N4007 | 0,63 V | |
+| 1N5819 (Schottky) | 0,25 V | |
+| dois 1N4148 em série | 1,40 V | |
+
+: A queda direta é do dispositivo, não do circuito. {#tbl-047-lab4}
+
+Observe que o 1N4007 tem queda **menor** que o 1N4148 nessa corrente, e não maior. A razão é
+área: a pastilha do 1N4007 é muito maior, o $I_S$ dela é proporcionalmente maior, e na mesma
+corrente ela precisa de menos tensão. A vantagem se inverte em corrente alta, onde a
+resistência ôhmica manda.
+
+### Parte 6 — A verificação de estado, com dois diodos
+
+Monte o circuito: fonte de 5 V → 1 kΩ → nó A. Do nó A, um 1N4148 para o terra (cátodo no
+terra) e outro 1N4148 do terra para o nó A (ânodo no terra).
+
+1. **Preveja** pelo modelo 2: qual diodo conduz? Qual é a tensão em A?
+2. Meça.
+3. Inverta a fonte e repita.
+
+O nó A fica em 0,7 V, e o segundo diodo tem 0,7 V de tensão reversa — coerente com a
+suposição de que ele está bloqueado, que é o passo 4 do procedimento. Isso é um **ceifador**,
+o circuito de proteção mais usado do mundo, e ele volta no @sec-cap-048.
+
+**Variante simulada (plano B).** No ngspice, `.dc vin 0 12 0.05` com `.print dc v(diodo) i(vin)`
+reproduz a Parte 1 em um comando, e trocar o modelo por `is=1.7e-8 n=2.18` faz a curva
+simulada coincidir com a sua. No LTspice, colocar a fonte em `.step` e usar o cursor sobre a
+curva dá a leitura direta do ponto Q. No Falstad, arrastar o valor do resistor com a
+simulação rodando **mostra o ponto de operação deslizando sobre a curva** — a melhor
+visualização da @fig-047-retacarga que existe sem papel.
+
+## 🔥 Onde Queima {#sec-047-queima}
+
+**Montar o diodo invertido.** Faixa é cátodo. Num retificador, invertido significa que a
+saída não aparece; num circuito de proteção contra polaridade invertida, significa curto
+direto na fonte, e o que queima é a fonte.
+
+**Usar 0,7 V onde a fonte é de 1,5 V ou 3 V.** O erro relativo explode. Em fonte de pilha, use
+o modelo 3 ou 4, ou use Schottky e reduza o problema.
+
+**Usar o modelo ideal para calcular dissipação.** Ele diz $V_D = 0$, logo potência zero. Um
+diodo de 1 A com 0,9 V de queda dissipa 0,9 W, o que exige área de cobre e não cabe num
+DO-41 sem esquentar. **Modelo de análise não é modelo de dissipação.**
+
+**Esquecer que $r_d$ depende do ponto de operação.** Não existe "a resistência dinâmica do
+1N4148": existe a resistência dinâmica dele **a 1 mA**, que é dez vezes a de 10 mA.
+
+**Pular a verificação de estado.** Supor que um diodo conduz, resolver, e não conferir se a
+corrente deu positiva. A resposta pode ser fisicamente impossível e algebricamente
+consistente.
+
+**Ligar diodos em paralelo para somar corrente.** A partilha é exponencialmente sensível a
+diferenças de $V_F$, e a realimentação térmica é positiva. Um leva tudo e queima. Se for
+inevitável, resistor de equalização em série com cada um.
+
+**Ligar diodos em série sem equalizar a tensão reversa.** A divisão é feita pelas fugas, que
+são desiguais, e o de menor fuga rompe primeiro.
+
+**Usar 1N4007 em fonte chaveada.** $t_{rr}$ de microssegundos contra período de dezenas de
+microssegundos. Ele conduz para trás em parte do ciclo e esquenta. Use ultrarrápido ou
+Schottky.
+
+**Escolher Schottky por causa da queda baixa em circuito de alta impedância.** A fuga é
+milhares de vezes maior, e ela dobra a cada 10 °C.
+
+**Ignorar $I_{FSM}$ ao ligar uma fonte com capacitor grande.** O surto do primeiro semiciclo
+é limitado só pela resistência do transformador, e chega facilmente a dezenas de ampères.
+Assunto do @sec-cap-049, mas o número está na folha de dados do diodo.
+
+**Confiar na leitura da escala de diodo do multímetro como $V_F$ de projeto.** Ela força
+menos de 1 mA. Em 100 mA a queda é 150 a 200 mV maior.
+
+**Medir $V_D$ e $V_R$ em momentos diferentes com a fonte oscilando.** A soma tem de dar a
+tensão da fonte. Se não der, há queda de contato na protoboard — e é ela, não o diodo, que
+está mentindo.
+
+## O que fica deste capítulo {#sec-047-resumo}
+
+O diodo **tem lado**: **faixa = cátodo = barra do símbolo**, e o triângulo aponta o sentido
+permitido da corrente convencional. Na dúvida, escala de diodo do multímetro: cerca de
+600 mV num sentido, `OL` no outro.
+
+A curva tem três regiões — **condução**, **bloqueio** e **ruptura** — e nenhuma figura honesta
+as desenha na mesma escala. O **joelho em 0,7 V não é um ponto físico**: é onde a exponencial
+cruza a resolução do gráfico, e ele anda se a escala mudar.
+
+Os quatro modelos, e o que cada um custa:
+
+1. **Chave ideal** — $V_D = 0$. Para saber por onde a corrente vai, e para fonte acima de
+   15 V.
+2. **Queda constante** — 0,7 V em silício, 0,3 V em Schottky. **É o cavalo de batalha**, e
+   resolve quase tudo entre 3 e 15 V. Procedimento: supor estado, substituir, resolver,
+   **verificar**.
+3. **Queda mais $r_d$**, com $r_d = nV_T/I$ — 26 Ω a 1 mA, 2,6 Ω a 10 mA. Para ondulação,
+   pequenos sinais e corrente alta.
+4. **Exponencial completa** — para simulador e para circuitos em que a exponencialidade é o
+   mecanismo. Resolve-se por iteração, que converge em duas ou três voltas.
+
+A regra de escolha não é "o mais preciso", e sim **"o erro do modelo é pequeno comparado com o
+que eu quero calcular, e com a tolerância do resto do circuito?"**. Com fonte de 5 V e 1 kΩ,
+os modelos 2 e 4 diferem 3 mV; com fonte de 1 V, diferem 130 mV, e aí o modelo simples
+falha.
+
+A **reta de carga** resolve o circuito exatamente, sem modelo: a parte linear é uma reta que
+corta o eixo horizontal em $V_{\text{fonte}}$ e o vertical em $V_{\text{fonte}}/R$, com
+inclinação $-1/R$; o cruzamento com a curva do diodo é o **ponto Q**. É a mesma construção que
+vai polarizar transistor.
+
+Na folha de dados, as linhas que decidem: $V_{RRM}$, $I_{F(AV)}$, $I_{FSM}$, $V_F$ na
+corrente certa, $I_R$ na temperatura certa, $t_{rr}$ e $C_j$.
+
+**Em série**, diodos precisam de resistor de equalização, porque a tensão reversa se divide
+pelas fugas desiguais. **Em paralelo**, não se usa: a partilha é exponencialmente sensível a
+$V_F$ e a realimentação térmica é positiva.
+
+## Para o próximo capítulo {#sec-047-fecho}
+
+Um componente que conduz num sentido e não no outro, aplicado a uma tensão que troca de sinal
+sessenta vezes por segundo, faz a coisa mais útil que a eletrônica de potência conhece:
+transforma corrente alternada em corrente contínua pulsante.
+
+O @sec-cap-048 monta esse circuito nas três topologias que importam — meia onda, onda
+completa com tomada central, e ponte —, calcula a tensão de saída de cada uma com o modelo 2
+deste capítulo, e mostra por que a tensão reversa que cada diodo suporta é diferente em cada
+topologia, o que decide a escolha do componente.
+
+E ele é o primeiro capítulo do manual em que a rede elétrica aparece de verdade no roteiro de
+laboratório. O aviso do @sec-cap-002 vale integralmente, e o capítulo abre repetindo-o.

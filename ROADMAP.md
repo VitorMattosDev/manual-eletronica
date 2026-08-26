@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 46/104 |
-| **Contíguos até** | **046** — sem nenhum buraco no meio do livro |
+| **Progresso** | 47/104 |
+| **Contíguos até** | **047** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 047** | O diodo real: curva, queda direta e modelos |
+| **Próximo capítulo: 048** | Retificadores de meia onda e de onda completa — exige o `.callout-warning` de rede elétrica |
 
 As três lacunas que existiam — 026 no Volume 4, 037 e 038 no Volume 6 — foram fechadas.
 Com isso as Fases 1 e 2 estão completas: Volumes 1 a 7, capítulos 001 a 045, contíguos.
@@ -124,7 +124,7 @@ cinco ocorrências como aviso.
 ### Volume 8 — Diodos e Aplicações
 
 - [x] 046 — Semicondutores, dopagem e a junção PN — `capitulos/046-semicondutores-dopagem-e-a-juncao-pn.qmd`
-- [ ] 047 — O diodo real: curva, queda direta e modelos — `capitulos/047-o-diodo-real-curva-queda-direta-e-modelos.qmd`
+- [x] 047 — O diodo real: curva, queda direta e modelos — `capitulos/047-o-diodo-real-curva-queda-direta-e-modelos.qmd`
 - [ ] 048 — Retificadores de meia onda e de onda completa — `capitulos/048-retificadores-de-meia-onda-e-de-onda-completa.qmd`
 - [ ] 049 — Filtragem capacitiva e ondulação — `capitulos/049-filtragem-capacitiva-e-ondulacao.qmd`
 - [ ] 050 — Diodo Zener e regulação por referência — `capitulos/050-diodo-zener-e-regulacao-por-referencia.qmd`
