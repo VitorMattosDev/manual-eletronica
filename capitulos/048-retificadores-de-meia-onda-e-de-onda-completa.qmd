@@ -3,9 +3,869 @@
 ::: {.callout-warning}
 ## Tensão perigosa
 
-Este capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve
-ser executado depois de ler integralmente o Capítulo 2. *(texto de aviso a
-escrever)*
+Este capítulo trata do circuito que converte a tensão da rede elétrica em contínua, e a rede
+elétrica mata. **Nada aqui autoriza trabalhar com o primário de um transformador
+energizado, com fonte sem transformador, ou com qualquer parte de um circuito ligado
+diretamente aos 127 V ou 220 V.**
+
+O laboratório do fim do capítulo é executado **inteiro** em baixa tensão: com gerador de
+funções, ou com uma fonte de parede de 12 V CA já montada e fechada, cujo primário nunca é
+aberto. Não há um único passo que exija encostar em fio vivo.
+
+Três regras que valem em toda a Fase 3, e que o @sec-cap-002 já estabeleceu:
+
+- **Fonte sem transformador é fonte sem isolação.** Nela, o "terra" do circuito está no
+  neutro ou na fase da rede, e encostar a garra de um osciloscópio nele produz um curto
+  franco através da malha do cabo. A @sec-048-terra explica o mecanismo.
+- **Capacitor de filtro guarda carga depois de desligar.** O @sec-cap-049 dimensiona o
+  resistor de descarga; até lá, meça antes de tocar.
+- **Se o roteiro parecer exigir a rede, o roteiro está errado.** Pare e releia.
 :::
 
-*(em elaboração)*
+O @sec-cap-047 entregou um componente que conduz num sentido e bloqueia no outro, e um modelo
+— queda constante de 0,7 V — que basta para projetar com ele. Este capítulo faz a coisa mais
+útil que se pode fazer com essa assimetria: aplicá-la a uma tensão que troca de sinal cem ou
+cento e vinte vezes por segundo.
+
+O resultado não é corrente contínua. É **contínua pulsante**: sempre do mesmo sinal, mas longe
+de constante. Alisá-la é o @sec-cap-049; escolher e dimensionar a topologia que a produz é
+este.
+
+Três circuitos importam, e a diferença entre eles não é acadêmica: eles usam de um a quatro
+diodos, entregam 0,32 ou 0,64 vez a tensão de pico, exigem tensões reversas que diferem por
+um fator de dois, e um deles tem uma armadilha de aterramento que já destruiu muita ponta de
+prova. Ao final do capítulo, escolher entre eles é uma decisão de dois minutos.
+
+## O ponto de partida: o secundário do transformador {#sec-048-transformador}
+
+Antes do primeiro diodo, três números que vêm do @sec-cap-028 e que **todo** cálculo de
+retificador usa.
+
+Um transformador de secundário "12 V" entrega **12 V eficazes**, e o valor eficaz não é o que
+o diodo vê. O que ele vê é o **pico**:
+
+$$ V_p = \sqrt{2}\,V_{\text{rms}} = 1{,}414 \times 12 = 16{,}97\ \text{V}. $$
+
+Esse fator 1,414 é a origem da surpresa mais comum na bancada: um transformador de 12 V
+alimentando um retificador com capacitor de filtro produz quase **17 V** na saída, não 12. Um
+regulador de 12 V com entrada máxima de 15 V ligado ali queima na primeira tentativa.
+
+Dois avisos práticos sobre o transformador, que a folha de dados dele traz:
+
+- **A tensão especificada é a de plena carga.** Sem carga, um transformador pequeno entrega
+  de 10 % a 20 % mais — regulação ruim é característica de transformador barato. Um "12 V"
+  a vazio mede facilmente 14 V eficazes, com pico de quase 20 V.
+- **A corrente especificada é eficaz senoidal.** Com capacitor de filtro, a corrente do
+  secundário deixa de ser senoidal e vira pulsos estreitos e altos, cujo valor eficaz é bem
+  maior que a média. Um transformador de 1 A alimenta com folga apenas uns 600 mA de saída
+  contínua. É o assunto do @sec-cap-049, e a raiz está no @sec-cap-028.
+
+E o transformador faz uma coisa que nenhum outro componente faz: **isola galvanicamente** o
+circuito da rede. Não há caminho condutor entre primário e secundário. É isso que permite
+escolher onde fica o terra do circuito — e é isso que uma fonte sem transformador não tem.
+
+## Meia onda {#sec-048-meiaonda}
+
+Um diodo, em série com a carga. Nada mais.
+
+::: {#fig-048-meiaonda}
+
+```{.tikz}
+%%| filename: 048-meiaonda
+%%| alt: À esquerda, o esquemático do retificador de meia onda: uma fonte de tensão alternada, representando o secundário de um transformador, com o terminal de cima ligado ao ânodo de um diodo; o cátodo do diodo vai ao nó de saída, de onde desce um resistor de carga até o trilho de terra, que retorna ao terminal de baixo da fonte. A saída é medida entre o nó de saída e o terra. À direita, o gráfico do tempo em milissegundos no eixo horizontal e da tensão em volts no vertical, mostrando duas curvas sobrepostas: em cinza claro e tracejado, a senoide de entrada completa, com semiciclos positivos e negativos de dezessete volts de pico; em azul e grosso, a saída, que acompanha a senoide durante os semiciclos positivos, com o pico reduzido a dezesseis vírgula três volts pela queda do diodo, e fica exatamente em zero durante os semiciclos negativos. Uma linha vermelha horizontal marca o valor médio da saída, cinco vírgula dois volts, bem abaixo do pico. Anotações indicam que a frequência da ondulação é igual à da rede, sessenta hertz, que metade do tempo não há entrega de energia nenhuma, e que durante o semiciclo negativo o diodo suporta a tensão reversa de pico igual ao pico do secundário.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquematico =================
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,0) to[sV, l=$v_{\text{sec}}$] (0,3.4);
+    \draw (0,3.4) to[D, l=$D$, *-] (2.9,3.4);
+    \draw (2.9,3.4) to[R, l=$R_L$, -*] (2.9,0);
+    \draw (0,0) -- (2.9,0);
+    \node[ground] at (1.45,0) {};
+    \draw[manualblue, {Latex[length=1.6mm]}-{Latex[length=1.6mm]}]
+         (3.5,3.3) -- (3.5,0.1);
+    \node[manualblue, anchor=west, font=\scriptsize] at (3.6,1.7) {$v_{\text{saída}}$};
+    \node[anchor=north, align=center, font=\scriptsize] at (1.7,-0.85)
+         {\textbf{meia onda}\\um diodo, e metade\\do tempo desperdiçada};
+  \end{scope}
+
+  % ================= formas de onda =================
+  % escala: 360 graus (16,7 ms) = 2,67 unidades
+  \begin{scope}[shift={(5.9,1.7)}]
+    \draw[eixo] (-0.3,0) -- (8.5,0) node[anchor=north west, font=\scriptsize] {$t$};
+    \draw[eixo] (0,-2.4) -- (0,2.4) node[anchor=south east, font=\scriptsize] {$v$};
+
+    % entrada (tracejada)
+    \draw[manualgray!70, dashed, samples=240, domain=0:1080, smooth, variable=\x]
+         plot ({\x/135}, {1.9*sin(\x)});
+    % saida (meia onda), pico 1,82 (a queda do diodo)
+    \draw[curva, samples=240, domain=0:1080, smooth, variable=\x]
+         plot ({\x/135}, {max(0, 1.82*sin(\x))});
+
+    % media --- o rotulo cai no intervalo em que a saida vale zero
+    \draw[destaque] (0,0.58) -- (8.0,0.58);
+    \node[manualred, anchor=south, font=\scriptsize] at (2.0,0.64)
+         {$V_{cc} = 5{,}2$ V};
+
+    \node[manualblue, anchor=south west, font=\tiny] at (0.45,1.88) {saída};
+    \node[manualgray, anchor=north west, font=\tiny] at (3.6,-2.0)
+         {entrada do secundário (tracejada)};
+
+    \draw[manualgray] (1.335,0.09) -- (1.335,-0.09);
+    \draw[manualgray] (2.67,0.09) -- (2.67,-0.09);
+    \node[anchor=north west, font=\tiny] at (1.30,-0.12) {$8{,}3$ ms};
+    \node[anchor=north west, font=\tiny] at (2.62,-0.12) {$16{,}7$ ms};
+
+    \draw[manualgreen!55!black, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}]
+         (2.67,-1.35) -- (5.33,-1.35);
+    \node[manualgreen!55!black, anchor=north, font=\tiny] at (4.0,-1.55)
+         {um ciclo de ondulação: $16{,}7$ ms --- \textbf{a mesma frequência da rede}};
+    \node[manualgray, anchor=north, font=\tiny, align=center] at (1.35,-2.0)
+         {aqui o diodo bloqueia\\e suporta $V_p$ reversos};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O retificador de meia onda. Simples, barato e ruim: metade dos semiciclos é jogada fora, a
+tensão média é 0,318 vez o pico, e a ondulação está na frequência da rede, a mais difícil de
+filtrar.
+
+:::
+
+Durante o semiciclo positivo o diodo conduz e a carga recebe $v_{\text{sec}} - 0{,}7$ V.
+Durante o negativo ele bloqueia, a saída é zero, e a tensão inteira do secundário aparece
+**sobre o diodo**, em reversa.
+
+Os números, todos obtidos pelo cálculo de valor médio e eficaz do @sec-cap-028:
+
+$$ V_{cc} = \frac{V_p}{\pi} = 0{,}318\,V_p, \qquad
+   V_{\text{rms(saída)}} = \frac{V_p}{2}, \qquad
+   f_{\text{ondulação}} = f_{\text{rede}}. $$
+
+Com o secundário de 12 V do exemplo, $V_p = 16{,}97$ V, menos 0,7 V do diodo dá 16,3 V de
+pico, e a média fica em $16{,}3/\pi = 5{,}2$ V. **De 12 V eficazes de entrada sobraram 5,2 V
+de contínua** — e é por isso que meia onda quase não se usa em fonte de alimentação.
+
+Onde ele se usa, e onde é a escolha certa:
+
+- Carregadores muito simples e circuitos de corrente baixíssima, onde economizar três diodos
+  importa mais que rendimento.
+- **Bombas de carga e circuitos de tensão auxiliar** dentro de fontes chaveadas.
+- Detecção de envoltória em receptores de rádio (Volume 13), onde o objetivo não é potência.
+
+E a especificação que decide o diodo:
+
+$$ \text{PIV}_{\text{meia onda}} = V_p, $$
+
+com uma correção importante que o @sec-cap-049 vai justificar: **com capacitor de filtro, a
+tensão reversa dobra**, chegando a $2V_p$, porque o capacitor mantém a saída em $+V_p$
+enquanto o secundário está em $-V_p$. Num secundário de 12 V, isso significa 34 V, e o
+diodo precisa ser especificado para isso.
+
+## Onda completa com tomada central {#sec-048-tomadacentral}
+
+Para aproveitar os dois semiciclos, a topologia mais antiga usa um transformador com
+**tomada central** no secundário — um fio soldado no meio do enrolamento, que vira o terra do
+circuito.
+
+::: {#fig-048-ondacompleta}
+
+```{.tikz}
+%%| filename: 048-ondacompleta
+%%| alt: À esquerda, o esquemático do retificador de onda completa com tomada central: um transformador cujo secundário tem três terminais, o de cima, o do meio e o de baixo. O terminal do meio, a tomada central, é ligado ao trilho de terra. Do terminal de cima sai um diodo com o ânodo nele e o cátodo no nó de saída; do terminal de baixo sai outro diodo igualmente orientado para o mesmo nó de saída. Do nó de saída desce o resistor de carga até o terra. À direita, o gráfico da tensão contra o tempo mostrando em cinza tracejado as duas metades do secundário, uma senoide e a mesma senoide invertida, e em azul grosso a saída, que é o valor absoluto da senoide: uma sucessão de arcos positivos sem intervalo entre eles, com pico de dezesseis vírgula três volts. Uma linha vermelha horizontal marca a média, dez vírgula quatro volts, quase o dobro da do meia onda. Anotações registram que a ondulação está agora em cento e vinte hertz, o dobro da frequência da rede, e que o diodo que está bloqueado suporta a soma das duas metades do secundário, ou seja, o dobro da tensão de pico.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquematico =================
+  \begin{scope}[shift={(0,0)}]
+    % secundario com tomada central
+    \draw (0,3.6) to[sV, l=$v_1$] (0,1.9);
+    \draw (0,1.9) to[sV, l=$v_2$] (0,0.2);
+    \node[circ] at (0,1.9) {};
+    \draw (0,1.9) -- (-0.9,1.9);
+    \node[rground, rotate=-90] at (-0.9,1.9) {};
+    \node[anchor=south, font=\tiny, align=center] at (-0.75,2.15)
+         {tomada central};
+
+    \draw (0,3.6) to[D, l=$D_1$] (2.9,3.6);
+    \draw (0,0.2) to[D, l_=$D_2$] (2.9,0.2);
+    \draw (2.9,3.6) -- (2.9,2.9);
+    \draw (2.9,0.2) -- (2.9,0.9);
+    \node[circ] at (2.9,2.9) {};
+    \node[circ] at (2.9,0.9) {};
+    \draw (2.9,2.9) to[R, l=$R_L$] (2.9,0.9);
+    \draw (2.9,2.9) -- (3.9,2.9) -- (3.9,0.9) -- (2.9,0.9);
+    \draw (-0.9,1.9) -- (-1.6,1.9) -- (-1.6,-0.6) -- (4.6,-0.6) -- (4.6,1.9) -- (3.9,1.9);
+    \node[circ] at (3.9,1.9) {};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (1.5,-1.15)
+         {\textbf{onda completa, tomada central}\\
+          dois diodos, uma queda por caminho,\\
+          e um transformador mais caro};
+  \end{scope}
+
+  % ================= formas de onda =================
+  % mesma escala do 048-meiaonda: 360 graus (16,7 ms) = 2,67 unidades
+  \begin{scope}[shift={(6.4,1.7)}]
+    \draw[eixo] (-0.3,0) -- (6.2,0) node[anchor=north west, font=\scriptsize] {$t$};
+    \draw[eixo] (0,-2.4) -- (0,2.4) node[anchor=south east, font=\scriptsize] {$v$};
+
+    \draw[manualgray!70, dashed, samples=200, domain=0:720, smooth, variable=\x]
+         plot ({\x/135}, {1.9*sin(\x)});
+    \draw[manualgray!70, dashed, samples=200, domain=0:720, smooth, variable=\x]
+         plot ({\x/135}, {-1.9*sin(\x)});
+    \draw[curva, samples=300, domain=0:720, smooth, variable=\x]
+         plot ({\x/135}, {abs(1.82*sin(\x))});
+    \draw[destaque] (0,1.16) -- (5.33,1.16);
+    \node[manualred, anchor=west, font=\scriptsize] at (5.45,1.16)
+         {$V_{cc} = 10{,}4$ V};
+
+    \node[manualblue, anchor=south west, font=\tiny] at (0.45,1.88) {saída};
+    \node[manualgray, anchor=north west, font=\tiny] at (5.45,-0.7)
+         {$v_1$ e $v_2 = -v_1$};
+
+    \draw[manualgreen!55!black, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}]
+         (2.67,-1.35) -- (4.0,-1.35);
+    \node[manualgreen!55!black, anchor=north, font=\tiny, align=center] at (3.3,-1.55)
+         {um ciclo de ondulação: $8{,}3$ ms\\
+          \textbf{o dobro da frequência da rede}};
+
+    \node[anchor=north west, font=\tiny] at (1.30,-0.12) {$8{,}3$ ms};
+    \draw[manualgray] (1.335,0.09) -- (1.335,-0.09);
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+Onda completa com tomada central. Os dois semiciclos são aproveitados, a média dobra, e a
+ondulação passa a 120 Hz. O preço é um transformador com três terminais no secundário e,
+sobretudo, uma tensão reversa de $2V_p$ sobre o diodo bloqueado.
+
+:::
+
+O funcionamento: os dois meios enrolamentos produzem tensões **opostas** em relação à tomada
+central. No semiciclo em que o terminal de cima está positivo, $D_1$ conduz e $D_2$ bloqueia;
+no seguinte, o contrário. A carga recebe corrente **sempre no mesmo sentido**, nos dois
+semiciclos.
+
+$$ V_{cc} = \frac{2V_p}{\pi} = 0{,}637\,V_p, \qquad
+   V_{\text{rms(saída)}} = \frac{V_p}{\sqrt 2}, \qquad
+   f_{\text{ondulação}} = 2f_{\text{rede}}. $$
+
+Com o secundário de 12-0-12 V — cada metade entregando 12 V eficazes — o pico de cada metade
+é 16,97 V, menos uma queda de diodo dá 16,3 V, e a média fica em $2\times16{,}3/\pi = 10{,}4$ V.
+
+Duas propriedades que decidem o uso:
+
+**Só uma queda de diodo por caminho.** A corrente atravessa um único diodo em cada semiciclo,
+e não dois. Em fonte de baixa tensão — 5 V ou menos — essa diferença de 0,7 V é enorme, e é a
+razão de a tomada central sobreviver em fontes de bancada simétricas e em saídas de baixa
+tensão de fontes chaveadas.
+
+**A tensão reversa é $2V_p$.** Quando $D_1$ conduz, o cátodo dele está em $+V_p$; o ânodo de
+$D_2$ está em $-V_p$; logo $D_2$ suporta $2V_p$. Com 12-0-12 V isso já dá 34 V, e com
+capacitor de filtro continua $2V_p$ — este é o único caso em que o capacitor **não** piora a
+situação.
+
+O custo é o transformador: um secundário com tomada central usa o dobro de cobre para a mesma
+potência de saída, porque cada metade só trabalha metade do tempo.
+
+## A ponte {#sec-048-ponte}
+
+Quatro diodos arranjados de modo que a corrente sempre atravesse a carga no mesmo sentido,
+qualquer que seja a polaridade da entrada. É a topologia dominante, e vale a pena entender o
+caminho da corrente em vez de decorar o desenho.
+
+::: {#fig-048-ponte}
+
+```{.tikz}
+%%| filename: 048-ponte
+%%| alt: Dois esquemáticos lado a lado da mesma ponte retificadora, cada um mostrando um semiciclo. A ponte é desenhada como um losango com quatro diodos, todos orientados no sentido horário em torno do losango. Os dois vértices laterais do losango recebem os dois terminais do secundário do transformador; o vértice de baixo é o terminal negativo, ligado ao terra, e o de cima é o positivo, de onde sai a saída para o resistor de carga que retorna ao terra. No painel da esquerda, rotulado semiciclo positivo, o terminal esquerdo do secundário está positivo, e um traço vermelho grosso marca o caminho da corrente: ela entra pelo vértice esquerdo, atravessa o diodo que sobe para o vértice de cima, sai pela saída, desce pela carga, retorna pelo vértice de baixo e sobe pelo diodo que vai ao vértice direito, fechando no secundário. No painel da direita, rotulado semiciclo negativo, o terminal direito está positivo e o traço vermelho mostra o caminho espelhado, entrando pelo vértice direito e retornando pelo esquerdo. Em ambos os painéis, uma anotação destaca que a corrente atravessa a carga sempre no mesmo sentido, de cima para baixo, e que dois diodos conduzem em série a cada semiciclo, o que custa uma vírgula quatro volt de queda.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+ \foreach \pan/\dx/\tit/\ea/\eb in {%
+    1/0/{semiciclo positivo}/{$+$}/{$-$},
+    2/8.0/{semiciclo negativo}/{$-$}/{$+$}}{
+  \begin{scope}[shift={(\dx,0)}]
+    % vertices do losango
+    \coordinate (E) at (0,1.9);
+    \coordinate (T) at (1.9,3.4);
+    \coordinate (D) at (3.8,1.9);
+    \coordinate (B) at (1.9,0.4);
+
+    \draw (E) to[D] (T);
+    \draw (B) to[D] (D);
+    \draw (E) to[D, invert] (B);
+    \draw (T) to[D, invert] (D);
+
+    \node[circ] at (E) {};
+    \node[circ] at (D) {};
+    \node[circ] at (T) {};
+    \node[circ] at (B) {};
+
+    % secundario
+    \draw (E) -- (-1.3,1.9);
+    \draw (D) -- (5.1,1.9);
+    \draw (-1.3,1.9) -- (-1.3,4.6) -- (5.1,4.6) -- (5.1,1.9);
+    \draw (1.0,4.6) to[sV, l=$v_{\text{sec}}$] (2.8,4.6);
+    \node[manualred, anchor=south east, font=\scriptsize] at (-0.15,2.0) {\ea};
+    \node[manualred, anchor=south west, font=\scriptsize] at (3.95,2.0) {\eb};
+
+    % saida
+    \draw (T) -- (1.9,4.0) -- (6.0,4.0);
+    \draw (6.0,4.0) to[R, l=$R_L$] (6.0,-0.3);
+    \draw (B) -- (1.9,-0.3) -- (6.0,-0.3);
+    \node[ground] at (3.5,-0.3) {};
+    \node[manualblue, anchor=south, font=\tiny] at (4.2,4.08)
+         {$v_{\text{saída}}$};
+
+    \node[anchor=north, align=center, font=\scriptsize\bfseries] at (2.6,-1.1) {\tit};
+  \end{scope}}
+
+  % ---- caminho da corrente: semiciclo positivo ----
+  \draw[manualred, line width=2.2pt, -{Latex[length=2.6mm]}, opacity=0.75]
+       (-1.3,1.9) -- (0,1.9) -- (1.9,3.4) -- (1.9,4.0) -- (6.0,4.0) -- (6.0,2.4);
+  \draw[manualred, line width=2.2pt, -{Latex[length=2.6mm]}, opacity=0.75]
+       (6.0,1.0) -- (6.0,-0.3) -- (1.9,-0.3) -- (1.9,0.4) -- (3.8,1.9) -- (5.1,1.9);
+
+  % ---- caminho da corrente: semiciclo negativo ----
+  \begin{scope}[shift={(8.0,0)}]
+    \draw[manualred, line width=2.2pt, -{Latex[length=2.6mm]}, opacity=0.75]
+         (5.1,1.9) -- (3.8,1.9) -- (1.9,3.4) -- (1.9,4.0) -- (6.0,4.0) -- (6.0,2.4);
+    \draw[manualred, line width=2.2pt, -{Latex[length=2.6mm]}, opacity=0.75]
+         (6.0,1.0) -- (6.0,-0.3) -- (1.9,-0.3) -- (1.9,0.4) -- (0,1.9) -- (-1.3,1.9);
+  \end{scope}
+
+  \node[manualred, anchor=north, align=center, font=\scriptsize] at (7.0,-2.0)
+       {Nos dois semiciclos a corrente atravessa $R_L$ \textbf{de cima para baixo}.
+        Dois diodos conduzem em série a cada vez:\\
+        a queda total é $2 \times 0{,}7 = 1{,}4$ V, e é esse o preço da ponte.};
+
+\end{tikzpicture}
+```
+
+A ponte, nos dois semiciclos. Os quatro diodos formam um comutador: qual par conduz depende
+da polaridade da entrada, e o sentido da corrente **na carga** nunca muda.
+
+:::
+
+$$ V_{cc} = \frac{2V_p}{\pi} = 0{,}637\,V_p, \qquad
+   f_{\text{ondulação}} = 2f_{\text{rede}}, \qquad
+   \text{PIV} = V_p. $$
+
+Com o secundário de 12 V: pico de 16,97 V, menos **duas** quedas de diodo (1,4 V), dá 15,6 V
+de pico, e a média fica em $2\times15{,}6/\pi = 9{,}9$ V.
+
+A ponte ganha da tomada central em quase tudo:
+
+- **Metade da tensão reversa** por diodo: $V_p$ em vez de $2V_p$. Diodos de menor tensão são
+  mais baratos e mais rápidos.
+- **Transformador simples**, sem tomada central, e usando o enrolamento inteiro nos dois
+  semiciclos — o que significa metade do cobre para a mesma potência.
+- **Existe em módulo pronto**, com os quatro diodos num só encapsulamento (KBP, KBU, GBU),
+  com os terminais marcados `~ ~ + −`. Custa menos que quatro diodos avulsos e monta mais
+  rápido.
+
+E perde numa coisa só, que é decisiva em baixa tensão: **duas quedas de diodo em vez de uma**.
+Numa saída de 5 V, 1,4 V é 28 % da tensão útil. É aí que a tomada central volta, ou que se
+troca silício por Schottky.
+
+## Comparação {#sec-048-comparacao}
+
+::: {#fig-048-comparacao}
+
+```{.tikz}
+%%| filename: 048-comparacao
+%%| alt: Três gráficos empilhados verticalmente, todos com o mesmo eixo de tempo, comparando as formas de onda da saída das três topologias a partir do mesmo secundário de doze volts eficazes. No gráfico de cima, meia onda: arcos positivos separados por intervalos planos em zero de igual duração, com uma linha vermelha de média em cinco vírgula dois volts. No gráfico do meio, onda completa com tomada central: arcos positivos contíguos, sem intervalos, com pico de dezesseis vírgula três volts e linha de média em dez vírgula quatro volts. No gráfico de baixo, ponte: arcos contíguos iguais aos do meio, porém com pico ligeiramente menor, quinze vírgula seis volts, por causa das duas quedas de diodo, e linha de média em nove vírgula nove volts. À direita de cada gráfico, uma caixa resume o número de diodos, a tensão média, a frequência da ondulação e a tensão reversa de pico exigida do diodo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- meia onda ----------
+  \begin{scope}[shift={(0,0)}]
+    \draw[eixo] (-0.2,0) -- (8.4,0);
+    \draw[eixo] (0,-0.3) -- (0,2.3);
+    \draw[curva, samples=240, domain=0:900, smooth, variable=\x]
+         plot ({\x/135}, {max(0, 1.82*sin(\x))});
+    \draw[destaque] (0,0.58) -- (6.67,0.58);
+    \node[manualred, anchor=west, font=\tiny] at (6.8,0.58) {$5{,}2$ V};
+    \node[anchor=east, font=\scriptsize\bfseries, align=right] at (-0.35,1.2)
+         {meia\\onda};
+    \node[draw=manualgray!50, rounded corners=2pt, anchor=west,
+          font=\tiny, align=left, inner sep=4pt] at (8.8,1.0)
+         {1 diodo \quad $V_{cc} = 0{,}318\,V_p$\\
+          ondulação em $f$ \quad PIV $= V_p$\\
+          (com filtro: PIV $= 2V_p$)};
+  \end{scope}
+
+  % ---------- tomada central ----------
+  \begin{scope}[shift={(0,-3.3)}]
+    \draw[eixo] (-0.2,0) -- (8.4,0);
+    \draw[eixo] (0,-0.3) -- (0,2.3);
+    \draw[curva, samples=300, domain=0:900, smooth, variable=\x]
+         plot ({\x/135}, {abs(1.82*sin(\x))});
+    \draw[destaque] (0,1.16) -- (6.67,1.16);
+    \node[manualred, anchor=west, font=\tiny] at (6.8,1.16) {$10{,}4$ V};
+    \node[anchor=east, font=\scriptsize\bfseries, align=right] at (-0.35,1.2)
+         {tomada\\central};
+    \node[draw=manualgray!50, rounded corners=2pt, anchor=west,
+          font=\tiny, align=left, inner sep=4pt] at (8.8,1.0)
+         {2 diodos \quad $V_{cc} = 0{,}637\,V_p$\\
+          ondulação em $2f$ \quad PIV $= 2V_p$\\
+          \textbf{uma} queda de diodo};
+  \end{scope}
+
+  % ---------- ponte ----------
+  \begin{scope}[shift={(0,-6.6)}]
+    \draw[eixo] (-0.2,0) -- (8.4,0);
+    \draw[eixo] (0,-0.3) -- (0,2.3);
+    \draw[curva, samples=300, domain=0:900, smooth, variable=\x]
+         plot ({\x/135}, {abs(1.74*sin(\x))});
+    \draw[destaque] (0,1.11) -- (6.67,1.11);
+    \node[manualred, anchor=west, font=\tiny] at (6.8,1.11) {$9{,}9$ V};
+    \node[anchor=east, font=\scriptsize\bfseries, align=right] at (-0.35,1.2)
+         {ponte};
+    \node[draw=manualgray!50, rounded corners=2pt, anchor=west,
+          font=\tiny, align=left, inner sep=4pt] at (8.8,1.0)
+         {4 diodos \quad $V_{cc} = 0{,}637\,V_p$\\
+          ondulação em $2f$ \quad PIV $= V_p$\\
+          \textbf{duas} quedas de diodo};
+    \node[anchor=north, font=\tiny] at (2.7,-0.15) {$8{,}3$ ms};
+    \draw[manualgray] (2.67,0.09) -- (2.67,-0.09);
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+As três saídas, do mesmo secundário de 12 V eficazes. A diferença entre a primeira e as
+outras duas é de fator dois na tensão média **e** de fator dois na frequência da ondulação —
+e a segunda dessas diferenças importa tanto quanto a primeira.
+
+:::
+
+| | Meia onda | Tomada central | Ponte |
+|---|---|---|---|
+| Diodos | 1 | 2 | 4 |
+| $V_{cc}$ | $0{,}318\,V_p$ | $0{,}637\,V_p$ | $0{,}637\,V_p$ |
+| $V_{\text{rms}}$ da saída | $V_p/2$ | $V_p/\sqrt2$ | $V_p/\sqrt2$ |
+| Frequência da ondulação | $f$ | $2f$ | $2f$ |
+| Fator de ondulação | 1,21 | 0,482 | 0,482 |
+| PIV por diodo | $V_p$ (com filtro, $2V_p$) | $2V_p$ | $V_p$ |
+| Quedas de diodo em série | 1 | 1 | 2 |
+| Transformador | simples | tomada central | simples |
+| Uso do enrolamento | metade do tempo | metade do tempo | integral |
+| Rendimento máximo teórico | 40,6 % | 81,2 % | 81,2 % |
+
+: As três topologias, lado a lado. A linha que decide o projeto quase sempre é a de "quedas
+de diodo em série" quando a tensão é baixa, e a de PIV quando ela é alta. {#tbl-048-comparacao}
+
+**A frequência da ondulação merece uma frase própria.** Passar de 60 Hz para 120 Hz não é uma
+melhoria marginal: o @sec-cap-049 mostra que a ondulação residual depois do capacitor de
+filtro é inversamente proporcional à frequência **e** o intervalo de descarga cai pela metade.
+Somados, o mesmo capacitor produz um quarto da ondulação. **Onda completa vale a pena mesmo
+quando a tensão média não importa.**
+
+## O que a tabela não diz {#sec-048-real}
+
+### A queda dos diodos não é 0,7 V no pico de corrente
+
+O modelo 2 do @sec-cap-047 diz 0,7 V, e é o que se usa para prever a tensão média. Mas a
+corrente num retificador com capacitor não é constante: ela vem em pulsos estreitos de vários
+ampères (@sec-cap-049). No pico desses pulsos, a queda de um 1N4007 passa de 1,1 V.
+
+Para tensão de saída, use 0,7 V (ou 1,4 V na ponte) e aceite o erro. Para **dissipação no
+diodo**, use a queda no pico de corrente, ou o cálculo subestima o aquecimento — e o
+@sec-cap-011 já mostrou o que acontece quando isso é subestimado.
+
+### O surto de partida
+
+No instante em que a fonte é ligada, o capacitor de filtro está descarregado e se comporta
+como um curto-circuito. A corrente do primeiro semiciclo é limitada apenas pela resistência
+do enrolamento do secundário e pela resistência dos diodos — dezenas de ampères, com
+frequência.
+
+É por isso que a folha de dados especifica $I_{FSM}$ separadamente de $I_{F(AV)}$: um diodo de
+1 A **precisa** aguentar 30 A por 8,3 ms. Fontes maiores usam um termistor NTC em série para
+limitar o surto. O dimensionamento fica no @sec-cap-049; aqui basta saber que a especificação
+existe e por quê.
+
+### Recuperação reversa, e por que ela não importa em 60 Hz
+
+O @sec-cap-046 mostrou que um diodo em condução guarda carga de portadores minoritários e não
+corta instantaneamente. Um 1N4007 leva alguns microssegundos para recuperar.
+
+Em 60 Hz, o semiciclo dura 8,3 ms: dois microssegundos são 0,02 % do ciclo, e ninguém percebe.
+**Em 50 kHz, o ciclo dura 20 µs**, e esses mesmos dois microssegundos viram 10 % do ciclo com
+o diodo conduzindo no sentido errado — dissipação enorme e ruído gerado em toda a faixa.
+
+A regra prática: **até alguns quilohertz, retificador comum; acima disso, ultrarrápido ou
+Schottky.** Um `UF4007` tem os mesmos 1000 V e 1 A do 1N4007, com $t_{rr}$ de 75 ns, e custa
+centavos a mais.
+
+## A armadilha do terra {#sec-048-terra}
+
+Esta seção é a razão de o capítulo abrir com um aviso, e ela precede qualquer medição de
+retificador com osciloscópio.
+
+::: {#fig-048-terra}
+
+```{.tikz}
+%%| filename: 048-terra
+%%| alt: Dois painéis comparando a ligação de um osciloscópio a uma ponte retificadora. No painel da esquerda, marcado como errado com um X vermelho, a ponta de prova é ligada a um dos terminais alternados da entrada da ponte e a garra de terra da ponta é ligada ao terminal alternado oposto; um traço vermelho grosso mostra o caminho do curto-circuito que se forma, saindo da garra, percorrendo a malha do cabo da ponta, indo ao chassi do osciloscópio, descendo pelo fio terra da tomada até o terra da instalação e voltando, curto-circuitando dois diodos da ponte. Uma anotação explica que a garra de terra do osciloscópio está ligada ao terra da instalação elétrica e não é um ponto livre. No painel da direita, marcado como certo, a garra está ligada ao terminal negativo da saída da ponte, que é o terra do circuito, e a ponta mede a saída positiva; o caminho está livre e a medida é válida. Uma nota abaixo dos dois painéis lista as três saídas quando é preciso medir um ponto que não pode ser aterrado: usar um transformador de isolação no circuito sob teste e nunca no osciloscópio, usar a subtração entre dois canais em modo matemático, ou usar uma ponta diferencial.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= ERRADO (painel de cima) =================
+  \begin{scope}[shift={(0,0)}]
+    \coordinate (E) at (0,1.7); \coordinate (T) at (1.5,2.9);
+    \coordinate (D) at (3.0,1.7); \coordinate (B) at (1.5,0.5);
+    \draw (E) to[D] (T);  \draw (B) to[D] (D);
+    \draw (E) to[D, invert] (B); \draw (T) to[D, invert] (D);
+    \foreach \n in {E,T,D,B}{\node[circ] at (\n) {};}
+    \draw (E) -- (-1.1,1.7); \draw (D) -- (4.1,1.7);
+    \draw (-1.1,1.7) -- (-1.1,3.7) -- (4.1,3.7) -- (4.1,1.7);
+    \draw (0.9,3.7) to[sV, l=$v_{\text{sec}}$] (2.1,3.7);
+    \draw (T) -- (1.5,4.3) -- (5.4,4.3);
+    \draw (B) -- (1.5,-0.1) -- (5.4,-0.1);
+    \draw (5.4,4.3) to[R, l=$R_L$] (5.4,-0.1);
+
+    % osciloscopio
+    \draw[thick] (7.0,0.6) rectangle (9.0,2.8);
+    \node[align=center, font=\tiny] at (8.0,1.7) {osciloscópio};
+    \draw[manualgray, very thick] (8.0,0.6) -- (8.0,-0.1) -- (8.0,-0.8);
+    \node[ground] at (8.0,-0.8) {};
+    \node[manualgray, anchor=west, font=\tiny, align=left] at (8.15,-0.5)
+         {terra da instalação\\(pelo cabo de força)};
+
+    % ponta e garra
+    \draw[manualblue, very thick] (7.0,2.4) -- (6.3,2.4) -- (6.3,5.0)
+          -- (-1.1,5.0) -- (-1.1,3.7);
+    \node[manualblue, anchor=south, font=\tiny] at (2.6,5.05) {ponta};
+    \draw[manualred, very thick] (7.0,1.0) -- (6.6,1.0) -- (6.6,-1.6)
+          -- (4.1,-1.6) -- (4.1,1.7);
+    \node[manualred, anchor=north, font=\tiny] at (5.4,-1.65) {garra de terra};
+
+    % caminho do curto, sobreposto
+    \draw[manualred, line width=2.6pt, opacity=0.45]
+         (4.1,1.7) -- (4.1,-1.6) -- (6.6,-1.6) -- (6.6,1.0) -- (8.0,1.0)
+         -- (8.0,-0.8);
+    \node[manualred, font=\Large\bfseries] at (1.5,1.7) {$\times$};
+    \node[manualred, anchor=north, align=center, font=\scriptsize] at (3.0,-2.3)
+         {\textbf{ERRADO} --- a garra aterra um terminal $\sim$ da ponte, e o
+          caminho pelo cabo de força\\
+          curto-circuita dois diodos: a malha da ponta é o fusível};
+  \end{scope}
+
+  % ================= CERTO (painel de baixo) =================
+  \begin{scope}[shift={(0,-9.2)}]
+    \coordinate (E2) at (0,1.7); \coordinate (T2) at (1.5,2.9);
+    \coordinate (D2) at (3.0,1.7); \coordinate (B2) at (1.5,0.5);
+    \draw (E2) to[D] (T2);  \draw (B2) to[D] (D2);
+    \draw (E2) to[D, invert] (B2); \draw (T2) to[D, invert] (D2);
+    \foreach \n in {E2,T2,D2,B2}{\node[circ] at (\n) {};}
+    \draw (E2) -- (-1.1,1.7); \draw (D2) -- (4.1,1.7);
+    \draw (-1.1,1.7) -- (-1.1,3.7) -- (4.1,3.7) -- (4.1,1.7);
+    \draw (0.9,3.7) to[sV, l=$v_{\text{sec}}$] (2.1,3.7);
+    \draw (T2) -- (1.5,4.3) -- (5.4,4.3);
+    \draw (B2) -- (1.5,-0.1) -- (5.4,-0.1);
+    \draw (5.4,4.3) to[R, l=$R_L$] (5.4,-0.1);
+
+    \draw[thick] (7.0,0.6) rectangle (9.0,2.8);
+    \node[align=center, font=\tiny] at (8.0,1.7) {osciloscópio};
+    \draw[manualgray, very thick] (8.0,0.6) -- (8.0,-0.8);
+    \node[ground] at (8.0,-0.8) {};
+    \node[manualgray, anchor=west, font=\tiny, align=left] at (8.15,-0.5)
+         {terra da instalação};
+
+    \draw[manualblue, very thick] (7.0,2.4) -- (6.3,2.4) -- (6.3,4.3) -- (5.4,4.3);
+    \node[manualblue, anchor=south, font=\tiny] at (6.3,4.4) {ponta: saída $+$};
+    \draw[manualgreen!55!black, very thick] (7.0,1.0) -- (6.6,1.0)
+          -- (6.6,-0.1) -- (5.4,-0.1);
+    \node[manualgreen!55!black, anchor=north, font=\tiny] at (6.3,-0.2)
+         {garra: saída $-$};
+    \node[ground] at (3.4,-0.1) {};
+
+    \node[manualgreen!55!black, anchor=north, align=center, font=\scriptsize]
+         at (3.0,-1.6)
+         {\textbf{CERTO} --- a garra vai ao $-$ da saída, que já é o terra do
+          circuito:\\ nenhum caminho novo se fecha};
+  \end{scope}
+
+  % ================= nota =================
+  \node[anchor=north, align=center, font=\scriptsize] at (4.0,-12.1)
+       {Para medir um ponto que \emph{não} pode ser aterrado, há três saídas:
+        transformador de isolação \textbf{no circuito sob teste}\\ (nunca no
+        osciloscópio), subtração entre dois canais em modo matemático,
+        ou ponta diferencial.};
+
+\end{tikzpicture}
+```
+
+A armadilha que destrói pontas de prova e trilhas de placa. A garra de terra da ponta **não é
+um ponto livre**: ela está ligada ao chassi do osciloscópio, que está ligado ao terra da
+tomada.
+
+:::
+
+O @sec-cap-044 já havia dito que a garra de terra da ponta está no potencial de terra do
+instrumento. Num retificador, isso tem consequência imediata: **os dois terminais alternados
+da entrada da ponte não podem ser aterrados**, e nem um deles pode, se a saída já estiver
+aterrada.
+
+Ligar a garra num deles fecha um caminho pelo cabo da ponta, pelo chassi, pelo fio terra da
+tomada e de volta ao circuito, curto-circuitando dois diodos da ponte. Com um transformador
+de bancada pequeno, o resultado costuma ser um estalo, um cheiro e a malha do cabo da ponta
+derretida. Sem transformador — fonte ligada direto na rede — o resultado é um curto franco
+entre fase e terra, e o que decide o desfecho é o disjuntor.
+
+Três saídas legítimas, e uma proibida:
+
+- **Isolar o circuito sob teste** com um transformador de isolação. Correto, e é para isso que
+  transformador de isolação existe.
+- **Medir com dois canais e subtrair** (`CH1 − CH2` no modo matemático). Ambas as garras vão
+  ao mesmo terra, e a diferença dá a tensão flutuante. Funciona bem, com a limitação de faixa
+  dinâmica do @sec-cap-043.
+- **Ponta diferencial**, que é a solução de instrumento.
+- **Nunca cortar o pino terra do cabo do osciloscópio.** É a "solução" que aparece em fórum,
+  ela funciona, e ela transforma o chassi inteiro do instrumento — e as garras de todas as
+  pontas — em algo que pode estar no potencial da rede. É a receita mais bem documentada de
+  acidente fatal em bancada de eletrônica.
+
+## 🧪 Laboratório {#sec-048-lab}
+
+::: {.callout-warning}
+## Antes de começar
+
+Este roteiro é executado **inteiro** em baixa tensão. Use uma das duas fontes:
+
+- **Gerador de funções** em senoide de 10 V pico a pico, 60 Hz (ou a frequência que o
+  instrumento permitir). É a opção mais segura e a mais controlável.
+- **Fonte de parede de 12 V CA** — o tipo com transformador, que entrega alternada e não
+  contínua. Ela é ligada na tomada já montada e fechada; **o primário nunca é aberto, medido
+  ou tocado**.
+
+**Não** monte este circuito com um transformador de primário exposto na protoboard. Não há
+nada nas partes abaixo que exija isso.
+
+Se usar a fonte de parede, ligue-a **por último**, depois de conferir a montagem inteira, e
+desligue-a da tomada antes de mexer em qualquer fio.
+:::
+
+**Montar as três topologias, medir a tensão média e a de pico de cada uma, e verificar na
+bancada os fatores 0,318 e 0,637 e a duplicação da frequência da ondulação.**
+
+### Material
+
+::: {.lab-material}
+- 1 gerador de funções, **ou** 1 fonte de parede de 12 V CA (com transformador) já montada
+- 1 osciloscópio de dois canais com pontas 10× compensadas
+- 1 multímetro digital com escalas de tensão contínua **e** alternada
+- Diodos: 6 × 1N4007 (ou 4 × 1N4007 + 2 × 1N4148)
+- 1 ponte retificadora encapsulada, tipo KBP206 ou similar, **se houver**
+- Resistores: 1 kΩ / 1 W, 2,2 kΩ / 1/2 W, 10 kΩ / 1/4 W
+- 1 transformador com secundário de tomada central (12-0-12 V), **se houver** — a Parte 3
+  tem alternativa sem ele
+- Protoboard, jumpers
+:::
+
+### Parte 1 — Meia onda
+
+1. Monte: fonte CA → ânodo do 1N4007 → nó de saída → $R_L = 1$ kΩ → terra → volta à fonte.
+2. Com o osciloscópio no nó de saída (garra no terra do circuito), observe a forma de onda.
+   Ela deve ser a @fig-048-meiaonda: arcos positivos separados por trechos planos em zero.
+3. Meça o **pico** da saída no osciloscópio.
+4. Meça a **entrada** no outro canal e anote o pico dela.
+5. Confira: $V_{p(\text{saída})} = V_{p(\text{entrada})} - 0{,}7$ V, dentro de umas dezenas de
+   milivolts.
+6. Meça a saída com o multímetro na escala de **contínua**. Esse é $V_{cc}$.
+7. Confira: $V_{cc} = V_{p(\text{saída})}/\pi$.
+
+| Grandeza | Prevista | Medida |
+|---|---|---|
+| $V_p$ da entrada | | |
+| $V_p$ da saída | $V_p - 0{,}7$ | |
+| $V_{cc}$ (multímetro CC) | $V_{p(\text{saída})}/\pi$ | |
+| Período da ondulação | 16,7 ms | |
+
+: Meia onda. {#tbl-048-lab1}
+
+8. **O ensaio que ensina mais:** meça a saída com o multímetro na escala de **alternada** e
+   compare com a de contínua. Os dois números são diferentes e nenhum é errado — o
+   @sec-cap-028 explica por quê, e a maioria dos multímetros de bancada mede alternada com
+   acoplamento capacitivo, o que remove a componente contínua e mede só a ondulação.
+
+### Parte 2 — Ponte
+
+1. Monte a ponte com quatro 1N4007, ou use o módulo encapsulado. Nos módulos, os terminais
+   `~` são a entrada alternada e `+` e `−` a saída.
+2. **Ligue o terra do circuito no terminal `−` da ponte**, e só nele. Releia a
+   @sec-048-terra antes de encostar a garra do osciloscópio em qualquer lugar.
+3. Observe a saída: arcos contíguos, sem intervalo, com o dobro da frequência.
+4. Meça o pico e confira a queda de **1,4 V** em relação ao pico da entrada.
+5. Meça $V_{cc}$ e confira o fator 0,637.
+6. Meça o **período da ondulação** com os cursores. Deve ser metade do da Parte 1.
+
+| Grandeza | Prevista | Medida |
+|---|---|---|
+| $V_p$ da saída | $V_p - 1{,}4$ | |
+| $V_{cc}$ | $2V_{p(\text{saída})}/\pi$ | |
+| Período da ondulação | 8,3 ms | |
+| Razão $V_{cc}$ ponte / $V_{cc}$ meia onda | ≈ 1,9 | |
+
+: Ponte. A última linha é o resultado do capítulo: **quase o dobro**, e a diferença dos 2,0
+exatos é a queda de diodo a mais. {#tbl-048-lab2}
+
+### Parte 3 — Tomada central
+
+**Com transformador de tomada central**: monte a @fig-048-ondacompleta, com a tomada central
+no terra e um diodo em cada extremo.
+
+**Sem transformador de tomada central**, use o gerador de funções de dois canais: configure os
+dois canais em senoide de mesma amplitude e frequência, com **180° de defasagem** entre eles,
+e ligue o terra comum dos dois na tomada central virtual. É exatamente o mesmo circuito.
+
+1. Observe a saída. Deve ser idêntica à da ponte, com **0,7 V a mais de pico**.
+2. Meça o pico e compare com a ponte.
+3. **Meça a tensão sobre o diodo bloqueado**, com o osciloscópio, garra no terra do circuito.
+   Ela deve chegar a $2V_p$ no pico — o dobro do que a ponte exige, e a razão de esta
+   topologia precisar de diodos de tensão maior.
+
+Este passo 3 é o mais instrutivo do laboratório inteiro, porque ele mede uma especificação de
+folha de dados em vez de apenas lê-la.
+
+### Parte 4 — A carga importa
+
+Com a ponte montada, troque $R_L$ e meça $V_{cc}$ em cada caso:
+
+| $R_L$ | $I_{cc}$ aproximada | $V_{cc}$ medida |
+|---|---|---|
+| 10 kΩ | 1 mA | |
+| 2,2 kΩ | 4,5 mA | |
+| 1 kΩ | 10 mA | |
+
+: Sem capacitor de filtro, a tensão média quase não depende da carga; o que muda é a queda no
+diodo e a regulação do transformador. {#tbl-048-lab3}
+
+A queda esperada de 10 kΩ para 1 kΩ é de alguns por cento. **Guarde esse resultado**: no
+@sec-cap-049, com capacitor de filtro, a mesma variação de carga vai produzir uma diferença
+muito maior — e entender por que é o assunto daquele capítulo.
+
+### Parte 5 — A ondulação, em números
+
+1. Com a ponte e $R_L = 1$ kΩ, ponha o osciloscópio em **acoplamento CA** (@sec-cap-043) e
+   aumente o ganho vertical.
+2. Meça a ondulação pico a pico. Sem capacitor, ela é enorme: praticamente o pico inteiro.
+3. Calcule o **fator de ondulação** — a razão entre o valor eficaz da ondulação e a tensão
+   média — e compare com o 0,482 da @tbl-048-comparacao.
+4. Repita para a meia onda e compare com 1,21.
+
+Esses dois números são o argumento quantitativo de por que ninguém usa retificador sem filtro,
+e a métrica que o @sec-cap-049 vai reduzir por um fator de cem.
+
+**Variante simulada (plano B).** No ngspice, uma análise `.tran 0.1m 50m` sobre as três
+topologias, com `sin(0 17 60)` na fonte e o modelo `D1N4007`, dá as três formas de onda e
+permite medir a média com `.meas tran vmed AVG v(saida)`. No LTspice, a mesma análise sai da
+paleta de componentes em dois minutos, e o comando `.meas` funciona igual. No Falstad, a ponte
+já vem pronta na biblioteca de circuitos, e clicar em cada diodo mostra a corrente instantânea
+por ele — a melhor visualização possível da @fig-048-ponte.
+
+## 🔥 Onde Queima {#sec-048-queima}
+
+**Aterrar um terminal alternado da ponte com a garra do osciloscópio.** Curto-circuito através
+da malha do cabo e do fio terra da tomada. Malha derretida no melhor caso. Aterre o `−` da
+saída, e só ele.
+
+**Cortar o pino terra do osciloscópio para "resolver" o problema acima.** Põe o chassi do
+instrumento e todas as garras no potencial da rede. É a receita clássica de acidente fatal.
+
+**Esquecer o fator $\sqrt2$.** Um secundário de 12 V eficazes dá 17 V de pico. Com capacitor de
+filtro, a saída fica em 17 V, não em 12 — e o regulador de 15 V máximos morre na primeira
+tentativa.
+
+**Usar a tensão do transformador a vazio.** Transformador pequeno entrega 10 % a 20 % a mais
+sem carga. O pico real pode passar de 20 V num "12 V".
+
+**Especificar diodo de tomada central para $V_p$ em vez de $2V_p$.** O diodo bloqueado suporta
+a soma das duas metades. Com 12-0-12 V são 34 V, não 17 V.
+
+**Especificar diodo de meia onda com filtro para $V_p$.** Com o capacitor segurando a saída em
+$+V_p$ enquanto o secundário está em $-V_p$, a tensão reversa é $2V_p$.
+
+**Ignorar $I_{FSM}$.** Ao ligar, o capacitor descarregado é um curto e a corrente do primeiro
+semiciclo chega a dezenas de ampères. Diodo de 1 A com $I_{FSM}$ de 30 A não é exagero; é o
+mínimo.
+
+**Usar 1N4007 em fonte chaveada ou em qualquer coisa acima de alguns quilohertz.** O $t_{rr}$
+de microssegundos vira fração significativa do ciclo. Use UF4007 ou Schottky.
+
+**Dimensionar o transformador pela corrente contínua de saída.** Com capacitor de filtro, a
+corrente do secundário é pulsante e o valor eficaz dela é bem maior que a média. Um
+transformador de 1 A entrega uns 600 mA contínuos com folga.
+
+**Calcular a dissipação do diodo com 0,7 V.** No pico dos pulsos de corrente, a queda passa de
+1,1 V. Para tensão de saída, 0,7 V basta; para calor, não.
+
+**Montar um diodo da ponte invertido.** Dois diodos invertidos põem o secundário em curto no
+semiciclo correspondente. Confira faixa por faixa antes de energizar — e, em módulo
+encapsulado, confira `~ ~ + −` na serigrafia.
+
+**Ligar dois retificadores com terras diferentes ao mesmo circuito.** Cada ponte define seu
+próprio `−`; uni-los sem pensar cria caminhos que curto-circuitam diodos. Fontes simétricas
+usam tomada central exatamente para evitar isso.
+
+**Tocar no circuito depois de desligar, com capacitor de filtro montado.** Ele guarda carga. O
+@sec-cap-049 dimensiona o resistor de descarga; até lá, meça antes de tocar.
+
+## O que fica deste capítulo {#sec-048-resumo}
+
+O ponto de partida é sempre o **pico**, não o valor eficaz:
+$V_p = \sqrt2\,V_{\text{rms}} = 1{,}414\,V_{\text{rms}}$. Um secundário de 12 V dá 17 V de
+pico, e um transformador a vazio dá mais ainda.
+
+**Meia onda:** um diodo, $V_{cc} = 0{,}318\,V_p$, ondulação na frequência da rede, PIV $= V_p$
+sem filtro e $2V_p$ com. Barato, ineficiente, e a ondulação está na frequência mais difícil de
+filtrar.
+
+**Onda completa com tomada central:** dois diodos, $V_{cc} = 0{,}637\,V_p$, ondulação em $2f$,
+**uma só queda de diodo** — e PIV $= 2V_p$, que é o preço. Sobrevive onde 0,7 V faz
+diferença: fontes de baixa tensão e saídas simétricas.
+
+**Ponte:** quatro diodos, $V_{cc} = 0{,}637\,V_p$, ondulação em $2f$, PIV $= V_p$,
+transformador simples com o enrolamento usado integralmente, e módulo encapsulado pronto. O
+preço são **duas quedas de diodo**, 1,4 V, que doem em saída de 5 V.
+
+Dobrar a frequência da ondulação vale tanto quanto dobrar a tensão média: com o mesmo
+capacitor de filtro, onda completa produz **um quarto** da ondulação de meia onda.
+
+Três coisas que a tabela não diz e que decidem o projeto:
+
+- **A queda no pico de corrente passa de 1,1 V.** Use 0,7 V para tensão, e a queda real para
+  dissipação.
+- **O surto de partida chega a dezenas de ampères**, porque o capacitor descarregado é um
+  curto. É a razão de $I_{FSM}$ existir.
+- **Recuperação reversa é irrelevante em 60 Hz e fatal em 50 kHz.** Até alguns quilohertz,
+  1N4007; acima, UF4007 ou Schottky.
+
+E a regra de bancada que vale para o resto da Fase 3: **a garra de terra da ponta de prova não
+é um ponto livre.** Ela está ligada ao terra da tomada. Num retificador, ela vai ao `−` da
+saída e a lugar nenhum mais. Se for preciso medir um ponto flutuante: isolação no circuito sob
+teste, subtração entre dois canais, ou ponta diferencial — nunca cortar o pino terra do
+instrumento.
+
+## Para o próximo capítulo {#sec-048-fecho}
+
+A saída de qualquer uma das três topologias é contínua no sinal e horrível em qualidade: ela
+vai de zero ao pico e volta, cento e vinte vezes por segundo. Nenhum circuito eletrônico se
+alimenta disso.
+
+Falta o componente que armazena energia entre os picos e a devolve nos vales — e o Volume 4
+já o entregou. O @sec-cap-049 põe um capacitor em paralelo com a carga e transforma a coisa
+inteira: a tensão média salta de $0{,}637\,V_p$ para quase $V_p$, a ondulação cai a poucos por
+cento, e três consequências novas aparecem, todas antecipadas neste capítulo — o surto de
+partida, a corrente pulsante do secundário, e a tensão reversa que dobra no meia onda.
+
+E ele traz a fórmula que se usa a vida inteira para dimensionar o capacitor de uma fonte,
+com um erro de projeto embutido que quase todo iniciante comete: escolher a capacitância certa
+para uma tensão de trabalho errada.
