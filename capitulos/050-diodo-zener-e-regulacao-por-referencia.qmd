@@ -1,3 +1,774 @@
 # Diodo Zener e regulação por referência {#sec-cap-050}
 
-*(em elaboração)*
+O @sec-cap-049 deixou uma fonte que entrega 15,2 V com 0,9 V de ondulação, e três defeitos que
+mais capacitância não resolve: a ondulação continua lá, a tensão cai quando a carga aumenta, e
+a tensão sobe quando a rede sobe.
+
+O que falta é um componente que **force** a tensão a um valor fixo — que absorva a diferença,
+qualquer que seja ela. E o @sec-cap-046 já mostrou onde procurar: na região de **ruptura**, a
+curva característica da junção é quase vertical. Uma curva vertical num gráfico $I$–$V$ é
+exatamente a definição de fonte de tensão ideal.
+
+O diodo Zener é uma junção projetada para trabalhar ali, a vida inteira, sem se destruir. Este
+capítulo mostra como ele funciona, como se projeta o regulador mais simples que existe, e —
+o que importa tanto quanto — **onde esse regulador não serve**, que é a maioria dos casos
+reais.
+
+Ao final, o "resistor mais Zener" deixa de ser uma receita e vira um projeto com pior caso
+verificado. E fica claro por que quase toda fonte real usa um Zener como **referência** e não
+como **regulador**.
+
+## Trabalhar em ruptura de propósito {#sec-050-ruptura}
+
+Um retificador em ruptura queima; um Zener em ruptura funciona. A diferença não está no
+fenômeno, e sim no projeto: o Zener é fabricado com dopagem, geometria e área escolhidas para
+que a ruptura ocorra numa tensão **precisa e repetível**, e para que a pastilha e o
+encapsulamento dissipem o calor resultante.
+
+::: {#fig-050-curva}
+
+```{.tikz}
+%%| filename: 050-curva
+%%| alt: Curva característica completa de um diodo Zener, com os dois quadrantes em escalas diferentes. No primeiro quadrante, à direita, a curva de condução direta comum, exponencial, começando a subir por volta de zero vírgula sete volt: em polarização direta o Zener é um diodo comum. No terceiro quadrante, à esquerda, a corrente reversa é praticamente nula até a tensão de ruptura, marcada como V sub Z, quando a curva faz um joelho abrupto e desce quase verticalmente. Três pontos estão marcados sobre esse trecho vertical: o joelho, com corrente I sub ZK, onde a regulação ainda é ruim; o ponto de ensaio, com corrente I sub ZT, onde a tensão nominal é especificada; e o limite superior, com corrente I sub ZM, fixado pela potência máxima do encapsulamento. Uma anotação mostra que o trecho não é exatamente vertical, e que sua inclinação é o inverso da resistência dinâmica r sub z. Faixas sombreadas marcam a região de operação útil, entre o joelho e o limite, e as duas regiões proibidas: abaixo do joelho, onde não há regulação, e acima do limite, onde o componente queima.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ===== eixos: direita 1 V = 2,4 cm ; esquerda 1 V = 0,62 cm =====
+  \draw[eixo] (-5.4,0) -- (3.0,0) node[anchor=north west, font=\scriptsize] {$V$};
+  \draw[eixo] (0,-4.3) -- (0,2.3) node[anchor=south east, font=\scriptsize] {$I$};
+
+  % marca de corte de escala
+  \draw[manualgray, thick] (-0.30,-0.20) -- (-0.16,0.20);
+  \draw[manualgray, thick] (-0.44,-0.20) -- (-0.30,0.20);
+
+  % ===== faixa util e faixas proibidas =====
+  \fill[manualgreen!16] (-3.75,-3.5) rectangle (-2.95,-0.55);
+  \fill[manualred!12]   (-3.75,-4.15) rectangle (-2.95,-3.5);
+  \fill[manualyellow!16](-3.75,-0.55) rectangle (-2.95,0);
+
+  % ===== ramo direto =====
+  % dominio limitado a 0,80 V, onde a curva chega ao topo do eixo
+  \draw[curva, samples=140, domain=0:0.80, variable=\v, smooth]
+       plot ({\v*2.4}, {exp(\v/0.0565 - 13.35)});
+  % ===== ramo reverso =====
+  \draw[curva] (-3.10,-0.03) -- (0,0);
+  \draw[curva, line width=1.6pt] (-3.10,-0.03) .. controls (-3.24,-0.30)
+        and (-3.30,-0.55) .. (-3.32,-0.55) -- (-3.52,-4.05);
+
+  % ===== escalas =====
+  \foreach \v/\x in {0.4/0.96, 0.8/1.92}{
+    \draw[manualgray] (\x,0.08) -- (\x,-0.08);
+    \node[anchor=north, font=\tiny] at (\x,-0.10) {$\v$};}
+  \node[anchor=south, font=\tiny] at (-3.16,0.12) {$-V_Z$};
+  \node[anchor=south west, font=\tiny, manualgray] at (2.0,0.1) {V (direta)};
+
+  % ===== pontos notaveis =====
+  \node[ponto] at (-3.32,-0.55) {};
+  \node[ponto] at (-3.40,-1.85) {};
+  \node[ponto] at (-3.52,-4.05) {};
+
+  \node[manualyellow!75!black, anchor=west, font=\scriptsize, align=left] at (-2.85,-0.55)
+       {$I_{ZK}$ --- \textbf{joelho}\\
+        abaixo daqui não há regulação};
+  \node[manualblue, anchor=west, font=\scriptsize, align=left] at (-2.85,-1.85)
+       {$I_{ZT}$ --- corrente de ensaio\\
+        é aqui que $V_Z$ é especificado};
+  \node[manualred, anchor=west, font=\scriptsize, align=left] at (-2.85,-4.05)
+       {$I_{ZM} = P_{\max}/V_Z$\\
+        acima daqui o encapsulamento queima};
+
+  \node[manualgreen!55!black, rotate=90, font=\scriptsize, align=center]
+       at (-3.66,-2.0) {faixa útil de operação};
+
+  % ===== inclinacao =====
+  \draw[destaque, dashed] (-3.35,-1.2) -- (-4.20,-1.2);
+  \draw[destaque, dashed] (-3.47,-2.6) -- (-4.20,-2.6);
+  \draw[destaque, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}] (-4.10,-1.2) -- (-4.10,-2.6);
+  \node[manualred, anchor=east, font=\scriptsize] at (-4.25,-1.9) {$\Delta I$};
+  \node[manualred, anchor=north west, font=\scriptsize, align=left] at (-5.4,-4.35)
+       {a reta \textbf{não} é vertical: a inclinação é $1/r_z$,\\
+        com $r_z$ de $2$ a $50\ \Omega$ --- e é ela que decide\\
+        a qualidade da regulação};
+
+  \node[anchor=north, font=\scriptsize, align=center] at (0.0,-5.4)
+       {\textbf{Em direta o Zener é um diodo comum}, com os mesmos $0{,}7$ V ---
+        e isso é usado\\ de propósito no ceifador simétrico, mais adiante no capítulo.};
+
+\end{tikzpicture}
+```
+
+A curva do Zener. Tudo o que interessa está no terceiro quadrante, e o projeto consiste em
+manter o ponto de operação **dentro da faixa verde**: acima do joelho, para haver regulação;
+abaixo do limite de potência, para não queimar.
+
+:::
+
+Três correntes nomeiam a curva, e as três aparecem na folha de dados:
+
+- **$I_{ZK}$**, corrente de joelho. Abaixo dela a curva ainda está dobrando e a tensão varia
+  muito com a corrente — não há regulação. Tipicamente 0,25 a 1 mA.
+- **$I_{ZT}$**, corrente de ensaio. É nela que o fabricante mede e garante $V_Z$. Um
+  1N4733 de 5,1 V tem $I_{ZT} = 49$ mA; sair muito dessa corrente muda a tensão de saída em
+  alguns por cento.
+- **$I_{ZM}$**, corrente máxima, que é simplesmente $P_{\max}/V_Z$. Num 1N4733 de 1 W e
+  5,1 V, isso dá 196 mA.
+
+E o parâmetro que descreve a qualidade da regulação:
+
+$$ r_z = \frac{\Delta V_Z}{\Delta I_Z}, $$
+
+a **resistência dinâmica**, medida em $I_{ZT}$. Ela vale de 2 a 50 Ω conforme o modelo, é
+menor perto de 6 a 8 V, e cresce muito perto do joelho. **É $r_z$ que separa um regulador
+Zener decente de um ruim**, e é ela que entra em todas as contas da @sec-050-regulacao.
+
+::: {.callout-note}
+## O símbolo, e por que ele é assim
+
+O símbolo do Zener é o do diodo comum com a barra do cátodo dobrada nas pontas, formando um
+"Z" deitado. A dobra existe para lembrar que o componente trabalha **para trás**.
+
+Isso tem uma consequência de montagem que confunde todo mundo pelo menos uma vez: **num
+regulador Zener, o cátodo — a faixa — vai para o lado positivo.** É o contrário de um
+retificador. Se o Zener for montado como se fosse um diodo comum, ele conduz em direta com
+0,7 V e a saída inteira desaba para esse valor. O sintoma é inconfundível, e a causa é sempre
+a mesma.
+:::
+
+## Os dois mecanismos, e os 5,6 V {#sec-050-mecanismos}
+
+O @sec-cap-046 já separou os dois fenômenos. Vale retomá-los porque agora eles têm
+consequência de projeto.
+
+**Efeito Zener (tunelamento)** domina abaixo de uns 5 V, em junções muito dopadas onde a
+depleção é estreitíssima. O coeficiente de temperatura é **negativo**: esquentar diminui
+$V_Z$.
+
+**Avalanche** domina acima de uns 6 V. O coeficiente é **positivo**: esquentar aumenta $V_Z$,
+porque a rede vibra mais e o portador colide antes de ganhar energia para ionizar.
+
+Entre 5 e 6 V os dois coexistem, e os coeficientes opostos se cancelam.
+
+::: {#fig-050-coefT}
+
+```{.tikz}
+%%| filename: 050-coefT
+%%| alt: Gráfico do coeficiente de temperatura de um diodo Zener, em milivolts por grau Celsius no eixo vertical, de menos três a mais dezoito, contra a tensão nominal do Zener em volts no eixo horizontal, de dois a vinte. A curva parte negativa em torno de menos dois milivolts por grau para Zeners de dois a três volts, sobe suavemente, cruza o zero por volta de cinco vírgula seis volts e depois cresce quase linearmente, chegando a mais dezesseis milivolts por grau em vinte volts. Uma faixa vertical sombreada destaca a região entre cinco e seis volts, onde o coeficiente passa por zero, com a anotação de que ali o efeito Zener, de coeficiente negativo, e a avalanche, de coeficiente positivo, se cancelam, e que é por isso que a referência de tensão mais estável obtida com uma junção sozinha fica em cinco vírgula seis volts. Uma segunda anotação registra que abaixo de cinco volts domina o tunelamento e acima de seis volts domina a avalanche.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13cm, height=8.2cm,
+  xlabel={$V_Z$ nominal (V)},
+  ylabel={coeficiente de temperatura (mV/$^{\circ}$C)},
+  xmin=2, xmax=20, ymin=-4, ymax=18,
+  xtick={2,4,5.6,8,10,12,14,16,18,20},
+  xticklabels={2,4,{5,6},8,10,12,14,16,18,20},
+  ytick={-4,-2,0,2,4,6,8,10,12,14,16,18},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+]
+
+% faixa de cancelamento
+\addplot[draw=none, fill=manualgreen!18, forget plot]
+  coordinates {(5.0,-4) (6.0,-4) (6.0,18) (5.0,18)} \closedcycle;
+
+\addplot[manualblue, very thick, smooth] coordinates {
+  (2.4,-2.0) (3.3,-1.8) (3.9,-1.5) (4.7,-1.1) (5.1,-0.6) (5.6,0)
+  (6.2,1.2) (6.8,2.4) (7.5,3.5) (8.2,4.5) (9.1,5.8) (10,6.9)
+  (12,9.1) (13,10.2) (15,12.2) (16,13.2) (18,15.0) (20,16.5)};
+
+\addplot[manualgray, dashed, thick, domain=2:20, samples=2] {0};
+
+\node[manualgreen!55!black, anchor=south, font=\scriptsize, align=center]
+     at (axis cs:5.5,4.6)
+     {aqui os dois\\mecanismos\\se cancelam};
+\draw[manualgreen!55!black, -{Latex[length=1.6mm]}]
+     (axis cs:5.5,4.4) -- (axis cs:5.6,0.4);
+
+\node[manualred, anchor=north west, font=\scriptsize, align=left]
+     at (axis cs:7.0,-0.9)
+     {abaixo de $5$ V: \textbf{tunelamento}, coeficiente negativo};
+\draw[manualred, -{Latex[length=1.6mm]}] (axis cs:6.9,-1.2) -- (axis cs:3.6,-1.7);
+
+\node[manualblue, anchor=south east, font=\scriptsize, align=right]
+     at (axis cs:19.5,7.0)
+     {acima de $6$ V: \textbf{avalanche}\\
+      coeficiente positivo, e\\
+      aproximadamente $0{,}08\ \%$ por $^{\circ}$C};
+
+\end{axis}
+
+\node[anchor=north, font=\scriptsize, align=center] at (6.5,-1.1)
+     {Valores típicos. \textbf{O Zener de 5,6 V é a referência mais estável que se obtém de
+      uma junção sozinha}\\ --- e a razão é este cruzamento, não uma preferência de
+      fabricante.};
+
+\end{tikzpicture}
+```
+
+O coeficiente de temperatura contra a tensão nominal. O cruzamento por zero em torno de 5,6 V
+não é coincidência: é onde dois mecanismos com sinais opostos têm o mesmo peso.
+
+:::
+
+Duas consequências práticas:
+
+**Para referência de tensão, prefira 5,6 V.** Um 1N4734 (5,6 V) deriva menos de 0,1 mV/°C, e
+um 1N4742 (12 V) deriva 9 mV/°C — noventa vezes mais. Numa faixa de 40 °C, isso é 0,4 mV
+contra 360 mV.
+
+**A resistência dinâmica também tem um mínimo por ali.** Zeners de 6 a 8 V têm o menor $r_z$
+da família, tipicamente 2 a 7 Ω, contra 20 a 40 Ω em Zeners de 3 V e valores parecidos acima
+de 20 V. Baixa tensão de Zener é ruim duas vezes.
+
+E é por isso que referências integradas de precisão — o LM329, o LM399, as *bandgap* — quase
+sempre trazem uma junção em avalanche perto de 6,3 V com compensação, e não um Zener de 3 V.
+
+## O regulador Zener {#sec-050-regulador}
+
+O circuito é um divisor de tensão em que o elemento de baixo tem curva vertical.
+
+::: {#fig-050-regulador}
+
+```{.tikz}
+%%| filename: 050-regulador
+%%| alt: À esquerda, o esquemático do regulador Zener: da entrada não regulada sai um resistor em série, chamado R sub S, até o nó de saída; desse nó desce um diodo Zener até o terra, desenhado com o cátodo para cima, isto é, com a faixa voltada para o lado positivo, e em paralelo com ele desce o resistor de carga. Setas marcam as três correntes: a corrente total no resistor série, a corrente que desvia pelo Zener e a corrente que vai para a carga, com a anotação de que a primeira é a soma das outras duas. À direita, dois quadros descrevem os dois piores casos que o projeto precisa verificar. O primeiro quadro, com entrada máxima e carga mínima, mostra que toda a corrente sobra para o Zener e que é essa a condição de máxima dissipação nele. O segundo quadro, com entrada mínima e carga máxima, mostra que sobra o mínimo para o Zener e que é essa a condição que pode fazê-lo cair abaixo do joelho e perder a regulação. Abaixo, a fórmula do resistor série aparece destacada.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquematico =================
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,0) to[battery1, l=$V_{\text{in}}$] (0,3.4);
+    \draw (0,3.4) to[R, l=$R_S$, -*] (3.2,3.4);
+    \draw (3.2,3.4) to[zD, l=$V_Z$, *-] (3.2,0);
+    \draw (3.2,3.4) -- (5.0,3.4);
+    \draw (5.0,3.4) to[R, l=$R_L$] (5.0,0);
+    \draw (0,0) -- (5.0,0);
+    \node[ground] at (1.6,0) {};
+    \node[circ] at (3.2,3.4) {};
+
+    \draw[manualblue, -{Latex[length=1.6mm]}, thick] (1.0,4.15) -- (1.9,4.15);
+    \node[manualblue, anchor=south, font=\tiny] at (1.45,4.2) {$I_S$};
+    \draw[manualgreen!55!black, -{Latex[length=1.6mm]}, thick] (2.75,2.3) -- (2.75,1.5);
+    \node[manualgreen!55!black, anchor=east, font=\tiny] at (2.7,1.9) {$I_Z$};
+    \draw[manualred, -{Latex[length=1.6mm]}, thick] (5.75,2.3) -- (5.75,1.5);
+    \node[manualred, anchor=west, font=\tiny] at (5.8,1.9) {$I_L$};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (2.5,-0.8)
+         {$I_S = I_Z + I_L$ --- o Zener \textbf{absorve a sobra}\\
+          O cátodo (a faixa) vai para \textbf{cima}};
+  \end{scope}
+
+  % ================= piores casos =================
+  \node[draw=manualred, very thick, rounded corners=3pt, anchor=north west,
+        align=left, inner sep=6pt, font=\scriptsize] at (7.4,4.0)
+       {\textbf{Pior caso 1 --- o Zener queima}\\[2pt]
+        $V_{\text{in}}$ \textbf{máxima} e $I_L$ \textbf{mínima} (carga desligada)\\[2pt]
+        $I_{Z(\max)} = \dfrac{V_{\text{in(máx)}} - V_Z}{R_S} - I_{L(\min)}$\\[4pt]
+        Verifique: $P_Z = V_Z\,I_{Z(\max)} < P_{\max}$};
+
+  \node[draw=manualyellow!75!black, very thick, rounded corners=3pt, anchor=north west,
+        align=left, inner sep=6pt, font=\scriptsize] at (7.4,0.9)
+       {\textbf{Pior caso 2 --- a regulação some}\\[2pt]
+        $V_{\text{in}}$ \textbf{mínima} e $I_L$ \textbf{máxima}\\[2pt]
+        $I_{Z(\min)} = \dfrac{V_{\text{in(mín)}} - V_Z}{R_S} - I_{L(\max)}$\\[4pt]
+        Verifique: $I_{Z(\min)} > I_{ZK}$ --- na prática, $\ge 5$ mA};
+
+  \node[draw=manualgreen!55!black, very thick, rounded corners=3pt, anchor=north,
+        align=center, inner sep=7pt, font=\small] at (5.5,-1.6)
+       {$R_S \;=\; \dfrac{V_{\text{in(mín)}} - V_Z}{I_{Z(\min)} + I_{L(\max)}}$
+        \quad --- dimensione pelo caso 2, e \emph{depois} verifique o caso 1};
+
+\end{tikzpicture}
+```
+
+O regulador Zener e os dois piores casos. Eles são **opostos**, e é por isso que o projeto
+exige as duas verificações: o valor de $R_S$ que garante regulação com carga cheia é o mesmo
+que impõe a dissipação máxima com carga desligada.
+
+:::
+
+O princípio: $R_S$ deixa passar mais corrente do que a carga precisa, e o Zener **absorve a
+sobra**. Se a carga pede menos, o Zener absorve mais; se a entrada sobe, o Zener absorve mais.
+A tensão de saída fica presa em $V_Z$ enquanto houver sobra para absorver.
+
+Daí sai a limitação estrutural, e ela é grande: **a corrente total é sempre a máxima**, mesmo
+com a carga desligada. Um regulador Zener consome do mesmo jeito o tempo todo.
+
+### Projeto completo
+
+**Regular a saída do @sec-cap-049 — 15 V nominais, variando ±10 % — para 5,1 V, alimentando
+uma carga de 0 a 20 mA.**
+
+1. **Faixa de entrada.** $V_{\text{in}}$ de 13,5 V a 16,5 V.
+2. **Escolha do Zener.** 1N4733A: $V_Z = 5{,}1$ V, 1 W, $r_z = 7\ \Omega$ em
+   $I_{ZT} = 49$ mA, $I_{ZK} = 1$ mA.
+3. **Corrente mínima de Zener.** Adote $I_{Z(\min)} = 5$ mA — bem acima do joelho de 1 mA,
+   com folga para tolerâncias.
+4. **Dimensione $R_S$ pelo pior caso 2:**
+   $$ R_S = \frac{13{,}5 - 5{,}1}{0{,}005 + 0{,}020} = \frac{8{,}4}{0{,}025} = 336\ \Omega
+      \;\rightarrow\; \textbf{330 } \Omega \text{ (E24)}. $$
+   Arredondar **para baixo** aumenta a corrente e é o lado seguro para o caso 2.
+5. **Verifique o caso 2 com o valor real:**
+   $I_S = (13{,}5 - 5{,}1)/330 = 25{,}5$ mA, logo $I_Z = 25{,}5 - 20 = 5{,}5$ mA. Acima dos
+   5 mA. ✓
+6. **Verifique o caso 1:** com $V_{\text{in}} = 16{,}5$ V e carga desligada,
+   $I_Z = (16{,}5 - 5{,}1)/330 = 34{,}5$ mA, e
+   $P_Z = 5{,}1 \times 0{,}0345 = 176$ mW. Num Zener de 1 W, folga de 5,7 vezes. ✓
+7. **Verifique o resistor**, que quase todo mundo esquece:
+   $P_{R_S} = (16{,}5-5{,}1)^2/330 = 394$ mW. **Um resistor de 1/4 W não serve.** Use 1/2 W,
+   ou melhor, 1 W.
+
+### O rendimento é ruim, e é bom saber quanto
+
+Com $V_{\text{in}} = 15$ V e a carga puxando 20 mA:
+
+$$ I_S = \frac{15 - 5{,}1}{330} = 30\ \text{mA},
+   \qquad P_{\text{entrada}} = 15 \times 0{,}030 = 450\ \text{mW}, $$
+$$ P_{\text{saída}} = 5{,}1 \times 0{,}020 = 102\ \text{mW}
+   \qquad\Longrightarrow\qquad \eta = 23\ \%. $$
+
+Setenta e sete por cento da energia vira calor, e **com a carga desligada o consumo não muda**.
+Um regulador Zener é aceitável para alguns miliampères e inaceitável acima disso.
+
+## Quão boa é a regulação {#sec-050-regulacao}
+
+Aqui entra $r_z$, e a análise é a do modelo 3 do @sec-cap-047 aplicada ao trecho de ruptura:
+o Zener vira uma bateria de $V_Z$ em série com $r_z$.
+
+**Regulação de linha** — quanto a saída muda quando a entrada muda. O circuito vira um divisor
+entre $R_S$ e $r_z$:
+
+$$ \frac{\Delta V_{\text{out}}}{\Delta V_{\text{in}}} = \frac{r_z}{r_z + R_S}. $$
+
+No exemplo: $7/337 = 0{,}0208$. Uma variação de ±1,5 V na entrada produz **±31 mV** na saída —
+uma atenuação de 48 vezes, ou 34 dB (@sec-cap-041).
+
+**Esse mesmo número vale para a ondulação.** Os 0,9 V pico a pico que sobraram do
+@sec-cap-049 aparecem na saída como $0{,}9 \times 0{,}0208 = 19$ mV pico a pico. **É esse o
+principal serviço que o Zener presta numa fonte simples**, e ele é enorme.
+
+**Regulação de carga** — quanto a saída muda quando a corrente da carga muda. Do ponto de
+vista da carga, o circuito é uma fonte de Thévenin (@sec-cap-018) com resistência interna
+$r_z \parallel R_S$:
+
+$$ \Delta V_{\text{out}} = -\Delta I_L \,(r_z \parallel R_S). $$
+
+No exemplo: $r_z \parallel R_S = 7 \parallel 330 = 6{,}85\ \Omega$, e a carga variando de 0 a
+20 mA produz $-20\ \text{mA} \times 6{,}85\ \Omega = -137$ mV.
+
+Compare os dois números: **31 mV de regulação de linha contra 137 mV de regulação de carga**.
+O regulador Zener é bom contra variação de entrada e medíocre contra variação de carga — e é
+exatamente por isso que a solução prática é a próxima seção.
+
+::: {.callout-important}
+## Zener como referência, não como regulador
+
+O regulador Zener sozinho tem resistência de saída de alguns ohms, rendimento de 20 % e
+corrente limitada a dezenas de miliampères. Nenhuma fonte séria o usa assim.
+
+O que se usa é o Zener como **referência de tensão** — um ponto fixo que consome pouco e
+estável — seguido de um elemento que forneça a corrente: um seguidor de emissor (Volume 9), um
+amplificador operacional com transistor de passagem (Volume 11), ou simplesmente um regulador
+integrado da família 78xx, que é as duas coisas num encapsulamento de três pinos.
+
+Nessa configuração o Zener trabalha com corrente **constante e pequena** — o que o mantém no
+melhor ponto da curva —, e a corrente da carga vem de outro lugar. A resistência de saída cai
+de 7 Ω para miliohms, e o rendimento passa a depender só da queda no elemento de passagem.
+
+Guarde a distinção: **o Zener define a tensão; outro componente entrega a corrente.** Ela é a
+ponte deste capítulo para o Volume 9.
+:::
+
+## Escolher o Zener {#sec-050-escolha}
+
+| Família | Potência | Tensões | Observação |
+|---|---|---|---|
+| BZX79 / 1N52xx | 0,4 – 0,5 W | 2,4 a 75 V | vidro, DO-35, para referência |
+| 1N47xx | 1 W | 3,3 a 100 V | DO-41, a família de uso geral |
+| 1N53xx | 5 W | 3,3 a 200 V | corpo grande, precisa de dissipação |
+| BZT52 | 0,2 – 0,5 W | 2,4 a 39 V | SOD-123, montagem em superfície |
+
+: As famílias que se encontram em qualquer loja. A série 1N47xx resolve quase tudo na bancada.
+{#tbl-050-familias}
+
+Os valores da série 1N47xx que aparecem o tempo todo:
+
+| Código | $V_Z$ | $I_{ZT}$ | $r_z$ típica | Uso comum |
+|---|---|---|---|---|
+| 1N4728A | 3,3 V | 76 mA | 10 Ω | lógica antiga |
+| 1N4732A | 4,7 V | 53 mA | 8 Ω | referência de baixa tensão |
+| 1N4733A | 5,1 V | 49 mA | 7 Ω | trilho de 5 V |
+| 1N4734A | 5,6 V | 45 mA | 5 Ω | **melhor referência da família** |
+| 1N4735A | 6,2 V | 41 mA | 2 Ω | **menor $r_z$ da família** |
+| 1N4740A | 10 V | 25 mA | 7 Ω | proteção, ceifador |
+| 1N4742A | 12 V | 21 mA | 9 Ω | trilho de 12 V |
+| 1N4744A | 15 V | 17 mA | 14 Ω | proteção de entrada |
+
+: Os oito Zeners que resolvem quase tudo. O sufixo `A` indica tolerância de 5 %; sem ele, é
+10 %. {#tbl-050-1n47xx}
+
+Três critérios além da tensão:
+
+**Tolerância.** 5 % no sufixo `A`, 10 % sem ele. Um "5,1 V" de 5 % está entre 4,85 e 5,36 V.
+Se o circuito precisa de melhor que isso, Zener não é a resposta — é referência integrada.
+
+**Potência, com margem real.** Calcule $P_Z$ no pior caso 1 e escolha um componente com pelo
+menos o dobro. E lembre que a potência nominal supõe uma condição de montagem: a folha de dados
+do 1N47xx especifica 1 W **com os terminais a 9,5 mm do corpo mantidos a 50 °C**. Numa
+protoboard, sem esse caminho térmico, conte com bem menos.
+
+**Ruído.** Zeners em avalanche são **fontes de ruído** — o processo de multiplicação é
+estatístico, e o resultado é ruído de banda larga de dezenas de microvolts eficazes. Em fonte
+de alimentação isso é irrelevante; em referência de precisão ou em circuito de baixo nível,
+não é. A providência padrão é um capacitor de 100 nF a 10 µF em paralelo com o Zener, que
+corta o ruído acima da frequência de corte do RC formado com $r_z$.
+
+## Outros usos do Zener {#sec-050-aplicacoes}
+
+::: {#fig-050-aplicacoes}
+
+```{.tikz}
+%%| filename: 050-aplicacoes
+%%| alt: Dois painéis. No painel da esquerda, o ceifador simétrico: um resistor em série leva o sinal de entrada ao nó de saída, e desse nó descem ao terra dois diodos Zener ligados em oposição, cátodo com cátodo. Ao lado, o gráfico mostra em cinza tracejado uma senoide de entrada de amplitude grande e em azul a saída, que acompanha a entrada enquanto ela é pequena e fica achatada em patamares simétricos quando a entrada ultrapassa a soma da tensão de Zener com a queda direta do outro diodo. Anotações registram que o patamar vale a tensão de Zener mais zero vírgula sete volt, e que os dois Zeners são necessários porque em direta o Zener é apenas um diodo comum. No painel da direita, a proteção de entrada: um resistor em série leva o sinal à entrada de um circuito sensível, e do nó protegido desce um Zener ao terra, com o cátodo para cima. Uma anotação indica que em operação normal o Zener está bloqueado e não faz nada, e que num pico de sobretensão ele entra em ruptura e prende a tensão no valor de Zener, com o resistor série absorvendo a diferença, e observa que para descargas rápidas o componente certo é o TVS, assunto do capítulo seguinte.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= ceifador =================
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,2.6) to[R, l=$R$, *-*] (2.2,2.6);
+    \node[anchor=east, font=\tiny] at (-0.15,2.6) {entrada};
+    \draw (2.2,2.6) -- (3.0,2.6);
+    \node[anchor=west, font=\tiny] at (3.1,2.6) {saída};
+    \node[circ] at (2.2,2.6) {};
+    \draw (2.2,2.6) to[zD, l=$Z_1$] (2.2,1.3);
+    \draw (2.2,1.3) to[zD, l=$Z_2$, invert] (2.2,0);
+    \draw (0,0) -- (3.0,0);
+    \node[ground] at (0.8,0) {};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (1.5,-0.55)
+         {\textbf{ceifador simétrico}\\
+          dois Zeners \textbf{cátodo com cátodo}};
+
+    % forma de onda
+    \begin{scope}[shift={(5.0,1.3)}]
+      \draw[eixo] (-0.2,0) -- (5.0,0);
+      \draw[eixo] (0,-1.9) -- (0,1.9);
+      \draw[manualgray!70, dashed, samples=200, domain=0:4.6, smooth, variable=\x]
+           plot ({\x}, {1.75*sin(160*\x)});
+      \draw[curva, samples=200, domain=0:4.6, smooth, variable=\x]
+           plot ({\x}, {max(-0.95, min(0.95, 1.75*sin(160*\x)))});
+      \draw[auxiliar] (0,0.95) -- (4.7,0.95);
+      \draw[auxiliar] (0,-0.95) -- (4.7,-0.95);
+      \node[manualred, anchor=west, font=\tiny] at (4.75,0.95) {$+(V_Z + 0{,}7)$};
+      \node[manualred, anchor=west, font=\tiny] at (4.75,-0.95) {$-(V_Z + 0{,}7)$};
+      \node[anchor=north, align=center, font=\tiny, manualgray] at (2.3,-2.1)
+           {o patamar é $V_Z$ de um mais a queda \emph{direta} do outro\\
+            --- em direta, o Zener é um diodo comum};
+    \end{scope}
+  \end{scope}
+
+  % ================= protecao =================
+  \begin{scope}[shift={(0,-6.0)}]
+    \draw (0,2.6) to[R, l=$R$, *-*] (2.2,2.6);
+    \node[anchor=east, font=\tiny, align=right] at (-0.15,2.6)
+         {sinal externo,\\que pode ter surto};
+    \draw (2.2,2.6) -- (3.4,2.6);
+    \node[circ] at (2.2,2.6) {};
+    \draw (2.2,2.6) to[zD, l=$Z$] (2.2,0);
+    \draw (0,0) -- (4.9,0);
+    \node[ground] at (0.8,0) {};
+    \draw[thick, fill=manualgray!8] (3.4,1.6) rectangle (4.9,3.6);
+    \node[align=center, font=\tiny] at (4.15,2.6) {entrada\\sensível};
+    \draw (4.15,1.6) -- (4.15,0);
+
+    \node[anchor=north, align=center, font=\scriptsize] at (2.4,-0.55)
+         {\textbf{proteção de sobretensão}};
+
+    \node[draw=manualgray!50, rounded corners=2pt, anchor=north west,
+          align=left, inner sep=6pt, font=\scriptsize] at (6.4,3.6)
+         {\textbf{Em operação normal:} o Zener está bloqueado,\\
+          consome nanoampères e não faz absolutamente nada.\\[4pt]
+          \textbf{Num surto:} ele entra em ruptura, prende o nó em\\
+          $V_Z$, e $R$ absorve a diferença --- dissipando
+          $\dfrac{(V_{\text{surto}} - V_Z)^{2}}{R}$.\\[4pt]
+          \textbf{Limite:} um Zener responde em microssegundos e\\
+          tem pouca energia de surto. Para descarga eletrostática\\
+          e transiente rápido, o componente certo é o \textbf{TVS} ---\\
+          é o assunto do capítulo seguinte.};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+Dois usos que não são regulação. No ceifador, os Zeners são montados **cátodo com cátodo**
+justamente porque em direta eles não ceifam nada — são diodos comuns.
+
+:::
+
+**Ceifador simétrico.** Dois Zeners em oposição, em série, do sinal ao terra. A saída fica
+presa em $\pm(V_Z + 0{,}7)$ V: num sentido o Zener rompe e o outro conduz em direta. É o
+limitador de amplitude mais barato que existe, aparece na entrada de amplificadores e em
+osciladores de onda quadrada, e distorce brutalmente — o que às vezes é o objetivo.
+
+**Proteção de sobretensão.** Um Zener do nó protegido ao terra, com um resistor em série antes
+dele. Normalmente ele não faz nada; num surto, ele prende a tensão. É eficaz contra
+sobretensões lentas e insuficiente contra descarga eletrostática, que exige um TVS — o
+@sec-cap-051 explica a diferença.
+
+**Deslocamento de nível.** Um Zener em série desloca um sinal por $V_Z$ volts, mantendo a
+forma. Funciona, gasta corrente permanente, e hoje só se usa onde nada melhor cabe.
+
+**Fonte de corrente rudimentar.** Zener na base de um transistor com resistor de emissor é a
+fonte de corrente mais simples que existe — assunto do Volume 9, mencionado aqui porque a
+referência é a do parágrafo destacado acima.
+
+## 🧪 Laboratório {#sec-050-lab}
+
+**Levantar a curva de ruptura de um Zener, medir $r_z$, projetar um regulador com os dois
+piores casos verificados, e medir a regulação de linha e de carga que ele entrega.**
+
+### Material
+
+::: {.lab-material}
+- 1 fonte ajustável de bancada de 0 a 20 V (ou a fonte do @sec-cap-049, se montada)
+- 1 multímetro digital
+- 1 osciloscópio, para a Parte 5
+- Diodos Zener: 2 × 1N4733 (5,1 V / 1 W), 1 × 1N4742 (12 V / 1 W), 1 × 1N4728 (3,3 V), se
+  houver
+- Resistores: 330 Ω / 1 W, 1 kΩ / 1/2 W, 2,2 kΩ, 4,7 kΩ, 10 kΩ, 100 Ω / 1 W
+- 1 potenciômetro de 1 kΩ (para varrer a carga)
+- 1 capacitor de 100 nF cerâmico
+- Protoboard, jumpers
+:::
+
+::: {.callout-warning}
+## Antes de começar
+
+O 1N4733 é de 1 W, mas **na protoboard, sem caminho térmico, conte com bem menos**. Nas partes
+1 e 2 a corrente passa de 50 mA e o componente esquenta de verdade: encoste o dedo com
+cuidado, e não deixe o circuito ligado enquanto anota.
+
+E confira a orientação: **num regulador, o cátodo — a faixa — vai para o lado positivo**, ao
+contrário de um retificador.
+:::
+
+### Parte 1 — A curva, em três regiões
+
+Monte: fonte ajustável → resistor de 330 Ω → Zener 1N4733 **com o cátodo para o lado
+positivo** → terra. Meça a tensão sobre o Zener e a tensão sobre o resistor (para obter a
+corrente).
+
+| $V_{\text{fonte}}$ | $V_R$ medida | $I_Z = V_R/330$ | $V_Z$ medida |
+|---|---|---|---|
+| 2,0 V | | | |
+| 4,0 V | | | |
+| 5,0 V | | | |
+| 5,5 V | | | |
+| 6,0 V | | | |
+| 8,0 V | | | |
+| 12,0 V | | | |
+| 16,0 V | | | |
+| 20,0 V | | | |
+
+: A curva de ruptura ponto a ponto. As três primeiras linhas estão abaixo do joelho; as
+últimas, na faixa útil. {#tbl-050-lab1}
+
+1. Marque $I_Z$ contra $V_Z$. Você desenhou o terceiro quadrante da @fig-050-curva.
+2. Observe onde está o **joelho** — a mudança de curvatura. Abaixo dele, a tensão varia muito
+   com a corrente; acima, quase não varia.
+3. Compare a tensão medida nas correntes altas com os 5,1 V nominais. Tolerância de 5 %
+   significa qualquer valor entre 4,85 e 5,36 V, e é normal que o seu exemplar não dê 5,10 V
+   exatos.
+
+### Parte 2 — A resistência dinâmica
+
+1. Tome duas linhas da tabela em que $I_Z$ difira por um fator de dois ou três, ambas bem
+   acima do joelho.
+2. Calcule $r_z = \Delta V_Z / \Delta I_Z$.
+3. Repita com duas linhas **perto do joelho**.
+
+O resultado esperado é $r_z$ de 5 a 15 Ω na faixa útil e **dez a cinquenta vezes maior** perto
+do joelho. Esse contraste é a razão de o projeto exigir $I_{Z(\min)}$ bem acima de $I_{ZK}$, e
+ele é muito mais convincente medido do que lido.
+
+### Parte 3 — O regulador, com os dois casos verificados
+
+Monte o projeto da @sec-050-regulador: $R_S = 330\ \Omega$ / 1 W, 1N4733, e o potenciômetro de
+1 kΩ como carga variável (em série com 100 Ω, para não chegar a zero ohms).
+
+**Caso 2 — regulação com carga cheia:**
+
+1. Ajuste a fonte para 13,5 V.
+2. Ajuste o potenciômetro até a carga puxar 20 mA (meça a corrente).
+3. Meça $V_{\text{out}}$ e calcule $I_Z = I_S - I_L$.
+4. Confirme que $I_Z$ ficou por volta de 5 mA e que a saída ainda está regulada.
+5. **Agora aumente a carga além disso** e observe a saída começar a cair. O ponto em que ela
+   cai é o ponto em que $I_Z$ chegou ao joelho — a fronteira do projeto, medida.
+
+**Caso 1 — dissipação com carga desligada:**
+
+6. Ajuste a fonte para 16,5 V e **desligue a carga**.
+7. Meça $I_Z$ e calcule $P_Z = V_Z I_Z$. Deve dar por volta de 176 mW.
+8. Meça também a tensão sobre $R_S$ e calcule a dissipação dele: quase 400 mW. **Toque no
+   resistor** (rapidamente) e no Zener e compare. O componente que mais esquenta não é o que
+   se está regulando.
+
+### Parte 4 — As duas regulações, em números
+
+**Regulação de linha.** Com a carga fixa em 10 mA, varra a entrada e meça a saída:
+
+| $V_{\text{in}}$ | $V_{\text{out}}$ medida |
+|---|---|
+| 13,5 V | |
+| 15,0 V | |
+| 16,5 V | |
+
+: A previsão é $\Delta V_{\text{out}} = \Delta V_{\text{in}} \times r_z/(r_z + R_S)$: cerca de
+31 mV para os 1,5 V de excursão de cada lado. {#tbl-050-lab2}
+
+**Regulação de carga.** Com a entrada fixa em 15 V, varra a carga:
+
+| $I_L$ | $V_{\text{out}}$ medida |
+|---|---|
+| 0 mA (carga desligada) | |
+| 5 mA | |
+| 10 mA | |
+| 20 mA | |
+
+: A previsão é $\Delta V_{\text{out}} = -\Delta I_L (r_z \parallel R_S)$: cerca de $-137$ mV de
+0 a 20 mA. {#tbl-050-lab3}
+
+Compare os dois efeitos. **A carga mexe mais na saída do que a entrada mexe**, e por isso é a
+regulação de carga que decide se um regulador Zener serve para a aplicação.
+
+### Parte 5 — A ondulação, atenuada
+
+Se a fonte do @sec-cap-049 estiver montada, esta é a parte mais satisfatória do capítulo.
+
+1. Alimente o regulador com a saída daquela fonte, em vez da fonte de bancada.
+2. Com o osciloscópio em acoplamento CA e ganho alto, meça a ondulação **na entrada** do
+   regulador. Deve ser algo como 0,9 V pico a pico.
+3. Meça a ondulação **na saída**. Deve ser cerca de 19 mV pico a pico.
+4. Calcule a razão e compare com $r_z/(r_z + R_S)$.
+5. Converta em decibéis (@sec-cap-041). Você deve encontrar por volta de 34 dB de atenuação.
+6. Ponha o capacitor de 100 nF em paralelo com o Zener e observe o que acontece com o ruído de
+   alta frequência sobreposto à ondulação.
+
+### Parte 6 — O coeficiente de temperatura, comparado
+
+1. Monte o 1N4733 (5,1 V) com 330 Ω e 15 V. Anote $V_Z$ com precisão.
+2. Aqueça o corpo do Zener com o ferro de solda aproximado, **sem encostar**, e observe a
+   leitura.
+3. Repita com o 1N4742 (12 V), ajustando o resistor para corrente parecida.
+
+O de 5,1 V praticamente não se move; o de 12 V sobe visivelmente, alguns milivolts por grau.
+Se houver um 1N4728 (3,3 V), ele se move na **direção oposta** — e ver os três comportamentos
+na mesma bancada é a demonstração da @fig-050-coefT.
+
+**Variante simulada (plano B).** No ngspice, um modelo de Zener é um diodo com `bv` e `ibv`
+definidos; `.dc vin 0 20 0.1` traça a curva da Parte 1, e `.step` sobre a resistência de carga
+dá a família de curvas de regulação. Para a Parte 6, `.temp 0`, `.temp 27` e `.temp 75` com
+`tbv1` no modelo reproduzem o coeficiente de temperatura. No Falstad, o componente "zener
+diode" permite ajustar $V_Z$ e ver o ceifador da @fig-050-aplicacoes funcionando em tempo real.
+
+## 🔥 Onde Queima {#sec-050-queima}
+
+**Montar o Zener ao contrário.** No regulador, o **cátodo vai para o lado positivo**. Montado
+como diodo comum, ele conduz em direta e a saída inteira cai para 0,7 V.
+
+**Dimensionar $R_S$ só pelo caso da carga cheia.** Com a carga desligada, toda a corrente sobra
+para o Zener, e é essa a condição de dissipação máxima. Verifique os **dois** casos, sempre.
+
+**Esquecer a potência do resistor série.** No exemplo, o Zener dissipa 176 mW e o resistor
+dissipa 394 mW. **O resistor é o componente mais quente do circuito**, e um 1/4 W ali queima.
+
+**Deixar $I_{Z(\min)}$ perto de $I_{ZK}$.** Perto do joelho, $r_z$ é dez a cinquenta vezes
+maior e a regulação some. Use pelo menos 5 mA, ou 10 % de $I_{ZM}$.
+
+**Confiar na potência nominal na protoboard.** O 1 W do 1N47xx supõe terminais curtos mantidos
+a 50 °C. Sem esse caminho térmico, conte com metade ou menos.
+
+**Usar Zener para alimentar carga variável de corrente alta.** A resistência de saída é
+$r_z \parallel R_S$, de alguns ohms. Acima de umas dezenas de miliampères com carga variável,
+use Zener como **referência** e um seguidor ou um regulador integrado como elemento de
+passagem.
+
+**Escolher a tensão do Zener sem olhar o coeficiente de temperatura.** Um Zener de 12 V deriva
+9 mV/°C — 360 mV numa excursão de 40 °C. Para referência, use 5,6 V, onde a deriva é quase
+zero.
+
+**Usar Zener como referência de precisão sem filtrar o ruído.** Avalanche é um processo
+estatístico e produz ruído de banda larga. Capacitor em paralelo, ou referência integrada.
+
+**Supor tolerância melhor do que a especificada.** "5,1 V" com sufixo `A` é 5 %: qualquer valor
+entre 4,85 e 5,36 V. Sem o sufixo, 10 %.
+
+**Usar Zener como proteção contra descarga eletrostática.** Ele é lento demais e tem pouca
+energia de surto. O componente certo é o TVS (@sec-cap-051).
+
+**Ligar Zeners em paralelo para aumentar a potência.** Pelo mesmo motivo dos diodos comuns
+(@sec-cap-047): o de menor $V_Z$ absorve tudo. Em **série** funciona bem, e as tensões se
+somam.
+
+**Esquecer que o consumo é constante.** O regulador Zener puxa a mesma corrente com carga
+cheia e com carga desligada. Em circuito alimentado por bateria, isso costuma ser
+inaceitável.
+
+## O que fica deste capítulo {#sec-050-resumo}
+
+O Zener é uma junção **projetada para trabalhar em ruptura**, com tensão precisa e
+encapsulamento capaz de dissipar o calor. Em direta ele é um diodo comum de 0,7 V — e isso é
+usado de propósito no ceifador.
+
+Três correntes descrevem a curva: **$I_{ZK}$** (joelho, abaixo do qual não há regulação),
+**$I_{ZT}$** (onde $V_Z$ é especificado) e **$I_{ZM} = P_{\max}/V_Z$**. E um parâmetro descreve
+a qualidade: **$r_z$**, a resistência dinâmica, de 2 a 50 Ω.
+
+**Os dois mecanismos:** tunelamento abaixo de 5 V, com coeficiente de temperatura **negativo**;
+avalanche acima de 6 V, com coeficiente **positivo**. Eles se cancelam por volta de
+**5,6 V**, e é por isso que essa é a melhor referência que se obtém de uma junção sozinha. O
+menor $r_z$ da família fica logo ao lado, em 6,2 V.
+
+**O projeto do regulador tem dois piores casos opostos**, e os dois têm de ser verificados:
+
+$$ R_S = \frac{V_{\text{in(mín)}} - V_Z}{I_{Z(\min)} + I_{L(\max)}}, $$
+
+dimensionado pelo caso de **entrada mínima e carga máxima** (a regulação some), e verificado
+no caso de **entrada máxima e carga desligada** (o Zener queima). E verifique também a
+potência do **resistor série**, que costuma ser o componente mais quente.
+
+**A qualidade da regulação:**
+
+$$ \frac{\Delta V_{\text{out}}}{\Delta V_{\text{in}}} = \frac{r_z}{r_z + R_S},
+   \qquad
+   \Delta V_{\text{out}} = -\Delta I_L\,(r_z \parallel R_S). $$
+
+No exemplo típico: 31 mV para ±1,5 V de entrada, e 137 mV para 0–20 mA de carga. **Bom contra
+variação de linha, medíocre contra variação de carga** — e essa mesma atenuação de linha
+reduz a ondulação do @sec-cap-049 de 0,9 V para 19 mV, que é o principal serviço que ele
+presta.
+
+O rendimento é de 20 a 25 %, e **o consumo não cai quando a carga desliga**.
+
+Por tudo isso, a regra de uso: **o Zener define a tensão; outro componente entrega a
+corrente.** Como regulador sozinho, ele serve para alguns miliampères. Como referência
+seguida de um elemento de passagem, ele está dentro de quase toda fonte linear já construída.
+
+## Para o próximo capítulo {#sec-050-fecho}
+
+Os capítulos 046 a 050 exploraram uma única junção PN em duas regiões: direta, onde ela conduz
+e retifica, e reversa em ruptura, onde ela regula. Sobrou uma terceira coisa que essa junção
+faz, e ela é o assunto que fecha o Volume 8.
+
+Quando um elétron atravessa a junção e se recombina com uma lacuna, a energia do gap tem de ir
+para algum lugar. No silício ela vira calor. Em outros semicondutores — arseneto de gálio,
+nitreto de índio e gálio — ela vira **luz**, e o comprimento de onda é fixado pelo gap: é o
+LED, e é por isso que a queda direta dele é 1,8 V no vermelho e 3,2 V no azul.
+
+O processo inverso também existe: luz incidindo na depleção cria pares elétron-lacuna e
+produz corrente. É o fotodiodo, e é a célula solar.
+
+E há uma família de diodos que não usa junção PN nenhuma — a barreira Schottky, entre metal e
+semicondutor — além dos que exploram a capacitância variável da depleção (varicap) e dos que
+existem só para morrer no lugar do circuito (TVS). O @sec-cap-051 cobre todos, e com ele o
+Volume 8 fecha.
