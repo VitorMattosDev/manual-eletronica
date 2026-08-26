@@ -12,15 +12,23 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 50/104 |
-| **Contíguos até** | **050** — sem nenhum buraco no meio do livro |
+| **Progresso** | 51/104 |
+| **Contíguos até** | **051** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 051** | LEDs, fotodiodos e diodos especiais: Schottky, TVS e varicap — fecha o Volume 8 |
+| **Próximo capítulo: 052** | O transistor bipolar: estrutura e funcionamento (abre o Volume 9) |
 
-As três lacunas que existiam — 026 no Volume 4, 037 e 038 no Volume 6 — foram fechadas.
-Com isso as Fases 1 e 2 estão completas: Volumes 1 a 7, capítulos 001 a 045, contíguos.
-A Fase 3 começa no Volume 8, e nele o capítulo 048 (retificadores) exige o bloco
-`.callout-warning` de rede elétrica antes de qualquer roteiro, conforme o `CLAUDE.md`.
+Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
+(capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
+diodos especiais. Os capítulos 048 e 049 trazem o bloco `.callout-warning` exigido pelo
+`CLAUDE.md` — rede elétrica no 048, capacitor carregado no 049 —, e os dois roteiros de
+laboratório foram escritos para execução **inteira em baixa tensão**, com gerador de funções
+ou fonte de parede de 12 V CA já montada.
+
+O próximo bloco é o Volume 9 (capítulos 052 a 058), sobre transistores bipolares. O
+capítulo 051 já monta a ponte: duas junções PN costas com costas, com a região do meio fina.
+Convenções do Volume 8 que o Volume 9 herda: valor comercial recalculado depois do
+arredondamento, pior caso verificado nos dois extremos, e `.tikz` com `circuitikz` para
+esquemático e `pgfplots` para curva.
 
 Para confirmar o estado a qualquer momento:
 
@@ -128,7 +136,7 @@ cinco ocorrências como aviso.
 - [x] 048 — Retificadores de meia onda e de onda completa — `capitulos/048-retificadores-de-meia-onda-e-de-onda-completa.qmd`
 - [x] 049 — Filtragem capacitiva e ondulação — `capitulos/049-filtragem-capacitiva-e-ondulacao.qmd`
 - [x] 050 — Diodo Zener e regulação por referência — `capitulos/050-diodo-zener-e-regulacao-por-referencia.qmd`
-- [ ] 051 — LEDs, fotodiodos e diodos especiais: Schottky, TVS e varicap — `capitulos/051-leds-fotodiodos-e-diodos-especiais-schottky-tvs-e.qmd`
+- [x] 051 — LEDs, fotodiodos e diodos especiais: Schottky, TVS e varicap — `capitulos/051-leds-fotodiodos-e-diodos-especiais-schottky-tvs-e.qmd`
 
 
 ### Volume 9 — Transistores Bipolares

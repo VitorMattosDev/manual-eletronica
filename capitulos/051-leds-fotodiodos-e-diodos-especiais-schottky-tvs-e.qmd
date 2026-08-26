@@ -1,3 +1,919 @@
 # LEDs, fotodiodos e diodos especiais: Schottky, TVS e varicap {#sec-cap-051}
 
-*(em elaboração)*
+Cinco capítulos exploraram uma junção PN em duas regiões: direta, onde ela retifica, e reversa
+em ruptura, onde ela regula. Este capítulo fecha o Volume 8 com tudo o mais que uma junção — ou
+uma barreira que nem junção é — consegue fazer.
+
+São cinco famílias, e o fio que as une é o mesmo do @sec-cap-046: **o que acontece com a
+energia quando um portador atravessa a barreira**.
+
+- No **LED**, ela sai como luz, e o comprimento de onda é fixado pelo gap do material.
+- No **fotodiodo**, o processo é o inverso: luz cria pares elétron-lacuna, e o campo da
+  depleção os separa em corrente.
+- No **Schottky**, não há junção PN nenhuma — a barreira é entre metal e semicondutor, não há
+  portador minoritário armazenado, e o diodo comuta em nanossegundos.
+- No **TVS**, a junção é a mesma do Zener, com área e projeto térmico feitos para absorver
+  joules em microssegundos e morrer no lugar do circuito.
+- No **varicap**, o que se usa não é a corrente, e sim a **capacitância** da depleção, que o
+  @sec-cap-046 mostrou depender da tensão.
+
+Ao final, o Volume 8 estará completo, e a caixa de componentes terá tudo o que se pode fazer
+com dois terminais e uma barreira. O Volume 9 acrescenta o terceiro terminal, e com ele a
+capacidade de **amplificar**.
+
+## O LED {#sec-051-led}
+
+Quando um elétron da banda de condução se recombina com uma lacuna, ele perde exatamente a
+energia do gap. Essa energia tem de ir para algum lugar.
+
+No silício ela vira **calor**, porque o silício tem gap **indireto**: a recombinação exige a
+participação de uma vibração da rede para conservar o momento, e o processo favorece a emissão
+de fônons. É por isso que não existe LED de silício, e é por isso que o silício é excelente
+para eletrônica e inútil para iluminação.
+
+Em semicondutores de gap **direto** — arseneto de gálio, fosfeto de gálio e arseneto, nitreto
+de índio e gálio — a recombinação emite um **fóton**, e a energia dele é a do gap:
+
+$$ E_{\text{fóton}} = E_g \qquad\Longrightarrow\qquad
+   \boxed{\;\lambda\ (\text{nm}) = \frac{1240}{E_g\ (\text{eV})}\;} $$
+
+Essa é a fórmula inteira. A cor de um LED **não** é escolhida por corante nem por filtro: ela é
+uma propriedade do material, e a queda direta do LED é essencialmente a energia do gap
+expressa em volts.
+
+::: {#fig-051-led}
+
+```{.tikz}
+%%| filename: 051-led
+%%| alt: Duas partes. Em cima, uma faixa horizontal colorida representando o espectro visível, do infravermelho à esquerda, passando por vermelho, amarelo, verde e azul, até o ultravioleta à direita, com o comprimento de onda em nanômetros marcado embaixo, de novecentos e quarenta a quatrocentos, e a energia do gap correspondente em elétron-volts marcada em cima, de um vírgula três a três vírgula um. Setas verticais apontam para posições da faixa indicando os materiais e as quedas diretas típicas: arseneto de gálio no infravermelho com um vírgula três volt, fosfeto de arseneto de gálio no vermelho com um vírgula oito volt, âmbar com dois vírgula um volts, nitreto de índio e gálio no verde com três vírgula dois volts e no azul com três vírgula três volts. Uma anotação registra que a relação entre comprimento de onda e energia é mil duzentos e quarenta dividido pela energia em elétron-volts, e que por isso a queda direta do LED é praticamente a energia do gap expressa em volts. Embaixo, à esquerda, o circuito de acionamento: uma fonte de cinco volts, um resistor em série e o LED até o terra, com a fórmula do resistor ao lado. À direita, o gráfico que justifica acionar por corrente: a curva exponencial do LED e duas retas de carga, uma quase vertical, correspondente a alimentar por tensão sem resistor, e outra bem inclinada, correspondente a alimentar através do resistor. Anotações mostram que uma variação pequena da queda direta desloca enormemente o ponto de operação no caso da reta vertical e quase nada no caso da reta inclinada.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= faixa espectral =================
+  \begin{scope}[shift={(0,0)}]
+    \foreach \i/\cor in {0/black!55, 1/red!80!black, 2/red, 3/orange,
+                         4/yellow!90!orange, 5/green!70!black, 6/green!55!cyan,
+                         7/cyan!80!blue, 8/blue!80, 9/violet!80}{
+      \fill[\cor] (\i*1.26,0) rectangle ({\i*1.26+1.26},0.85);}
+    \draw[thick] (0,0) rectangle (12.6,0.85);
+
+    % escala de comprimento de onda
+    \foreach \lam/\x in {940/0.5, 700/2.9, 620/4.6, 590/5.7, 520/7.6, 470/9.5, 400/11.9}{
+      \draw[manualgray] (\x,0) -- (\x,-0.16);
+      \node[anchor=north, font=\tiny] at (\x,-0.18) {\lam};}
+    \node[anchor=north, font=\tiny, manualgray] at (12.6,-0.18) {nm};
+
+    % escala de energia
+    \foreach \eg/\x in {{1,3}/0.5, {1,8}/2.9, {2,0}/4.6, {2,1}/5.7,
+                        {2,4}/7.6, {2,6}/9.5, {3,1}/11.9}{
+      \draw[manualgray] (\x,0.85) -- (\x,1.01);
+      \node[anchor=south, font=\tiny] at (\x,1.03) {$\eg$};}
+    \node[anchor=south, font=\tiny, manualgray] at (12.6,1.03) {eV};
+
+    % materiais
+    \foreach \x/\txt in {0.5/{GaAs\\infravermelho\\$V_F \approx 1{,}3$ V},
+                         2.9/{GaAsP\\vermelho\\$V_F \approx 1{,}8$ V},
+                         5.7/{AlInGaP\\âmbar\\$V_F \approx 2{,}1$ V},
+                         7.6/{InGaN\\verde\\$V_F \approx 3{,}2$ V},
+                         9.5/{InGaN\\azul\\$V_F \approx 3{,}3$ V}}{
+      \draw[manualgray, -{Latex[length=1.4mm]}] (\x,-1.55) -- (\x,-0.55);
+      \node[anchor=north, font=\tiny, align=center] at (\x,-1.6) {\txt};}
+
+    \node[anchor=north, font=\scriptsize, align=center] at (6.3,-2.85)
+         {$\lambda\ (\text{nm}) = 1240 / E_g\ (\text{eV})$ ---
+          \textbf{a cor é o material}, e a queda direta é o gap em volts};
+  \end{scope}
+
+  % ================= acionamento =================
+  \begin{scope}[shift={(0,-8.0)}]
+    \draw (0,0) to[battery1, l=$5$ V] (0,3.0);
+    \draw (0,3.0) to[R, l=$R_S$] (2.6,3.0);
+    \draw (2.6,3.0) to[leD, l=LED] (2.6,0);
+    \draw (0,0) -- (2.6,0);
+    \node[ground] at (1.3,0) {};
+    \node[draw=manualgreen!55!black, thick, rounded corners=2pt, anchor=north,
+          align=center, font=\scriptsize, inner sep=5pt] at (1.3,-0.9)
+         {$R_S = \dfrac{V_{\text{fonte}} - V_F}{I_F}$};
+  \end{scope}
+
+  \begin{scope}[shift={(6.0,-8.0)}]
+    \draw[eixo] (-0.2,0) -- (6.6,0) node[anchor=north west, font=\scriptsize] {$V$};
+    \draw[eixo] (0,-0.2) -- (0,3.6) node[anchor=south east, font=\scriptsize] {$I$};
+    % curva do LED: escala 2,2 cm por volt, joelho em torno de 1,8 V.
+    % dominio limitado a 1,85 V, onde a curva chega ao topo do eixo.
+    \draw[curva, samples=140, domain=1.20:1.85, variable=\v, smooth]
+         plot ({\v*2.2}, {exp(\v/0.075 - 23.44)});
+    \draw[curva] (0,0) -- (2.64,0);
+    % reta de carga com resistor
+    \draw[manualgreen!55!black, very thick] (1.6,3.4) -- (5.9,0);
+    % reta de carga "por tensao" (fonte quase ideal)
+    \draw[manualred, very thick] (3.93,0) -- (4.00,3.5);
+
+    \node[manualgreen!55!black, anchor=west, font=\tiny, align=left] at (4.55,2.45)
+         {com resistor:\\reta inclinada};
+    \node[manualred, anchor=east, font=\tiny, align=right] at (3.78,3.25)
+         {por tensão:\\reta quase vertical};
+
+    \draw[auxiliar] (3.85,0) -- (3.85,3.5);
+    \draw[auxiliar] (4.07,0) -- (4.07,3.5);
+    \node[manualred, anchor=north, font=\tiny, align=center] at (3.96,-0.25)
+         {$\pm 0{,}05$ V entre\\exemplares};
+
+    \node[anchor=north, font=\scriptsize, align=center] at (3.0,-1.35)
+       {A curva é exponencial: apenas $\pm 0{,}05$ V de $V_F$ muda a corrente
+        \textbf{por um fator de quatro}\\ na reta vermelha, e por $13\ \%$ na verde.
+        \textbf{LED se aciona por corrente.}};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O gap decide a cor **e** a queda direta, e o resistor decide a corrente. As duas retas de carga
+da direita são o mesmo argumento do @sec-cap-047 aplicado a um caso em que ele custa
+componente queimado.
+
+:::
+
+### Acionar por corrente, não por tensão
+
+Um LED é um diodo, e a curva dele é exponencial. Alimentá-lo com uma fonte de tensão ajustada
+para "1,8 V" é o mesmo erro do @sec-cap-047, com uma agravante: a tolerância de $V_F$ entre
+exemplares do mesmo lote chega a ±0,1 V, e ela desloca a corrente por um fator de três a
+quatro.
+
+O circuito correto é fonte, **resistor em série** e LED:
+
+$$ R_S = \frac{V_{\text{fonte}} - V_F}{I_F}. $$
+
+**Exemplo.** LED vermelho ($V_F = 1{,}8$ V) em 5 V, com 10 mA:
+
+$$ R_S = \frac{5 - 1{,}8}{0{,}010} = 320\ \Omega \;\rightarrow\; \textbf{330 } \Omega. $$
+
+Recalculando com o valor comercial: $I_F = (5 - 1{,}8)/330 = 9{,}7$ mA. E a dissipação no
+resistor é $(3{,}2)^2/330 = 31$ mW — um 1/4 W sobra.
+
+**LEDs em série** compartilham a mesma corrente e é assim que se acionam vários: três LEDs
+vermelhos em 12 V dão $R_S = (12 - 5{,}4)/0{,}010 = 660\ \Omega \rightarrow 680\ \Omega$.
+
+**LEDs em paralelo com um único resistor não funcionam**, pela razão do @sec-cap-047: a
+partilha é exponencialmente sensível à diferença de $V_F$, e um LED fica visivelmente mais
+claro que os outros — ou leva quase toda a corrente. **Um resistor por LED**, sempre.
+
+### O que a folha de dados de um LED traz
+
+| Parâmetro | Típico (LED 5 mm) | Observação |
+|---|---|---|
+| $V_F$ @ $I_F$ | 1,8 a 3,4 V @ 20 mA | depende do material, não do encapsulamento |
+| $I_F$ máxima contínua | 20 a 30 mA | LEDs modernos brilham bem com 2 a 5 mA |
+| $I_{FP}$ pulsada | 100 mA @ 10 % de ciclo | é o que permite multiplexação |
+| **$V_R$ máxima** | **5 V** | **o dado mais esquecido do componente** |
+| Intensidade luminosa | 100 a 10 000 mcd | medida no eixo, e o ângulo importa tanto quanto |
+| Ângulo de meia intensidade | 15° a 120° | LED "muito brilhante" costuma ser só muito estreito |
+| Comprimento de onda de pico | conforme a cor | a largura espectral é de 20 a 40 nm |
+
+: A folha de dados de um LED. A linha em negrito é a que causa mais falhas silenciosas.
+{#tbl-051-led}
+
+::: {.callout-important}
+## Os 5 V de tensão reversa
+
+**Um LED não é um retificador.** A tensão reversa máxima dele é tipicamente **5 V**, e
+excedê-la o degrada permanentemente — às vezes de imediato, às vezes ao longo de semanas, com
+o brilho caindo sem explicação aparente.
+
+Isso importa em três situações comuns:
+
+- **LED ligado direto na saída de um circuito CA**, ou num ponto que troca de sinal. Precisa de
+  um diodo comum em antiparalelo, ou de um segundo LED na posição inversa.
+- **LED como indicador de polaridade numa entrada que pode inverter.**
+- **LED em ponte H ou em circuito com indutor**, onde o transiente reverso passa muito dos
+  5 V.
+
+O remédio é sempre o mesmo e custa cinco centavos: um 1N4148 em antiparalelo com o LED.
+:::
+
+### Cor, branco e ajuste de brilho
+
+**LED branco não existe como material.** O que existe é um LED **azul** de InGaN coberto por
+um fósforo amarelo que converte parte do azul. A soma dá branco, e a "temperatura de cor" é a
+proporção. Isso explica duas coisas: por que a queda direta de um LED branco é a de um azul —
+3,0 a 3,4 V — e por que o espectro de um LED branco tem um pico azul estreito e uma corcova
+larga no amarelo, com um vale no ciano.
+
+**Ajustar brilho por corrente muda a cor.** A recombinação depende da densidade de portadores,
+e reduzir a corrente desloca ligeiramente o comprimento de onda — visível sobretudo em LEDs de
+InGaN. Reduzir a corrente também piora o rendimento em muitos LEDs de potência.
+
+**Por isso a forma correta é PWM**: liga e desliga o LED na corrente nominal, com ciclo de
+trabalho variável. Acima de 200 Hz o olho integra e vê brilho médio, a cor não muda, e o
+rendimento se mantém. É o assunto do Volume 12, e é a razão de quase todo controlador de LED
+comercial ser um modulador.
+
+**Infravermelho**, com GaAs em 940 nm, é o mesmo componente com gap menor. Controles remotos,
+sensores de barreira e o transmissor de um optoacoplador usam exatamente isso — e o fato de
+não se ver a luz torna a câmera do celular a melhor ferramenta de diagnóstico que existe para
+eles.
+
+## O fotodiodo, e a célula solar {#sec-051-fotodiodo}
+
+O processo inverso. Um fóton com energia maior que o gap, absorvido dentro ou perto da região
+de depleção, quebra uma ligação e cria um par elétron-lacuna. O campo interno da depleção — o
+mesmo da @fig-046-juncao — separa os dois antes que se recombinem, e o resultado é uma
+**corrente proporcional à luz incidente**.
+
+::: {#fig-051-fotodiodo}
+
+```{.tikz}
+%%| filename: 051-fotodiodo
+%%| alt: Gráfico da corrente contra a tensão de uma junção PN iluminada, mostrando os quatro quadrantes. A curva do escuro é a curva normal de um diodo, passando pela origem. Cada nível crescente de iluminação desloca a curva inteira para baixo, paralelamente a si mesma, por um valor igual à fotocorrente. Como resultado, no terceiro quadrante, com tensão reversa aplicada, as curvas são retas horizontais espaçadas, e a corrente reversa é diretamente proporcional à luz: esse é o modo fotocondutivo, rápido e linear, marcado com uma faixa sombreada. No quarto quadrante, com tensão positiva e corrente negativa, o produto tensão vezes corrente é negativo, isto é, o dispositivo entrega potência: esse é o modo fotovoltaico, e a região está marcada com outra faixa sombreada. Sobre uma das curvas iluminadas estão marcados três pontos: a corrente de curto-circuito, onde a curva cruza o eixo vertical; a tensão de circuito aberto, onde ela cruza o eixo horizontal, em torno de meio volt; e o ponto de máxima potência, entre os dois, onde o retângulo formado com os eixos tem área máxima.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13.5cm, height=9cm,
+  xlabel={$V$ sobre o fotodiodo (V)}, ylabel={$I$ ($\mu$A)},
+  xmin=-0.5, xmax=0.62, ymin=-80, ymax=40,
+  xtick={-0.5,-0.4,-0.3,-0.2,-0.1,0,0.1,0.2,0.3,0.4,0.5,0.6},
+  xticklabel style={/pgf/number format/fixed,
+                    /pgf/number format/precision=1,
+                    /pgf/number format/use comma},
+  ytick={-80,-60,-40,-20,0,20,40},
+  grid=both, grid style={manualgray!25},
+  axis lines=box, font=\footnotesize,
+]
+
+% os eixos do zero, desenhados a mao para nao carregar os rotulos das escalas
+\addplot[manualgray!70, thick, forget plot] coordinates {(-0.5,0) (0.62,0)};
+\addplot[manualgray!70, thick, forget plot] coordinates {(0,-80) (0,40)};
+
+% faixas dos dois modos
+\addplot[draw=none, fill=manualblue!10, forget plot]
+  coordinates {(-0.5,-80) (0,-80) (0,40) (-0.5,40)} \closedcycle;
+\addplot[draw=none, fill=manualgreen!14, forget plot]
+  coordinates {(0,-80) (0.62,-80) (0.62,0) (0,0)} \closedcycle;
+
+% I = Is(exp(V/VT)-1) - Iph ; Is = 1e-6 uA
+\addplot[manualgray, very thick, domain=-0.5:0.48, samples=250]
+  {1e-6*(exp(x/0.026)-1)};
+\addplot[manualblue, very thick, domain=-0.5:0.50, samples=250]
+  {1e-6*(exp(x/0.026)-1) - 20};
+\addplot[manualgreen!55!black, very thick, domain=-0.5:0.51, samples=250]
+  {1e-6*(exp(x/0.026)-1) - 40};
+\addplot[manualred, very thick, domain=-0.5:0.52, samples=250]
+  {1e-6*(exp(x/0.026)-1) - 60};
+
+% pontos notaveis sobre a curva de 60 uA
+\addplot[only marks, mark=*, mark size=2.2pt, black]
+  coordinates {(0,-60) (0.466,0) (0.39,-55)};
+
+\node[anchor=west, font=\scriptsize] at (axis cs:0.03,-64) {$I_{cc}$ (curto)};
+\node[anchor=north west, font=\scriptsize] at (axis cs:0.05,-3)
+     {$V_{ca}$ (circuito aberto)};
+\draw[black, -{Latex[length=1.4mm]}] (axis cs:0.44,-6) -- (axis cs:0.464,-1.5);
+\node[anchor=north west, font=\scriptsize, align=left] at (axis cs:0.41,-56)
+     {ponto de\\máxima potência};
+
+\node[manualgray, anchor=west, font=\scriptsize] at (axis cs:-0.48,4) {escuro};
+\node[manualblue, anchor=west, font=\scriptsize] at (axis cs:-0.48,-16) {luz fraca};
+\node[manualgreen!55!black, anchor=west, font=\scriptsize] at (axis cs:-0.48,-36) {luz média};
+\node[manualred, anchor=west, font=\scriptsize] at (axis cs:-0.48,-56) {luz forte};
+
+\node[manualblue, anchor=north west, font=\scriptsize, align=left]
+     at (axis cs:-0.48,-62)
+     {\textbf{modo fotocondutivo}\\
+      reverso: rápido e linear};
+\node[manualgreen!55!black, anchor=south east, font=\scriptsize, align=right]
+     at (axis cs:0.60,-78)
+     {\textbf{modo fotovoltaico}\\
+      $V\!\cdot\!I < 0$: \emph{entrega} potência};
+
+\end{axis}
+
+\node[anchor=north, font=\scriptsize, align=center] at (6.7,-1.5)
+     {A luz \textbf{desloca a curva inteira para baixo}, paralelamente a si mesma.
+      Tudo o mais decorre disso:\\ a linearidade em reverso, a tensão de circuito aberto
+      travada em meio volt, e a célula solar.};
+
+\end{tikzpicture}
+```
+
+A junção iluminada. Uma única figura explica fotodiodo e célula solar: são o mesmo dispositivo
+operado em quadrantes diferentes.
+
+:::
+
+O efeito da luz é somar uma corrente constante $-I_{ph}$ à equação do diodo:
+
+$$ I = I_S\left(e^{\,V/(nV_T)} - 1\right) - I_{ph}. $$
+
+Deslocar a curva inteira para baixo explica tudo o que segue.
+
+**Modo fotocondutivo** — terceiro quadrante, com polarização reversa aplicada. A corrente é
+$-I_{ph}$, praticamente independente da tensão, e **rigorosamente proporcional à irradiância**
+em cinco ou seis décadas. A polarização reversa alarga a depleção, o que reduz a capacitância
+de junção e torna o dispositivo **rápido** — fotodiodos PIN comerciais chegam a nanossegundos.
+O preço é a **corrente de escuro**, que dobra a cada 10 °C como toda corrente de minoritário
+(@sec-cap-046) e fixa o piso de detecção.
+
+**Modo fotovoltaico** — quarto quadrante, sem polarização. Tensão positiva com corrente
+negativa significa $V\!\cdot\!I < 0$: o dispositivo **entrega** potência. É a célula solar.
+Três números a descrevem:
+
+- **$I_{cc}$**, corrente de curto-circuito, proporcional à luz.
+- **$V_{ca}$**, tensão de circuito aberto, travada em torno de **0,5 a 0,6 V** por célula de
+  silício — porque ela é onde a exponencial do diodo alcança $I_{ph}$, e o logaritmo faz com
+  que dobrar a luz acrescente apenas 18 mV.
+- **O ponto de máxima potência**, entre os dois, onde o retângulo sob a curva tem área máxima.
+  Ele **muda com a luz e com a temperatura**, e persegui-lo é a função dos rastreadores MPPT
+  dos inversores solares.
+
+É por isso que um painel solar de 12 V tem 36 células em série: $36 \times 0{,}55 = 20$ V a
+vazio, e por volta de 17 V no ponto de máxima potência.
+
+**Responsividade** é a grandeza que a folha de dados traz: ampères de saída por watt de luz
+incidente, tipicamente 0,5 A/W para silício no infravermelho próximo. Ela depende do
+comprimento de onda, e cai a zero para fótons com energia abaixo do gap — silício não enxerga
+além de 1100 nm.
+
+### O optoacoplador
+
+Um LED infravermelho e um fotodetector no mesmo encapsulamento, **sem contato elétrico entre
+eles**. O sinal atravessa como luz, e a isolação entre entrada e saída chega a 5 kV.
+
+É um dos componentes mais úteis que existem, e ele resolve exatamente o problema do
+@sec-cap-048: comandar algo ligado à rede a partir de um circuito de baixa tensão, sem que os
+dois terras se toquem.
+
+Três coisas a saber antes de usar um:
+
+- **A entrada é um LED**, com tudo o que este capítulo disse: resistor em série, 5 V de tensão
+  reversa, e corrente de 5 a 20 mA.
+- **A saída costuma ser um fototransistor**, não um fotodiodo — e por isso a razão de
+  transferência de corrente (CTR) fica entre 20 % e 300 %, com enorme dispersão entre
+  exemplares **e degradação ao longo dos anos**, porque o LED envelhece. Projete com folga.
+- **A velocidade é modesta** num optoacoplador comum: alguns microssegundos. Para dados
+  rápidos existem versões com fotodiodo e amplificador integrado.
+
+## O diodo Schottky {#sec-051-schottky}
+
+Aqui não há junção PN. A barreira se forma entre um **metal** e um semicondutor tipo N, e a
+diferença muda tudo.
+
+::: {#fig-051-schottky}
+
+```{.tikz}
+%%| filename: 051-schottky
+%%| alt: Três painéis. No painel da esquerda, dois cortes esquemáticos comparados: em cima, o diodo PN, com uma região P e uma região N separadas por uma região de depleção, com a anotação de que a condução envolve injeção de portadores minoritários, que ficam armazenados; embaixo, o diodo Schottky, com uma camada de metal diretamente sobre a região N, com a anotação de que só elétrons participam, de modo que não há carga armazenada. No painel do meio, o gráfico das curvas de condução direta dos dois, corrente contra tensão: a curva do Schottky sobe a partir de cerca de zero vírgula dois volt e a do silício comum a partir de cerca de zero vírgula seis volt, com uma seta horizontal marcando a diferença de aproximadamente meio volt entre elas na mesma corrente. No painel da direita, o cronograma da recuperação reversa: a corrente no diodo em função do tempo quando a tensão se inverte bruscamente. No diodo PN a corrente não vai a zero imediatamente: ela cruza o zero e vai a um pico negativo, permanecendo negativa durante o tempo de recuperação reversa, de alguns microssegundos, antes de retornar a zero. No Schottky a corrente cai a zero praticamente sem excursão negativa.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= estruturas =================
+  \begin{scope}[shift={(0,0)}]
+    % PN
+    \fill[manualred!18] (0,2.7) rectangle (1.5,3.7);
+    \fill[white]        (1.5,2.7) rectangle (2.0,3.7);
+    \fill[manualblue!18](2.0,2.7) rectangle (3.5,3.7);
+    \draw[thick] (0,2.7) rectangle (3.5,3.7);
+    \node[font=\tiny] at (0.75,3.2) {P};
+    \node[font=\tiny] at (2.75,3.2) {N};
+    \node[anchor=west, font=\tiny, align=left] at (3.7,3.2)
+         {\textbf{PN}: lacunas são injetadas\\
+          no N e \emph{ficam armazenadas}};
+
+    % Schottky
+    \fill[manualgray!60] (0,0.9) rectangle (0.85,1.9);
+    \fill[manualblue!18] (0.85,0.9) rectangle (3.5,1.9);
+    \draw[thick] (0,0.9) rectangle (3.5,1.9);
+    \node[font=\tiny, white] at (0.42,1.4) {metal};
+    \node[font=\tiny] at (2.2,1.4) {N};
+    \node[anchor=west, font=\tiny, align=left] at (3.7,1.4)
+         {\textbf{Schottky}: só elétrons ---\\
+          \emph{nenhuma} carga armazenada};
+
+    \node[anchor=north, font=\scriptsize, align=center] at (2.6,0.3)
+         {a estrutura decide tudo o que vem depois};
+  \end{scope}
+
+  % ================= curvas diretas =================
+  \begin{scope}[shift={(8.6,0.6)}]
+    \draw[eixo] (-0.2,0) -- (4.0,0) node[anchor=north west, font=\scriptsize] {$V_F$};
+    \draw[eixo] (0,-0.2) -- (0,3.3) node[anchor=south east, font=\scriptsize] {$I_F$};
+    % Schottky: joelho em 0,25 V ; escala 4 cm por volt
+    \draw[curva, samples=120, domain=0:0.36, variable=\v, smooth]
+         plot ({\v*4}, {exp(\v/0.043 - 7.3)});
+    % silicio: joelho em 0,7 V
+    \draw[manualred, very thick, samples=120, domain=0:0.83, variable=\v, smooth]
+         plot ({\v*4}, {exp(\v/0.055 - 14.0)});
+    \node[manualblue, anchor=south east, font=\tiny, align=right] at (1.35,2.6)
+         {Schottky};
+    \node[manualred, anchor=south west, font=\tiny] at (3.35,2.6) {Si (PN)};
+    \draw[manualgreen!55!black, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}]
+         (1.15,1.6) -- (3.05,1.6);
+    \node[manualgreen!55!black, anchor=south, font=\tiny] at (2.1,1.65)
+         {$\approx 0{,}5$ V};
+    \node[anchor=north, font=\scriptsize, align=center] at (2.0,-0.45)
+         {meio volt a menos na mesma corrente};
+  \end{scope}
+
+  % ================= recuperacao reversa =================
+  \begin{scope}[shift={(0,-4.3)}]
+    \draw[eixo] (-0.2,0) -- (11.0,0) node[anchor=north west, font=\scriptsize] {$t$};
+    \draw[eixo] (0,-1.9) -- (0,2.0) node[anchor=south east, font=\scriptsize] {$i_D$};
+
+    % PN: conduz, cruza o zero, pico negativo, recupera
+    \draw[manualred, very thick]
+         (0,1.5) -- (2.2,1.5) -- (3.4,-1.55) -- (4.0,-1.55)
+         .. controls (4.9,-1.5) and (5.0,-0.1) .. (5.9,0) -- (11.0,0);
+    \node[manualred, anchor=west, font=\tiny] at (6.3,-1.15)
+         {corrente \textbf{para trás}};
+    \draw[manualred, -{Latex[length=1.4mm]}] (6.25,-1.2) -- (4.6,-1.5);
+    \draw[manualred, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}] (3.0,-1.85) -- (5.9,-1.85);
+    \node[manualred, anchor=north, font=\tiny] at (4.45,-1.9)
+         {$t_{rr}$: 2 a 5 $\mu$s num 1N4007};
+
+    % Schottky
+    \draw[curva, very thick]
+         (0,1.5) -- (2.2,1.5) -- (2.45,-0.18) -- (2.7,0) -- (11.0,0);
+    \node[manualblue, anchor=west, font=\tiny, align=left] at (6.2,1.1)
+         {\textbf{Schottky}: sem carga armazenada,\\
+          a corrente simplesmente para --- $t_{rr} < 10$ ns};
+    \draw[manualblue, -{Latex[length=1.4mm]}] (6.15,1.0) -- (2.75,0.12);
+
+    \node[anchor=north, font=\scriptsize, align=center] at (5.0,-2.6)
+       {Em 60 Hz, $t_{rr}$ de 3 $\mu$s é $0{,}02\ \%$ do ciclo: irrelevante.
+        Em 50 kHz é \textbf{15 \% do ciclo},\\ com o diodo conduzindo no sentido errado ---
+        e é por isso que fonte chaveada usa Schottky ou ultrarrápido.};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+A estrutura, a curva e a comutação. As três diferenças do Schottky vêm de um único fato: **não
+há portador minoritário armazenado**.
+
+:::
+
+Num diodo PN em condução direta, lacunas são injetadas no lado N e elétrons no lado P. Esses
+portadores minoritários ficam **armazenados** perto da junção, e quando a tensão se inverte
+eles precisam ser retirados antes que o diodo bloqueie. Esse é o **tempo de recuperação
+reversa** que o @sec-cap-046 antecipou e o @sec-cap-048 cobrou.
+
+Na barreira metal-semicondutor, a corrente é feita **só de elétrons** — os portadores
+majoritários do lado N. Não há injeção de minoritários, não há carga armazenada, e não há
+recuperação. O diodo simplesmente para de conduzir.
+
+| | Silício PN | Schottky |
+|---|---|---|
+| $V_F$ @ 1 A | 0,8 a 1,1 V | 0,3 a 0,5 V |
+| $t_{rr}$ | 2 a 5 µs (comum) | < 10 ns, na prática nulo |
+| $V_R$ máxima | até 1000 V | 20 a 100 V (Si); até 1700 V (SiC) |
+| $I_R$ a 25 °C | 1 a 10 µA | 0,1 a 1 mA — **mil vezes maior** |
+| $I_R$ a 100 °C | dezenas de µA | dezenas de mA |
+| Custo | mínimo | 2 a 5 vezes mais |
+
+: Schottky contra silício comum. As duas primeiras linhas são a razão de usá-lo; as duas
+seguintes, a razão de não usá-lo em toda parte. {#tbl-051-schottky}
+
+Onde o Schottky é a escolha certa:
+
+- **Retificação em fonte chaveada.** As duas vantagens somadas: menos queda (mais rendimento) e
+  comutação instantânea (sem dissipação de recuperação nem ruído).
+- **Retificação de baixa tensão.** Numa saída de 5 V, trocar 0,9 V por 0,35 V recupera 11 % do
+  rendimento.
+- **Proteção contra polaridade invertida em série**, onde a queda menor importa.
+- **Diodo de roda livre** ao lado de cargas indutivas rápidas (Volume 9).
+- **Grampo antissaturação** em transistores bipolares de comutação — o diodo Schottky da
+  família TTL-S, assunto do Volume 15.
+- **Ligação OU de duas fontes** (*ORing*), onde a queda é perda direta.
+
+E onde ele é a escolha errada: **qualquer circuito de alta impedância ou de alta
+temperatura**. A corrente de fuga de um Schottky de 1 A pode chegar a 1 mA a 25 °C e a
+dezenas de miliampères a 100 °C — e ela também tem realimentação térmica positiva, o que em
+casos extremos leva à fuga térmica do próprio diodo.
+
+## O TVS {#sec-051-tvs}
+
+Um TVS (*transient voltage suppressor*) é, eletricamente, um Zener. A diferença está no
+projeto: área de junção muito maior, encapsulamento com massa térmica, e especificação em
+**joules e watts de pico**, não em watts contínuos.
+
+::: {#fig-051-tvs}
+
+```{.tikz}
+%%| filename: 051-tvs
+%%| alt: Gráfico da tensão contra o tempo mostrando a ação de um supressor de transiente. Em cinza tracejado, o surto que chegaria ao circuito sem proteção: um pico altíssimo, de centenas de volts, que sobe em microssegundos e decai lentamente. Em azul, a tensão que realmente aparece no circuito com o TVS instalado: ela acompanha o surto apenas até o valor de ruptura e depois fica presa num patamar, a tensão de grampo. Três níveis horizontais estão marcados: a tensão de trabalho reversa, mais abaixo, que é a máxima tensão normal do circuito e na qual o TVS não conduz nada; a tensão de ruptura, um pouco acima; e a tensão de grampo, acima desta, que é o pior caso que o circuito protegido vai ver, na corrente de pico especificada. Uma anotação registra que o circuito protegido precisa suportar a tensão de grampo, não a de ruptura, e outra registra que a energia do surto é absorvida pelo TVS e limitada pela especificação em watts de pico para uma forma de onda padronizada.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \draw[eixo] (-0.2,0) -- (9.4,0) node[anchor=north west, font=\scriptsize] {$t$};
+  \draw[eixo] (0,-0.2) -- (0,5.4) node[anchor=south east, font=\scriptsize] {$v$};
+
+  % surto sem protecao
+  \draw[manualgray!75, dashed, very thick]
+       (0,0) .. controls (0.42,4.6) and (0.67,5.1) .. (1.0,5.1)
+       .. controls (2.2,5.1) and (3.8,1.4) .. (7.1,0.35)
+       -- (9.2,0.12);
+  \node[manualgray, anchor=west, font=\scriptsize, align=left] at (2.2,4.75)
+       {o surto \textbf{sem} proteção:\\centenas de volts};
+
+  % niveis
+  \draw[manualred, thick, dashed] (0,2.1) -- (9.2,2.1);
+  \draw[manualyellow!75!black, thick, dashed] (0,1.5) -- (9.2,1.5);
+  \draw[manualgreen!55!black, thick, dashed] (0,1.05) -- (9.2,1.05);
+  \node[manualred, anchor=west, font=\tiny, align=left] at (9.3,2.15)
+       {$V_C$ --- \textbf{grampo},\\na corrente de pico};
+  \node[manualyellow!75!black, anchor=west, font=\tiny] at (9.3,1.5)
+       {$V_{BR}$ --- ruptura};
+  \node[manualgreen!55!black, anchor=west, font=\tiny, align=left] at (9.3,0.95)
+       {$V_{RWM}$ --- trabalho\\(não conduz nada)};
+
+  % com protecao
+  \draw[curva, line width=1.8pt]
+       (0,0) -- (0.35,1.5) .. controls (0.46,2.0) and (0.58,2.1) .. (0.79,2.1)
+       -- (3.8,2.1) .. controls (4.8,2.05) and (5.5,1.0) .. (7.1,0.35)
+       -- (9.2,0.12);
+  \node[manualblue, anchor=north, font=\scriptsize, align=center] at (2.4,0.62)
+       {\textbf{com o TVS}: a tensão fica presa em $V_C$};
+  \draw[manualblue, -{Latex[length=1.4mm]}] (2.4,0.68) -- (2.4,2.05);
+
+  \node[anchor=north, font=\scriptsize, align=center] at (4.6,-0.6)
+     {\textbf{O circuito protegido precisa suportar $V_C$, não $V_{BR}$.}
+      A folha de dados especifica $V_C$ na corrente de pico\\
+      de uma forma de onda padronizada --- tipicamente
+      $8/20\ \mu$s para descarga atmosférica ou $10/1000\ \mu$s para surto de rede.};
+
+\end{tikzpicture}
+```
+
+O TVS em ação. Os três níveis não são o mesmo número, e confundi-los é o erro clássico de
+especificação: o circuito vê $V_C$, que é bem maior que $V_{BR}$.
+
+:::
+
+Três tensões, e elas precisam ser lidas na ordem:
+
+- **$V_{RWM}$**, tensão de trabalho reversa. É a tensão normal máxima do circuito, e nela o TVS
+  deve conduzir apenas microampères. **Escolha $V_{RWM}$ acima da tensão máxima normal**, com
+  margem para tolerância e ondulação.
+- **$V_{BR}$**, tensão de ruptura, medida a 1 mA. Tipicamente 10 a 20 % acima de $V_{RWM}$.
+- **$V_C$**, tensão de grampo, na corrente de pico especificada. É **o que o circuito
+  protegido realmente vê**, e pode ser 1,5 a 1,8 vez $V_{RWM}$.
+
+**Exemplo.** Proteger uma entrada de 5 V. Um SMBJ5.0A tem $V_{RWM} = 5{,}0$ V,
+$V_{BR} = 6{,}4$ a 7,0 V, e $V_C = 9{,}2$ V a 40,7 A. **O circuito protegido precisa suportar
+9,2 V**, não 6,4. Se o componente a jusante tiver máximo absoluto de 7 V, esse TVS não serve.
+
+Outras distinções que importam na hora de comprar:
+
+- **Unidirecional ou bidirecional.** O unidirecional é um Zener: grampeia num sentido e conduz
+  em direta com 0,7 V no outro. Para linha que troca de sinal — CA, sinal diferencial —
+  use bidirecional, que são dois em oposição num só encapsulamento.
+- **TVS não é MOV.** O varistor de óxido metálico absorve muito mais energia, custa menos,
+  responde mais devagar e **degrada a cada evento**, perdendo tensão de grampo até falhar em
+  curto. A prática padrão em entrada de rede é MOV para a energia bruta e TVS para o que
+  passa dele.
+- **TVS não é Zener.** Um Zener de 1 W grampeia alguns watts por alguns milissegundos; um TVS
+  de 600 W grampeia 600 W por 1 ms e dezenas de ampères. Usar Zener como supressor de surto
+  funciona nos testes e falha em campo.
+- **A capacitância importa em linha de dados.** Um TVS comum tem centenas de picofarads, o que
+  destrói um sinal de alta velocidade. Para USB, HDMI e Ethernet existem versões de baixa
+  capacitância, de poucos picofarads.
+
+## O varicap {#sec-051-varicap}
+
+O @sec-cap-046 mostrou que a região de depleção é uma camada isolante entre duas regiões
+condutoras, e que a espessura dela **cresce com a tensão reversa**:
+
+$$ C_j(V_R) = \frac{C_{j0}}{\left(1 + V_R/V_{bi}\right)^{m}}. $$
+
+Todo diodo faz isso. O **varicap** — ou varactor — é fabricado para maximizar o efeito: perfil
+de dopagem escolhido para dar $m$ alto, área grande, e a especificação principal sendo a razão
+$C_{\max}/C_{\min}$, que vai de 3 a 15 conforme o modelo.
+
+::: {#fig-051-varicap}
+
+```{.tikz}
+%%| filename: 051-varicap
+%%| alt: À esquerda, o gráfico da capacitância de junção em picofarads contra a tensão reversa aplicada em volts, de zero a dez. A curva parte de cerca de quinhentos picofarads em um volt e cai rapidamente, chegando a cerca de vinte picofarads em oito volts, numa relação que é uma reta em eixos logarítmicos. À direita, o circuito de sintonia: um indutor em paralelo com o varicap, formando um tanque ressonante; a tensão de controle chega ao varicap através de um resistor de valor alto, que isola a fonte de controle do circuito de radiofrequência, e um capacitor de acoplamento separa a tensão contínua de controle do resto do circuito. Uma anotação registra que a frequência de ressonância é um sobre dois pi raiz de LC, de modo que variar a capacitância por um fator de vinte e cinco varia a frequência por um fator de cinco, e que é assim que um rádio sintoniza sem nenhuma peça móvel.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= curva C(V) =================
+  \begin{scope}[shift={(0,0)}]
+    \begin{axis}[
+      width=8.4cm, height=6.6cm,
+      xlabel={$V_R$ (V)}, ylabel={$C_j$ (pF)},
+      xmin=0.5, xmax=10, ymin=15, ymax=700,
+      ymode=log,
+      xtick={1,2,3,4,5,6,8,10},
+      ytick={20,50,100,200,500},
+      yticklabels={20,50,100,200,500},
+      grid=both, grid style={manualgray!25},
+      axis lines=left, font=\footnotesize,
+      at={(0,0)},
+    ]
+    % C = 560 / (1 + V/0,7)^1,1
+    \addplot[manualblue, very thick, domain=0.5:10, samples=120]
+      {560/((1+x/0.7)^1.1)};
+    \addplot[only marks, mark=*, mark size=2pt, black]
+      coordinates {(1,320) (8,26)};
+    \node[anchor=west, font=\scriptsize] at (axis cs:1.15,330) {$1$ V: $\approx 320$ pF};
+    \node[anchor=south east, font=\scriptsize] at (axis cs:7.7,28) {$8$ V: $\approx 26$ pF};
+    \end{axis}
+  \end{scope}
+
+  % ================= circuito de sintonia =================
+  \begin{scope}[shift={(9.5,0.4)}]
+    \draw (0,3.4) -- (2.6,3.4);
+    \draw (0,3.4) to[L, l=$L$] (0,0.6);
+    \draw (0,0.6) -- (2.6,0.6);
+    \draw (2.6,3.4) to[C, l=$C_a$] (2.6,2.3);
+    \draw (2.6,2.3) to[VC, l=varicap, invert] (2.6,0.6);
+    \node[circ] at (2.6,2.3) {};
+    \node[ground] at (1.3,0.6) {};
+    \draw (2.6,2.3) to[R, l=$R_{\text{alto}}$] (5.2,2.3);
+    \node[anchor=west, font=\tiny, align=left] at (5.35,2.3)
+         {$V_{\text{controle}}$};
+    \draw[manualblue, -{Latex[length=1.4mm]}] (3.9,3.15) -- (3.9,2.5);
+    \node[manualblue, anchor=south, font=\tiny, align=center] at (3.9,3.2)
+         {o resistor alto isola o\\controle do circuito de RF};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (2.3,-0.35)
+       {$f_0 = \dfrac{1}{2\pi\sqrt{LC}}$ --- variar $C$ por $25\times$
+        varia $f_0$ por $5\times$\\
+        \textbf{sintonia sem nenhuma peça móvel}};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O varicap e seu uso canônico. A capacitância varia por mais de uma década com poucos volts, e
+a frequência de ressonância do @sec-cap-037 varia com a raiz disso.
+
+:::
+
+O uso canônico é o **oscilador controlado por tensão** de um receptor ou de uma malha de
+travamento de fase (Volume 13). Antes dele, sintonizar um rádio exigia um capacitor variável
+mecânico, com placas móveis; o varicap substituiu a peça móvel por um número.
+
+Duas armadilhas de aplicação:
+
+- **O sinal de RF sobreposto altera a capacitância.** Se a amplitude do sinal for comparável à
+  tensão de controle, o varicap fica não linear e gera distorção e modulação cruzada. Mantenha
+  o sinal pequeno, ou use dois varicaps em oposição, que cancelam o efeito de primeira ordem.
+- **A tensão de controle precisa ser limpa.** Qualquer ruído nela vira ruído de fase no
+  oscilador, e o resistor de isolação — junto com um capacitor de desacoplamento — existe
+  exatamente para isso.
+
+## 🧪 Laboratório {#sec-051-lab}
+
+**Medir a queda direta de LEDs de várias cores e obter o gap do material; comparar Schottky e
+silício na mesma corrente; ver a curva do fotodiodo nos dois modos; e medir a capacitância de
+um diodo comum usado como varicap.**
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala de teste de diodo
+- 1 fonte ajustável de 0 a 12 V
+- 1 osciloscópio (partes 3 e 5)
+- 1 gerador de funções (parte 5)
+- LEDs 5 mm: vermelho, âmbar, verde, azul ou branco, e 1 infravermelho (de controle remoto
+  velho, se houver)
+- Diodos: 2 × 1N4148, 2 × 1N5819 (Schottky), 1 × 1N4007
+- 1 fotodiodo BPW34, **ou** 1 LED vermelho de 5 mm (que funciona como fotodiodo ruim e
+  suficiente), **ou** 1 célula solar de calculadora
+- Resistores: 220 Ω, 330 Ω, 470 Ω, 1 kΩ, 10 kΩ, 100 kΩ, 1 MΩ
+- 1 lanterna, ou a lanterna do celular
+- Protoboard, jumpers
+:::
+
+### Parte 1 — A cor é o gap
+
+Na escala de teste de diodo, meça a queda direta de cada LED. Depois calcule o comprimento de
+onda que a fórmula prevê e compare com a cor que você vê.
+
+| LED | $V_F$ medida | $E_g$ estimado (eV) | $\lambda$ previsto (nm) | cor esperada |
+|---|---|---|---|---|
+| infravermelho | | | | invisível |
+| vermelho | | | | ~640 |
+| âmbar | | | | ~590 |
+| verde | | | | ~520 |
+| azul / branco | | | | ~465 |
+
+: Tome $E_g \approx V_F$ em elétron-volts e use $\lambda = 1240/E_g$. A estimativa erra 10 a
+20 % — a queda direta inclui as resistências de contato — e mesmo assim acerta a ordem das
+cores. {#tbl-051-lab1}
+
+1. Muitos multímetros não fornecem corrente suficiente para o LED azul e mostram `OL`. **Isso
+   é informação, não defeito**: significa que a barreira é alta demais para a tensão de teste
+   do instrumento.
+2. Para esses, monte com 12 V e 1 kΩ e meça $V_F$ diretamente.
+3. **O infravermelho:** ligue-o com 5 V e 220 Ω e aponte a câmera do celular para ele. Ela
+   enxerga o que o olho não vê — e essa é a ferramenta de diagnóstico padrão para controles
+   remotos.
+
+### Parte 2 — Acionar por corrente, provado
+
+1. Monte o LED vermelho com 5 V e 330 Ω. Meça a corrente e o brilho aparente.
+2. Troque por 220 Ω e por 1 kΩ. Anote as três correntes.
+3. Agora **troque o LED** por outro exemplar da mesma cor, mantendo 330 Ω. A corrente muda
+   pouco.
+4. Repita com **dois LEDs em paralelo compartilhando um único resistor de 220 Ω**. Olhe os
+   dois com atenção.
+
+O passo 4 é o experimento do capítulo: os dois quase nunca brilham igual, e às vezes a
+diferença é gritante. Meça a corrente em cada ramo, inserindo um resistor de 10 Ω em série com
+cada LED e medindo a queda. **A razão entre as duas correntes costuma passar de dois para um.**
+
+### Parte 3 — Schottky contra silício
+
+1. Monte 1N4148 e 1N5819 separadamente, cada um com 1 kΩ e 5 V, e meça $V_F$.
+2. Repita com 220 Ω (corrente cerca de cinco vezes maior).
+3. Monte os dois **em paralelo**, com um único resistor de 220 Ω, e meça a corrente em cada um
+   (com 10 Ω em série em cada ramo).
+
+No passo 3 o Schottky leva praticamente toda a corrente, porque a queda dele é meio volt menor
+e a relação é exponencial. **É a demonstração mais limpa que existe do princípio da ligação
+OU**, e também de por que não se ligam diodos diferentes em paralelo.
+
+4. Meça a **corrente reversa** de cada um: em série com 1 MΩ e 12 V, meça a tensão sobre o
+   resistor. O 1N4148 dá alguns milivolts; o 1N5819 dá uma leitura muito maior. É a
+   contrapartida da queda baixa.
+
+### Parte 4 — O fotodiodo, nos dois modos
+
+Use o BPW34 se tiver; se não, um LED vermelho de 5 mm serve — todo LED é um fotodiodo ruim.
+
+**Modo fotovoltaico:**
+
+1. Ligue apenas o multímetro nos terminais do dispositivo, na escala de tensão contínua.
+2. No escuro, no ambiente e sob a lanterna do celular, anote a tensão.
+3. A leitura deve subir e **saturar** por volta de 0,4 a 0,5 V. Dobrar a luz acrescenta uns
+   18 mV, e não o dobro — porque a relação é logarítmica.
+4. Agora meça a **corrente de curto-circuito** com o multímetro na escala de microampères. Ela
+   é **proporcional** à luz, e não logarítmica.
+
+Essa diferença entre os passos 3 e 4 é a @fig-051-fotodiodo inteira, medida com um multímetro:
+a corrente de curto é linear na luz, e a tensão de circuito aberto é logarítmica.
+
+**Modo fotocondutivo:**
+
+5. Ligue o fotodiodo **em reverso** em série com 100 kΩ e 5 V — cátodo no positivo.
+6. Meça a tensão sobre o resistor no escuro, no ambiente e sob a lanterna.
+7. Aproxime e afaste a lanterna, e observe a resposta.
+8. Com o osciloscópio sobre o resistor, aponte para uma lâmpada da rede: você deve ver a
+   ondulação de **120 Hz** da lâmpada. Aponte para a tela do celular, ou para um LED com PWM, e
+   você verá a frequência de modulação dele.
+
+O passo 8 é o mais divertido do capítulo, e ele transforma um componente de dois terminais num
+instrumento de diagnóstico de iluminação.
+
+### Parte 5 — Recuperação reversa, vista na tela
+
+1. Monte gerador de funções → resistor de 470 Ω → diodo → terra, com o diodo no sentido de
+   condução.
+2. Ponha o gerador em **onda quadrada de 100 kHz**, amplitude de uns 5 V pico a pico
+   **simétrica em torno de zero**.
+3. Com o osciloscópio sobre o resistor (que mede a corrente), observe a transição de condução
+   para bloqueio.
+4. Compare o 1N4007, o 1N4148 e o 1N5819.
+
+O 1N4007 mostra claramente o pico de corrente **negativa** da @fig-051-schottky, com duração de
+microssegundos. O 1N4148, que é um diodo de sinal rápido, mostra alguns nanossegundos. O
+Schottky não mostra praticamente nada.
+
+Este é o ensaio que fecha o argumento do @sec-cap-048: um diodo de retificação de rede visto
+em 100 kHz é um componente diferente.
+
+### Parte 6 — Um diodo comum como varicap
+
+1. Monte um circuito ressonante paralelo do @sec-cap-037: indutor de 10 mH em paralelo com o
+   1N4007 polarizado em **reverso**, com o controle chegando por 100 kΩ.
+2. Acople o gerador de funções por um capacitor de 10 pF e procure a frequência de ressonância
+   observando a amplitude no tanque.
+3. Varie a tensão reversa de 1 V a 10 V e refaça a busca a cada volt.
+4. Calcule $C = 1/(4\pi^2 f_0^2 L)$ para cada tensão e marque $C$ contra $V_R$.
+
+A capacitância de um 1N4007 é de dezenas de picofarads e varia por um fator de dois ou três na
+faixa — bem menos que um varicap de verdade, e o bastante para a curva aparecer. Você mediu a
+região de depleção do @sec-cap-046 usando ressonância.
+
+**Variante simulada (plano B).** No ngspice, um LED é um diodo com `n=2` e `is` pequeno; o
+Schottky, um com `n=1.05`, `is` grande e `tt=0`. Uma análise `.tran` com fonte quadrada de
+100 kHz sobre os três modelos reproduz a Parte 5, e é a melhor maneira de ver a recuperação
+reversa sem osciloscópio rápido. O modelo de fotodiodo é um diodo com uma fonte de corrente em
+paralelo: variar essa fonte e traçar `.dc` reproduz a @fig-051-fotodiodo inteira, com os quatro
+quadrantes. No Falstad, os componentes "LED", "Schottky diode", "solar cell" e "varactor" estão
+todos na biblioteca.
+
+## 🔥 Onde Queima {#sec-051-queima}
+
+**Ligar LED sem resistor.** A curva é exponencial e a tolerância de $V_F$ entre exemplares é
+±0,1 V, o que muda a corrente por um fator de três ou quatro. **LED se aciona por corrente.**
+
+**Ligar LEDs em paralelo com um único resistor.** A partilha é exponencialmente sensível a
+$V_F$. Um resistor por LED.
+
+**Exceder os 5 V de tensão reversa de um LED.** É o dado mais esquecido da folha de dados. Em
+circuito CA, ou onde o sinal inverte, ponha um 1N4148 em antiparalelo.
+
+**Ajustar brilho por corrente em LED colorido de InGaN.** A cor muda e o rendimento piora. Use
+PWM acima de 200 Hz.
+
+**Comprar LED pela intensidade luminosa sem olhar o ângulo.** Um LED de 10 000 mcd com 15° de
+abertura é mais escuro, na prática, que um de 2000 mcd com 60°.
+
+**Usar Schottky em circuito de alta impedância ou que esquenta.** A fuga é mil vezes maior que
+a de um diodo PN, e ela dobra a cada 10 °C.
+
+**Usar diodo PN comum em fonte chaveada.** O $t_{rr}$ de microssegundos vira 15 % do ciclo em
+50 kHz, com o diodo conduzindo para trás. Schottky ou ultrarrápido.
+
+**Especificar TVS pela tensão de ruptura.** O circuito protegido vê a **tensão de grampo**
+$V_C$, que pode ser 1,8 vez a tensão de trabalho. Um SMBJ5.0A grampeia em 9,2 V, não em 6,4.
+
+**Escolher $V_{RWM}$ do TVS igual à tensão nominal do circuito.** Com tolerância e ondulação,
+o TVS passa a conduzir em operação normal e cozinha. Deixe margem.
+
+**Usar Zener no lugar de TVS.** Um Zener de 1 W não absorve um surto de centenas de watts.
+Funciona no teste de bancada e falha em campo.
+
+**Usar TVS comum em linha de dados rápida.** A capacitância de centenas de picofarads destrói o
+sinal. Use versão de baixa capacitância.
+
+**Trocar MOV por TVS em entrada de rede.** O MOV absorve muito mais energia. Os dois têm
+papéis distintos e complementares.
+
+**Deixar sinal de RF grande sobre um varicap.** A capacitância varia dentro do próprio ciclo, e
+o resultado é distorção e modulação cruzada. Sinal pequeno, ou dois varicaps em oposição.
+
+**Alimentar a tensão de controle de um varicap por uma fonte ruidosa.** O ruído vira ruído de
+fase no oscilador. Resistor de isolação e desacoplamento.
+
+**Confundir a polaridade de um fotodiodo em modo fotocondutivo.** Ele trabalha em **reverso**:
+cátodo no positivo. Em direta ele é um diodo comum e não mede nada.
+
+## O que fica deste capítulo {#sec-051-resumo}
+
+**O LED** emite porque o material tem gap **direto** — o silício não tem, e por isso não
+existe LED de silício. A cor é o gap:
+
+$$ \lambda\ (\text{nm}) = \frac{1240}{E_g\ (\text{eV})}, $$
+
+e a queda direta é essencialmente o gap em volts: 1,3 V no infravermelho, 1,8 V no vermelho,
+3,3 V no azul. **Branco é azul com fósforo**, e por isso tem a queda de um azul.
+
+**Aciona-se por corrente**, com $R_S = (V_{\text{fonte}} - V_F)/I_F$, um resistor por LED,
+nunca vários LEDs em paralelo com um só resistor. E a tensão reversa máxima é de apenas
+**5 V** — o dado mais esquecido do componente.
+
+**O fotodiodo** é a mesma junção com o processo invertido: a luz soma $-I_{ph}$ à equação do
+diodo e **desloca a curva inteira para baixo**. Daí saem os dois modos:
+
+- **Fotocondutivo** (reverso): corrente **proporcional** à luz, rápido e linear, limitado pela
+  corrente de escuro, que dobra a cada 10 °C.
+- **Fotovoltaico** (quarto quadrante): entrega potência. $I_{cc}$ é proporcional à luz,
+  $V_{ca}$ é **logarítmica** e trava em 0,5 a 0,6 V por célula de silício, e o ponto de máxima
+  potência fica entre os dois.
+
+O **optoacoplador** é um LED e um fotodetector sem contato elétrico — a solução padrão para
+comandar a rede a partir de baixa tensão. A entrada é um LED com todas as regras dele, e a
+razão de transferência de corrente tem enorme dispersão **e envelhece**.
+
+**O Schottky** não tem junção PN: a barreira é metal-semicondutor, a condução é só de
+majoritários, e **não há carga armazenada**. Daí as três diferenças: queda de 0,3 V em vez de
+0,9 V, recuperação reversa praticamente nula, e **corrente de fuga mil vezes maior**. Use em
+fonte chaveada, baixa tensão e comutação rápida; evite em alta impedância e alta temperatura.
+
+**O TVS** é um Zener de área grande especificado em potência de pico. Três tensões, na ordem:
+$V_{RWM}$ (trabalho, sem conduzir), $V_{BR}$ (ruptura, a 1 mA) e **$V_C$ (grampo, na corrente
+de pico) — que é a que o circuito protegido realmente vê**. Não é Zener, não é MOV, e em linha
+de dados precisa ser de baixa capacitância.
+
+**O varicap** usa a capacitância da depleção, que cai com a tensão reversa. É a sintonia sem
+peça móvel, e a base do oscilador controlado por tensão.
+
+## O Volume 8, e o que vem depois {#sec-051-fecho}
+
+Seis capítulos atrás, este manual tinha resistores, capacitores, indutores e instrumentos —
+tudo linear, tudo passivo, tudo incapaz de distinguir um sentido do outro.
+
+Agora ele tem um cristal com dopagem controlada, uma junção com barreira e depleção, uma curva
+exponencial, quatro modelos para lidar com ela, três topologias de retificador, um filtro
+dimensionado, uma referência de tensão e cinco famílias de dispositivos especiais. A caixa de
+componentes de bancada está, para efeitos práticos, completa no que diz respeito a **dois
+terminais**.
+
+E é essa a limitação que fecha o volume. Um diodo é um componente de duas pernas: ele
+**responde** ao que se aplica nele. Ele retifica, grampeia, regula, emite e detecta — e nunca
+controla nada. Não há como pedir a um diodo que uma corrente pequena comande uma grande.
+
+O terceiro terminal é a invenção que separa a eletrônica do resto da física aplicada. Com ele,
+uma corrente de microampères comanda uma de ampères, um sinal de milivolts vira um de volts, e
+um circuito passa a poder **decidir**. O primeiro capítulo do Volume 9 abre juntando duas
+junções PN costas com costas — literalmente o que este volume acabou de descrever, duas vezes
+— e mostrando por que essa estrutura aparentemente inútil, quando a região do meio é fina o
+bastante, é o transistor bipolar.
+
+A Fase 3 mal começou. O que vem a seguir são cinco volumes de dispositivos ativos, e todos
+eles são construídos com a junção PN dos capítulos 046 e 047.

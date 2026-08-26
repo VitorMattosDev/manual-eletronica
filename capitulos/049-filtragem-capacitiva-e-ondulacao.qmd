@@ -247,7 +247,7 @@ comparar com a especificação de "ruído e ondulação" de um regulador.
 E a tensão de saída fica em $15{,}6 - 0{,}887/2 = 15{,}2$ V — bem acima dos 12 V nominais do
 transformador, que é o ponto do @sec-cap-048 aparecendo de novo.
 
-**Falta o passo que quase todo iniciante esquece, e ele está na @sec-049-escolha:** a tensão
+**Falta o passo que quase todo iniciante esquece, e ele está na @sec-049-escolha-cap:** a tensão
 de trabalho do capacitor. Um 4700 µF/16 V nesse circuito trabalha acima da tensão nominal e
 morre em semanas.
 
