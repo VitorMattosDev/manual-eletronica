@@ -12,23 +12,23 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 51/104 |
-| **Contíguos até** | **051** — sem nenhum buraco no meio do livro |
+| **Progresso** | 52/104 |
+| **Contíguos até** | **052** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 052** | O transistor bipolar: estrutura e funcionamento (abre o Volume 9) |
+| **Próximo capítulo: 053** | Curvas características e regiões de operação |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
-diodos especiais. Os capítulos 048 e 049 trazem o bloco `.callout-warning` exigido pelo
-`CLAUDE.md` — rede elétrica no 048, capacitor carregado no 049 —, e os dois roteiros de
-laboratório foram escritos para execução **inteira em baixa tensão**, com gerador de funções
-ou fonte de parede de 12 V CA já montada.
+diodos especiais.
 
-O próximo bloco é o Volume 9 (capítulos 052 a 058), sobre transistores bipolares. O
-capítulo 051 já monta a ponte: duas junções PN costas com costas, com a região do meio fina.
+**Volume 9 em andamento** (capítulos 052 a 058, transistores bipolares). O 052 já está
+escrito: estrutura, comprimento de difusão contra espessura de base, $\alpha$ e $\beta$, a
+exponencial de $V_{BE}$ e a pinagem não padronizada do TO-92.
+
 Convenções do Volume 8 que o Volume 9 herda: valor comercial recalculado depois do
 arredondamento, pior caso verificado nos dois extremos, e `.tikz` com `circuitikz` para
-esquemático e `pgfplots` para curva.
+esquemático e `pgfplots` para curva. Convenção nova do Volume 9: **$\beta$ entra em projeto
+só como desigualdade**, nunca como fator numa conta que decide tensão de saída.
 
 Para confirmar o estado a qualquer momento:
 
@@ -141,7 +141,7 @@ cinco ocorrências como aviso.
 
 ### Volume 9 — Transistores Bipolares
 
-- [ ] 052 — O transistor bipolar: estrutura e funcionamento — `capitulos/052-o-transistor-bipolar-estrutura-e-funcionamento.qmd`
+- [x] 052 — O transistor bipolar: estrutura e funcionamento — `capitulos/052-o-transistor-bipolar-estrutura-e-funcionamento.qmd`
 - [ ] 053 — Curvas características e regiões de operação — `capitulos/053-curvas-caracteristicas-e-regioes-de-operacao.qmd`
 - [ ] 054 — O BJT como chave: corte, saturação e acionamento de cargas — `capitulos/054-o-bjt-como-chave-corte-saturacao-e-acionamento-de.qmd`
 - [ ] 055 — Polarização: divisor de base, resistor de emissor e estabilidade térmica — `capitulos/055-polarizacao-divisor-de-base-resistor-de-emissor-e.qmd`

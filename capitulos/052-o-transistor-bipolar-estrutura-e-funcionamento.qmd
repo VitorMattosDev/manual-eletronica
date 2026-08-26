@@ -1,3 +1,1078 @@
 # O transistor bipolar: estrutura e funcionamento {#sec-cap-052}
 
-*(em elaboração)*
+Seis capítulos foram gastos com dois terminais. O @sec-cap-046 montou a junção PN, o
+@sec-cap-047 mediu a curva dela, os capítulos 048 a 050 a puseram para trabalhar em direta e
+em ruptura, e o @sec-cap-051 varreu tudo o mais que uma barreira consegue fazer.
+
+Em nenhum desses circuitos o sinal ficou **maior**. Um diodo retifica, ceifa, regula, emite
+luz — e todos esses serviços saem da energia que já estava lá. Não há um componente passivo,
+nem uma junção sozinha, que pegue um sinal de 10 mV e devolva 1 V.
+
+Este capítulo acrescenta o terceiro terminal, e com ele a coisa nova: **um circuito em que uma
+corrente pequena controla uma corrente grande**, tirada de uma fonte. O nome disso é
+amplificação, e o transistor bipolar de junção — BJT, de *bipolar junction transistor* — foi o
+primeiro componente a fazê-lo em estado sólido.
+
+O @sec-cap-051 fechou apontando o caminho: duas junções PN costas com costas, com a região do
+meio fina. Vale começar mostrando por que essa palavra — **fina** — carrega o capítulo inteiro.
+
+## Dois diodos costas com costas não são um transistor {#sec-052-dois-diodos}
+
+Um transistor NPN é, no desenho, duas junções: N-P do lado do emissor, P-N do lado do coletor,
+com a região P compartilhada. A tentação óbvia é montar isso com dois diodos: junte os dois
+anodos, chame esse ponto de base, e os dois catodos serão emissor e coletor.
+
+Monte, e não funciona. A @fig-052-dois-diodos mostra os dois circuitos lado a lado, idênticos
+em tudo — mesma fonte, mesmos resistores, mesma corrente de base.
+
+::: {#fig-052-dois-diodos}
+
+```{.tikz}
+%%| filename: 052-dois-diodos
+%%| alt: Dois circuitos lado a lado, alimentados por cinco volts. À esquerda, dois diodos ligados pelos anodos: o ponto comum é a base, alimentada por um resistor de cem quilo-ohms vindo dos cinco volts; o catodo do diodo da esquerda é o emissor, ligado ao terra; o catodo do diodo da direita é o coletor, ligado aos cinco volts por um resistor de um quilo-ohm. Anotações registram que a corrente de base é de cerca de quarenta e três microampères e que a corrente de coletor é praticamente zero, apenas a fuga do diodo reverso, de poucos nanoampères, com a tensão de coletor colada nos cinco volts. À direita, o mesmo circuito com um transistor NPN no lugar dos dois diodos: a mesma corrente de base de quarenta e três microampères produz uma corrente de coletor de cerca de quatro vírgula três miliampères, cem vezes maior, e a tensão de coletor cai para menos de um volt. Embaixo, dois cortes ampliados comparam a região da base nos dois casos: nos dois diodos, duas pastilhas separadas com centenas de micrômetros de silício, mais fio e solda entre elas; no transistor, uma única faixa de menos de um micrômetro dentro do mesmo cristal. Uma anotação diz que o comprimento de difusão do elétron no silício tipo P é da ordem de dezenas a centenas de micrômetros, e que por isso no primeiro caso todo elétron injetado se recombina antes de chegar à segunda junção.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ============================ dois diodos ============================
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=south, font=\small\bfseries] at (2.4,4.6) {dois diodos discretos};
+
+    % trilho +5 V
+    \draw (0,4.0) -- (4.8,4.0);
+    \node[anchor=south, font=\scriptsize] at (2.4,4.05) {$+5$ V};
+
+    % ramo de base
+    \draw (2.4,4.0) to[R, l=$100$ k$\Omega$] (2.4,1.6);
+    \draw (2.4,1.6) -- (2.4,0);
+    \node[ponto] at (2.4,0) {};
+    \node[anchor=south west, font=\scriptsize] at (2.45,0.05) {B};
+
+    % diodo BE (anodo na base, catodo no emissor)
+    \draw (2.4,0) to[D, l=$D_1$] (0,0);
+    \node[anchor=east, font=\scriptsize] at (-0.12,0) {E};
+    \draw (0,0) -- (0,-1.0) node[ground]{};
+
+    % diodo BC (anodo na base, catodo no coletor)
+    \draw (2.4,0) to[D, l=$D_2$] (4.8,0);
+    \node[anchor=north, font=\scriptsize] at (4.8,-0.05) {C};
+    \draw (4.8,0) -- (4.8,2.4);
+    \draw (4.8,2.4) to[R, l=$1$ k$\Omega$] (4.8,4.0);
+
+    \node[manualred, anchor=west, font=\scriptsize, align=left] at (5.15,1.1)
+         {$I_C \approx 0$\\(só a fuga: poucos nA)};
+    \node[manualred, anchor=west, font=\scriptsize] at (5.15,2.2) {$V_C = 5{,}00$ V};
+    \node[manualblue, anchor=east, font=\scriptsize, align=right] at (2.25,2.9)
+         {$I_B \approx 43\ \mu$A};
+  \end{scope}
+
+  % ============================ transistor ============================
+  \begin{scope}[shift={(9.0,0)}]
+    \node[anchor=south, font=\small\bfseries] at (2.4,4.6) {um transistor NPN};
+
+    \draw (0,4.0) -- (4.8,4.0);
+    \node[anchor=south, font=\scriptsize] at (2.4,4.05) {$+5$ V};
+
+    \draw (2.4,4.0) to[R, l=$100$ k$\Omega$] (2.4,1.6);
+
+    \node[npn, anchor=B] (Q) at (2.4,0.8) {};
+    \draw (2.4,1.6) -- (2.4,0.8);
+    \node[anchor=south east, font=\scriptsize] at (2.35,0.85) {B};
+
+    \draw (Q.E) -- ++(0,-0.9) node[ground]{};
+    \node[anchor=north west, font=\scriptsize] at ($(Q.E)+(0.08,-0.1)$) {E};
+
+    \node[anchor=south west, font=\scriptsize] at ($(Q.C)+(0.08,0.05)$) {C};
+    \draw (Q.C) |- (4.8,2.4);
+    \draw (4.8,2.4) to[R, l=$1$ k$\Omega$] (4.8,4.0);
+
+    \node[manualgreen!55!black, anchor=west, font=\scriptsize, align=left] at (5.15,1.1)
+         {$I_C \approx 4{,}3$ mA\\$= 100 \times I_B$};
+    \node[manualgreen!55!black, anchor=west, font=\scriptsize] at (5.15,2.2)
+         {$V_C = 0{,}7$ V};
+    \node[manualblue, anchor=east, font=\scriptsize, align=right] at (2.25,2.9)
+         {$I_B \approx 43\ \mu$A};
+  \end{scope}
+
+  % ============================ os dois cortes ============================
+  \begin{scope}[shift={(0,-3.6)}]
+    % dois diodos: duas pastilhas separadas
+    \fill[manualblue!18] (0,0) rectangle (1.6,1.1);
+    \fill[manualred!18]  (1.6,0) rectangle (3.0,1.1);
+    \draw[thick] (0,0) rectangle (3.0,1.1);
+    \draw[thick] (1.6,0) -- (1.6,1.1);
+    \node[font=\tiny] at (0.8,0.55) {n};
+    \node[font=\tiny] at (2.3,0.55) {p};
+
+    \draw[manualgray, thick] (3.0,0.55) -- (3.5,0.55)
+          .. controls (3.8,1.2) and (4.2,0.0) .. (4.5,0.55) -- (5.0,0.55);
+    \node[anchor=south, font=\tiny, manualgray] at (4.0,0.9) {fio + solda};
+
+    \fill[manualred!18]  (5.0,0) rectangle (6.4,1.1);
+    \fill[manualblue!18] (6.4,0) rectangle (8.0,1.1);
+    \draw[thick] (5.0,0) rectangle (8.0,1.1);
+    \draw[thick] (6.4,0) -- (6.4,1.1);
+    \node[font=\tiny] at (5.7,0.55) {p};
+    \node[font=\tiny] at (7.2,0.55) {n};
+
+    \draw[manualred, -{Latex[length=1.6mm]}] (1.65,1.45) -- (2.4,1.45);
+    \draw[manualred, {Latex[length=1.6mm]}-] (5.05,1.45) -- (5.8,1.45);
+    \node[manualred, anchor=south, font=\tiny, align=center] at (4.0,1.6)
+         {região p total: centenas de $\mu$m de cada lado, mais o fio};
+
+    \node[anchor=north, font=\tiny, align=center, manualred] at (4.0,-0.25)
+         {o elétron injetado se recombina muito antes\\de alcançar a segunda junção};
+  \end{scope}
+
+  \begin{scope}[shift={(9.0,-3.6)}]
+    \fill[manualblue!25] (0,0) rectangle (3.0,1.1);
+    \fill[manualred!22]  (3.0,0) rectangle (3.24,1.1);
+    \fill[manualblue!12] (3.24,0) rectangle (8.0,1.1);
+    \draw[thick] (0,0) rectangle (8.0,1.1);
+    \draw[thick] (3.0,0) -- (3.0,1.1);
+    \draw[thick] (3.24,0) -- (3.24,1.1);
+    \node[font=\tiny] at (1.5,0.55) {n$^{+}$};
+    \node[font=\tiny] at (5.6,0.55) {n};
+
+    \draw[manualgreen!55!black, -{Latex[length=1.6mm]}] (2.2,1.6) -- (3.02,1.2);
+    \draw[manualgreen!55!black, -{Latex[length=1.6mm]}] (4.1,1.6) -- (3.22,1.2);
+    \node[manualgreen!55!black, anchor=south, font=\tiny, align=center] at (3.2,1.7)
+         {base p: menos de $1\ \mu$m,\\no mesmo cristal};
+
+    \node[anchor=north, font=\tiny, align=center, manualgreen!55!black] at (4.0,-0.25)
+         {o elétron atravessa a base em nanossegundos\\e é varrido pelo campo do coletor};
+  \end{scope}
+
+  \node[anchor=north, font=\scriptsize, align=center, manualgray, text width=15cm]
+       at (8.6,-5.6)
+       {comprimento de difusão do elétron em silício p: dezenas a centenas de $\mu$m ---
+        \textbf{é a comparação com a espessura da base que decide tudo}};
+
+\end{tikzpicture}
+```
+
+Dois diodos discretos e um transistor NPN, no mesmo circuito. A diferença não está no símbolo:
+está na espessura da região do meio, comparada à distância que um portador injetado percorre
+antes de se recombinar.
+:::
+
+No circuito da esquerda, $D_1$ conduz normalmente — os 43 µA de base entram por ele e saem pelo
+emissor. $D_2$ está reversamente polarizado e não conduz nada além da fuga. O coletor fica em
+5,00 V, e a corrente que passa pelo resistor de 1 kΩ é de poucos nanoampères. **Os dois diodos
+funcionam perfeitamente, cada um por si, e o conjunto não faz absolutamente nada.**
+
+No circuito da direita, a mesma corrente de base produz 4,3 mA no coletor. A corrente cresceu
+cem vezes, e a energia para isso veio da fonte de 5 V — não do sinal de entrada.
+
+A diferença é geométrica. Quando $D_1$ conduz, o emissor injeta elétrons na região p. Esses
+elétrons são **portadores minoritários** ali dentro, e um portador minoritário tem vida curta:
+ele difunde até encontrar uma lacuna e se recombinar. A distância média que ele percorre antes
+disso é o **comprimento de difusão**, $L_n$, e em silício tipo p com dopagem moderada ele vale
+algumas dezenas a algumas centenas de micrômetros.
+
+Nos dois diodos discretos, a região p tem centenas de micrômetros em cada pastilha, e entre as
+duas há ainda o fio de ligação, a solda e um segundo cristal. Todo elétron injetado se
+recombina muito antes de chegar à segunda junção. A corrente que entra pela base sai inteira
+pelo emissor, e a segunda junção nem toma conhecimento.
+
+No transistor, a base tem **menos de um micrômetro**, e é a mesma peça de silício. O elétron
+atravessa antes de ter chance de se recombinar — a probabilidade de sobreviver é de 99 % ou
+mais — e do outro lado encontra o campo elétrico da junção coletor-base, reversamente
+polarizada, que o varre para o coletor.
+
+::: {.callout-note}
+## A palavra que resume o capítulo
+
+A ação de transistor **não é** uma propriedade de duas junções. É uma propriedade de duas
+junções **próximas o bastante** para que um portador injetado numa atravesse até a outra. Fina
+comparada a quê? Ao comprimento de difusão. Toda a diferença entre um par de diodos e um
+amplificador está nessa comparação.
+:::
+
+## A estrutura, e as três decisões de projeto {#sec-052-estrutura}
+
+A @fig-052-estrutura mostra o corte de um NPN, com o percurso dos portadores marcado. Três
+escolhas de fabricação — dopagem do emissor, espessura da base, tamanho do coletor — não são
+detalhes de processo: cada uma responde por um número da folha de dados.
+
+::: {#fig-052-estrutura}
+
+```{.tikz}
+%%| filename: 052-estrutura
+%%| alt: Corte de um transistor NPN em três faixas horizontais. À esquerda, o emissor, marcado como n mais, com dopagem alta. No meio, uma faixa muito estreita, a base, tipo p, com dopagem baixa. À direita, uma região larga, o coletor, tipo n, com dopagem baixa. Os contatos de emissor e coletor saem pelas laterais e o contato de base sai por cima da faixa estreita. Duas regiões de depleção são desenhadas hachuradas, uma em cada junção: a da junção base-emissor é estreita, porque essa junção está diretamente polarizada; a da junção base-coletor é larga, porque essa está reversamente polarizada, e ela avança sobretudo para dentro do coletor, que é menos dopado. Setas mostram o percurso dos portadores: elétrons entram pelo emissor, atravessam a base e são varridos para o coletor, e uma seta bem mais fina se desvia para cima, para o terminal de base, representando os poucos elétrons que se recombinam. Anotações registram os três compromissos de fabricação: emissor cem vezes mais dopado que a base, para que quase toda a corrente da junção seja de elétrons indo para a base e quase nada de lacunas voltando; base fina e pouco dopada, para que quase nenhum elétron se recombine; e coletor grande e pouco dopado, para suportar a tensão reversa e dissipar o calor. À direita, os símbolos do NPN e do PNP com os sentidos das correntes marcados, e a observação de que a seta fica sempre no emissor e aponta no sentido da corrente convencional.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ======================= corte da pastilha =======================
+  % emissor 0..3 | base 3..3.5 | coletor 3.5..9.5
+  \fill[manualblue!30] (0,0) rectangle (3.0,3.0);
+  \fill[manualred!20]  (3.0,0) rectangle (3.5,3.0);
+  \fill[manualblue!10] (3.5,0) rectangle (9.5,3.0);
+
+  % depleções
+  \fill[pattern=north east lines, pattern color=manualgray!70]
+        (2.82,0) rectangle (3.12,3.0);
+  \fill[pattern=north east lines, pattern color=manualgray!70]
+        (3.42,0) rectangle (4.55,3.0);
+
+  \draw[thick] (0,0) rectangle (9.5,3.0);
+  \draw[thick] (3.0,0) -- (3.0,3.0);
+  \draw[thick] (3.5,0) -- (3.5,3.0);
+
+  \node[font=\small] at (1.5,2.5) {n$^{+}$};
+  \node[font=\small] at (8.7,2.5) {n};
+  \node[font=\tiny, manualred, rotate=90] at (3.26,0.45) {p};
+
+  % terminais
+  \draw[thick] (0,1.5) -- (-1.3,1.5);
+  \node[anchor=east, font=\small] at (-1.35,1.5) {\textbf{E}};
+  \node[anchor=south, font=\tiny, manualgray] at (-0.65,1.6) {emissor};
+
+  \draw[thick] (9.5,1.5) -- (10.8,1.5);
+  \node[anchor=west, font=\small] at (10.85,1.5) {\textbf{C}};
+  \node[anchor=south, font=\tiny, manualgray] at (10.15,1.6) {coletor};
+
+  \draw[thick] (3.25,3.0) -- (3.25,5.3) -- (1.6,5.3);
+  \node[anchor=east, font=\small] at (1.55,5.3) {\textbf{B}};
+  \node[anchor=south, font=\tiny, manualgray] at (2.4,5.4) {base};
+
+  % percurso dos elétrons
+  \foreach \y in {0.55, 1.05, 1.55, 2.05}{
+    \draw[manualgreen!55!black, -{Latex[length=1.5mm]}, thick]
+         (0.4,\y) -- (5.4,\y);}
+  \draw[manualgreen!55!black, -{Latex[length=1.5mm]}, thick] (5.4,1.3) -- (8.9,1.3);
+  \node[manualgreen!55!black, anchor=south, font=\tiny, align=center] at (7.2,2.4)
+       {99 \% ou mais atravessam:\\isso é $I_C$};
+
+  % recombinação: seta fina subindo pela base
+  \draw[manualred, -{Latex[length=1.2mm]}, thin] (3.26,1.05) -- (3.26,2.9);
+  \node[manualred, anchor=west, font=\tiny, align=left] at (3.55,4.55)
+       {1 \% se recombina: isso é $I_B$};
+
+  % legendas de projeto
+  \node[anchor=north, font=\tiny, align=center, text width=3.0cm] at (1.5,-0.3)
+       {\textbf{dopagem alta}\\$\sim 100\times$ a da base: quase toda a corrente da junção é
+        de elétrons \emph{indo}, quase nada de lacunas \emph{voltando}};
+  \node[anchor=north, font=\tiny, align=center, text width=3.2cm] at (3.9,-2.1)
+       {\textbf{base fina e pouco dopada}\\menos de $1\ \mu$m: pouca chance de recombinar};
+  \node[anchor=north, font=\tiny, align=center, text width=3.6cm] at (7.4,-0.3)
+       {\textbf{coletor grande e pouco dopado}\\a depleção avança para dentro dele: é isso que
+        segura $V_{CE}$ e espalha o calor};
+  \draw[manualgray, thin] (3.25,-0.3) -- (3.6,-1.9);
+
+  \node[anchor=east, font=\tiny, manualgray, align=right] (dbe) at (2.55,3.75)
+       {depleção estreita:\\junção BE em \emph{direta}};
+  \draw[manualgray, thin] (dbe.east) -- (2.95,3.05);
+  \node[anchor=west, font=\tiny, manualgray, align=left] (dbc) at (5.4,3.75)
+       {depleção larga:\\junção BC em \emph{reversa}};
+  \draw[manualgray, thin] (dbc.west) -- (4.2,3.05);
+
+  % ======================= símbolos =======================
+  \begin{scope}[shift={(0.6,-5.6)}]
+    \node[npn, anchor=B] (Qn) at (0,0) {};
+    \draw (Qn.B) -- ++(-1.1,0) node[anchor=east, font=\small] {B};
+    \draw (Qn.C) -- ++(0,0.9) node[anchor=south, font=\small] {C};
+    \draw (Qn.E) -- ++(0,-0.9) node[anchor=north, font=\small] {E};
+    \draw[manualblue, -{Latex[length=1.5mm]}, thick] ($(Qn.C)+(0.45,0.75)$) -- ++(0,-0.6);
+    \draw[manualblue, -{Latex[length=1.5mm]}, thick] ($(Qn.B)+(-0.95,0.32)$) -- ++(0.6,0);
+    \draw[manualblue, -{Latex[length=1.5mm]}, thick] ($(Qn.E)+(0.45,-0.25)$) -- ++(0,-0.6);
+    \node[anchor=south, font=\small\bfseries] at (0.2,2.4) {NPN};
+    \node[anchor=north, font=\tiny, align=center] at (0.2,-2.7)
+         {$I_C$ e $I_B$ \emph{entram},\\$I_E$ \emph{sai}};
+  \end{scope}
+
+  \begin{scope}[shift={(5.2,-5.6)}]
+    \node[pnp, anchor=B] (Qp) at (0,0) {};
+    \draw (Qp.B) -- ++(-1.1,0) node[anchor=east, font=\small] {B};
+    \draw (Qp.C) -- ++(0,-0.9) node[anchor=north, font=\small] {C};
+    \draw (Qp.E) -- ++(0,0.9) node[anchor=south, font=\small] {E};
+    \draw[manualred, -{Latex[length=1.5mm]}, thick] ($(Qp.C)+(0.45,-0.25)$) -- ++(0,-0.6);
+    \draw[manualred, -{Latex[length=1.5mm]}, thick] ($(Qp.B)+(-0.35,0.32)$) -- ++(-0.6,0);
+    \draw[manualred, -{Latex[length=1.5mm]}, thick] ($(Qp.E)+(0.45,0.75)$) -- ++(0,-0.6);
+    \node[anchor=south, font=\small\bfseries] at (0.2,2.4) {PNP};
+    \node[anchor=north, font=\tiny, align=center] at (0.2,-2.7)
+         {$I_E$ \emph{entra},\\$I_C$ e $I_B$ \emph{saem}};
+  \end{scope}
+
+  \node[draw=manualgray, rounded corners=2pt, anchor=west, align=left,
+        font=\scriptsize, inner sep=5pt] at (8.0,-6.0)
+       {\textbf{A seta fica sempre no emissor}\\
+        e aponta no sentido da corrente convencional\\
+        (isto é, no sentido em que a junção BE conduz).\\[2pt]
+        NPN: aponta para \emph{fora}. PNP: para \emph{dentro}.};
+
+\end{tikzpicture}
+```
+
+Corte de um NPN, com o percurso dos portadores. As três decisões de fabricação — emissor
+muito dopado, base fina, coletor grande — respondem, nessa ordem, por $\alpha$ alto, por
+$\beta$ alto e por $V_{CEO}$ e $P_D$ altos.
+:::
+
+**O emissor é muito mais dopado que a base.** Uma junção PN em direta tem corrente nos dois
+sentidos: elétrons do lado n para o p e lacunas do lado p para o n. Só a primeira parcela
+serve — as lacunas que vão da base para o emissor se recombinam lá e viram corrente de base
+desperdiçada. Dopando o emissor cem vezes mais que a base, a parcela útil domina. É por isso
+que o emissor leva a marca $n^{+}$ no desenho.
+
+**A base é fina e pouco dopada.** Fina, pelo motivo da seção anterior. Pouco dopada, porque
+menos lacunas na base significam menos parceiros de recombinação para o elétron em trânsito.
+As duas escolhas empurram na mesma direção: mais elétrons chegam do outro lado.
+
+**O coletor é grande e pouco dopado.** A junção base-coletor trabalha reversamente polarizada,
+e o @sec-cap-046 mostrou que a depleção avança preferencialmente para o lado **menos** dopado.
+Um coletor pouco dopado deixa a depleção crescer para dentro dele sem que o campo estoure — é
+isso que dá a tensão de ruptura. E a área grande é o que espalha o calor: $I_C V_{CE}$ é
+dissipado quase todo ali.
+
+::: {.callout-important}
+## O transistor não é simétrico
+
+O desenho tem duas junções, mas elas não são intercambiáveis. Se você trocar emissor e coletor
+de lugar, o componente **ainda funciona** — mal. O ganho reverso $\beta_R$ de um transistor de
+sinal fica entre 2 e 10, contra 100 a 300 no sentido certo, porque o coletor é pouco dopado e
+injeta mal.
+
+Isso é útil de duas maneiras. Primeiro, como diagnóstico: um transistor que amplifica pouco
+demais no seu circuito pode estar simplesmente montado ao contrário. Segundo, o modo reverso
+tem $V_{CE(\text{sat})}$ **menor** que o modo direto, e chaves analógicas de precisão às vezes
+o usam de propósito.
+:::
+
+## As quatro regiões, e a que interessa agora {#sec-052-regioes}
+
+Cada junção pode estar em direta ou em reversa, o que dá quatro combinações:
+
+| Junção BE | Junção BC | Região | O que o transistor faz |
+|---|---|---|---|
+| reversa | reversa | **corte** | não conduz: chave aberta |
+| direta | reversa | **ativa direta** | $I_C = \beta I_B$: amplifica |
+| direta | direta | **saturação** | conduz tudo o que a carga deixa: chave fechada |
+| reversa | direta | **ativa reversa** | amplifica mal, $\beta_R$ de 2 a 10 |
+
+: As quatro regiões de operação do BJT. O capítulo 053 as desenha sobre as curvas
+características, e o 054 usa as duas primeiras linhas — corte e saturação — para construir uma
+chave. {#tbl-052-regioes}
+
+A região que importa neste capítulo é a **ativa direta**: base-emissor em direta, base-coletor
+em reversa. É onde a ação de transistor acontece, e é onde valem todas as fórmulas que vêm a
+seguir.
+
+Vale registrar desde já um ponto que costuma confundir: **o coletor não precisa de muita
+tensão para coletar**. Basta que a junção base-coletor não esteja em direta, e como a base
+está em torno de 0,7 V, isso significa $V_C$ acima de uns 0,3 V. Abaixo disso o transistor
+entra em saturação — assunto do capítulo 054.
+
+## As correntes: $\alpha$, $\beta$ e Kirchhoff {#sec-052-correntes}
+
+O transistor é um nó como qualquer outro, e a lei de Kirchhoff das correntes (@sec-cap-013)
+não abre exceção para ele:
+
+$$ \boxed{\;I_E = I_C + I_B\;} $$
+
+Tudo o que entra pela base e pelo coletor sai pelo emissor. A @fig-052-correntes mostra como
+essa corrente se reparte.
+
+::: {#fig-052-correntes}
+
+```{.tikz}
+%%| filename: 052-correntes
+%%| alt: À esquerda, um símbolo de transistor NPN com as três correntes marcadas: a corrente de base entrando pela esquerda com o valor de vinte microampères, a corrente de coletor entrando por cima com o valor de dois miliampères, e a corrente de emissor saindo por baixo com o valor de dois vírgula zero dois miliampères. Uma anotação registra a lei dos nós: a corrente de emissor é a soma das outras duas. À direita, um diagrama de faixa mostrando a repartição: uma faixa larga entra pela esquerda representando a corrente de emissor, cem por cento; uma faixa fina se desvia para cima representando a corrente de base, cerca de um por cento; e a faixa larga continua para a direita representando a corrente de coletor, noventa e nove por cento. As definições de alfa e beta estão escritas ao lado, com alfa igual à razão entre corrente de coletor e corrente de emissor, beta igual à razão entre corrente de coletor e corrente de base, e a relação entre os dois. Uma tabela pequena mostra pares de valores: alfa de zero vírgula nove oito para beta quarenta e nove, zero vírgula nove nove para noventa e nove, zero vírgula nove nove cinco para cento e noventa e nove, e zero vírgula nove nove oito para quatrocentos e noventa e nove, com a observação de que uma variação minúscula em alfa vira uma variação enorme em beta.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ===================== símbolo com as correntes =====================
+  \begin{scope}[shift={(0,0)}]
+    \node[npn, anchor=B] (Q) at (0,0) {};
+    \draw[thick] (Q.B) -- ++(-1.6,0) coordinate (bt);
+    \draw[thick] (Q.C) -- ++(0,1.4) coordinate (ct);
+    \draw[thick] (Q.E) -- ++(0,-1.4) coordinate (et);
+
+    \draw[manualblue, -{Latex[length=1.8mm]}, very thick]
+         ($(bt)+(0.1,0.35)$) -- ++(0.9,0);
+    \node[manualblue, anchor=south, font=\scriptsize] at ($(bt)+(0.55,0.45)$)
+         {$I_B = 20\ \mu$A};
+
+    \draw[manualgreen!55!black, -{Latex[length=1.8mm]}, very thick]
+         ($(ct)+(0.42,0.15)$) -- ++(0,-0.9);
+    \node[manualgreen!55!black, anchor=west, font=\scriptsize] at ($(ct)+(0.55,-0.3)$)
+         {$I_C = 2{,}00$ mA};
+
+    \draw[manualred, -{Latex[length=1.8mm]}, very thick]
+         ($(et)+(0.42,0.75)$) -- ++(0,-0.9);
+    \node[manualred, anchor=west, font=\scriptsize] at ($(et)+(0.55,0.3)$)
+         {$I_E = 2{,}02$ mA};
+
+    \node[anchor=north, font=\scriptsize] at (0.1,-2.6) {$I_E = I_C + I_B$};
+  \end{scope}
+
+  % ===================== repartição =====================
+  \begin{scope}[shift={(6.6,-0.6)}]
+    % faixa do emissor entrando (da direita para a esquerda no sentido do elétron,
+    % mas desenhada no sentido convencional: E -> C)
+    \fill[manualred!35] (0,0) -- (2.4,0) -- (2.4,1.6) -- (0,1.6) -- cycle;
+    \fill[manualgreen!35] (2.4,0) -- (6.4,0) -- (6.4,1.58) -- (2.4,1.58) -- cycle;
+    \fill[manualblue!45] (2.4,1.58) -- (2.6,1.58) -- (2.6,2.8) -- (2.4,2.8) -- cycle;
+    \draw[thick] (0,0) -- (6.4,0);
+    \draw[thick] (0,1.6) -- (2.4,1.6) -- (2.4,2.8) -- (2.6,2.8) -- (2.6,1.58) -- (6.4,1.58);
+    \draw[thick] (0,0) -- (0,1.6);
+    \draw[thick] (6.4,0) -- (6.4,1.58);
+
+    \node[anchor=north, font=\scriptsize, manualred] at (1.2,-0.15) {$I_E$ --- 100 \%};
+    \node[anchor=north, font=\scriptsize, manualgreen!55!black] at (4.4,-0.15)
+         {$I_C$ --- 99 \%};
+    \node[anchor=south, font=\scriptsize, manualblue] at (2.5,2.9) {$I_B$ --- 1 \%};
+  \end{scope}
+
+  % ===================== definições =====================
+  \node[draw=manualgray, rounded corners=2pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt] at (6.6,-1.2)
+       {$\alpha = \dfrac{I_C}{I_E}$ \quad (fração que atravessa a base) \\[4pt]
+        $\beta = \dfrac{I_C}{I_B}$ \quad (o ganho que o projeto usa) \\[4pt]
+        $\beta = \dfrac{\alpha}{1-\alpha}$ \qquad
+        $\alpha = \dfrac{\beta}{\beta+1}$ \qquad
+        $I_E = (\beta+1)\,I_B$};
+
+  \node[anchor=north west, font=\scriptsize, align=center, inner sep=4pt,
+        draw=manualgray, rounded corners=2pt] at (-1.6,-3.4)
+       {\begin{tabular}{cc}
+          $\boldsymbol{\alpha}$ & $\boldsymbol{\beta}$ \\ \hline
+          0,980 & 49 \\
+          0,990 & 99 \\
+          0,995 & 199 \\
+          0,998 & 499 \\
+        \end{tabular}};
+  \node[anchor=north west, font=\scriptsize, align=left, text width=4.2cm, manualred]
+       at (1.2,-3.6)
+       {$\alpha$ mal cabe em três casas decimais e $\beta$ varia por um fator de dez:
+        \textbf{é por isso que nenhum projeto sério depende do valor exato de $\beta$.}};
+
+\end{tikzpicture}
+```
+
+A repartição da corrente do emissor. $\alpha$ é a fração que sobrevive à travessia da base;
+$\beta$ é a razão entre o que sobreviveu e o que se perdeu. Uma variação de meio por cento em
+$\alpha$ dobra $\beta$.
+:::
+
+Duas razões descrevem essa repartição. A primeira é o **ganho de base comum**:
+
+$$ \alpha = \frac{I_C}{I_E} $$
+
+que é literalmente a fração dos elétrons injetados que chega ao coletor. Como nem todos chegam,
+$\alpha < 1$ sempre, e num transistor bom ele vale 0,99 ou mais.
+
+A segunda é o **ganho de emissor comum**, o número que aparece na folha de dados como $h_{FE}$:
+
+$$ \beta = \frac{I_C}{I_B} $$
+
+Substituindo $I_B = I_E - I_C$ chega-se às duas conversões:
+
+$$ \beta = \frac{\alpha}{1-\alpha}, \qquad \alpha = \frac{\beta}{\beta+1} $$
+
+E a corrente de emissor, em função da de base, sai da lei dos nós:
+
+$$ I_E = I_C + I_B = \beta I_B + I_B = (\beta+1)\,I_B $$
+
+Com $\beta = 100$: $I_E = 101\,I_B$ e $I_C = 100\,I_B$. A diferença entre $I_E$ e $I_C$ é de
+1 %, e em quase todo cálculo de bancada **considerar $I_E \approx I_C$ é aproximação
+excelente** — melhor, aliás, que a tolerância dos resistores em volta.
+
+### $\beta$ não é uma constante {#sec-052-beta}
+
+Essa é a informação mais importante do capítulo para quem vai projetar, e vale insistir nela.
+
+A tabela da @fig-052-correntes já mostra a fragilidade aritmética: $\alpha$ passando de 0,990
+para 0,998 leva $\beta$ de 99 a 499. Como $\alpha$ depende de espessura de base — uma dimensão
+controlada em micrômetros, com dispersão de fabricação —, $\beta$ herda uma dispersão enorme.
+
+Um 2N3904 comprado no mesmo saquinho traz, na folha de dados:
+
+| $I_C$ | $h_{FE}$ mínimo | $h_{FE}$ máximo |
+|---|---|---|
+| 0,1 mA | 40 | — |
+| 1 mA | 70 | — |
+| 10 mA | 100 | 300 |
+| 50 mA | 60 | — |
+| 100 mA | 30 | — |
+
+: $h_{FE}$ do 2N3904 em função da corrente de coletor, a 25 °C, com $V_{CE} = 1$ V. O fabricante
+garante só o mínimo, exceto num único ponto. {#tbl-052-hfe}
+
+Três leituras dessa tabela:
+
+1. **A dispersão entre exemplares é de 3 para 1** no único ponto em que há máximo especificado.
+   Dois transistores do mesmo lote podem ter $\beta = 100$ e $\beta = 300$.
+2. **$\beta$ cai nas pontas.** Em corrente baixa, a recombinação na própria depleção da junção
+   BE come uma fração maior da corrente de base; em corrente alta, a injeção do emissor satura
+   e a base efetiva engorda. O máximo fica no meio da faixa útil.
+3. **A temperatura mexe muito**: $\beta$ sobe de 0,5 a 1 % por grau. De 25 °C para 100 °C, ele
+   quase dobra.
+
+Some as três e o resultado prático é: **em um circuito bem projetado, $\beta$ aparece só como
+uma desigualdade** — "$\beta$ é grande o bastante" —, nunca como um valor no meio de uma conta
+que decide a tensão de saída. O capítulo 055 é inteiro sobre como conseguir isso.
+
+## A equação: o transistor é controlado por tensão {#sec-052-exponencial}
+
+Até aqui $\beta$ apareceu como se fosse a causa: uma corrente de base "gera" uma corrente de
+coletor. Fisicamente é o contrário. O que controla quantos elétrons o emissor injeta é a
+**tensão** sobre a junção base-emissor, exatamente como num diodo (@sec-cap-047):
+
+$$ \boxed{\;I_C = I_S\,e^{V_{BE}/V_T}\;} $$
+
+com $V_T = kT/q \approx 26$ mV a 27 °C e $I_S$ da ordem de $10^{-15}$ A num transistor de
+sinal. A corrente de base é uma **consequência**: uma fração $1/\beta$ do que foi injetado se
+perde no caminho.
+
+::: {#fig-052-exponencial}
+
+```{.tikz}
+%%| filename: 052-exponencial
+%%| alt: Dois gráficos lado a lado da corrente de coletor em função da tensão base-emissor. No da esquerda, com escala vertical linear de zero a dez miliampères, a curva é uma exponencial praticamente colada no zero até cerca de meio volt e depois sobe quase verticalmente, com marcações mostrando que a corrente vale um miliampère em torno de zero vírgula sessenta e cinco volt e dez miliampères em torno de zero vírgula setenta e um volt. Uma anotação diz que é essa verticalidade que faz o transistor parecer ter uma tensão fixa de zero vírgula sete volt e que faz a polarização por tensão de base ser inviável. No da direita, o mesmo dado com escala vertical logarítmica de um nanoampère a cem miliampères: a curva vira uma reta perfeita, e duas linhas auxiliares mostram que cada década de corrente custa exatamente sessenta milivolts. Uma anotação registra que a inclinação é o logaritmo natural de dez vezes a tensão térmica, cerca de sessenta milivolts por década a temperatura ambiente, e outra registra que a mesma curva se desloca cerca de menos dois milivolts por grau quando a corrente é mantida constante, com uma curva tracejada deslocada para a esquerda representando a mesma junção a setenta e cinco graus.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+\begin{axis}[
+  name=esq,
+  width=8.4cm, height=6.6cm,
+  xlabel={$V_{BE}$ (V)}, ylabel={$I_C$ (mA)},
+  xmin=0.40, xmax=0.76, ymin=0, ymax=11,
+  xtick={0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75},
+  xticklabel style={/pgf/number format/fixed, /pgf/number format/precision=2,
+                    /pgf/number format/use comma, font=\tiny},
+  ytick={0,2,4,6,8,10},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+  title={\footnotesize escala linear},
+]
+  % Ic (mA) = 1e-12 * exp(V/0.026)  -> em 0,65 V da 1,03 mA
+  \addplot[curva, domain=0.40:0.7124, samples=220] {1.39e-11*exp(x/0.026)};
+
+  \draw[auxiliar] (axis cs:0.40,1) -- (axis cs:0.650,1);
+  \draw[auxiliar] (axis cs:0.650,0) -- (axis cs:0.650,1);
+  \node[ponto] at (axis cs:0.650,1) {};
+  \node[anchor=west, font=\tiny] at (axis cs:0.44,1.7) {1 mA em $0{,}65$ V};
+
+  \node[ponto] at (axis cs:0.710,10) {};
+  \node[anchor=east, font=\tiny] at (axis cs:0.700,10) {10 mA em $0{,}71$ V};
+
+  \node[anchor=north west, font=\tiny, align=left, text width=3.2cm, manualred]
+       at (axis cs:0.405,8.4)
+       {60 mV de diferença entre 1 e 10 mA: é por isso que ``$0{,}7$ V'' funciona como
+        lembrete e \textbf{não} funciona como fonte de polarização};
+\end{axis}
+
+\begin{axis}[
+  name=dir, at={(esq.south east)}, xshift=1.9cm, anchor=south west,
+  width=8.4cm, height=6.6cm,
+  xlabel={$V_{BE}$ (V)}, ylabel={$I_C$ (A)},
+  xmin=0.30, xmax=0.80, ymin=1e-9, ymax=1e-1,
+  ymode=log,
+  xtick={0.30,0.40,0.50,0.60,0.70,0.80},
+  xticklabel style={/pgf/number format/fixed, /pgf/number format/precision=2,
+                    /pgf/number format/use comma, font=\tiny},
+  ytick={1e-9,1e-7,1e-5,1e-3,1e-1},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+  title={\footnotesize escala logarítmica --- a mesma curva},
+]
+  \addplot[curva, domain=0.30:0.80, samples=2] {1e-15*exp(x/0.026)};
+  \addplot[manualred, very thick, dashed, domain=0.30:0.80, samples=2]
+          {1e-15*exp((x+0.10)/0.026)};
+
+  % marcação das décadas
+  \draw[auxiliar] (axis cs:0.5390,1e-9) -- (axis cs:0.5390,1e-6);
+  \draw[auxiliar] (axis cs:0.5989,1e-9) -- (axis cs:0.5989,1e-5);
+  \draw[manualgreen!55!black, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}]
+       (axis cs:0.5390,3e-7) -- (axis cs:0.5989,3e-7);
+  \node[manualgreen!55!black, anchor=north, font=\tiny, align=center]
+       at (axis cs:0.569,2.2e-7) {60 mV por década};
+
+  \node[manualred, anchor=north west, font=\tiny, align=left, text width=3.2cm]
+       at (axis cs:0.305,4e-3)
+       {a mesma junção a 75 $^{\circ}$C: deslocada $\approx 100$ mV para a esquerda
+        ($-2$ mV/$^{\circ}$C)};
+\end{axis}
+
+\end{tikzpicture}
+```
+
+A relação corrente-tensão da junção base-emissor, nas duas escalas. Em linear ela parece uma
+parede em 0,7 V; em log ela é uma reta de 60 mV por década, e é a reta que descreve o
+componente.
+:::
+
+### Os 60 mV por década
+
+Tomando o logaritmo da exponencial:
+
+$$ V_{BE} = V_T \ln\!\left(\frac{I_C}{I_S}\right) $$
+
+Multiplicar $I_C$ por dez soma $V_T \ln 10 = 26 \times 2{,}303 \approx 60$ mV a $V_{BE}$. É a
+mesma constante do diodo do @sec-cap-047, e ela vale para toda a família de junções de silício.
+
+Números para guardar, num transistor de sinal:
+
+- 1 µA → $V_{BE} \approx 0{,}47$ V
+- 10 µA → 0,53 V
+- 100 µA → 0,59 V
+- 1 mA → 0,65 V
+- 10 mA → 0,71 V
+- 100 mA → 0,77 V
+
+"Zero vírgula sete volt" é, então, uma etiqueta boa para a faixa de alguns miliampères e ruim
+fora dela — o mesmo diagnóstico que o @sec-cap-047 fez para o diodo.
+
+### Os −2 mV por grau
+
+Mantendo $I_C$ constante e aquecendo a junção, $V_{BE}$ **cai** cerca de 2 mV por grau. A
+razão é a mesma do diodo: $I_S$ cresce muito com a temperatura, e como a corrente foi fixada,
+a tensão tem de recuar para compensar.
+
+O sinal é o que torna isso perigoso. Fixe $V_{BE}$ com uma fonte de tensão, aqueça o
+transistor: $I_C$ **sobe**, o que aquece mais, o que faz $I_C$ subir mais. Chama-se **fuga
+térmica**, e é um modo de morte real, não uma curiosidade. Todo o capítulo 055 existe para
+impedi-la.
+
+### Então é corrente ou tensão que controla?
+
+As duas descrições são válidas, e a escolha entre elas é de engenharia, não de física:
+
+- **A física é controlada por tensão.** $V_{BE}$ determina a injeção; $I_C$ é a consequência.
+  É essa a descrição certa para pequenos sinais e para pares casados, e é dela que sai a
+  transcondutância $g_m = I_C/V_T$ do capítulo 058.
+- **O projeto de polarização é feito por corrente.** Não porque a corrente cause alguma coisa,
+  mas porque $\beta$, com toda a dispersão que tem, ainda é **muito mais estável** que $I_S$ —
+  que varia por ordens de grandeza entre exemplares e com a temperatura. Fixar $I_B$ é errar
+  $I_C$ por um fator de três; fixar $V_{BE}$ é errar por um fator de mil.
+
+E a resposta prática, que atravessa o volume inteiro: **não fixe nem um nem outro. Fixe
+$I_E$.** Como isso se faz é o assunto do capítulo 055.
+
+## O PNP {#sec-052-pnp}
+
+Troque cada região pelo tipo oposto — p⁺, n fina, p — e tudo se inverte:
+
+- Os portadores injetados são **lacunas**, não elétrons.
+- O emissor vai para o lado **positivo**, e o coletor para o negativo.
+- $V_{BE}$ vale $-0{,}7$ V, ou, dito de forma menos confusa, o emissor fica **0,7 V acima** da
+  base.
+- As correntes convencionais invertem: $I_E$ **entra**, $I_C$ e $I_B$ **saem**.
+- A seta do símbolo aponta para **dentro** do transistor.
+
+Todas as equações — $I_E = I_C + I_B$, $\beta = I_C/I_B$, a exponencial, os 60 mV por década,
+os −2 mV por grau — valem sem alteração nenhuma, desde que se trabalhe com o **módulo** das
+correntes e com a tensão medida no sentido certo.
+
+O PNP existe para os casos em que a carga tem de ficar ligada ao terra e o transistor
+ligado ao positivo — chave de lado alto (capítulo 054), fonte de corrente que empurra em vez
+de puxar, e o meio de cima de um estágio de saída. Todo NPN comum tem um PNP complementar,
+casado de propósito: 2N3904/2N3906, BC547/BC557, BC337/BC327.
+
+Em silício, o PNP é historicamente um pouco pior: a mobilidade da lacuna é cerca de um terço
+da do elétron, o que deixa o PNP mais lento e com $\beta$ um pouco menor em igualdade de
+processo. Nos pares comerciais modernos a diferença já foi bastante compensada, mas ela ainda
+aparece na frequência de transição.
+
+## O componente real: encapsulamento e folha de dados {#sec-052-real}
+
+### A pinagem não é padronizada {#sec-052-pinagem}
+
+Esta é, disparado, a causa número um de circuito com transistor que não funciona na primeira
+montagem.
+
+::: {#fig-052-pinagem}
+
+```{.tikz}
+%%| filename: 052-pinagem
+%%| alt: Quatro encapsulamentos de transistor desenhados com a pinagem. O primeiro é um TO-92 visto pelo lado chato, com o texto voltado para quem olha e os terminais para baixo, identificado como BC547, BC548 e BC557, com os pinos da esquerda para a direita sendo coletor, base e emissor. O segundo é o mesmo TO-92 na mesma orientação, identificado como 2N3904, 2N3906 e BC337, com os pinos da esquerda para a direita sendo emissor, base e coletor, exatamente ao contrário do primeiro. Uma anotação em destaque diz que a base fica no meio nos dois casos e que só o emissor e o coletor trocam de lugar, e que por isso um transistor montado ao contrário conduz como um diodo pela junção base-emissor e o circuito parece funcionar pela metade. O terceiro é um TO-220 visto pela frente, com aba metálica, identificado como TIP31C e BD139, com os pinos da esquerda para a direita sendo base, coletor e emissor, e uma anotação de que a aba metálica é eletricamente ligada ao coletor. O quarto é um SOT-23 visto de cima, com dois pinos embaixo e um em cima, identificado como MMBT3904, com o pino um sendo base, o pino dois emissor e o pino três coletor.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- TO-92 padrão europeu (BC547) ----------
+  \begin{scope}[shift={(0,0)}]
+    \draw[thick, fill=manualgray!12] (0,0) -- (0,1.5)
+          arc[start angle=180, end angle=0, radius=0.85] -- (1.7,0) -- cycle;
+    \draw[thick] (0,0) -- (1.7,0);
+    \foreach \x/\t in {0.35/C, 0.85/B, 1.35/E}{
+      \draw[thick] (\x,0) -- (\x,-0.9);
+      \node[anchor=north, font=\small\bfseries] at (\x,-0.95) {\t};}
+    \node[font=\tiny, align=center] at (0.85,1.55) {lado chato\\(o do texto)};
+    \node[anchor=north, font=\scriptsize, align=center] at (0.85,-1.55)
+         {\textbf{BC547} \; BC548\\BC557 \; BC558};
+    \node[anchor=north, font=\tiny, manualgray] at (0.85,-2.35) {TO-92 --- C\,B\,E};
+  \end{scope}
+
+  % ---------- TO-92 padrão americano (2N3904) ----------
+  \begin{scope}[shift={(4.2,0)}]
+    \draw[thick, fill=manualgray!12] (0,0) -- (0,1.5)
+          arc[start angle=180, end angle=0, radius=0.85] -- (1.7,0) -- cycle;
+    \draw[thick] (0,0) -- (1.7,0);
+    \foreach \x/\t in {0.35/E, 0.85/B, 1.35/C}{
+      \draw[thick] (\x,0) -- (\x,-0.9);
+      \node[anchor=north, font=\small\bfseries] at (\x,-0.95) {\t};}
+    \node[font=\tiny, align=center] at (0.85,1.55) {lado chato\\(o do texto)};
+    \node[anchor=north, font=\scriptsize, align=center] at (0.85,-1.55)
+         {\textbf{2N3904} \; 2N3906\\BC337 \; BC327};
+    \node[anchor=north, font=\tiny, manualgray] at (0.85,-2.35) {TO-92 --- E\,B\,C};
+  \end{scope}
+
+  \draw[manualred, {Latex[length=2mm]}-{Latex[length=2mm]}, very thick]
+       (2.05,0.75) -- (3.95,0.75);
+  \node[manualred, anchor=south, font=\scriptsize, align=center] at (3.0,0.85)
+       {\textbf{invertido}};
+
+  \node[draw=manualred, thick, rounded corners=2pt, anchor=north, align=center,
+        font=\scriptsize, inner sep=5pt, text width=7.6cm] at (3.0,-3.0)
+       {Mesmo encapsulamento, mesma orientação, \textbf{pinagem oposta}.
+        A base fica no meio nos dois; trocam-se emissor e coletor.
+        Montado ao contrário, o transistor ainda ``funciona'' com $\beta_R$ de 2 a 10 ---
+        e o circuito parece meio vivo, que é o pior dos diagnósticos.};
+
+  % ---------- TO-220 ----------
+  \begin{scope}[shift={(9.4,0)}]
+    \draw[thick, fill=manualgray!25] (0,1.5) rectangle (2.2,2.4);
+    \draw[thick, fill=manualgray!12] (0,0) rectangle (2.2,1.5);
+    \draw[thick] (1.1,1.95) circle (0.2);
+    \foreach \x/\t in {0.45/B, 1.1/C, 1.75/E}{
+      \draw[thick] (\x,0) -- (\x,-0.9);
+      \node[anchor=north, font=\small\bfseries] at (\x,-0.95) {\t};}
+    \node[anchor=south, font=\tiny, align=center] at (1.1,2.45) {aba metálica\\$=$ coletor};
+    \node[anchor=north, font=\scriptsize, align=center] at (1.1,-1.55)
+         {\textbf{TIP31C} \; BD139};
+    \node[anchor=north, font=\tiny, manualgray] at (1.1,-2.35) {TO-220 --- B\,C\,E};
+  \end{scope}
+
+  % ---------- SOT-23 ----------
+  \begin{scope}[shift={(13.4,0)}]
+    \draw[thick, fill=manualgray!12] (0,0.3) rectangle (1.6,1.5);
+    \draw[thick] (0.3,0.3) -- (0.3,-0.15);
+    \draw[thick] (1.3,0.3) -- (1.3,-0.15);
+    \draw[thick] (0.8,1.5) -- (0.8,1.95);
+    \node[anchor=north, font=\scriptsize] at (0.3,-0.2) {1 \textbf{B}};
+    \node[anchor=north, font=\scriptsize] at (1.3,-0.2) {2 \textbf{E}};
+    \node[anchor=south, font=\scriptsize] at (0.8,2.0) {3 \textbf{C}};
+    \node[font=\tiny] at (0.8,0.9) {visto de cima};
+    \node[anchor=north, font=\scriptsize, align=center] at (0.8,-1.05)
+         {\textbf{MMBT3904}};
+    \node[anchor=north, font=\tiny, manualgray] at (0.8,-1.85) {SOT-23};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+Quatro encapsulamentos comuns. Os dois TO-92 do meio da imagem são fisicamente idênticos e
+eletricamente invertidos — e não há nada no corpo do componente que avise.
+:::
+
+O TO-92 é o encapsulamento mais comum de transistor de sinal, e ele tem **duas pinagens
+incompatíveis em circulação**. A família europeia BC5xx usa C-B-E lida da esquerda para a
+direita com o lado chato voltado para quem olha; a americana 2N39xx usa E-B-C, exatamente ao
+contrário. A base fica no meio nas duas, o que é uma sorte pequena e uma armadilha grande: o
+transistor invertido ainda conduz, ainda tem ganho — o ganho reverso, de 2 a 10 — e o circuito
+funciona mal em vez de não funcionar, que é muito mais difícil de diagnosticar.
+
+**Regra de bancada: confira a pinagem na folha de dados de cada código novo, e escreva-a numa
+etiqueta na gaveta.** A Parte 1 do laboratório ensina a determiná-la com o multímetro, o que
+resolve o caso do componente sem código legível.
+
+### Os números da folha de dados
+
+| Parâmetro | O que é | 2N3904 | BC547B | TIP31C |
+|---|---|---|---|---|
+| $V_{CEO}$ | tensão coletor-emissor máxima, base aberta | 40 V | 45 V | 100 V |
+| $V_{CBO}$ | tensão coletor-base máxima | 60 V | 50 V | 100 V |
+| $V_{EBO}$ | tensão **reversa** base-emissor máxima | 6 V | 6 V | 5 V |
+| $I_{C(\max)}$ | corrente de coletor contínua | 200 mA | 100 mA | 3 A |
+| $P_D$ | dissipação a 25 °C, sem dissipador | 625 mW | 500 mW | 2 W |
+| $h_{FE}$ | ganho de corrente | 100–300 | 200–450 | 10–50 |
+| $V_{CE(\text{sat})}$ | queda em saturação | 0,2 V | 0,25 V | 1,2 V |
+| $f_T$ | frequência de transição | 300 MHz | 300 MHz | 3 MHz |
+
+: Os oito números que descrevem um transistor bipolar para efeito de projeto. Os valores de
+$h_{FE}$ são para a corrente de teste da folha de dados. {#tbl-052-datasheet}
+
+Três observações sobre essa tabela.
+
+**$V_{EBO}$ é minúsculo, e é uma armadilha.** A junção base-emissor entra em ruptura reversa
+por volta de 5 a 6 V — ela é, na prática, um Zener de baixa tensão (@sec-cap-050). Ao contrário
+de um Zener de verdade, ela **se degrada** em cada evento: $\beta$ cai permanentemente e o
+ruído sobe. Circuitos que chaveiam sinais grandes na base precisam de um diodo em antiparalelo
+com a junção BE.
+
+**$V_{CEO}$ é menor que $V_{CBO}$**, e não por acaso: com a base aberta, os portadores gerados
+por avalanche na junção BC não têm por onde escapar, entram na base e são multiplicados por
+$\beta$. A ruptura efetiva cai. Com a base amarrada por um resistor baixo ao emissor, a
+tensão suportada sobe — o parâmetro correspondente chama-se $V_{CER}$ ou $V_{CES}$.
+
+**$P_D$ supõe 25 °C no ambiente e derrate a partir daí.** Um 2N3904 dissipando 400 mW numa
+protoboard a 35 °C está muito mais perto do limite do que os "625 mW" sugerem. O @sec-cap-011
+tem a conta térmica completa; ela vale integralmente aqui.
+
+### As correntes de fuga
+
+Com a base aberta e $V_{CE}$ aplicada, algum resíduo passa. São dois parâmetros ligados:
+
+$$ I_{CBO}: \text{fuga da junção BC com o emissor aberto} \qquad
+   I_{CEO} = (\beta+1)\,I_{CBO} $$
+
+A fuga da junção base-coletor entra na base e é amplificada, exatamente como um sinal. No
+2N3904, $I_{CBO}$ é de 50 nA no máximo a 25 °C — desprezível. Mas ela **dobra a cada 10 °C**,
+e num transistor de germânio (que este manual não usa, mas que o leitor encontrará em
+equipamento antigo) ela é mil vezes maior e domina o comportamento. Foi essa fuga que fez a
+indústria abandonar o germânio.
+
+## 🧪 Laboratório {#sec-052-lab}
+
+**Identificar os três terminais de um transistor desconhecido, provar que dois diodos não
+amplificam, ver a ação de transistor pela primeira vez, medir $\beta$ em três correntes
+diferentes e confirmar os 60 mV por década e os −2 mV por grau.**
+
+### Material
+
+::: {.lab-material}
+- 1 fonte ajustável de bancada de 0 a 15 V (ou 4 pilhas AA, 6 V)
+- 1 multímetro digital com **teste de diodo** e, se possível, medida de $h_{FE}$
+- 1 segundo multímetro, se houver (poupa muita remontagem)
+- Transistores NPN: 3 × 2N3904 ou BC547 (peça exemplares do mesmo lote)
+- 1 transistor PNP: 2N3906 ou BC557
+- 2 diodos 1N4148
+- Resistores: 100 Ω, 470 Ω, 1 kΩ, 4,7 kΩ, 10 kΩ, 47 kΩ, 100 kΩ, 220 kΩ, 1 MΩ
+- 1 potenciômetro de 100 kΩ (linear)
+- 1 LED vermelho comum
+- Protoboard, jumpers, ferro de solda (só como fonte de calor, na Parte 6)
+:::
+
+### Parte 1 — Achar os três terminais com o multímetro
+
+Ponha o multímetro no **teste de diodo** e trate o transistor como dois diodos que
+compartilham um terminal.
+
+1. Procure o par de terminais que dá leitura de junção (0,6 a 0,8 V) numa polaridade e
+   estouro na outra. Faça isso para todos os seis pares possíveis.
+2. Você vai achar **dois pares que conduzem**, e eles compartilham um terminal: esse é a
+   **base**.
+3. Se a base conduz com a **ponta vermelha** (positiva) nela, o transistor é **NPN**. Se
+   conduz com a ponta preta, é **PNP**.
+4. Falta distinguir emissor de coletor. Duas maneiras:
+   - **Pela leitura**: a junção base-**emissor** costuma dar leitura ligeiramente **maior**
+     (uns 10 a 40 mV) que a base-coletor, porque é mais dopada e tem área menor. A diferença é
+     pequena; confirme com o item seguinte.
+   - **Pelo ganho**: use a função $h_{FE}$ do multímetro, ou monte a Parte 3 nas duas
+     orientações. A orientação que der ganho alto é a certa; a que der ganho de 2 a 10 está
+     invertida.
+
+::: {.callout-note}
+Anote o resultado e confira com a folha de dados. Se você tem um BC547 e um 2N3904 na mesma
+gaveta, esta parte acabou de justificar o capítulo inteiro.
+:::
+
+### Parte 2 — Os dois diodos que não amplificam
+
+Monte o circuito da esquerda da @fig-052-dois-diodos: dois 1N4148 com os **anodos** unidos
+(esse ponto é a base falsa), 100 kΩ da base falsa para +5 V, catodo do primeiro diodo ao terra,
+catodo do segundo a +5 V através de 1 kΩ.
+
+1. Meça a tensão sobre o resistor de 100 kΩ: uns 4,3 V, o que dá $I_B \approx 43$ µA.
+2. Meça a tensão sobre o resistor de 1 kΩ. Deve dar **alguns milivolts, no máximo** — o
+   multímetro talvez leia zero.
+3. Meça a tensão no "coletor": 5,00 V, colados.
+
+**Nenhuma corrente de coletor.** Guarde os números.
+
+### Parte 3 — A ação de transistor, vista pela primeira vez
+
+Troque os dois diodos por um 2N3904, mantendo tudo o mais idêntico.
+
+1. Meça de novo a tensão sobre o resistor de 100 kΩ. Praticamente a mesma: os mesmos 43 µA.
+2. Meça a tensão sobre o resistor de 1 kΩ. Agora ela é de vários volts.
+3. Meça $V_{CE}$. Com $\beta$ perto de 100, a conta dá $I_C \approx 4{,}3$ mA e sobra menos de
+   1 V no transistor; com um exemplar de $\beta$ alto, o transistor **satura** e $V_{CE}$ cai
+   para 0,1 a 0,3 V, porque $\beta I_B$ pediria mais corrente do que o resistor de 1 kΩ deixa
+   passar. Guarde essa observação: é o assunto do capítulo 054.
+4. Troque o resistor de base de 100 kΩ por 10 kΩ. Agora $I_B \approx 430$ µA, e o transistor
+   satura sem dúvida nenhuma: $V_{CE}$ vai para 0,1 a 0,2 V e **fica lá**, por mais que você
+   aumente a corrente de base. A relação $I_C = \beta I_B$ deixou de valer, e o motivo é o
+   assunto do capítulo 053.
+
+O contraste entre as partes 2 e 3 é o conteúdo do capítulo, medido com dois multímetros e
+cinco componentes.
+
+### Parte 4 — Medir $\beta$, e ver que ele não é um número
+
+Monte: fonte de 10 V, resistor de base $R_B$ do positivo à base, resistor de coletor de 1 kΩ do
+positivo ao coletor, emissor ao terra. Calcule $I_B = (10 - 0{,}7)/R_B$ e
+$I_C = V_{R_C}/1000$, com $V_{R_C}$ medido.
+
+| $R_B$ | $I_B$ calculada | $V_{R_C}$ medida | $I_C$ | $\beta = I_C/I_B$ |
+|---|---|---|---|---|
+| 1 MΩ | 9,3 µA | | | |
+| 220 kΩ | 42 µA | | | |
+| 100 kΩ | 93 µA | | | |
+| 47 kΩ | 198 µA | | | |
+
+: Medida de $\beta$ em quatro correntes. Interrompa a série quando $V_{CE}$ cair abaixo de
+1 V: dali em diante o transistor está saturado e a conta não mede mais $\beta$. {#tbl-052-lab1}
+
+1. Antes de anotar cada linha, **meça $V_{CE}$**. Se estiver abaixo de 1 V, o ponto não vale.
+2. Repita a tabela inteira com os **outros dois exemplares** do mesmo lote.
+3. Compare. Você deve encontrar dispersão de dezenas de por cento entre exemplares, e uma
+   variação clara de $\beta$ com a corrente dentro do mesmo exemplar.
+
+Se o multímetro tiver a função $h_{FE}$, meça também por ela e compare. **Vai dar diferente**,
+e por um motivo específico: o soquete de $h_{FE}$ do multímetro testa numa corrente de base
+fixa, tipicamente 10 µA, com $V_{CE}$ de uns 3 V. Esse ponto não tem nada a ver com o ponto de
+operação do seu circuito, e a @tbl-052-hfe já mostrou que $\beta$ depende dele.
+
+### Parte 5 — Os 60 mV por década
+
+Substitua o resistor de base por um potenciômetro de 100 kΩ em série com 4,7 kΩ (o resistor
+impede que a base fique sem proteção quando o cursor chegar ao fim).
+
+1. Ajuste o potenciômetro até $I_C = 0{,}1$ mA (meça pela queda em $R_C$). Anote $V_{BE}$ com
+   a maior resolução que o multímetro tiver.
+2. Repita para $I_C = 1$ mA e $I_C = 10$ mA. Se o transistor saturar em 10 mA, baixe $R_C$
+   para 100 Ω.
+3. Calcule as duas diferenças de $V_{BE}$.
+
+O esperado é **58 a 65 mV** por década. Se der consistentemente mais — 70, 80 mV —, ou o
+multímetro está carregando a medida, ou a corrente está alta o bastante para a resistência
+ôhmica do emissor entrar na conta.
+
+### Parte 6 — Os −2 mV por grau
+
+1. Com o circuito da Parte 5 ajustado para $I_C = 1$ mA, anote $V_{BE}$ com o transistor à
+   temperatura ambiente.
+2. Aproxime o ferro de solda quente do corpo do transistor, **sem encostar**, e acompanhe a
+   leitura de $V_{BE}$.
+3. Afaste e veja a leitura voltar.
+
+$V_{BE}$ cai visivelmente — dezenas de milivolts em poucos segundos. Agora a demonstração que
+importa:
+
+4. Meça também $V_{R_C}$ durante o aquecimento, com o segundo multímetro se houver.
+
+$I_C$ **sobe** enquanto $V_{BE}$ cai. Neste circuito o efeito é limitado, porque o resistor de
+base fixa aproximadamente $I_B$. Se em vez disso você polarizar a base com um divisor de
+tensão de resistência baixa — fixando $V_{BE}$ —, o mesmo aquecimento produz uma subida de
+corrente muito maior, e é assim que a fuga térmica começa. **Não deixe esse experimento rodando
+sozinho.**
+
+### Parte 7 — O PNP, e o ganho reverso
+
+1. Monte o mesmo circuito da Parte 4 com um 2N3906 (PNP), invertendo a fonte: emissor ao
+   positivo, resistor de coletor do coletor ao terra, resistor de base da base ao terra.
+2. Confirme que $\beta$ está na mesma ordem de grandeza.
+3. Agora monte um 2N3904 **de propósito invertido** — emissor no lugar do coletor — e refaça
+   uma linha da @tbl-052-lab1.
+
+O ganho medido deve cair para algo entre 2 e 10. É o $\beta_R$ da seção @sec-052-estrutura, e
+ver esse número é o melhor antídoto contra montar transistor errado pelo resto da vida.
+
+**Variante simulada (plano B).** No ngspice, os modelos `2N3904` e `2N3906` acompanham a
+instalação padrão. `.dc vbe 0.3 0.8 0.005` com `.plot i(vc)` em escala log reproduz a
+@fig-052-exponencial inteira; `.step` sobre o parâmetro `bf` do modelo mostra o efeito da
+dispersão de $\beta$; e `.temp 25 75 125` produz o deslocamento de −2 mV/°C sem ferro de solda.
+No Falstad, o componente "transistor" já traz as correntes anotadas em tempo real, e arrastar o
+resistor de base mostra a saturação chegando.
+
+## 🔥 Onde Queima {#sec-052-queima}
+
+**Alimentar a base direto de uma fonte de tensão.** A junção BE é um diodo, e a curva da
+@fig-052-exponencial é vertical na região de trabalho. Ligar 5 V na base sem resistor é ligar
+5 V num diodo: a corrente é limitada só pela resistência do fio, e a junção evapora. **Sempre
+resistor de base**, ou um divisor com emissor degenerado (capítulo 055).
+
+**Trocar emissor e coletor.** BC547 é C-B-E; 2N3904 é E-B-C. Invertido, o transistor ainda
+tem ganho de 2 a 10, o circuito fica meio vivo, e você perde uma hora medindo tudo menos a
+pinagem.
+
+**Aplicar tensão reversa na junção base-emissor.** $V_{EBO}$ é de 5 a 6 V. Passar disso põe a
+junção em ruptura, e cada evento degrada $\beta$ permanentemente. Sinais bipolares na base
+pedem um diodo em antiparalelo.
+
+**Projetar contando com um valor de $\beta$.** Ele varia 3 para 1 entre exemplares, cai nas
+duas pontas da faixa de corrente e sobe 1 % por grau. $\beta$ entra no projeto como
+desigualdade — "maior que 50" —, nunca como fator numa conta de tensão de saída.
+
+**Usar o $h_{FE}$ do multímetro como se fosse o $\beta$ do circuito.** O soquete testa com
+$I_B$ fixa de uns 10 µA. Se o seu circuito opera em 5 mA de coletor, o número lido tem pouca
+relação com o que acontece lá.
+
+**Confiar em $P_D$ sem derrate.** "625 mW" é a 25 °C, com o encapsulamento no ar livre. Numa
+protoboard, dentro de uma caixa, num dia quente, a margem real é uma fração disso. Faça a conta
+do @sec-cap-011.
+
+**Esquecer que $V_{CEO}$ é o limite com a base aberta.** Ele é o menor dos três limites de
+tensão, e é o que vale em quase todo circuito real. Carga indutiva sem diodo de retorno estoura
+$V_{CEO}$ na primeira comutação — o mecanismo é o do @sec-cap-029.
+
+**Polarizar por $V_{BE}$ fixa e deixar aquecer.** −2 mV/°C com $V_{BE}$ presa é o mecanismo da
+fuga térmica: mais quente, mais corrente, mais quente. Em transistor de potência, isso vai de
+"esquentou um pouco" a "abriu" em segundos.
+
+**Supor que o par NPN/PNP é perfeitamente casado.** 2N3904 e 2N3906 são complementares, não
+idênticos: $f_T$, $\beta$ e capacitâncias diferem. Em estágio de saída, isso vira distorção
+assimétrica.
+
+**Tomar $I_E \approx I_C$ como igualdade em medida de precisão.** A aproximação erra por
+$1/(\beta+1)$, uns 1 %. Excelente para dimensionar resistor, ruim para calibrar uma fonte de
+corrente de referência.
+
+**Medir $V_{BE}$ com o multímetro em série no caminho da base.** A resistência do amperímetro
+em série com uma junção exponencial muda o ponto de operação. Meça a corrente pela **queda num
+resistor conhecido**, como faz o laboratório.
+
+## O que fica deste capítulo {#sec-052-resumo}
+
+O BJT é **duas junções PN separadas por uma base fina o bastante** para que um portador
+injetado atravesse antes de se recombinar. Fina comparada ao comprimento de difusão — e é essa
+comparação, não o desenho de duas junções, que produz a ação de transistor. Dois diodos
+discretos ligados costas com costas não amplificam nada.
+
+Três decisões de fabricação sustentam o componente: **emissor muito dopado** (quase toda a
+corrente da junção é útil), **base fina e pouco dopada** (quase nada se recombina), **coletor
+grande e pouco dopado** (suporta a tensão reversa e espalha o calor). E elas tornam o
+transistor **assimétrico**: invertido, ele funciona com $\beta_R$ de 2 a 10.
+
+As correntes obedecem a Kirchhoff e a duas razões:
+
+$$ I_E = I_C + I_B, \qquad \alpha = \frac{I_C}{I_E}, \qquad \beta = \frac{I_C}{I_B},
+   \qquad \beta = \frac{\alpha}{1-\alpha}, \qquad I_E = (\beta+1) I_B $$
+
+Com $\alpha = 0{,}99$ vem $\beta = 99$, e $I_E \approx I_C$ com 1 % de erro.
+
+**$\beta$ não é uma constante:** 3 para 1 entre exemplares, queda nas duas pontas da faixa de
+corrente, +1 % por grau. Todo o volume é construído em torno de não depender dele.
+
+O que controla de verdade é a **tensão**:
+
+$$ I_C = I_S\,e^{V_{BE}/V_T}, \qquad V_T \approx 26\ \text{mV}, \qquad
+   60\ \text{mV por década}, \qquad -2\ \text{mV}/^{\circ}\text{C} $$
+
+Os 60 mV por década explicam por que "0,7 V" é uma etiqueta útil e uma fonte de polarização
+péssima. Os −2 mV por grau explicam a fuga térmica, e por isso a regra do próximo bloco de
+capítulos: **não fixe $V_{BE}$, não fixe $I_B$ — fixe $I_E$.**
+
+Quatro regiões de operação, definidas pelo estado das duas junções: **corte**, **ativa
+direta**, **saturação** e ativa reversa. A ativa direta é onde este capítulo trabalhou.
+
+E o componente real traz uma armadilha antes de qualquer teoria: **a pinagem do TO-92 não é
+padronizada**. BC547 é C-B-E, 2N3904 é E-B-C, e o transistor invertido funciona mal em vez de
+não funcionar.
+
+## Para o próximo capítulo {#sec-052-fecho}
+
+Este capítulo mediu o transistor num ponto de cada vez: uma corrente de base, uma corrente de
+coletor, uma razão entre elas. Falta o retrato completo — o que acontece com $I_C$ quando
+$V_{CE}$ varre de zero até a ruptura, com $I_B$ fixa em vários valores.
+
+Esse retrato é a **família de curvas características**, e ela responde de uma vez a três
+perguntas que ficaram abertas aqui: por onde exatamente passa a fronteira entre saturação e
+região ativa; por que $I_C$ não é perfeitamente constante na região ativa (a resposta se chama
+**efeito Early**, e ela vira a resistência de saída do amplificador); e como desenhar sobre
+esse mesmo gráfico a reta de carga do @sec-cap-047, agora com um terceiro terminal mandando
+nela.
+
+O capítulo 053 levanta essa família — na bancada, ponto a ponto, com dois multímetros — e
+marca sobre ela as quatro regiões da @tbl-052-regioes.
