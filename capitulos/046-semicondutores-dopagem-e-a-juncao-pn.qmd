@@ -695,10 +695,10 @@ Use $V_{\text{fonte}} = 9$ V e troque $R$:
 
 | $R$ | $I$ prevista (aprox.) | $V_F$ medida | $V_F$ prevista |
 |---|---|---|---|
-| 100 kΩ | 83 µA | | 0,49 V |
-| 10 kΩ | 0,84 mA | | 0,62 V |
-| 1 kΩ | 8,3 mA | | 0,75 V |
-| 100 Ω | 83 mA | | 0,88 V |
+| 100 kΩ | 85 µA | | 0,48 V |
+| 10 kΩ | 0,84 mA | | 0,61 V |
+| 1 kΩ | 8,3 mA | | 0,74 V |
+| 100 Ω | 81 mA | | 0,87 V |
 
 : Um diodo 1N4148, quatro correntes, três décadas. A coluna prevista usa
 $V_F = n V_T \ln(I/I_S)$ com $n V_T = 56{,}5$ mV e $I_S = 1{,}7\times10^{-8}$ A; espere
@@ -712,16 +712,15 @@ por volta de 110 a 130 mV na tensão, e não mais que isso. Mil vezes mais corre
 primeira linha à última, e a queda subiu menos de 400 mV.
 
 ::: {.callout-warning}
-## A última linha do ensaio
+## A última linha do ensaio queima o resistor, não o diodo
 
-Com 100 Ω e 9 V, o 1N4148 conduz cerca de 83 mA — acima dos 75 mA de corrente contínua
-máxima da folha de dados dele. Faça essa leitura **rápido**, em poucos segundos, e desligue.
-Melhor ainda: use o 1N4007, que aguenta 1 A, e observe que a queda dele é maior na mesma
-corrente, porque a pastilha é maior e o $I_S$ também.
+Com 100 Ω e 9 V passam cerca de 81 mA. O 1N4148 aguenta: são 70 mW numa junção especificada
+para 500 mW, e a corrente está abaixo dos 150 mA de média retificada da folha de dados.
 
-Aqui já aparece o @sec-cap-011 em ação: 0,88 V × 83 mA = 73 mW num encapsulamento de vidro
-que dissipa uns 350 mW no ar parado. Não queima, mas esquenta — e a Parte 3 explora
-justamente isso.
+**O resistor é que não aguenta.** Ele dissipa $I^{2}R = (0{,}081)^{2} 	imes 100 = 0{,}66$ W
+num corpo de 1/4 W. Use um resistor de 1 W ou mais, ou faça a leitura em poucos segundos e
+desligue — e nos dois casos não encoste o dedo nele. É o @sec-cap-011 cobrando a conta no
+componente que ninguém estava olhando.
 :::
 
 3. Marque os quatro pontos em papel monolog, corrente no eixo logarítmico. Devem cair numa
