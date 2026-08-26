@@ -1,3 +1,820 @@
 # O BJT como chave: corte, saturação e acionamento de cargas {#sec-cap-054}
 
-*(em elaboração)*
+O @sec-cap-053 recomendou o meio da reta de carga e explicou por quê: é lá que o sinal cabe
+nos dois sentidos. Este capítulo faz o oposto. O ponto de operação vai para as **duas pontas**
+da reta e nunca para no meio — e o motivo é aritmético.
+
+No corte, $I_C \approx 0$, e a dissipação $I_C V_{CE}$ é praticamente zero por falta de
+corrente. Na saturação, $V_{CE} \approx 0{,}1$ V, e a dissipação é quase zero por falta de
+tensão. **Nas duas pontas o transistor quase não esquenta**; no meio, onde o amplificador
+vive, ele dissipa o máximo.
+
+Isso é o que torna possível controlar 5 A com um componente de 30 centavos. E é por isso que
+todo circuito de potência moderno — fonte chaveada, controle de motor, driver de LED — é
+construído em torno de chaves, não de amplificadores.
+
+Ao final deste capítulo o leitor terá acionado uma carga real: um relé de 12 V a partir de uma
+saída lógica de 5 V, com o diodo de retorno no lugar certo, o resistor de base dimensionado
+para o **pior** exemplar e a corrente da porta lógica dentro do que ela aguenta.
+
+## As duas pontas da reta {#sec-054-pontas}
+
+Repita a conta com números. Carga de 12 V e 30 mA (a bobina de um relé de 400 Ω), acionada por
+um 2N3904:
+
+| Estado | $I_C$ | $V_{CE}$ | $P = I_C V_{CE}$ |
+|---|---|---|---|
+| corte | 50 nA (fuga) | 12 V | 0,6 µW |
+| **meio da reta** | 15 mA | 6 V | **90 mW** |
+| saturação | 30 mA | 0,15 V | 4,5 mW |
+
+: A mesma carga, três pontos de operação. O ponto do meio dissipa vinte vezes mais que o da
+saturação — e é o único que o circuito de chaveamento **não** usa. {#tbl-054-pontas}
+
+A conclusão prática é dupla e vale para o resto do manual:
+
+1. **Chaveamento é eficiente.** A carga recebe quase toda a potência; o transistor fica com
+   migalhas.
+2. **A travessia é onde mora o perigo.** O transistor passa pelo ponto do meio a cada
+   comutação. Se a travessia for lenta, ou frequente, os 90 mW instantâneos viram aquecimento
+   médio de verdade — assunto que volta no fim deste capítulo e domina o Volume 10.
+
+## A chave de lado baixo {#sec-054-ladobaixo}
+
+A configuração mais simples põe a carga entre o positivo e o coletor, e o emissor no terra. Ela
+se chama **chave de lado baixo** (*low side*), porque o elemento de comutação fica do lado do
+terra.
+
+::: {#fig-054-chave}
+
+```{.tikz}
+%%| filename: 054-chave
+%%| alt: À esquerda, o esquema de uma chave de lado baixo: uma fonte de doze volts alimenta a bobina de um relé de quatrocentos ohms, cujo outro terminal vai ao coletor de um transistor NPN; o emissor vai ao terra; a base é alimentada por um resistor de um vírgula dois quilo-ohms vindo de uma saída lógica de cinco volts, e há um resistor de dez quilo-ohms da base para o terra. Um diodo está ligado em paralelo com a bobina, com o catodo para o lado positivo. Ao lado, a sequência de projeto em quatro passos numerados: primeiro a corrente de carga, que é a tensão de alimentação dividida pela resistência da bobina, dando trinta miliampères; segundo a escolha de um beta forçado de dez, bem abaixo do beta mínimo do transistor, o que dá três miliampères de corrente de base; terceiro o resistor de base, que é a tensão de comando menos a tensão base-emissor de saturação de zero vírgula oito volt, dividida pela corrente de base, dando mil e quatrocentos ohms e arredondado para o valor comercial de mil e duzentos ohms; quarto a verificação da corrente que a porta lógica tem de fornecer, três vírgula cinco miliampères, confortavelmente dentro dos vinte miliampères que um pino de microcontrolador entrega. À direita, os dois estados desenhados como pontos sobre a reta de carga: um ponto no canto inferior direito, corrente zero e doze volts, marcado como corte; outro no canto superior esquerdo, trinta miliampères e zero vírgula quinze volt, marcado como saturação; e uma seta indicando o caminho rápido entre os dois, atravessando o ponto de dissipação máxima no meio.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquema =================
+  \begin{scope}
+    \draw (0,5.2) -- (3.4,5.2);
+    \node[anchor=south, font=\scriptsize] at (1.7,5.25) {$+12$ V};
+
+    % bobina do rele
+    \draw (0,5.2) to[L, l=bobina, a=$400\ \Omega$] (0,2.6);
+    \draw (0,2.6) -- (0,2.0) coordinate (col);
+
+    % diodo de retorno
+    \draw (3.4,5.2) -- (3.4,4.6);
+    \draw (3.4,4.6) to[D, l_=1N4007, invert] (3.4,3.2);
+    \draw (3.4,3.2) -- (3.4,2.6) -- (0,2.6);
+
+    % transistor
+    \node[npn, anchor=C] (Q) at (col) {};
+    \draw (Q.E) -- ++(0,-0.7) node[ground]{};
+    \node[anchor=west, font=\scriptsize] at ($(Q.C)+(0.1,0.15)$) {2N3904};
+
+    % base
+    \coordinate (bn) at ($(Q.B)+(-1.8,0)$);
+    \draw (Q.B) to[R, l={$R_B = 1{,}2$ k$\Omega$}] (bn);
+    \node[ponto] at (bn) {};
+    \draw (bn) -- ++(-1.4,0) coordinate (drv);
+    \node[anchor=east, font=\scriptsize, align=right] at (drv) {saída lógica\\$0$ ou $5$ V};
+    \draw (bn) to[R, l_={$10$ k$\Omega$}] ++(0,-1.8) node[ground]{};
+
+    \node[manualgreen!55!black, anchor=north, font=\tiny, align=center, text width=4.4cm]
+         at (-1.6,-2.0)
+         {o resistor de $10$ k$\Omega$ segura a base no terra enquanto o pino de comando
+          está em alta impedância --- \emph{reset}, gravação, pino ainda não configurado};
+  \end{scope}
+
+  % ================= projeto =================
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.4cm] at (4.6,5.6)
+       {\textbf{1. A corrente da carga} \\
+        $I_C = \dfrac{12}{400} = 30$ mA \\[5pt]
+        \textbf{2. O $\beta$ forçado, com folga} \\
+        $\beta_{\text{forçado}} = 10 \ll \beta_{\min} = 50$ \\
+        $I_B = \dfrac{30\ \text{mA}}{10} = 3$ mA \\[5pt]
+        \textbf{3. O resistor de base} \\
+        $R_B = \dfrac{5 - 0{,}8}{3\ \text{mA}} = 1{,}4$ k$\Omega
+         \;\rightarrow\; \mathbf{1{,}2}$ \textbf{k}$\boldsymbol{\Omega}$ \\
+        recalculando: $I_B = 3{,}5$ mA \\[5pt]
+        \textbf{4. A porta aguenta?} \\
+        $3{,}5$ mA de um pino de $20$ mA: \textbf{sim}};
+
+  % ================= os dois estados =================
+  \begin{scope}[shift={(5.0,-5.2)}]
+    \draw[eixo] (0,0) -- (5.4,0) node[anchor=south east, font=\tiny] {$V_{CE}$};
+    \draw[eixo] (0,0) -- (0,4.4) node[anchor=south east, font=\tiny] {$I_C$};
+    \draw[destaque, very thick] (0.2,4.0) -- (5.0,0.05);
+    \node[ponto] at (0.2,4.0) {};
+    \node[ponto] at (5.0,0.05) {};
+    \node[manualgreen!55!black, anchor=west, font=\tiny, align=left] at (0.45,4.05)
+         {\textbf{saturação}\\$30$ mA, $0{,}15$ V\\$4{,}5$ mW};
+    \node[manualgreen!55!black, anchor=north east, font=\tiny, align=right] at (5.4,-0.25)
+         {\textbf{corte}\\$0$ mA, $12$ V\\$0{,}6\ \mu$W};
+    \node[ponto, fill=manualred] at (2.6,2.05) {};
+    \node[manualred, anchor=west, font=\tiny, align=left] at (2.8,2.3)
+         {$90$ mW: atravessar\\\textbf{depressa}};
+    \draw[manualblue, {Latex[length=1.8mm]}-{Latex[length=1.8mm]}, thick]
+         (0.55,3.5) -- (4.55,0.55);
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+A chave de lado baixo completa: carga, transistor, diodo de retorno, resistor de base
+dimensionado por $\beta$ forçado e resistor de segurança da base. Os quatro passos de projeto
+estão à direita, e os dois estados, sobre a reta de carga.
+:::
+
+### O $\beta$ forçado, e por que 10
+
+O @sec-cap-053 definiu $\beta_{\text{forçado}} = I_C/I_B$ como a razão que o circuito impõe. O
+projeto de chave usa isso ao contrário: **escolhe-se** o $\beta$ forçado, bem abaixo do
+$\beta$ mínimo garantido, e daí sai a corrente de base.
+
+$$ \boxed{\;I_B = \frac{I_C}{\beta_{\text{forçado}}}, \qquad
+   \beta_{\text{forçado}} = 5\ \text{a}\ 10\;} $$
+
+A razão $\beta_{\min}/\beta_{\text{forçado}}$ chama-se **fator de sobre-excitação**
+(*overdrive factor*), e ela é a margem do projeto. Com $\beta_{\min} = 50$ e
+$\beta_{\text{forçado}} = 10$, a margem é de 5 para 1: o transistor satura mesmo que o
+exemplar seja o pior do lote, mesmo a −20 °C (onde $\beta$ é menor), mesmo com a alimentação
+15 % baixa.
+
+**E o $\beta_{\min}$ tem de ser lido na corrente certa.** Este é o erro silencioso mais comum
+do capítulo: a folha de dados do 2N3904 anuncia "$h_{FE} = 100$ a 300", mas isso é a 10 mA.
+A 100 mA o mínimo garantido é **30**. Projetar uma chave de 100 mA com $\beta = 100$ produz um
+transistor que nunca satura, fica na região ativa, e dissipa dez vezes mais do que a conta
+previa. Ele esquenta, e ninguém entende por quê.
+
+### Os 0,8 V, e não 0,7
+
+Na saturação forte, $V_{BE}$ sobe para 0,8 a 0,9 V — é a exponencial do @sec-cap-052 avaliada
+numa corrente de base dez vezes maior que a de um amplificador. Usar 0,7 V na conta de $R_B$
+subestima o resistor e produz mais corrente que o previsto, o que é o erro na direção segura;
+usar 0,8 V é a prática correta e não custa nada.
+
+### O resistor de base para o terra
+
+O resistor de 10 kΩ entre base e terra da @fig-054-chave não faz nada em operação normal — ele
+desvia 80 µA dos 3,5 mA. Ele existe para o momento em que **o pino de comando está em alta
+impedância**: durante o *reset* do microcontrolador, durante a gravação, ou antes de o
+*firmware* configurar o pino como saída.
+
+Sem ele, a base fica flutuando, e uma base flutuando capta ruído, fuga e capacitância. Um relé
+que fecha sozinho durante o *reset* é um defeito clássico, difícil de reproduzir e trivial de
+prevenir.
+
+::: {.callout-note}
+## Um resistor de base para o terra, sempre
+
+A regra vale para toda chave comandada por circuito digital: **resistor de 10 kΩ da base para
+o emissor**, ou o equivalente do lado do MOSFET (Volume 10). Ele custa dois centavos e elimina
+uma classe inteira de comportamento errático na energização.
+:::
+
+## A carga indutiva, e o diodo de retorno {#sec-054-indutiva}
+
+Relé, contator, válvula solenoide, motor: todos são indutores. E o @sec-cap-024 já estabeleceu
+o fato que torna isso perigoso: **a corrente num indutor não pode mudar instantaneamente**.
+
+Quando o transistor corta, ele tenta zerar a corrente da bobina em nanossegundos. A bobina
+reage com a tensão que for necessária para manter a corrente fluindo:
+
+$$ v_L = -L\,\frac{di}{dt} $$
+
+Com $L = 0{,}5$ H, $I = 30$ mA e um corte em 100 ns, o $di/dt$ é de $3 \times 10^5$ A/s, e a
+tensão pedida é de **150 kV**. Ela não chega lá, é claro: alguma coisa cede antes. O que cede
+é a junção coletor-base do transistor, que entra em ruptura em 40 V e absorve a energia toda —
+uma vez, duas, e na terceira o transistor está morto.
+
+::: {#fig-054-indutiva}
+
+```{.tikz}
+%%| filename: 054-indutiva
+%%| alt: Três painéis. À esquerda, o circuito da bobina com o transistor, mostrando dois caminhos de corrente marcados com cores diferentes: enquanto o transistor conduz, a corrente sai do positivo, atravessa a bobina e desce pelo transistor até o terra; quando o transistor corta, a corrente continua na bobina e circula por um laço fechado formado pela bobina e pelo diodo de retorno, decaindo devagar. No centro, dois traços de osciloscópio sobrepostos mostram a tensão de coletor no instante do corte. Sem diodo, a tensão dispara para muito acima da tensão de ruptura de quarenta volts, num pico estreito e altíssimo, com a anotação de que é isso que mata o transistor. Com diodo, a tensão sobe apenas até a alimentação mais a queda direta do diodo, cerca de doze vírgula sete volts, e fica num patamar durante o decaimento da corrente. À direita, a comparação de três opções de grampeamento em uma tabela desenhada: diodo comum, com tensão de coletor de doze vírgula sete volts e tempo de decaimento de um vírgula dois milissegundo; diodo em série com um Zener de vinte e quatro volts, com tensão de coletor de trinta e seis volts e tempo de decaimento de zero vírgula seis milissegundo; e resistor em paralelo com a bobina, com tensão de coletor dependente do valor do resistor. A anotação registra o compromisso: quanto mais alta a tensão que se permite ao transistor, mais rápido o campo se desfaz e mais rápido o relé solta.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= circuito com os dois caminhos =================
+  \begin{scope}
+    \draw (0,4.6) -- (2.6,4.6);
+    \node[anchor=south, font=\scriptsize] at (1.3,4.65) {$+12$ V};
+
+    \draw (0,4.6) to[L, l=$L$] (0,2.4);
+    \draw (0,2.4) -- (0,1.9) coordinate (col);
+
+    \draw (2.6,4.6) to[D, l_=$D$, invert] (2.6,2.4);
+    \draw (2.6,2.4) -- (0,2.4);
+
+    \node[npn, anchor=C] (Q) at (col) {};
+    \draw (Q.E) -- ++(0,-0.7) node[ground]{};
+    \draw (Q.B) -- ++(-1.3,0) node[anchor=east, font=\scriptsize] {cmd};
+
+    % caminho 1: conduzindo
+    \draw[manualgreen!55!black, very thick, -{Latex[length=1.8mm]}]
+         (-0.45,4.4) -- (-0.45,2.5);
+    \node[manualgreen!55!black, anchor=east, font=\tiny, align=right] at (-0.5,3.5)
+         {conduzindo:\\a corrente vem\\da fonte};
+
+    % caminho 2: laço de roda livre
+    \draw[manualred, very thick, -{Latex[length=1.8mm]}]
+         (0.45,2.6) -- (0.45,4.4) -- (2.15,4.4) -- (2.15,2.6) -- (0.55,2.6);
+    \node[manualred, anchor=west, font=\tiny, align=left] at (2.9,3.5)
+         {cortado:\\a corrente circula\\no laço $L$--$D$};
+  \end{scope}
+
+  % ================= traços =================
+  \begin{scope}[shift={(6.4,0.6)}]
+    \draw[eixo] (0,0) -- (6.4,0) node[anchor=north east, font=\tiny] {$t$};
+    \draw[eixo] (0,0) -- (0,4.6) node[anchor=south west, font=\tiny] {$V_C$};
+
+    % nivel de 12 V e de ruptura
+    \draw[auxiliar] (0,1.2) -- (6.4,1.2);
+    \node[anchor=east, font=\tiny] at (-0.1,1.2) {$12$ V};
+    \draw[manualgray, dashed, thin] (0,2.6) -- (6.4,2.6);
+    \node[anchor=east, font=\tiny, manualgray] at (-0.1,2.6) {$V_{CEO}$};
+
+    % com diodo
+    \draw[manualgreen!55!black, very thick]
+         (0,0.15) -- (2.0,0.15) -- (2.0,1.45) -- (4.4,1.45) -- (4.6,0.15) -- (6.4,0.15);
+    \node[manualgreen!55!black, anchor=west, font=\tiny, align=left] at (4.7,1.45)
+         {\textbf{com diodo}\\$12{,}7$ V};
+
+    % sem diodo
+    \draw[manualred, very thick]
+         (0,0.15) -- (2.0,0.15) -- (2.05,4.3) -- (2.25,0.6) -- (2.5,0.15) -- (6.4,0.15);
+    \node[manualred, anchor=west, font=\tiny, align=left] at (2.35,4.0)
+         {\textbf{sem diodo}: sobe até\\alguma coisa ceder ---\\e o que cede é a junção};
+
+    \node[anchor=north, font=\tiny] at (2.0,-0.1) {corte};
+  \end{scope}
+
+  % ================= opções de grampeamento =================
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt] at (0.2,-1.4)
+       {\begin{tabular}{lcc}
+          \textbf{grampeamento} & $V_C$ \textbf{no corte} & \textbf{decaimento} \\ \hline
+          diodo comum & $12{,}7$ V & $1{,}2$ ms \\
+          diodo $+$ Zener de $24$ V & $36$ V & $0{,}6$ ms \\
+          nenhum & $>200$ V & --- (queima) \\
+        \end{tabular}};
+
+  \node[anchor=north west, font=\scriptsize, align=left, text width=12.6cm, manualblue]
+       at (0.2,-4.0)
+       {\textbf{O compromisso:} quanto mais alta a tensão que se permite ao coletor, mais
+        depressa a energia da bobina se dissipa --- e mais depressa o relé solta. O diodo
+        comum é o mais seguro e o mais lento; o Zener em série troca margem de tensão por
+        tempo de desarme.};
+
+\end{tikzpicture}
+```
+
+O diodo de retorno dá à corrente da bobina um caminho para continuar circulando. Sem ele, a
+tensão de coletor sobe até a ruptura da junção, e a energia $\tfrac{1}{2}LI^2$ é dissipada
+dentro do transistor.
+:::
+
+O conserto custa um diodo: ligado **em antiparalelo com a bobina**, catodo para o positivo. Em
+condução normal ele está reversamente polarizado e não faz nada. No instante do corte, a
+tensão da bobina inverte, o diodo passa a conduzir, e a corrente circula no laço fechado
+bobina-diodo até se extinguir na resistência da própria bobina.
+
+A tensão de coletor fica presa em $V_{CC} + V_F \approx 12{,}7$ V, e o transistor não vê nada
+demais.
+
+**Escolha do diodo:** corrente direta maior que a corrente da bobina, tensão reversa maior que
+$V_{CC}$, e recuperação reversa que não importe muito em relé (1N4007 serve e é barato) mas
+importe em chaveamento rápido — aí vale um 1N4148 ou, melhor, um Schottky (@sec-cap-051).
+
+::: {.callout-warning}
+## O tempo de desarme, e por que às vezes o diodo comum não serve
+
+Com o diodo comum, a corrente decai com constante de tempo $L/R_{\text{bobina}}$ — 1,2 ms no
+exemplo. Durante todo esse tempo o campo magnético ainda segura a armadura do relé, e os
+contatos só abrem no fim.
+
+Em relé comandando carga de rede, isso importa: contato que abre devagar arca por mais tempo, e
+arco é o que come o contato. A solução é permitir uma tensão maior no corte — diodo em série
+com um Zener de 24 V, por exemplo — o que dobra a velocidade de desarme ao custo de 36 V no
+coletor. Verifique que $V_{CEO}$ do transistor comporta essa soma.
+:::
+
+## O tempo, e por que a saturação atrasa {#sec-054-tempos}
+
+Uma chave ideal comuta instantaneamente. Um BJT saturado, não — e o atraso tem uma causa
+específica que vale entender, porque ela reaparece em toda a eletrônica digital bipolar.
+
+::: {#fig-054-tempos}
+
+```{.tikz}
+%%| filename: 054-tempos
+%%| alt: Diagrama de tempos com três traços empilhados. No topo, o sinal de comando na base, um pulso retangular que sobe e desce abruptamente. No meio, a corrente de coletor, mostrando os quatro intervalos característicos: primeiro um atraso antes de qualquer coisa acontecer, chamado tempo de atraso, de trinta e cinco nanossegundos; depois a subida da corrente, tempo de subida, também de trinta e cinco nanossegundos; na descida, um intervalo em que absolutamente nada acontece embora o comando já tenha ido a zero, chamado tempo de armazenamento, de duzentos nanossegundos; e finalmente a descida da corrente, tempo de queda, de cinquenta nanossegundos. O tempo de armazenamento está destacado em vermelho por ser o maior de todos. Embaixo, uma anotação explica a causa: na saturação a base fica cheia de portadores minoritários em excesso, e enquanto essa carga não é removida a corrente de coletor não cai. Ao lado, dois circuitos de correção: o primeiro mostra um capacitor de cem picofarads em paralelo com o resistor de base, chamado capacitor de aceleração, que entrega um pico de corrente na subida e retira carga na descida; o segundo mostra um diodo Schottky ligado entre base e coletor, chamado grampo de Baker, que impede o transistor de entrar em saturação profunda desviando o excesso de corrente de base para o coletor.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= traços =================
+  % comando
+  \draw[eixo] (0,3.4) -- (11.4,3.4);
+  \node[anchor=east, font=\scriptsize] at (-0.1,3.9) {$I_B$};
+  \draw[manualblue, very thick]
+       (0,3.5) -- (1.6,3.5) -- (1.6,4.5) -- (6.4,4.5) -- (6.4,3.5) -- (11.4,3.5);
+
+  % corrente de coletor
+  \draw[eixo] (0,0.6) -- (11.4,0.6);
+  \node[anchor=east, font=\scriptsize] at (-0.1,1.4) {$I_C$};
+  \draw[manualgreen!55!black, very thick]
+       (0,0.7) -- (2.3,0.7) -- (3.0,2.5) -- (8.2,2.5) -- (9.2,0.7) -- (11.4,0.7);
+
+  % marcações verticais
+  \foreach \x in {1.6, 2.3, 3.0, 6.4, 8.2, 9.2}{
+    \draw[auxiliar] (\x,0.5) -- (\x,4.6);}
+
+  % td
+  \draw[manualgray, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}] (1.6,1.7) -- (2.3,1.7);
+  \node[anchor=south, font=\tiny, manualgray] at (1.95,1.75) {$t_d$};
+  \node[anchor=north, font=\tiny, manualgray] at (1.95,1.65) {$35$ ns};
+
+  % tr
+  \draw[manualgray, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}] (2.3,2.75) -- (3.0,2.75);
+  \node[anchor=south, font=\tiny, manualgray] at (2.65,2.78) {$t_r$};
+
+  % ts
+  \draw[manualred, {Latex[length=1.6mm]}-{Latex[length=1.6mm]}, very thick]
+       (6.4,1.7) -- (8.2,1.7);
+  \node[anchor=south, font=\tiny, manualred] at (7.3,1.75) {$t_s = 200$ ns};
+  \node[anchor=north, font=\tiny, manualred, align=center, text width=4cm] at (7.3,1.6)
+       {\textbf{tempo de armazenamento}: o comando já foi a zero e nada aconteceu ainda};
+
+  % tf
+  \draw[manualgray, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}] (8.2,2.75) -- (9.2,2.75);
+  \node[anchor=south, font=\tiny, manualgray] at (8.7,2.78) {$t_f = 50$ ns};
+
+  \node[anchor=north west, font=\tiny, align=left, text width=10.6cm, manualred]
+       at (0.2,-1.1)
+       {\textbf{A causa:} na saturação, a junção base-coletor também injeta, e a base fica
+        com um estoque de portadores minoritários em excesso. Enquanto esse estoque não for
+        drenado --- por recombinação, ou puxado para fora pelo circuito de base --- o
+        transistor continua saturado, com a base já em zero. Quanto \emph{mais forte} a
+        saturação, maior o estoque e maior $t_s$.};
+
+  % ================= correções =================
+  \begin{scope}[shift={(1.0,-5.0)}]
+    \draw (0,0) to[R, l=$R_B$] (2.6,0);
+    \draw (0,0) -- (0,1.0) to[C, l={$100$ pF}] (2.6,1.0) -- (2.6,0);
+    \node[anchor=east, font=\scriptsize] at (-0.1,0) {cmd};
+    \node[npn, anchor=B] (Qa) at (3.0,0) {};
+    \draw (2.6,0) -- (3.0,0);
+    \draw (Qa.E) -- ++(0,-0.6) node[ground]{};
+    \draw (Qa.C) -- ++(0,0.6);
+    \node[anchor=north, font=\tiny, align=center, text width=4.4cm] at (1.6,-1.0)
+         {\textbf{capacitor de aceleração}: pico de corrente na subida, e um caminho para
+          \emph{tirar} carga na descida};
+  \end{scope}
+
+  \begin{scope}[shift={(7.2,-5.0)}]
+    \draw (0,0) to[R, l=$R_B$] (2.6,0);
+    \node[anchor=east, font=\scriptsize] at (-0.1,0) {cmd};
+    \node[npn, anchor=B] (Qb) at (3.0,0) {};
+    \draw (2.6,0) -- (3.0,0);
+    \draw (Qb.E) -- ++(0,-0.6) node[ground]{};
+    \draw (Qb.C) -- ++(0,0.9) coordinate (cc);
+    \draw (2.6,0) -- (2.6,1.6) to[sD, l=Schottky] (4.2,1.6) -- (4.2,0.9) -- (cc);
+    \node[anchor=north, font=\tiny, align=center, text width=4.4cm] at (1.8,-1.0)
+         {\textbf{grampo de Baker}: desvia o excesso de $I_B$ para o coletor e \emph{impede}
+          a saturação profunda};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+Os quatro tempos de comutação de um 2N3904 e as duas correções clássicas. O tempo de
+armazenamento é quatro vezes maior que qualquer um dos outros, e é consequência direta da
+saturação.
+:::
+
+Os quatro intervalos, com os valores da folha de dados do 2N3904:
+
+| Tempo | O que é | 2N3904 |
+|---|---|---|
+| $t_d$ (atraso) | carregar a capacitância da junção BE até ela conduzir | 35 ns |
+| $t_r$ (subida) | $I_C$ de 10 % a 90 % | 35 ns |
+| $t_s$ (armazenamento) | **drenar o excesso de carga da base**, com o comando já em zero | 200 ns |
+| $t_f$ (queda) | $I_C$ de 90 % a 10 % | 50 ns |
+
+: Os tempos de comutação. $t_s$ domina, e ele é o preço da saturação forte.
+{#tbl-054-tempos}
+
+O tempo de armazenamento tem causa física precisa. Na saturação, a junção base-coletor está em
+direta e **também** injeta portadores na base. A base acumula um estoque de minoritários em
+excesso — muito além do necessário para sustentar $I_C$. Quando o comando vai a zero, esse
+estoque continua lá, alimentando a corrente de coletor, até ser drenado por recombinação ou
+puxado para fora pelo circuito de base.
+
+Duas correções clássicas:
+
+**Capacitor de aceleração** (*speed-up capacitor*), em paralelo com $R_B$. Na borda de subida
+ele passa um pico de corrente que satura o transistor rápido; na borda de descida ele oferece
+um caminho de baixa impedância para **tirar** carga da base. Valores de 100 pF a 1 nF, com a
+regra $R_B C \approx t_s$.
+
+**Grampo de Baker**, um diodo Schottky entre base e coletor. Quando o coletor cai abaixo da
+base, o Schottky (com seus 0,3 V, contra os 0,7 V da junção BC) conduz primeiro e desvia o
+excesso de corrente de base direto para o coletor. O transistor fica na **fronteira** da
+saturação, sem nunca entrar fundo: $V_{CE}$ um pouco maior, $t_s$ quase zero. Foi assim que a
+família TTL Schottky conseguiu ser rápida.
+
+Para acionar relé, nada disso importa: 200 ns num dispositivo que leva 10 ms para armar é
+irrelevante. Para chavear a 100 kHz, importa muito.
+
+## A chave de lado alto {#sec-054-ladoalto}
+
+Às vezes a carga precisa ter um terminal no terra — porque o chassi é terra, porque o sensor
+compartilha o retorno, ou porque a norma exige. Aí a chave tem de ficar entre o positivo e a
+carga: **lado alto** (*high side*).
+
+E o NPN não serve bem para isso.
+
+::: {#fig-054-ladoalto}
+
+```{.tikz}
+%%| filename: 054-ladoalto
+%%| alt: Dois circuitos lado a lado. À esquerda, a tentativa errada: um transistor NPN com o coletor nos doze volts e o emissor ligado à carga, que vai ao terra. Uma anotação em vermelho registra que essa ligação é um seguidor de emissor, que a tensão no emissor é a tensão de base menos zero vírgula sete volt, de modo que comandando a base com cinco volts a carga recebe apenas quatro vírgula três volts, e que o transistor fica na região ativa dissipando a diferença de sete vírgula sete volts vezes a corrente da carga, o que para cem miliampères dá setecentos e setenta miliwatts. À direita, a solução correta: um transistor PNP com o emissor nos doze volts, o coletor na carga e a base puxada para os doze volts por um resistor de dez quilo-ohms, além de um resistor de um quilo-ohm ligando a base ao coletor de um transistor NPN pequeno, cujo emissor está no terra e cuja base recebe o comando de cinco volts através de três vírgula nove quilo-ohms. Anotações explicam a sequência: com o comando em zero, o NPN está cortado, o resistor de dez quilo-ohms mantém a base do PNP na tensão do emissor e o PNP está cortado; com o comando em cinco volts, o NPN satura, puxa a base do PNP para baixo através do resistor de um quilo-ohm, e o PNP satura entregando à carga praticamente os doze volts inteiros. Uma observação final registra que o NPN pequeno serve como deslocador de nível, porque a lógica de cinco volts não consegue por si só puxar uma base que está em doze volts.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= errado: NPN no lado alto =================
+  \begin{scope}
+    \node[anchor=south, font=\small\bfseries, manualred] at (1.6,5.6) {NPN no lado alto};
+    \draw (1.6,5.2) -- (1.6,4.6);
+    \node[anchor=south, font=\scriptsize] at (1.6,5.25) {$+12$ V};
+
+    \node[npn, anchor=C] (Q1) at (1.6,4.6) {};
+    \draw (Q1.B) -- ++(-1.5,0) node[anchor=east, font=\scriptsize, align=right]
+         {cmd\\$5$ V};
+    \draw (Q1.E) -- ++(0,-0.8) coordinate (le);
+    \draw (le) to[R, l=carga] ++(0,-1.6) node[ground]{};
+
+    \node[manualred, anchor=north west, font=\tiny, align=left, text width=4.6cm]
+         at (-0.8,-0.2)
+         {É um \textbf{seguidor de emissor}: $V_E = V_B - 0{,}7 = 4{,}3$ V. A carga recebe
+          $4{,}3$ V em vez de $12$ V, e o transistor fica na \textbf{região ativa}
+          dissipando $7{,}7\ \text{V} \times I$ --- $770$ mW a $100$ mA.};
+  \end{scope}
+
+  % ================= certo: PNP com driver NPN =================
+  \begin{scope}[shift={(8.0,0)}]
+    \node[anchor=south, font=\small\bfseries, manualgreen!55!black] at (2.6,5.6)
+         {PNP com deslocador de nível};
+    \draw (0.6,5.2) -- (4.6,5.2);
+    \node[anchor=south, font=\scriptsize] at (2.6,5.25) {$+12$ V};
+
+    \node[pnp, anchor=E] (Q2) at (4.6,5.2) {};
+    \draw (Q2.C) -- ++(0,-0.7) coordinate (lc);
+    \draw (lc) to[R, l=carga] ++(0,-1.7) node[ground]{};
+
+    % pull-up da base do PNP
+    \draw (0.6,5.2) -- (0.6,4.4);
+    \draw (0.6,4.4) to[R, l={$10$ k$\Omega$}] (0.6,3.0);
+    \draw (0.6,3.0) -- (0.6,2.6) coordinate (pb);
+    \draw (pb) -| (Q2.B);
+
+    % resistor para o coletor do NPN
+    \draw (0.6,2.6) -- (0.6,2.2);
+    \draw (0.6,2.2) to[R, l={$1$ k$\Omega$}] (0.6,0.8);
+
+    \node[npn, anchor=C] (Q3) at (0.6,0.8) {};
+    \draw (Q3.E) -- ++(0,-0.7) node[ground]{};
+    \draw (Q3.B) to[R, l={$3{,}9$ k$\Omega$}] ++(-2.2,0)
+          node[anchor=east, font=\scriptsize, align=right] {cmd\\$5$ V};
+
+    \node[manualgreen!55!black, anchor=north west, font=\tiny, align=left, text width=5.6cm]
+         at (-2.2,-2.2)
+         {\textbf{cmd $= 0$:} NPN cortado; o resistor de $10$ k$\Omega$ segura a base do PNP
+          no emissor; PNP cortado. \\[3pt]
+          \textbf{cmd $= 5$ V:} NPN satura, puxa a base do PNP para baixo pelo $1$ k$\Omega$;
+          PNP satura e a carga recebe $11{,}8$ V.};
+  \end{scope}
+
+  \node[draw=manualblue, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=6.4cm] at (0.0,-3.6)
+       {\textbf{Por que o NPN pequeno é obrigatório:} a base do PNP está em $12$ V quando ele
+        está cortado. Uma saída lógica de $5$ V não consegue puxá-la para baixo nem
+        mantê-la em cima --- e ligada direto, ela receberia $12$ V pela junção. O NPN faz o
+        deslocamento de nível e isola os dois domínios de tensão.};
+
+\end{tikzpicture}
+```
+
+Lado alto: por que o NPN não serve e como o PNP resolve. O transistor pequeno de comando não é
+um detalhe — ele é o que separa o domínio de 5 V do de 12 V.
+:::
+
+O problema do NPN no lado alto é estrutural. Com a carga no emissor, o circuito é um
+**seguidor de emissor**: a tensão do emissor persegue a da base, uma queda de junção abaixo. Se
+a base recebe 5 V, o emissor fica em 4,3 V, a carga recebe 4,3 V dos 12 V disponíveis, e os
+7,7 V restantes ficam sobre o transistor — que está na região ativa, dissipando. Para saturar
+um NPN no lado alto seria preciso levar a base **acima** de $V_{CC}$, o que exige uma fonte
+extra ou uma bomba de carga (assunto do Volume 10, onde o mesmo problema reaparece com o
+MOSFET de canal N).
+
+O PNP não tem esse problema: o emissor vai direto no positivo, e saturar exige puxar a base
+**para baixo** — 0,8 V abaixo do emissor, ou seja, para uns 11,2 V. Ainda longe dos 5 V da
+lógica, e é por isso que entra o NPN de comando, que funciona como deslocador de nível.
+
+Dimensionamento do exemplo, com carga de 100 mA:
+
+$$ I_{B(\text{pnp})} = \frac{100\ \text{mA}}{10} = 10\ \text{mA}
+   \qquad
+   R = \frac{12 - 0{,}8 - 0{,}2}{10\ \text{mA}} = 1{,}1\ \text{k}\Omega
+   \;\rightarrow\; \mathbf{1}\ \textbf{k}\boldsymbol{\Omega} $$
+
+$$ I_{C(\text{npn})} \approx 11\ \text{mA} + \frac{12}{10\ \text{k}} = 12{,}2\ \text{mA}
+   \qquad
+   I_{B(\text{npn})} = 1{,}2\ \text{mA}
+   \qquad
+   R_B = \frac{5 - 0{,}8}{1{,}2\ \text{mA}} = 3{,}5\ \text{k}\Omega
+   \;\rightarrow\; \mathbf{3{,}3}\ \textbf{k}\boldsymbol{\Omega} $$
+
+Note o custo escondido: o resistor de 10 kΩ de *pull-up* **consome 1,2 mA o tempo todo em que a
+carga está ligada**. Numa aplicação a bateria, isso pode ser mais do que a própria carga
+consome em repouso.
+
+## Ganho não basta: o Darlington {#sec-054-darlington}
+
+Para cargas de ampères, $\beta_{\text{forçado}} = 10$ pede uma corrente de base que a lógica
+não fornece: 2 A de carga exigiriam 200 mA de base. A saída clássica é o **par Darlington** —
+dois transistores em que o emissor do primeiro alimenta a base do segundo.
+
+$$ \beta_{\text{total}} \approx \beta_1 \beta_2 $$
+
+Com dois transistores de $\beta = 50$, o par tem $\beta = 2500$: os mesmos 2 A pedem 0,8 mA de
+base. O TIP120 é exatamente isso num TO-220, com $h_{FE}$ mínimo de 1000.
+
+O preço vem em duas parcelas, e as duas doem:
+
+**$V_{BE}$ dobra.** São duas junções em série: 1,4 V para começar a conduzir, e até 2,5 V em
+corrente alta. Comandar um Darlington a partir de lógica de 3,3 V é apertado.
+
+**$V_{CE(\text{sat})}$ é péssima.** O transistor de saída nunca satura de verdade — o de
+entrada, saturado, não consegue puxar a base do de saída abaixo da própria queda dele. O
+resultado é $V_{CE(\text{sat})} \ge V_{BE} \approx 0{,}9$ V, e num TIP120 a 3 A chega a **2 V**.
+
+Isso é dissipação: $2\ \text{V} \times 3\ \text{A} = 6\ \text{W}$, contra os 0,3 W de um MOSFET
+equivalente. **Todo Darlington de potência precisa de dissipador**, e é esse número que
+explica por que o MOSFET substituiu o Darlington em quase tudo a partir dos anos 1990 — o
+assunto do Volume 10.
+
+::: {.callout-note}
+## O ULN2003, que resolve o caso comum
+
+Sete Darlingtons num DIP de 16 pinos, cada um com resistor de base embutido (comandável direto
+por lógica de 5 V), 500 mA por canal e **diodos de retorno integrados**, todos com o catodo
+num pino comum chamado COM, que se liga ao positivo da carga.
+
+Para acionar sete relés, sete solenoides ou um motor de passo unipolar, ele substitui uns
+trinta componentes discretos. A queda de 1,1 V a 350 mA continua sendo a limitação: a 500 mA
+por canal e sete canais ativos, o encapsulamento não dá conta — a folha de dados traz a curva
+de derrate por número de canais, e ela é para ser lida.
+:::
+
+## 🧪 Laboratório {#sec-054-lab}
+
+**Acionar um LED e um relé de 12 V a partir de uma saída de 5 V, medir $V_{CE(\text{sat})}$
+em função da corrente de base, ver o pico indutivo no osciloscópio com e sem o diodo de
+retorno, medir o tempo de armazenamento, e montar uma chave de lado alto com PNP.**
+
+### Material
+
+::: {.lab-material}
+- 1 fonte ajustável de bancada de 0 a 15 V (ou duas: 5 V e 12 V)
+- 1 gerador de funções (onda quadrada, 1 a 100 kHz), para as partes 4 e 5
+- 1 osciloscópio, de 2 canais se possível
+- 2 multímetros digitais
+- Transistores: 3 × 2N3904 (ou BC547), 1 × 2N3906 (ou BC557), 1 × TIP120 (opcional)
+- 1 relé de 12 V com bobina de 300 a 500 Ω (tipo SRD-12VDC ou equivalente)
+- Diodos: 2 × 1N4007, 2 × 1N4148, 1 × BAT85 ou 1N5819 (Schottky)
+- 1 LED vermelho + resistor de 470 Ω
+- Resistores: 100 Ω, 330 Ω, 470 Ω, 1 kΩ, 1,2 kΩ, 3,3 kΩ, 10 kΩ, 47 kΩ, 100 kΩ
+- Capacitores: 100 pF, 1 nF
+- 1 lâmpada incandescente de 12 V / 100 mA, ou um resistor de 120 Ω / 2 W como carga
+- Protoboard, jumpers
+:::
+
+::: {.callout-warning}
+## Antes de começar
+
+**O relé é o único componente perigoso desta bancada, e não pelo lado da bobina.** Se o seu
+relé tiver contatos ligados a alguma coisa, desligue-a. Todo este laboratório é feito com os
+contatos **livres, sem nada ligado neles** — o que se estuda aqui é o circuito de acionamento,
+não a carga comutada. Relé chaveando rede elétrica é assunto do Volume 13, com o roteiro de
+segurança correspondente.
+
+O pico indutivo da Parte 3 é real e chega a centenas de volts na ponta de prova. Ele não
+oferece risco de choque (a energia é de microjoules), mas **escolha a escala do osciloscópio
+antes de ligar**, e use a ponta em 10× — em 1× você pode passar do limite de entrada do
+instrumento.
+:::
+
+### Parte 1 — A chave mais simples, e o efeito da corrente de base
+
+Monte: +12 V → LED → 470 Ω → coletor do 2N3904; emissor ao terra; base através de $R_B$ para
++5 V.
+
+| $R_B$ | $I_B$ | $I_C$ (pela queda em 470 Ω) | $\beta_{\text{forçado}}$ | $V_{CE}$ medida |
+|---|---|---|---|---|
+| 100 kΩ | 42 µA | | | |
+| 47 kΩ | 89 µA | | | |
+| 10 kΩ | 420 µA | | | |
+| 3,3 kΩ | 1,3 mA | | | |
+| 1,2 kΩ | 3,5 mA | | | |
+
+: A entrada na saturação, medida. Anote também o brilho aparente do LED em cada linha.
+{#tbl-054-lab1}
+
+O que se espera: $V_{CE}$ cai muito nas primeiras linhas e depois **para de cair**. Da terceira
+linha em diante, dobrar a corrente de base não muda praticamente nada em $I_C$ nem em
+$V_{CE}$ — a saturação já está estabelecida, e todo o resto é margem.
+
+Marque em qual linha $\beta_{\text{forçado}}$ cruza 10. É o ponto de projeto recomendado, e ele
+deve estar confortavelmente dentro da região onde $V_{CE}$ já parou de cair.
+
+### Parte 2 — O relé, com o projeto completo
+
+1. Meça a resistência da bobina do seu relé com o multímetro. Calcule $I_C = 12/R_{\text{bobina}}$.
+2. Refaça o cálculo dos quatro passos da @fig-054-chave com o **seu** número. Escolha $R_B$ no
+   valor comercial mais próximo, para baixo.
+3. Monte, **com o 1N4007 em antiparalelo com a bobina, catodo para o +12 V**, e com o resistor
+   de 10 kΩ da base para o terra.
+4. Comande a base com 5 V e ouça o relé fechar. Meça $V_{CE}$ com o relé fechado: deve dar 0,1
+   a 0,2 V.
+5. Calcule a dissipação do transistor. Compare com os 90 mW do meio da reta.
+6. Meça a corrente que a fonte de 5 V está entregando à base. É essa a corrente que o pino de
+   um microcontrolador teria de fornecer.
+
+### Parte 3 — O pico indutivo, visto
+
+::: {.callout-warning}
+Ponta de prova em **10×**, escala vertical em 50 V/div antes de ligar.
+:::
+
+1. Com o circuito da Parte 2 montado e o osciloscópio no coletor, **retire o diodo**.
+2. Comande a base com uma onda quadrada de 10 Hz do gerador (ou ligue e desligue à mão, com o
+   osciloscópio em modo de disparo único).
+3. Observe o pico no instante do corte. Ele passa de 100 V com facilidade.
+4. Meça o valor de pico e compare com os 40 V de $V_{CEO}$ do 2N3904. **O transistor está
+   sendo destruído devagar a cada ciclo.**
+5. Recoloque o diodo e repita. O pico desaparece e no lugar dele aparece um patamar em 12,7 V.
+6. Meça a duração desse patamar: é o tempo de decaimento da corrente da bobina,
+   $\approx 3L/R$.
+7. Substitua o 1N4007 por um 1N4007 **em série com um Zener de 24 V** (catodo do Zener para o
+   catodo do diodo). Meça de novo o patamar e a duração.
+
+Você vai ver a tensão subir para uns 36 V e o tempo cair pela metade. É o compromisso da
+@fig-054-indutiva, medido.
+
+### Parte 4 — O tempo de armazenamento
+
+1. Monte a chave do LED da Parte 1 com $R_B = 1{,}2$ kΩ, comandada pelo gerador em onda
+   quadrada de 100 kHz, 0 a 5 V.
+2. Osciloscópio com dois canais: um no comando (entrada de $R_B$), outro no coletor.
+3. Meça o atraso entre a **descida** do comando e a **subida** do coletor. É $t_s + t_f$.
+4. Repita com $R_B = 10$ kΩ (saturação mais fraca). O atraso deve **diminuir**.
+5. Volte a $R_B = 1{,}2$ kΩ e ponha um capacitor de 100 pF em paralelo com ele. Meça de novo.
+
+Três medidas, três conclusões: saturação mais forte atrasa mais; o capacitor de aceleração
+recupera boa parte disso; e a diferença entre elas é da ordem de centenas de nanossegundos, o
+que é irrelevante para um relé e decisivo a 100 kHz.
+
+6. **Grampo de Baker:** ligue um Schottky (BAT85) entre base e coletor, anodo na base. Meça
+   $V_{CE}$ com o transistor ligado — vai subir para uns 0,4 V — e o atraso — vai quase sumir.
+
+### Parte 5 — A chave de lado alto
+
+1. Monte o circuito da direita da @fig-054-ladoalto, com a lâmpada de 12 V (ou o resistor de
+   120 Ω) como carga.
+2. Com o comando em 0 V, meça a tensão sobre a carga. Deve ser zero — confirme que o PNP está
+   realmente cortado, e não com fuga.
+3. Com o comando em 5 V, meça a tensão sobre a carga. Deve ser $12 - V_{CE(\text{sat})}$, ou
+   seja, uns 11,8 V.
+4. Meça a corrente no resistor de 10 kΩ com a chave ligada, e calcule quanto ela consome.
+5. **Agora monte a versão errada**: um 2N3904 com coletor no +12 V, emissor na carga e base
+   comandada com 5 V através de 1 kΩ. Meça a tensão na carga (uns 4,3 V) e $V_{CE}$ (uns
+   7,7 V). Toque no transistor depois de dez segundos.
+
+O contraste dessa última medida é a lição inteira da seção @sec-054-ladoalto, e ela é térmica.
+
+**Variante simulada (plano B).** No ngspice, a Parte 3 é o experimento mais instrutivo:
+declare a bobina como `L1 vcc col 0.5` com `R1` em série, comande a base com `PULSE`, e rode
+`.tran 1u 20m`. Com o diodo comentado, a tensão de coletor no corte explode até o limite
+numérico do modelo; descomentando, ela para em 12,7 V. Para a Parte 4, `.tran 1n 40u` com o
+modelo `2N3904` mostra o tempo de armazenamento diretamente, e mudar `rb` no comando reproduz
+a dependência com a profundidade da saturação. No Falstad, o circuito "Relay" e o
+"Transistor switch" trazem o pico indutivo animado.
+
+## 🔥 Onde Queima {#sec-054-queima}
+
+**Esquecer o diodo de retorno.** Relé, solenoide, motor, transformador: qualquer coisa com
+bobina. O pico chega a centenas de volts e mata o transistor — às vezes na hora, mais
+frequentemente depois de algumas centenas de ciclos, o que é muito pior de diagnosticar.
+
+**Usar o $h_{FE}$ da folha de dados na corrente errada.** O 2N3904 tem $h_{FE} \ge 100$ a
+10 mA e $h_{FE} \ge 30$ a 100 mA. Dimensionar uma chave de 100 mA com 100 produz um transistor
+que fica na região ativa, esquenta e não satura.
+
+**Deixar a base sem resistor.** A junção BE é um diodo, e a saída lógica é uma fonte de tensão.
+Sem $R_B$, a corrente é limitada só pela impedância da porta, que se queima antes do
+transistor.
+
+**Deixar a base flutuando.** Sem o resistor para o terra, o relé fecha sozinho durante o
+*reset*, na gravação, ou quando a mão passa perto. Dez quilo-ohms resolvem.
+
+**Somar as correntes de base de vários canais e esquecer o pino.** Um microcontrolador tem
+limite por pino (uns 20 mA) **e** limite total pelo pino de terra (uns 100 mA). Oito chaves de
+3,5 mA cada já são 28 mA; oito de 20 mA estouram o encapsulamento.
+
+**Usar $V_{BE} = 0{,}7$ V para uma chave.** Em saturação forte, $V_{BE}$ é 0,8 a 0,9 V. Erra
+para o lado seguro na conta de $R_B$, mas erra feio na conta de comando de Darlington, onde
+são 1,4 a 2,5 V.
+
+**Usar NPN no lado alto.** Vira seguidor de emissor: a carga recebe $V_{cmd} - 0{,}7$ e o
+transistor dissipa o resto. Lado alto pede PNP, com deslocador de nível.
+
+**Esquecer que o *pull-up* do PNP consome sempre.** Os 10 kΩ da @fig-054-ladoalto puxam
+1,2 mA continuamente enquanto a carga está ligada. Em circuito a bateria, isso pode dominar o
+consumo.
+
+**Contar com a queda baixa de um Darlington.** $V_{CE(\text{sat})}$ é de 0,9 a 2 V, não 0,2 V.
+A 3 A isso são 6 W, e sem dissipador o TIP120 dura segundos.
+
+**Chavear devagar e chamar de chave.** A travessia pela região ativa é onde a dissipação
+instantânea é máxima. Comando de base lento, ou fraco, transforma uma chave eficiente num
+aquecedor com frequência de operação.
+
+**Medir o pico indutivo com a ponta em 1×.** Além de a atenuação ser insuficiente para a
+escala, a entrada do osciloscópio tem limite (tipicamente 300 V). Ponta em 10×, escala
+escolhida **antes** de ligar.
+
+**Supor que o relé abre no instante em que a base corta.** Com diodo de retorno comum, a
+corrente decai em milissegundos e a armadura só solta no fim. Em aplicação que exige desarme
+rápido, use grampeamento em tensão mais alta.
+
+## O que fica deste capítulo {#sec-054-resumo}
+
+Chaveamento é eficiente porque as **duas pontas** da reta de carga quase não dissipam: no
+corte falta corrente, na saturação falta tensão. O ponto do meio, que o amplificador usa, é o
+que dissipa — e a chave o atravessa depressa.
+
+**O projeto de uma chave de lado baixo tem quatro passos:**
+
+$$ I_C = \frac{V_{CC}}{R_{\text{carga}}}, \qquad
+   I_B = \frac{I_C}{\beta_{\text{forçado}}}\ \ (\beta_{\text{forçado}} = 5\ \text{a}\ 10),
+   \qquad
+   R_B = \frac{V_{\text{cmd}} - 0{,}8}{I_B} $$
+
+seguidos da verificação de que a fonte de comando aguenta $I_B$. O $\beta$ mínimo tem de ser
+lido **na corrente de operação**, não no ponto de teste da folha de dados, e $V_{BE}$ de
+saturação é 0,8 V, não 0,7 V.
+
+**Resistor de 10 kΩ da base para o emissor, sempre**, contra a base flutuando durante *reset* e
+gravação.
+
+**Carga indutiva exige diodo de retorno**, em antiparalelo com a bobina, catodo para o
+positivo. Sem ele, $v_L = -L\,di/dt$ leva o coletor a centenas de volts e a junção entra em
+ruptura. Com ele, o coletor fica em $V_{CC} + V_F$ e a corrente decai com $L/R$. Grampear em
+tensão mais alta (diodo mais Zener) acelera o desarme ao custo de mais tensão no transistor.
+
+**A saturação atrasa o desligamento.** O tempo de armazenamento $t_s$ — 200 ns num 2N3904 — é
+o tempo de drenar o excesso de portadores da base, e é maior quanto mais forte a saturação. O
+capacitor de aceleração e o grampo de Baker (Schottky entre base e coletor) são as duas
+correções clássicas.
+
+**Lado alto pede PNP.** O NPN vira seguidor de emissor e entrega $V_{\text{cmd}} - 0{,}7$ à
+carga, ficando na região ativa. O PNP satura puxando a base para baixo, o que exige um NPN
+pequeno como deslocador de nível — e um *pull-up* que consome corrente o tempo todo.
+
+**O Darlington multiplica $\beta$ e piora tudo o mais:** $V_{BE}$ de 1,4 a 2,5 V e
+$V_{CE(\text{sat})}$ de 0,9 a 2 V. A 3 A, são 6 W de dissipação — a razão de o MOSFET ter
+tomado esse lugar.
+
+## Para o próximo capítulo {#sec-054-fecho}
+
+A chave foi fácil porque ela é grosseira: qualquer coisa entre 10 e 100 de $\beta$ produz o
+mesmo resultado, porque a saturação é um estado, não um ponto. **O amplificador não tem essa
+sorte.**
+
+O @sec-cap-053 já mostrou o problema com números: polarizado por corrente de base fixa, o
+mesmo circuito dá $V_{CE} = 6{,}6$ V com $\beta = 100$ e satura com $\beta = 300$. E o
+@sec-cap-052 acrescentou o segundo mecanismo, pior: $V_{BE}$ cai 2 mV por grau, de modo que um
+circuito polarizado por tensão de base fixa esquenta, puxa mais corrente, esquenta mais — a
+fuga térmica.
+
+O capítulo 055 resolve os dois de uma vez, com uma ideia que atravessa o resto do manual e
+reaparece no amplificador operacional: **realimentação negativa**. Um resistor no emissor, um
+divisor rígido na base, e o ponto de operação passa a depender de resistores — que têm
+tolerância de 1 % — em vez de $\beta$ e $V_{BE}$, que não têm tolerância nenhuma que se possa
+usar.
+
+Ao final dele, o mesmo circuito funcionará com qualquer exemplar do saquinho, de 0 a 70 °C, e
+o leitor terá o primeiro estágio amplificador que sobrevive fora da bancada.

@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 53/104 |
-| **Contíguos até** | **053** — sem nenhum buraco no meio do livro |
+| **Progresso** | 54/104 |
+| **Contíguos até** | **054** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 054** | O BJT como chave: corte, saturação e acionamento de cargas |
+| **Próximo capítulo: 055** | Polarização: divisor de base, resistor de emissor e estabilidade térmica |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -24,7 +24,9 @@ diodos especiais.
 **Volume 9 em andamento** (capítulos 052 a 058, transistores bipolares). O 052 traz estrutura,
 comprimento de difusão contra espessura de base, $\alpha$ e $\beta$, a exponencial de $V_{BE}$
 e a pinagem não padronizada do TO-92; o 053 traz a família de curvas, o efeito Early, a reta
-de carga com o ponto Q e a área de operação segura.
+de carga com o ponto Q e a área de operação segura; o 054 traz a chave de lado baixo com
+$\beta$ forçado, o diodo de retorno, os tempos de comutação, o lado alto com PNP e o
+Darlington.
 
 Convenções do Volume 8 que o Volume 9 herda: valor comercial recalculado depois do
 arredondamento, pior caso verificado nos dois extremos, e `.tikz` com `circuitikz` para
@@ -144,7 +146,7 @@ cinco ocorrências como aviso.
 
 - [x] 052 — O transistor bipolar: estrutura e funcionamento — `capitulos/052-o-transistor-bipolar-estrutura-e-funcionamento.qmd`
 - [x] 053 — Curvas características e regiões de operação — `capitulos/053-curvas-caracteristicas-e-regioes-de-operacao.qmd`
-- [ ] 054 — O BJT como chave: corte, saturação e acionamento de cargas — `capitulos/054-o-bjt-como-chave-corte-saturacao-e-acionamento-de.qmd`
+- [x] 054 — O BJT como chave: corte, saturação e acionamento de cargas — `capitulos/054-o-bjt-como-chave-corte-saturacao-e-acionamento-de.qmd`
 - [ ] 055 — Polarização: divisor de base, resistor de emissor e estabilidade térmica — `capitulos/055-polarizacao-divisor-de-base-resistor-de-emissor-e.qmd`
 - [ ] 056 — Emissor comum: ganho, impedâncias e limitações — `capitulos/056-emissor-comum-ganho-impedancias-e-limitacoes.qmd`
 - [ ] 057 — Coletor comum e base comum — `capitulos/057-coletor-comum-e-base-comum.qmd`
