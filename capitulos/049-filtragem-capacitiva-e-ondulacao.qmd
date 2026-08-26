@@ -1,3 +1,787 @@
 # Filtragem capacitiva e ondulação {#sec-cap-049}
 
-*(em elaboração)*
+::: {.callout-warning}
+## Capacitor carregado
+
+O circuito deste capítulo **guarda energia depois de desligado**. Um capacitor de 4700 µF
+carregado a 17 V armazena 0,68 J — o suficiente para um susto, uma queimadura na ponta do
+dedo e uma chave de fenda com a ponta soldada. Em fonte de tensão mais alta, o suficiente para
+muito mais.
+
+Três hábitos, e eles valem para o resto do manual:
+
+- **Meça antes de tocar.** Sempre, mesmo tendo desligado há um minuto.
+- **Descarregue por um resistor**, nunca em curto com chave de fenda. O curto vaporiza metal
+  e pode romper o capacitor internamente.
+- **Projete com resistor de descarga** (@sec-049-sangria). Ele custa oito centavos e faz o
+  circuito ficar seguro sozinho.
+
+O laboratório continua sendo em baixa tensão, com gerador de funções ou fonte de parede de
+12 V CA já montada. O aviso do @sec-cap-048 vale integralmente.
+:::
+
+A saída de qualquer retificador do @sec-cap-048 vai de zero ao pico e volta, cento e vinte
+vezes por segundo. Nenhum circuito eletrônico se alimenta disso.
+
+Falta o componente que armazena energia enquanto sobra e a devolve enquanto falta, e o Volume
+4 já o entregou. Um capacitor em paralelo com a carga transforma a coisa inteira: a tensão
+média salta de $0{,}637\,V_p$ para quase $V_p$, e a ondulação cai de 48 % para poucos por
+cento.
+
+O preço é pago em três moedas, e todas as três aparecem neste capítulo:
+
+- A corrente do secundário deixa de ser senoidal e vira **pulsos estreitos e altos**, com
+  pico de dez a vinte vezes a corrente contínua de saída.
+- Ao ligar, o capacitor descarregado é um curto-circuito, e há um **surto** limitado apenas
+  pela resistência do enrolamento.
+- O capacitor precisa aguentar **tensão, corrente de ondulação e temperatura** — e errar
+  qualquer uma das três encurta a vida dele de anos para meses.
+
+Ao final, dimensionar o capacitor de uma fonte é uma conta de uma linha, e escolher o
+componente certo na loja é uma decisão informada.
+
+## O mecanismo {#sec-049-mecanismo}
+
+Ponha um capacitor em paralelo com a carga, na saída de uma ponte.
+
+::: {#fig-049-filtro}
+
+```{.tikz}
+%%| filename: 049-filtro
+%%| alt: À esquerda, o esquemático: uma fonte alternada alimenta uma ponte retificadora desenhada como uma caixa rotulada ponte, cuja saída positiva vai a um nó de onde descem, em paralelo, um capacitor eletrolítico e o resistor de carga, ambos retornando ao trilho de terra ligado à saída negativa da ponte. À direita, o gráfico da tensão contra o tempo. Em cinza tracejado aparece a saída da ponte sem filtro, uma sucessão de arcos que vão de zero ao pico. Em azul grosso aparece a tensão sobre o capacitor: ela sobe acompanhando o arco até o pico, e a partir do pico desce quase em linha reta, muito mais devagar do que o arco, até encontrar o arco seguinte já perto do próximo pico, quando volta a subir. O resultado é uma linha quase horizontal com um pequeno dente de serra sobreposto. Uma seta vertical vermelha entre o topo e o vale do dente de serra marca a ondulação pico a pico, e uma linha horizontal vermelha marca a tensão média, que fica logo abaixo do pico. Anotações indicam que o diodo só conduz durante a subida, no trecho curto em que o arco está acima da tensão do capacitor, e que durante todo o resto do tempo é o capacitor que alimenta a carga sozinho.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquematico =================
+  \begin{scope}[shift={(0,0.4)}]
+    \draw (0,0) to[sV, l=$v_{\text{sec}}$] (0,3.0);
+    \draw (0,3.0) -- (0.7,3.0);
+    \draw (0,0) -- (0.7,0);
+    \draw[thick, fill=manualgray!8] (0.7,-0.35) rectangle (2.3,3.35);
+    \node[align=center, font=\scriptsize] at (1.5,1.5) {ponte};
+    \node[anchor=south, font=\tiny] at (2.55,3.05) {$+$};
+    \node[anchor=north, font=\tiny] at (2.55,-0.05) {$-$};
+    \draw (2.3,3.0) -- (4.6,3.0);
+    \draw (2.3,0) -- (4.6,0);
+    \draw (3.4,3.0) to[eC, l=$C$, *-*] (3.4,0);
+    \draw (4.6,3.0) to[R, l=$R_L$] (4.6,0);
+    \node[ground] at (2.9,0) {};
+    \node[anchor=north, align=center, font=\scriptsize] at (2.6,-1.1)
+         {o capacitor \textbf{em paralelo} com a carga};
+  \end{scope}
+
+  % ================= formas de onda =================
+  % V_p = 3,0 ; ondulacao = 0,55 ; periodo da ondulacao = 1,5
+  \begin{scope}[shift={(6.6,0.4)}]
+    \draw[eixo] (-0.3,0) -- (8.9,0) node[anchor=north west, font=\scriptsize] {$t$};
+    \draw[eixo] (0,-0.3) -- (0,3.7) node[anchor=south east, font=\scriptsize] {$v$};
+
+    % janelas em que o diodo conduz: do encontro com o arco ate o pico
+    \foreach \p in {0.75, 2.25, 3.75, 5.25, 6.75}{
+      \fill[manualgreen!20] ({\p-0.293},0) rectangle (\p,3.05);}
+
+    % saida da ponte, sem filtro
+    \draw[manualgray!70, dashed, samples=320, domain=0:8.25, smooth, variable=\x]
+         plot ({\x}, {3.0*abs(sin(120*\x))});
+
+    % carga inicial, ate o primeiro pico
+    \draw[curva, samples=60, domain=0:0.75, smooth, variable=\x]
+         plot ({\x}, {3.0*abs(sin(120*\x))});
+
+    % descarga linear + retomada pelo arco seguinte
+    \foreach \p in {0.75, 2.25, 3.75, 5.25, 6.75}{
+      \draw[curva] (\p,3.0) -- ({\p+1.207},2.45);
+      \draw[curva, samples=30, domain=0:0.293, smooth, variable=\x]
+           plot ({\p+1.207+\x}, {3.0*abs(sin(120*(\p+1.207+\x)))});}
+
+    % media e ondulacao
+    \draw[destaque] (0,2.725) -- (8.25,2.725);
+    \node[manualred, anchor=west, font=\scriptsize] at (8.35,2.725)
+         {$V_{cc}$};
+    \draw[destaque, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}]
+         (2.9,3.0) -- (2.9,2.45);
+    \node[manualred, anchor=west, font=\tiny, align=left] at (3.0,3.35)
+         {$V_{r(pp)}$};
+
+    \node[manualblue, anchor=south east, font=\tiny] at (1.5,3.05)
+         {$v_C$};
+    \node[manualgray, anchor=north, font=\tiny] at (1.5,-0.15)
+         {sem filtro};
+
+    \node[manualgreen!55!black, anchor=north, font=\tiny, align=center] at (4.4,-0.55)
+         {nas faixas verdes o diodo conduz e recarrega o capacitor; em
+          \textbf{todo o resto do tempo}\\
+          é o capacitor que alimenta a carga sozinho};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O filtro capacitivo. O capacitor carrega até o pico em cada ciclo e descarrega pela carga
+entre os picos. Como a constante de tempo $R_L C$ é muito maior que o intervalo entre picos,
+a descarga é apenas o começo de uma exponencial — que é, com excelente aproximação, **uma
+reta**.
+
+:::
+
+O funcionamento, em quatro frases:
+
+1. Enquanto a tensão da ponte é maior que a do capacitor, o diodo conduz e o capacitor
+   carrega, acompanhando o arco até o pico.
+2. Passado o pico, a tensão da ponte cai mais rápido do que a do capacitor. O diodo fica
+   reversamente polarizado e **desliga**.
+3. Com o diodo desligado, o capacitor alimenta a carga sozinho, descarregando com constante de
+   tempo $R_L C$ — o transitório do @sec-cap-025.
+4. Quando o arco seguinte alcança a tensão do capacitor, o diodo volta a conduzir e o ciclo
+   recomeça.
+
+**O diodo conduz durante uma fração muito pequena do ciclo**, e essa é a origem de tudo o que
+vem depois: a corrente pulsante, o surto e o aquecimento do transformador.
+
+## A fórmula que se usa a vida inteira {#sec-049-formula}
+
+::: {#fig-049-ondulacao}
+
+```{.tikz}
+%%| filename: 049-ondulacao
+%%| alt: Ampliação de um único ciclo de ondulação para deduzir a fórmula. O gráfico mostra a tensão contra o tempo, com o arco da ponte em cinza tracejado e a tensão do capacitor em azul. Do pico, a curva azul desce quase em linha reta, e sobre ela está desenhada em vermelho a reta que a aproxima. Do lado esquerdo, uma seta vertical entre o pico e o vale marca a ondulação pico a pico. Na base, uma seta horizontal marca o intervalo de descarga, anotado como aproximadamente o período da ondulação inteiro, um sobre a frequência da ondulação. Uma anotação registra que a inclinação da reta é a corrente da carga dividida pela capacitância, porque a corrente num capacitor é a capacitância vezes a derivada da tensão, e que multiplicando essa inclinação pelo intervalo se obtém a ondulação. Ao lado, a fórmula resultante aparece destacada num quadro.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---- geometria: arcos de meio periodo 5,2, com picos em x = 2,6 e 7,8 ----
+  \draw[eixo] (-0.3,0) -- (10.2,0) node[anchor=north west, font=\scriptsize] {$t$};
+  \draw[eixo] (0,-0.3) -- (0,4.6) node[anchor=south east, font=\scriptsize] {$v$};
+
+  \draw[manualgray!70, dashed, samples=260, domain=0:9.6, smooth, variable=\x]
+       plot ({\x}, {3.6*abs(sin(34.6*\x))});
+
+  % carga ate o primeiro pico
+  \draw[curva, samples=80, domain=0:2.6, smooth, variable=\x]
+       plot ({\x}, {3.6*abs(sin(34.6*\x))});
+  % descarga: o comeco de uma exponencial e, com otima aproximacao, uma reta
+  \draw[curva, line width=1.6pt] (2.6,3.6) -- (6.37,2.33);
+  % retomada pelo arco seguinte, ate o pico em 7,8
+  \draw[curva, samples=60, domain=6.37:7.8, smooth, variable=\x]
+       plot ({\x}, {3.6*abs(sin(34.6*\x))});
+
+  % reta aproximadora, estendida ao periodo inteiro (o lado conservador)
+  \draw[destaque, dashed, line width=1.2pt] (2.6,3.6) -- (7.8,1.85);
+  \node[manualred, anchor=north west, font=\tiny, align=left] at (6.55,1.95)
+       {a reta estendida ao período\\
+        inteiro: previsão \textbf{a maior}};
+
+  % ondulacao real
+  \draw[auxiliar] (2.6,3.6) -- (8.9,3.6);
+  \draw[auxiliar] (6.37,2.33) -- (8.9,2.33);
+  \draw[destaque, {Latex[length=1.6mm]}-{Latex[length=1.6mm]}] (8.6,3.6) -- (8.6,2.33);
+  \node[manualred, anchor=west, font=\scriptsize, align=left] at (8.75,2.97)
+       {$V_{r(pp)}$};
+
+  % intervalo de descarga
+  \draw[manualgreen!55!black, {Latex[length=1.6mm]}-{Latex[length=1.6mm]}]
+       (2.6,-0.8) -- (7.8,-0.8);
+  \node[manualgreen!55!black, anchor=north, font=\scriptsize] at (5.2,-0.9)
+       {$\Delta t \approx \dfrac{1}{f_r}$};
+
+  % inclinacao
+  \node[manualred, anchor=south, font=\scriptsize, align=center] at (3.9,3.95)
+       {inclinação $= \dfrac{dv}{dt} = \dfrac{I_{cc}}{C}$};
+  \draw[manualred, -{Latex[length=1.6mm]}] (3.9,3.9) -- (4.1,3.13);
+
+  % quadro com a formula
+  \node[draw=manualred, very thick, rounded corners=3pt, anchor=north west,
+        align=left, inner sep=7pt, font=\small] at (0.2,-1.8)
+       {$V_{r(pp)} \;=\; \dfrac{I_{cc}}{f_r\,C}
+         \;=\; \dfrac{V_{cc}}{f_r\,R_L\,C}$
+        \qquad
+        $C \;=\; \dfrac{I_{cc}}{f_r\,V_{r(pp)}}$};
+
+  \node[anchor=north west, align=left, font=\scriptsize] at (0.2,-3.65)
+       {com $f_r = 2f_{\text{rede}}$ na onda completa e $f_r = f_{\text{rede}}$ na meia onda.
+        \textbf{A aproximação é conservadora:}\\
+        supõe que a descarga dura o período inteiro, quando na verdade ela é interrompida
+        um pouco antes\\ pelo arco seguinte --- o erro é de poucos por cento, e sempre
+        para o lado seguro.};
+
+\end{tikzpicture}
+```
+
+A dedução inteira, num desenho. A descarga do capacitor é o começo de uma exponencial, e o
+começo de uma exponencial é uma reta cuja inclinação é $I/C$.
+
+:::
+
+O capacitor entrega a corrente da carga durante o intervalo entre picos. Do @sec-cap-021,
+$i = C\,dv/dt$, de modo que a taxa de queda da tensão é $I_{cc}/C$. Multiplicando pelo
+intervalo $\Delta t \approx 1/f_r$:
+
+$$ \boxed{\;V_{r(pp)} = \frac{I_{cc}}{f_r\,C}\;}
+   \qquad\text{e, invertendo,}\qquad
+   \boxed{\;C = \frac{I_{cc}}{f_r\,V_{r(pp)}}\;} $$
+
+com $f_r$ a **frequência da ondulação** — 120 Hz numa ponte alimentada por rede de 60 Hz, e
+60 Hz num retificador de meia onda. É aqui que o @sec-cap-048 cobra: **a mesma capacitância
+produz metade da ondulação em onda completa.**
+
+Os dois valores derivados:
+
+$$ V_{cc} \approx V_p - \frac{V_{r(pp)}}{2},
+   \qquad
+   V_{r(\text{rms})} \approx \frac{V_{r(pp)}}{2\sqrt3} = 0{,}289\,V_{r(pp)}. $$
+
+O $2\sqrt3$ vem do valor eficaz de uma onda triangular (@sec-cap-028), e é ele que se usa para
+comparar com a especificação de "ruído e ondulação" de um regulador.
+
+### Um projeto completo, em cinco linhas
+
+**Fonte de 12 V, 500 mA, com ondulação de no máximo 1 V pico a pico, rede de 60 Hz.**
+
+1. Transformador de 12 V eficazes → $V_p = 1{,}414 \times 12 = 16{,}97$ V.
+2. Ponte, duas quedas: $V_p$ na saída $= 16{,}97 - 1{,}4 = 15{,}6$ V.
+3. $f_r = 120$ Hz.
+4. $C = \dfrac{0{,}5}{120 \times 1} = 4{,}17\ \text{mF} \rightarrow$ **4700 µF**, valor
+   comercial da série E6, imediatamente acima.
+5. Recalcule com o valor real:
+   $V_{r(pp)} = \dfrac{0{,}5}{120 \times 4700\times10^{-6}} = 0{,}887$ V. Confortável.
+
+E a tensão de saída fica em $15{,}6 - 0{,}887/2 = 15{,}2$ V — bem acima dos 12 V nominais do
+transformador, que é o ponto do @sec-cap-048 aparecendo de novo.
+
+**Falta o passo que quase todo iniciante esquece, e ele está na @sec-049-escolha:** a tensão
+de trabalho do capacitor. Um 4700 µF/16 V nesse circuito trabalha acima da tensão nominal e
+morre em semanas.
+
+::: {#fig-049-escolha}
+
+```{.tikz}
+%%| filename: 049-escolha
+%%| alt: Gráfico de eixos logarítmicos com a capacitância em microfarads no eixo horizontal, de cem a dez mil, e a ondulação pico a pico em volts no eixo vertical, de zero vírgula zero cinco a cinquenta. Três retas descendentes paralelas, uma para cada corrente de carga: cem miliampères, quinhentos miliampères e um ampère. Como os dois eixos são logarítmicos e a ondulação é inversamente proporcional à capacitância, cada curva é uma reta de inclinação menos um. Uma faixa horizontal sombreada marca a região de ondulação abaixo de um volt, considerada boa para alimentar um regulador linear. Um ponto destacado marca o projeto do texto: quatro mil e setecentos microfarads com quinhentos miliampères, resultando em zero vírgula oito nove volt de ondulação. Uma anotação registra que a curva vale para frequência de ondulação de cento e vinte hertz, e que em meia onda, com sessenta hertz, toda a família de retas sobe por um fator de dois.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13cm, height=8.4cm,
+  xmode=log, ymode=log,
+  xlabel={$C$ ($\mu$F)}, ylabel={$V_{r(pp)}$ (V)},
+  xmin=100, xmax=10000, ymin=0.05, ymax=50,
+  xtick={100,220,470,1000,2200,4700,10000},
+  xticklabels={100,220,470,1000,2200,4700,10000},
+  ytick={0.05,0.1,0.2,0.5,1,2,5,10,20,50},
+  yticklabels={{0,05},{0,1},{0,2},{0,5},{1},{2},{5},{10},{20},{50}},
+  grid=both, grid style={manualgray!25},
+  font=\footnotesize,
+  legend pos=south west, legend cell align=left,
+  legend style={font=\scriptsize, draw=manualgray!50},
+]
+
+% faixa "boa"
+\addplot[draw=none, fill=manualgreen!12, forget plot]
+  coordinates {(100,0.05) (10000,0.05) (10000,1) (100,1)} \closedcycle;
+
+% V_r = I/(f_r C), com f_r = 120 Hz e C em uF
+\addplot[manualblue, very thick, domain=100:10000, samples=40]
+  {0.1/(120*x*1e-6)};
+\addlegendentry{$I_{cc} = 100$ mA}
+
+\addplot[manualgreen!55!black, very thick, domain=100:10000, samples=40]
+  {0.5/(120*x*1e-6)};
+\addlegendentry{$I_{cc} = 500$ mA}
+
+\addplot[manualred, very thick, domain=100:10000, samples=40]
+  {1.0/(120*x*1e-6)};
+\addlegendentry{$I_{cc} = 1$ A}
+
+\addplot[only marks, mark=*, mark size=2.6pt, black]
+  coordinates {(4700, 0.887)};
+\node[anchor=north east, font=\scriptsize, align=right] (proj) at (axis cs:9800,30)
+     {o projeto do texto:\\$4700\ \mu$F, $500$ mA\\$\rightarrow 0{,}89$ V};
+\draw[black, -{Latex[length=1.6mm]}] (proj.south) -- (axis cs:4900,1.0);
+
+\node[manualgreen!55!black, anchor=west, font=\scriptsize] at (axis cs:112,0.62)
+     {ondulação abaixo de $1$ V: confortável para regulador linear};
+
+\end{axis}
+
+\node[anchor=north, font=\scriptsize, align=center] at (6.5,-1.1)
+     {Válido para $f_r = 120$ Hz (onda completa em rede de 60 Hz).
+      Em \textbf{meia onda} a família inteira sobe por um fator de dois.};
+
+\end{tikzpicture}
+```
+
+O ábaco de projeto. Em eixos logarítmicos, $V_r = I/(f_r C)$ vira uma família de retas
+paralelas, e escolher o capacitor é ler o cruzamento.
+
+:::
+
+## O preço: pulsos de corrente {#sec-049-pulsos}
+
+O capacitor melhorou a tensão. A conta chega na corrente.
+
+::: {#fig-049-pulsos}
+
+```{.tikz}
+%%| filename: 049-pulsos
+%%| alt: Dois gráficos empilhados com o mesmo eixo de tempo. No gráfico de cima, a tensão: em cinza tracejado os arcos da saída da ponte, e em azul a tensão do capacitor, quase plana com um pequeno dente de serra. Faixas verticais verdes sombreadas marcam os intervalos curtos, em torno de cada pico, em que o arco está acima da tensão do capacitor, que são os intervalos de condução do diodo. No gráfico de baixo, a corrente no diodo, na mesma escala de tempo: ela é zero em quase todo o ciclo e sobe em pulsos altos e estreitos, exatamente alinhados com as faixas verdes de cima. Uma linha horizontal vermelha tracejada marca, bem embaixo, o nível da corrente contínua média entregue à carga, deixando visível que o pico dos pulsos é mais de dez vezes esse nível. Anotações registram que a área de cada pulso é igual à carga consumida pela carga durante o ciclo inteiro, e que quanto menor a ondulação, mais estreito e mais alto o pulso.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= tensao =================
+  \begin{scope}[shift={(0,0)}]
+    \draw[eixo] (-0.3,0) -- (9.0,0);
+    \draw[eixo] (0,-0.3) -- (0,3.9) node[anchor=south east, font=\scriptsize] {$v$};
+
+    % janelas de conducao
+    \foreach \p in {0.75, 2.25, 3.75, 5.25, 6.75}{
+      \fill[manualgreen!22] ({\p-0.293},0) rectangle (\p,3.6);}
+
+    \draw[manualgray!70, dashed, samples=320, domain=0:8.25, smooth, variable=\x]
+         plot ({\x}, {3.0*abs(sin(120*\x))});
+    \draw[curva, samples=60, domain=0:0.75, smooth, variable=\x]
+         plot ({\x}, {3.0*abs(sin(120*\x))});
+    \foreach \p in {0.75, 2.25, 3.75, 5.25, 6.75}{
+      \draw[curva] (\p,3.0) -- ({\p+1.207},2.45);
+      \draw[curva, samples=30, domain=0:0.293, smooth, variable=\x]
+           plot ({\p+1.207+\x}, {3.0*abs(sin(120*(\p+1.207+\x)))});}
+
+    \node[manualgreen!55!black, anchor=south, font=\tiny, align=center] at (4.4,3.7)
+         {faixas verdes: os únicos instantes em que o diodo conduz};
+
+  \end{scope}
+
+  % ================= corrente =================
+  \begin{scope}[shift={(0,-5.0)}]
+    \draw[eixo] (-0.3,0) -- (9.0,0) node[anchor=north west, font=\scriptsize] {$t$};
+    \draw[eixo] (0,-0.3) -- (0,3.9) node[anchor=south east, font=\scriptsize] {$i_D$};
+
+    \foreach \p in {0.75, 2.25, 3.75, 5.25, 6.75}{
+      \fill[manualgreen!22] ({\p-0.293},0) rectangle (\p,3.4);
+      \draw[manualred, very thick]
+           ({\p-0.293},0) -- ({\p-0.06},3.4) -- (\p,0);}
+    \draw[manualred, very thick] (0,0) -- (0.457,0);
+    \foreach \p in {0.75, 2.25, 3.75, 5.25}{
+      \draw[manualred, very thick] (\p,0) -- ({\p+1.207},0);}
+    \draw[manualred, very thick] (6.75,0) -- (8.25,0);
+
+    \draw[manualblue, dashed, thick] (0,0.28) -- (8.25,0.28);
+    \node[manualblue, anchor=west, font=\tiny, align=left] at (8.35,0.28)
+         {$I_{cc}$ da carga};
+
+    \draw[destaque, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}] (4.2,0.28) -- (4.2,3.4);
+    \node[draw=manualred, rounded corners=2pt, manualred, anchor=west,
+          font=\tiny, align=left, inner sep=4pt] (fpico) at (8.35,2.4)
+         {$I_{\text{pico}} \approx \pi\,I_{cc}\sqrt{\dfrac{2V_p}{V_{r(pp)}}}$\\[2pt]
+          aqui, $\approx 17\times I_{cc}$};
+    \node[manualred, anchor=west, font=\tiny] at (4.3,1.85) {$I_{\text{pico}}$};
+
+    \node[anchor=north, align=center, font=\scriptsize] at (4.4,-0.9)
+       {A \textbf{área} de cada pulso é a carga que a carga consumiu no ciclo inteiro.
+        Quanto menor a ondulação,\\ mais estreita a janela --- e mais alto o pulso.
+        Melhorar a tensão \emph{piora} a corrente.};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O que o capacitor faz com a corrente. A carga puxa uma corrente constante; o diodo a entrega
+em pulsos que ocupam 10 % do ciclo. A área é a mesma, e a altura é dez a vinte vezes maior.
+
+:::
+
+O diodo só conduz enquanto o arco está **acima** da tensão do capacitor. Esse intervalo é
+pequeno, e fica menor à medida que a ondulação diminui. Da geometria da senoide perto do
+pico, o ângulo de condução é
+
+$$ \theta_c = \arccos\!\left(1 - \frac{V_{r(pp)}}{V_p}\right) \approx \sqrt{\frac{2V_{r(pp)}}{V_p}}. $$
+
+No projeto acima, com $V_{r(pp)} = 0{,}887$ V e $V_p = 15{,}6$ V, isso dá $0{,}337$ rad, ou
+19,3° — cerca de **11 % do semiciclo**.
+
+Como a carga que sai é a mesma que entra, o pulso tem de ser tão mais alto quanto mais
+estreito for. Para um pulso aproximadamente triangular:
+
+$$ \boxed{\;I_{\text{pico}} \approx \pi\,I_{cc}\sqrt{\frac{2V_p}{V_{r(pp)}}}\;} $$
+
+Com $I_{cc} = 0{,}5$ A, $V_p = 15{,}6$ V e $V_{r(pp)} = 0{,}887$ V:
+$I_{\text{pico}} \approx \pi \times 0{,}5 \times 5{,}93 = 9{,}3$ A. **Nove ampères de pico
+numa fonte de meio ampère.**
+
+Quatro consequências, todas práticas:
+
+**O diodo precisa aguentar o pulso repetitivo.** A folha de dados chama isso de $I_{FRM}$, e
+ele é bem maior que $I_{F(AV)}$. Um 1N4007 tem $I_{F(AV)} = 1$ A e $I_{FRM} = 30$ A — folga
+suficiente aqui.
+
+**O transformador aquece mais do que a conta ingênua sugere.** O valor eficaz de um pulso
+estreito e alto é muito maior que a média dele (@sec-cap-028). O **fator de crista** de um
+retificador com filtro capacitivo fica entre 3 e 5, e a regra prática é dimensionar o
+transformador para **1,6 a 1,8 vez** a corrente contínua de saída.
+
+**O fator de potência é ruim.** A corrente do secundário é rica em harmônicos (@sec-cap-040),
+e o fator de potência de uma fonte com filtro capacitivo simples fica em torno de 0,6. É
+irrelevante numa fonte de bancada e é regulamentado acima de 75 W, o que é a razão de fontes
+de computador terem correção ativa de fator de potência.
+
+**Aumentar $C$ indefinidamente não é grátis.** Cada dobra de capacitância corta a ondulação
+pela metade **e** aumenta o pico de corrente por $\sqrt2$. Existe um ponto além do qual o
+custo em diodo, transformador e surto supera o ganho em ondulação — e a solução certa passa a
+ser um regulador (@sec-cap-050), não mais capacitância.
+
+## O surto de partida {#sec-049-surto}
+
+No instante em que a fonte é ligada, o capacitor está descarregado. Um capacitor descarregado
+é um **curto-circuito** (@sec-cap-025), e a única coisa que limita a corrente é a resistência
+em série do caminho: o enrolamento do secundário, a resistência dinâmica dos diodos e a ESR do
+próprio capacitor.
+
+$$ I_{\text{surto}} \approx \frac{V_p}{R_{\text{sec}} + R_{\text{diodos}} + \text{ESR}}. $$
+
+Com um transformador pequeno de 12 V / 1 A, cujo secundário tem uns 2 Ω, isso dá
+$16{,}97/2{,}5 \approx 6{,}8$ A — sete vezes a corrente nominal do transformador, e dentro dos
+30 A de $I_{FSM}$ do 1N4007. Com um transformador maior, de resistência menor, o surto sobe
+proporcionalmente, e passa a exigir providência.
+
+Pior: o surto depende de **em que ponto da senoide a chave foi fechada**. Fechar no zero é
+benigno; fechar no pico é o pior caso, e é o que a conta acima supõe.
+
+As providências, em ordem de custo:
+
+- **Escolher diodo com $I_{FSM}$ folgado.** Grátis, e resolve a maioria dos casos de bancada.
+- **Termistor NTC em série** com o primário ou o secundário. Frio ele tem alguns ohms e limita
+  o surto; aquecido pela própria corrente, a resistência cai para décimos de ohm e ele quase
+  some do circuito. É a solução padrão, custa pouco, e tem uma limitação real: **ele precisa
+  esfriar entre religamentos**, de modo que desligar e religar em dois segundos não é
+  protegido.
+- **Resistor fixo em série**, para fontes pequenas. Simples e sempre dissipando.
+- **Circuito de pré-carga com relé**, em fontes grandes: um resistor limita o surto e um relé
+  o curto-circuita alguns décimos de segundo depois.
+
+## Escolher o capacitor {#sec-049-escolha-cap}
+
+A capacitância é o parâmetro mais fácil e o menos crítico. Os outros três decidem se a fonte
+dura dez anos ou seis meses.
+
+### Tensão de trabalho — o erro clássico
+
+O capacitor vê a tensão de **pico**, que é a que se calculou na @sec-049-formula, e ela ocorre
+no pior caso:
+
+- rede 10 % acima do nominal;
+- transformador **sem carga**, entregando 10 % a 20 % a mais.
+
+Somando os dois, um "12 V" pode produzir $12 \times 1{,}1 \times 1{,}15 \times 1{,}414 =
+21{,}5$ V de pico. Um capacitor de 16 V nesse circuito está sendo abusado o tempo todo, e um
+eletrolítico abusado em tensão **seca por dentro**, perde capacitância, ganha ESR, esquenta
+mais, e por fim estufa ou abre a válvula.
+
+**Regra:** tensão de trabalho $\ge 1{,}5 \times V_p$ calculado. No exemplo, 16,97 V de pico
+pede **35 V**, e 25 V é o mínimo absoluto. A diferença de preço entre 25 V e 35 V é de
+centavos.
+
+### Corrente de ondulação
+
+A folha de dados de um eletrolítico traz uma **corrente de ondulação máxima** em ampères
+eficazes, tipicamente especificada a 100 ou 120 Hz e 105 °C. Ela existe porque a corrente que
+atravessa o capacitor passa pela ESR dele e dissipa $I_{\text{rms}}^2 \times \text{ESR}$
+**dentro** do componente, onde não há como esfriar.
+
+Num filtro de fonte, a corrente eficaz no capacitor é da ordem de **1,5 a 2 vezes** a corrente
+contínua de saída, por causa dos pulsos da @sec-049-pulsos. Para o projeto de 500 mA, procure
+um capacitor com pelo menos 1 A eficaz de ondulação — e capacitores de 4700 µF / 35 V para
+uso em fonte trazem tipicamente 2 a 3 A.
+
+### ESR e temperatura
+
+O @sec-cap-022 já apresentou a ESR. Aqui ela tem duas consequências:
+
+- **A ondulação real é maior que a calculada**, porque os pulsos de corrente atravessam a ESR
+  e produzem uma queda adicional. Com ESR de 50 mΩ e pulsos de 9 A, isso são 450 mV de
+  ondulação **extra**, comparável à ondulação calculada. Em fonte de baixa ondulação, a ESR
+  passa a dominar, e a solução é usar dois capacitores em paralelo — que dividem a corrente e
+  metade da ESR — em vez de um só, maior.
+- **A vida útil despenca com a temperatura.** A regra dos eletrolíticos é brutal e confiável:
+  **a vida dobra a cada 10 °C a menos**. Um capacitor de 2000 h a 105 °C dura
+  $2000 \times 2^{6} = 128\,000$ h — quinze anos — se trabalhar a 45 °C. O mesmo componente ao
+  lado de um dissipador a 85 °C dura 8000 h, menos de um ano de operação contínua.
+
+**Consequência de montagem, e ela é gratuita:** posicione o capacitor de filtro longe do
+dissipador do regulador e do transformador. É a diferença entre uma fonte que dura a vida
+inteira e uma que precisa de manutenção.
+
+### Polaridade
+
+Eletrolítico tem polaridade, e invertê-lo em circuito de fonte é o experimento mais barulhento
+que se faz numa bancada de baixa tensão: o eletrólito ferve, a válvula abre, e o conteúdo sai.
+Confira a faixa do lado negativo — **é o oposto da convenção do diodo**, onde a faixa marca o
+cátodo e o terminal é positivo em bloqueio. A faixa do eletrolítico marca o **negativo**.
+
+## O resistor de sangria {#sec-049-sangria}
+
+Um capacitor de filtro sem carga permanente fica carregado indefinidamente depois de a fonte
+ser desligada — a fuga própria dele leva minutos ou horas para descarregá-lo.
+
+A solução é um resistor permanente em paralelo, chamado **resistor de sangria** ou *bleeder*.
+Ele resolve três problemas de uma vez: descarrega o capacitor depois do desligamento, dá uma
+carga mínima ao regulador (o que evita que a tensão suba sem carga), e serve de indicação
+visual de circuito vivo se houver um LED em série.
+
+O dimensionamento é um compromisso:
+
+$$ \tau = R_{\text{sangria}}\,C, \qquad
+   P = \frac{V_{cc}^{2}}{R_{\text{sangria}}}. $$
+
+Para o exemplo de 4700 µF a 15,6 V:
+
+| $R$ | $\tau$ | Descarga a 5 V | Corrente | Dissipação |
+|---|---|---|---|---|
+| 10 kΩ | 47 s | ~54 s | 1,6 mA | 24 mW |
+| 4,7 kΩ | 22 s | ~25 s | 3,3 mA | 52 mW |
+| 2,2 kΩ | 10 s | ~12 s | 7,1 mA | 111 mW |
+| 1 kΩ | 4,7 s | ~5 s | 15,6 mA | 243 mW |
+
+: O resistor de sangria. A escolha típica descarrega em dez a trinta segundos e desperdiça
+menos de 1 % da corrente nominal. {#tbl-049-sangria}
+
+Um 2,2 kΩ / 1/2 W é uma escolha equilibrada aqui: descarga em pouco mais de dez segundos,
+7 mA desperdiçados de 500 mA, e 111 mW num corpo de 1/2 W.
+
+**Em fonte de tensão alta, o resistor de sangria não é opcional.** Ele é o que separa
+"desligado" de "desligado e seguro".
+
+## 🧪 Laboratório {#sec-049-lab}
+
+::: {.callout-warning}
+## Antes de começar
+
+Vale integralmente o aviso do @sec-cap-048: roteiro **inteiro** em baixa tensão, com gerador
+de funções ou fonte de parede de 12 V CA já montada e fechada. O primário nunca é aberto.
+
+E agora há o capacitor: **descarregue-o por um resistor antes de mexer no circuito**, e meça
+para confirmar. Não use chave de fenda.
+
+Verifique a **polaridade** do eletrolítico duas vezes antes de energizar. A faixa marca o
+negativo.
+:::
+
+**Medir a ondulação de uma fonte real, verificar a fórmula $V_r = I/(f_r C)$ em três décadas de
+capacitância, e ver na tela os pulsos de corrente que ela produz.**
+
+### Material
+
+::: {.lab-material}
+- 1 gerador de funções, **ou** 1 fonte de parede de 12 V CA já montada
+- 1 osciloscópio de dois canais com pontas 10× compensadas
+- 1 multímetro digital
+- 1 ponte retificadora KBP206 (ou 4 × 1N4007)
+- Capacitores eletrolíticos, todos de **35 V ou mais**: 100 µF, 470 µF, 1000 µF, 2200 µF
+- Resistores: 100 Ω / 2 W, 470 Ω / 1 W, 1 kΩ / 1 W, 2,2 kΩ / 1/2 W (sangria)
+- 1 resistor de 1 Ω / 1 W — o **sensor de corrente** da Parte 4
+- Protoboard, jumpers
+:::
+
+### Parte 1 — Antes e depois
+
+1. Monte a ponte com $R_L = 1$ kΩ, **sem** capacitor. Meça $V_{cc}$ no multímetro e observe a
+   forma de onda. É o @sec-cap-048.
+2. Adicione o capacitor de 1000 µF em paralelo com $R_L$, **atenção à polaridade**.
+3. Meça $V_{cc}$ de novo, e observe a forma de onda.
+
+A tensão média deve saltar de cerca de 0,64 $V_p$ para quase $V_p$ — um aumento de 55 %, com
+um componente e nenhum ajuste. Anote os dois valores; eles são o resultado mais direto do
+capítulo.
+
+### Parte 2 — A fórmula, em três décadas
+
+Com $R_L = 1$ kΩ e o osciloscópio em **acoplamento CA** e ganho alto (@sec-cap-043), meça a
+ondulação pico a pico para cada capacitor:
+
+| $C$ | $I_{cc}$ medida | $V_{r(pp)}$ prevista | $V_{r(pp)}$ medida |
+|---|---|---|---|
+| 100 µF | ~15 mA | 1,25 V | |
+| 470 µF | ~15 mA | 0,27 V | |
+| 1000 µF | ~15 mA | 0,13 V | |
+| 2200 µF | ~15 mA | 0,06 V | |
+
+: A previsão usa $V_{r(pp)} = I_{cc}/(f_r C)$ com $f_r = 120$ Hz. Meça $I_{cc}$ de verdade —
+ela é $V_{cc}/R_L$ e muda um pouco de linha para linha. {#tbl-049-lab1}
+
+1. Marque medido contra previsto num gráfico log-log. Deve dar uma reta de inclinação 1.
+2. **Onde a previsão falha**: nos capacitores maiores, a ondulação medida costuma ficar
+   **acima** da prevista. A razão é a ESR — os pulsos de corrente atravessam-na e produzem
+   degraus verticais na forma de onda. Procure esses degraus na tela: eles são a assinatura
+   inconfundível da ESR, e distingui-los da rampa de descarga é uma habilidade de bancada
+   real.
+
+### Parte 3 — A carga importa muito agora
+
+Com $C = 470$ µF fixo, troque a carga:
+
+| $R_L$ | $I_{cc}$ | $V_{r(pp)}$ prevista | $V_{r(pp)}$ medida | $V_{cc}$ medida |
+|---|---|---|---|---|
+| 1 kΩ | ~15 mA | 0,27 V | | |
+| 470 Ω | ~32 mA | 0,57 V | | |
+| 100 Ω | ~140 mA | 2,5 V | | |
+
+: Compare com a @tbl-048-lab3, onde a mesma variação de carga quase não mudava nada.
+{#tbl-049-lab2}
+
+**Esta é a comparação que ensina.** Sem capacitor, a tensão média mal dependia da carga. Com
+capacitor, ela cai visivelmente — e a queda é a ondulação. É o começo do problema de
+**regulação**, que o @sec-cap-050 vai resolver.
+
+### Parte 4 — Ver os pulsos de corrente
+
+1. Insira o resistor de 1 Ω **em série** com o terminal negativo da ponte, entre ela e o terra
+   do circuito. A tensão sobre ele é a corrente, na proporção de 1 V por ampère.
+2. Ponha a garra da ponta no lado de terra desse resistor e a ponta no outro lado. Releia a
+   @sec-048-terra: o resistor de 1 Ω está do lado do terra justamente para que essa medida
+   seja possível com a garra aterrada.
+3. Com $C = 1000$ µF e $R_L = 100\ \Omega$, observe a forma de onda.
+
+Você deve ver exatamente a @fig-049-pulsos: zero durante quase todo o ciclo, e pulsos altos e
+estreitos em torno de cada pico.
+
+4. Meça o **pico** do pulso e a **largura** dele.
+5. Compare o pico com a previsão $\pi I_{cc}\sqrt{2V_p/V_{r(pp)}}$.
+6. Compare a largura com o ângulo de condução previsto.
+7. Remova o capacitor e observe a corrente virar arcos largos e baixos. **A área é a mesma; a
+   forma é completamente diferente.**
+
+### Parte 5 — O surto, com segurança
+
+1. Descarregue o capacitor de 2200 µF completamente. Confirme com o multímetro.
+2. Com o osciloscópio na ponta sobre o resistor de 1 Ω, ponha a base de tempo em uns 10 ms por
+   divisão e o disparo em **único** (*single*), com nível em uns 0,5 V.
+3. Ligue a fonte e capture.
+
+O primeiro pulso é visivelmente maior que os de regime — o surto da @sec-049-surto. Meça-o.
+
+4. Repita algumas vezes. **Os valores variam**, e a razão é a fase da senoide no instante em
+   que a chave fechou. Ligar no zero dá surto pequeno; ligar no pico, o máximo.
+
+Essa variabilidade é a razão de $I_{FSM}$ ser especificada para o pior caso, e de o
+dimensionamento de fonte nunca poder confiar numa medida só.
+
+### Parte 6 — O resistor de sangria
+
+1. Com a fonte desligada e $R_L$ **removido**, meça a tensão sobre o capacitor de 2200 µF e
+   acompanhe por um minuto. Ela cai devagar — é só a fuga do capacitor.
+2. Ligue o resistor de 2,2 kΩ em paralelo e repita, cronometrando.
+3. Compare com $\tau = RC = 2200 \times 2200\times10^{-6} = 4{,}8$ s, e com o tempo previsto
+   para chegar a 5 V.
+
+Depois desse ensaio, o resistor de sangria deixa de parecer um componente supérfluo.
+
+**Variante simulada (plano B).** No ngspice, uma análise `.tran 0.2m 200m uic` sobre a ponte
+com capacitor reproduz tudo: a forma de onda da Parte 1, a ondulação da Parte 2 (com
+`.meas tran vpp PP v(saida) from=100m to=200m`), os pulsos da Parte 4 (`i(d1)`) e o surto da
+Parte 5 nos primeiros ciclos. Trocar `ic=0` por diferentes fases da fonte mostra a
+variabilidade do surto sem religar nada. No LTspice, a mesma análise sai da paleta; no
+Falstad, o circuito "full-wave rectifier with smoothing" já vem pronto, e arrastar o valor do
+capacitor com a simulação rodando mostra a ondulação e os pulsos mudando ao mesmo tempo — a
+melhor demonstração do compromisso da @sec-049-pulsos.
+
+## 🔥 Onde Queima {#sec-049-queima}
+
+**Capacitor com tensão de trabalho insuficiente.** O erro mais comum do capítulo. O capacitor
+vê o **pico**, com rede alta e transformador a vazio: um "12 V" chega a 21 V. Use pelo menos
+$1{,}5\,V_p$ — 35 V para um pico de 17 V.
+
+**Eletrolítico invertido.** A faixa marca o **negativo**, ao contrário da convenção do diodo.
+Invertido, ele ferve e abre a válvula.
+
+**Tocar no circuito depois de desligar.** O capacitor guarda carga. Meça antes de tocar,
+descarregue por resistor, e projete com sangria.
+
+**Descarregar com chave de fenda.** Vaporiza metal, danifica o capacitor internamente e é
+perigoso na proporção da energia armazenada.
+
+**Dimensionar o transformador pela corrente contínua de saída.** A corrente do secundário é
+pulsante, com fator de crista de 3 a 5. Especifique **1,6 a 1,8 vez** a corrente de saída.
+
+**Ignorar o pulso repetitivo no diodo.** Nove ampères de pico numa fonte de meio ampère é o
+normal, não a exceção. Confira $I_{FRM}$, não só $I_{F(AV)}$.
+
+**Ignorar o surto de partida.** Capacitor descarregado é curto. Confira $I_{FSM}$ e, em fonte
+maior, use NTC — lembrando que o NTC precisa **esfriar** entre religamentos.
+
+**Aumentar $C$ para resolver tudo.** Cada dobra corta a ondulação pela metade e sobe o pico de
+corrente por $\sqrt2$. Depois de certo ponto, o que falta é regulação (@sec-cap-050), não
+capacitância.
+
+**Esquecer a ESR na conta de ondulação.** Com pulsos de 9 A, 50 mΩ de ESR produzem 450 mV
+de ondulação adicional, que a fórmula não prevê. Dois capacitores em paralelo resolvem melhor
+que um do dobro do valor.
+
+**Montar o capacitor de filtro encostado no dissipador.** A vida de um eletrolítico dobra a
+cada 10 °C a menos. Vinte centímetros de distância valem anos de vida útil.
+
+**Usar a fórmula de onda completa num retificador de meia onda.** $f_r$ é 60 Hz, não 120 Hz, e
+a ondulação é o **dobro** para a mesma capacitância.
+
+**Medir a corrente pondo o resistor sensor no lado positivo.** A garra do osciloscópio precisa
+ir ao terra. Sensor no lado do terra, sempre — e releia a @sec-048-terra.
+
+**Confiar numa única medida de surto.** Ele depende da fase da rede no instante do
+fechamento. Meça várias vezes e projete para o pior caso.
+
+## O que fica deste capítulo {#sec-049-resumo}
+
+Um capacitor em paralelo com a carga carrega até o pico e descarrega pela carga entre os
+picos. Como $R_L C \gg 1/f_r$, a descarga é o começo de uma exponencial, que é uma reta de
+inclinação $I_{cc}/C$. Daí a fórmula que se usa a vida inteira:
+
+$$ V_{r(pp)} = \frac{I_{cc}}{f_r\,C}
+   \qquad\Longleftrightarrow\qquad
+   C = \frac{I_{cc}}{f_r\,V_{r(pp)}}, $$
+
+com $f_r = 2f_{\text{rede}}$ em onda completa e $f_{\text{rede}}$ em meia onda. E os dois
+derivados: $V_{cc} \approx V_p - V_{r(pp)}/2$ e
+$V_{r(\text{rms})} \approx 0{,}289\,V_{r(pp)}$.
+
+O projeto completo cabe em cinco linhas: pico do secundário, menos as quedas de diodo,
+frequência de ondulação, capacitância, arredondamento para valor comercial **e recálculo**.
+
+**O preço é a corrente.** O diodo só conduz em torno do pico, num ângulo
+$\theta_c \approx \sqrt{2V_r/V_p}$ — cerca de 11 % do semiciclo num projeto típico. A carga é
+a mesma, então o pulso é proporcionalmente mais alto:
+
+$$ I_{\text{pico}} \approx \pi\,I_{cc}\sqrt{\frac{2V_p}{V_{r(pp)}}} \approx 10\text{ a }20 \times I_{cc}. $$
+
+Daí três exigências: diodo com $I_{FRM}$ folgado, transformador especificado para **1,6 a 1,8
+vez** a corrente de saída, e a consciência de que **melhorar a tensão piora a corrente**.
+
+**Ao ligar, o capacitor descarregado é um curto**, e o surto vale
+$V_p/R_{\text{série}}$ — dependendo da fase em que a chave fechou. Providências: diodo com
+$I_{FSM}$ folgado, NTC em série (que precisa esfriar entre religamentos), ou pré-carga com
+relé.
+
+**Escolher o capacitor é escolher quatro coisas, e a capacitância é a menos crítica:**
+
+- **Tensão:** $\ge 1{,}5\,V_p$, calculado com rede alta e transformador a vazio.
+- **Corrente de ondulação:** 1,5 a 2 vezes a corrente contínua de saída.
+- **ESR:** ela adiciona ondulação que a fórmula não prevê; dois capacitores em paralelo batem
+  um do dobro.
+- **Temperatura:** a vida **dobra a cada 10 °C a menos**. Longe do dissipador.
+
+E a faixa do eletrolítico marca o **negativo** — o oposto da do diodo.
+
+O **resistor de sangria** descarrega o capacitor depois do desligamento, dá carga mínima ao
+regulador e custa menos de 1 % da corrente nominal. Em tensão alta, ele não é opcional.
+
+## Para o próximo capítulo {#sec-049-fecho}
+
+A fonte agora entrega 15,2 V com 0,9 V de ondulação. É utilizável, e não é boa o bastante para
+quase nada que se queira alimentar com ela.
+
+Três defeitos permanecem, e nenhum deles se resolve com mais capacitância:
+
+- **A ondulação continua lá.** Reduzi-la a 10 mV exigiria 470 000 µF, com pulsos de corrente
+  proibitivos.
+- **A tensão depende da carga.** Entre 15 mA e 500 mA, a saída cai vários volts. É o problema
+  de **regulação de carga**, e o @sec-cap-020 já tinha o vocabulário para ele.
+- **A tensão depende da rede.** Rede 10 % acima, saída 10 % acima. É a **regulação de linha**.
+
+Falta um componente que force a tensão a um valor fixo, independentemente da corrente que se
+pede e da tensão que chega. O @sec-cap-050 mostra que a junção PN já tem exatamente essa
+propriedade — na região de ruptura, onde o @sec-cap-046 deixou o diodo Zener esperando, e onde
+a curva característica é quase vertical.
