@@ -1,3 +1,883 @@
 # Semicondutores, dopagem e a junção PN {#sec-cap-046}
 
-*(em elaboração)*
+Quarenta e cinco capítulos atrás este manual começou com um resistor, e desde então tudo o
+que apareceu na bancada obedeceu à mesma regra: dobrar a tensão dobra a corrente. Resistor,
+capacitor, indutor, transformador, filtro — todos **lineares**. O @sec-cap-017 deu nome à
+propriedade e mostrou o que ela permite: superposição, fasores, impedância, diagramas de
+Bode. Todo o Volume 6 depende dela.
+
+Um circuito linear e passivo é honesto e limitado. Ele seleciona frequências, atrasa, divide,
+soma e transforma impedância. Ele nunca entrega mais potência do que recebeu, nunca decide
+nada, e nunca distingue "para cá" de "para lá".
+
+Para a eletrônica existir é preciso quebrar a linearidade. O componente que a quebra é feito
+de um material que não é condutor nem isolante, cuja condutividade é ajustável por
+impureza, por tensão, por luz e por temperatura, e cuja curva característica finalmente não
+é uma reta. Este capítulo é sobre esse material e sobre a estrutura mais simples que se pode
+construir com ele: uma junção entre dois pedaços dopados de maneira diferente.
+
+Ao final, a curva $I$–$V$ exponencial do diodo não será uma fórmula decorada, e a famosa
+"queda de 0,7 V" terá deixado de ser uma constante para virar o que ela é: um ponto de uma
+exponencial, que anda com a corrente e com a temperatura.
+
+## Por que o silício {#sec-046-silicio}
+
+Um condutor conduz porque tem elétrons livres em abundância — no cobre, cerca de um por
+átomo, o modelo do @sec-cap-008. Um isolante não conduz porque todos os seus elétrons estão
+presos em ligações químicas, e arrancá-los custa mais energia do que qualquer tensão
+razoável fornece.
+
+O silício está exatamente no meio, e não por acaso. Ele tem quatro elétrons na camada mais
+externa e, num cristal, cada átomo compartilha esses quatro com quatro vizinhos, formando
+**ligações covalentes**. Cada ligação é um par de elétrons. A zero absoluto, todos os
+elétrons estão em ligações, nenhum está livre, e o silício puro é um isolante perfeito.
+
+O que muda tudo é quanto custa quebrar uma ligação. No diamante, custa 5,5 eV — muito, e o
+diamante é isolante. No silício, custa **1,12 eV**, e no germânio, 0,66 eV. Essa energia é
+pequena o bastante para que a agitação térmica à temperatura ambiente quebre algumas
+ligações o tempo todo.
+
+::: {#fig-046-rede}
+
+```{.tikz}
+%%| filename: 046-rede
+%%| alt: Três painéis lado a lado mostrando a rede cristalina bidimensional do silício. No painel da esquerda, rotulado silício intrínseco, nove átomos de silício em grade três por três estão ligados aos vizinhos por linhas duplas, cada linha dupla representando um par de elétrons compartilhado, e todas as ligações estão completas. No painel do meio, rotulado silício tipo N, o átomo central foi substituído por um átomo de fósforo, que faz as mesmas quatro ligações duplas com os vizinhos e ainda sobra com um quinto elétron, desenhado como um ponto azul solto ao lado do átomo, com a anotação de que esse elétron está livre para conduzir e que o fósforo ionizado fica com carga positiva fixa na rede. No painel da direita, rotulado silício tipo P, o átomo central foi substituído por um átomo de boro, que só tem três elétrons de valência: três das ligações estão completas e a quarta, a da direita, aparece com uma linha simples e um círculo vermelho vazado no lugar do elétron que falta, com a anotação de que essa vacância é a lacuna, que ela se move pela rede como se fosse uma carga positiva, e que o boro ionizado fica com carga negativa fixa.
+
+\begin{tikzpicture}[font=\footnotesize,
+  atomo/.style={circle, draw, thick, fill=manualgray!10, minimum size=0.78cm,
+                inner sep=0pt, font=\scriptsize},
+  lig/.style={manualgray!80, double, double distance=1.5pt, line width=0.35pt}]
+
+  % ---------------- painel A: intrinseco ----------------
+  \begin{scope}[shift={(0,0)}]
+    \foreach \i in {0,1,2}{\foreach \j in {0,1,2}{
+      \node[atomo] (A\i\j) at (\i*1.55, \j*1.55) {Si};}}
+    \foreach \i/\ii in {0/1,1/2}{\foreach \j in {0,1,2}{
+      \draw[lig] (A\i\j) -- (A\ii\j);}}
+    \foreach \j/\jj in {0/1,1/2}{\foreach \i in {0,1,2}{
+      \draw[lig] (A\i\j) -- (A\i\jj);}}
+    \node[anchor=north, align=center, font=\scriptsize] at (1.55,-0.85)
+         {\textbf{silício intrínseco}\\todas as ligações completas\\
+          conduz mal, e só por\\agitação térmica};
+  \end{scope}
+
+  % ---------------- painel B: tipo N ----------------
+  \begin{scope}[shift={(5.6,0)}]
+    \foreach \i in {0,1,2}{\foreach \j in {0,1,2}{
+      \node[atomo] (B\i\j) at (\i*1.55, \j*1.55) {Si};}}
+    \node[atomo, fill=manualblue!22, draw=manualblue, very thick]
+         (B11) at (1.55,1.55) {P};
+    \foreach \i/\ii in {0/1,1/2}{\foreach \j in {0,1,2}{
+      \draw[lig] (B\i\j) -- (B\ii\j);}}
+    \foreach \j/\jj in {0/1,1/2}{\foreach \i in {0,1,2}{
+      \draw[lig] (B\i\j) -- (B\i\jj);}}
+    \fill[manualblue] (2.20,2.20) circle (2.6pt);
+    \node[manualblue, anchor=south, font=\scriptsize, align=center]
+         (rotB) at (1.55,4.15) {5º elétron do fósforo:\\\textbf{livre}};
+    \draw[manualblue, -{Latex[length=1.6mm]}] (rotB.south) -- (2.20,2.38);
+  \end{scope}
+  \node[anchor=north, align=center, font=\scriptsize] at (7.15,-0.85)
+       {\textbf{tipo N} --- doador (P, As, Sb)\\
+        um elétron livre por dopante\\
+        o íon P$^{+}$ fica \emph{fixo} na rede};
+
+  % ---------------- painel C: tipo P ----------------
+  \begin{scope}[shift={(11.2,0)}]
+    \foreach \i in {0,1,2}{\foreach \j in {0,1,2}{
+      \node[atomo] (C\i\j) at (\i*1.55, \j*1.55) {Si};}}
+    \node[atomo, fill=manualred!20, draw=manualred, very thick]
+         (C11) at (1.55,1.55) {B};
+    \foreach \i/\ii in {0/1,1/2}{\foreach \j in {0,1,2}{
+      \draw[lig] (C\i\j) -- (C\ii\j);}}
+    \foreach \j/\jj in {0/1,1/2}{\foreach \i in {0,1,2}{
+      \draw[lig] (C\i\j) -- (C\i\jj);}}
+    % apaga a ligacao incompleta e redesenha simples
+    \draw[white, line width=3.2pt] (C11) -- (C21);
+    \draw[manualgray!80, line width=0.6pt] (C11) -- (C21);
+    \draw[manualred, very thick, fill=white] (2.33,1.55) circle (3.2pt);
+    \node[manualred, anchor=south, font=\scriptsize, align=center]
+         (rotC) at (1.55,4.15) {ligação faltando um elétron:\\\textbf{lacuna}};
+    \draw[manualred, -{Latex[length=1.6mm]}] (rotC.south) -- (2.33,1.78);
+  \end{scope}
+  \node[anchor=north, align=center, font=\scriptsize] at (12.75,-0.85)
+       {\textbf{tipo P} --- aceitador (B, Al, Ga)\\
+        uma lacuna por dopante\\
+        o íon B$^{-}$ fica \emph{fixo} na rede};
+
+\end{tikzpicture}
+```
+
+A rede covalente do silício, e o que a dopagem faz com ela. Em todos os três casos o cristal
+continua **eletricamente neutro**: o dopante entra com seu próprio núcleo. O que muda é
+quantos portadores estão **livres para se mover**, e de que sinal.
+
+:::
+
+Quando uma ligação se quebra, aparecem **dois** portadores de carga, não um: o elétron que
+saiu, livre para se mover, e a vaga que ele deixou, chamada **lacuna**. A lacuna não é uma
+partícula; é uma ausência. Mas um elétron de uma ligação vizinha pode pular para dentro dela,
+e nesse instante a vaga passa a estar onde esse elétron estava. Repetido muitas vezes, o
+efeito líquido é uma vaga que se desloca pelo cristal — e, como ela é a falta de uma carga
+negativa numa região neutra, ela se comporta em tudo como uma **carga positiva móvel**.
+
+Esse é o ponto que separa um semicondutor de um metal, e vale insistir nele: **num
+semicondutor há dois tipos de portador**, elétrons e lacunas, com sinais opostos. Num metal,
+só há elétrons. Quase tudo o que os próximos seis volumes descrevem depende dessa dualidade.
+
+::: {.callout-note}
+## Por que "1,12 eV" é o número que importa
+
+Um elétron-volt é a energia que um elétron ganha ao cair por 1 V de diferença de potencial —
+$1\ \text{eV} = 1{,}602\times10^{-19}$ J. A energia térmica média disponível à temperatura
+ambiente é da ordem de $kT \approx 0{,}026$ eV, quarenta vezes menor que 1,12 eV. Quebrar uma
+ligação, portanto, é um evento **raro**: só a cauda da distribuição de energia consegue.
+
+Raro, mas não impossível — e é justamente por ser exponencialmente raro que a condução do
+silício depende tão violentamente da temperatura. Isso volta na @sec-046-temperatura, e volta
+de novo no Volume 9, quando um transistor de potência mal dimensionado entrar em fuga
+térmica.
+:::
+
+## Condução intrínseca, e por que ela não serve {#sec-046-intrinseco}
+
+Silício puro — **intrínseco** — tem, a 300 K, cerca de $n_i = 1{,}0\times10^{10}$ pares
+elétron-lacuna por centímetro cúbico. Parece muito. Não é: o cristal tem
+$5\times10^{22}$ átomos por centímetro cúbico, de modo que **uma ligação em cinco trilhões**
+está quebrada.
+
+O resultado é uma resistividade de aproximadamente $2{,}3\times10^{5}\ \Omega\cdot$cm — cerca
+de dez bilhões de vezes a do cobre, e ainda assim bem menos que a do vidro. Um bastão de
+silício puro é um resistor ruim e um isolante ruim.
+
+Pior: essa condução é **incontrolável**. Ela vem da temperatura, dobra a cada poucos graus, e
+não há nada nela que se possa ajustar. Silício intrínseco não é um material eletrônico; é
+matéria-prima.
+
+## Dopagem: fabricar portadores de propósito {#sec-046-dopagem}
+
+O truque, descoberto nos anos 1940 e refinado desde então até virar a indústria mais precisa
+que já existiu, é introduzir impurezas **de propósito e em quantidade controlada**.
+
+**Tipo N.** Substitua um átomo de silício por um do grupo V — fósforo, arsênio, antimônio —
+que tem **cinco** elétrons de valência. Quatro entram nas ligações covalentes; o quinto sobra,
+fracamente ligado (0,045 eV no fósforo, quase nada), e à temperatura ambiente ele está livre.
+O dopante **doou** um elétron e virou um íon positivo **preso na rede**. O material tem
+elétrons como portadores **majoritários**.
+
+**Tipo P.** Substitua por um átomo do grupo III — boro, alumínio, gálio — que tem **três**
+elétrons de valência. Uma das quatro ligações fica incompleta: uma lacuna. Um elétron vizinho
+a preenche facilmente, e a lacuna se desloca. O dopante **aceitou** um elétron e virou um íon
+negativo **preso na rede**. O material tem lacunas como portadores majoritários.
+
+Duas observações que evitam a maior parte das confusões deste volume:
+
+1. **O cristal continua neutro.** O átomo dopante trouxe seu próprio núcleo. Silício tipo N
+   não é "carregado negativamente"; ele tem elétrons móveis em excesso e um número igual de
+   íons positivos imóveis.
+2. **Os íons dopantes não se movem.** Eles são parte da rede cristalina. Essa imobilidade é
+   exatamente o que faz a junção PN funcionar, como a @sec-046-juncao vai mostrar.
+
+A quantidade importa, e a escala é impressionante. Uma dopagem típica é de $10^{15}$ a
+$10^{18}$ átomos por centímetro cúbico, o que significa **um dopante para cada 50 milhões a
+50 mil átomos de silício**. Em termos de pureza química isso é sujeira desprezível; em termos
+elétricos, é uma mudança de cinco a oito ordens de grandeza na condutividade.
+
+| Material | Portadores livres (cm⁻³) | Resistividade aproximada |
+|---|---|---|
+| Cobre | $8{,}5\times10^{22}$ | $1{,}7\times10^{-6}\ \Omega\cdot$cm |
+| Silício tipo N, $10^{18}$ | $10^{18}$ | $0{,}025\ \Omega\cdot$cm |
+| Silício tipo N, $10^{16}$ | $10^{16}$ | $0{,}5\ \Omega\cdot$cm |
+| Silício tipo N, $10^{14}$ | $10^{14}$ | $50\ \Omega\cdot$cm |
+| Silício intrínseco | $1{,}0\times10^{10}$ | $2{,}3\times10^{5}\ \Omega\cdot$cm |
+| Vidro | — | $10^{14}\ \Omega\cdot$cm |
+
+: A dopagem é um botão de condutividade com oito ordens de grandeza de curso. Os valores são
+típicos a 300 K e servem para ordem de grandeza, não para projeto. {#tbl-046-dopagem}
+
+### Majoritários, minoritários e a lei da ação das massas
+
+Dopar tipo N não elimina as lacunas; ele as torna raras. A relação, válida em equilíbrio
+térmico e em material não degenerado, é notavelmente simples:
+
+$$ \boxed{\;n\,p = n_i^{2}\;} $$
+
+onde $n$ é a concentração de elétrons e $p$ a de lacunas. Num tipo N com $n = 10^{16}$ cm⁻³ e
+$n_i = 10^{10}$ cm⁻³:
+
+$$ p = \frac{(10^{10})^{2}}{10^{16}} = 10^{4}\ \text{cm}^{-3}. $$
+
+Dez mil lacunas por centímetro cúbico, contra dez quatrilhões de elétrons — uma proporção de
+um para um trilhão. As lacunas são os portadores **minoritários** do material tipo N, e o
+espelho vale para o tipo P.
+
+Guarde essa palavra. **Corrente de portador minoritário é a origem da corrente reversa do
+diodo**, da corrente de fuga de todo transistor bipolar, e do fato de que ambas dobram a cada
+10 °C. Minoritário é sinônimo de "poucos, e fortemente dependentes da temperatura".
+
+## A junção PN {#sec-046-juncao}
+
+Agora o passo decisivo. Tome um único cristal de silício e dope uma metade como P e a outra
+como N. Não são dois pedaços encostados — encostar dois cristais produz uma interface suja
+que não funciona. É **um cristal contínuo** com dopagem diferente de cada lado, e a fronteira
+entre as duas regiões é a **junção**.
+
+No instante conceitual em que a junção existe, há um desequilíbrio brutal de concentração:
+elétrons em excesso à direita, lacunas em excesso à esquerda. Como qualquer gradiente de
+concentração, ele provoca **difusão** — o mesmo fenômeno que espalha uma gota de tinta na
+água.
+
+Elétrons difundem da região N para a P. Lacunas difundem da P para a N. E aqui vem a parte
+bonita: quando um elétron sai da região N, ele deixa para trás o íon doador positivo,
+**que não pode segui-lo**. Do outro lado, o elétron que chega preenche uma lacuna e deixa o
+íon aceitador negativo descoberto.
+
+O resultado é uma faixa em torno da junção que ficou **sem portadores móveis** e exposta às
+cargas fixas: negativa do lado P, positiva do lado N. Essa faixa é a **região de depleção**,
+ou camada de carga espacial.
+
+::: {#fig-046-juncao}
+
+```{.tikz}
+%%| filename: 046-juncao
+%%| alt: Diagrama em três faixas empilhadas descrevendo uma junção PN em equilíbrio. A faixa superior é um retângulo horizontal dividido em três partes: à esquerda a região P, em tom avermelhado, povoada por pequenos círculos vermelhos vazados representando lacunas móveis; à direita a região N, em tom azulado, povoada por pontos azuis cheios representando elétrons móveis; e no centro uma faixa branca, a região de depleção, sem nenhum portador móvel, contendo à esquerda três sinais de menos circulados que são os íons aceitadores fixos e à direita três sinais de mais circulados que são os íons doadores fixos. Setas curtas indicam a difusão de lacunas para a direita e de elétrons para a esquerda, e setas opostas indicam a deriva provocada pelo campo, com a anotação de que em equilíbrio as duas se cancelam exatamente. A faixa do meio mostra uma seta grossa apontando da região N para a região P, dentro da depleção, rotulada campo elétrico interno, com a observação de que ele aponta do positivo para o negativo e portanto se opõe à difusão. A faixa inferior é o gráfico do potencial ao longo da posição: uma linha horizontal em zero sobre toda a região P, uma subida suave em forma de S ao atravessar a depleção, e uma linha horizontal mais alta sobre toda a região N, com a altura do degrau marcada como a barreira de potencial, de aproximadamente zero vírgula sete volt no silício.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= faixa 1: o cristal =================
+  \fill[manualred!12] (0,1.6) rectangle (5.0,4.3);
+  \fill[white]        (5.0,1.6) rectangle (7.4,4.3);
+  \fill[manualblue!12] (7.4,1.6) rectangle (12.4,4.3);
+  \draw[thick] (0,1.6) rectangle (12.4,4.3);
+  \draw[thick, manualgray] (5.0,1.6) -- (5.0,4.3);
+  \draw[thick, manualgray] (7.4,1.6) -- (7.4,4.3);
+  \draw[very thick, manualgray, dashed] (6.2,1.6) -- (6.2,4.3);
+
+  \node[anchor=north west, font=\scriptsize\bfseries] at (0.15,4.2) {região P};
+  \node[anchor=north east, font=\scriptsize\bfseries] at (12.25,4.2) {região N};
+  \node[anchor=south, font=\scriptsize, align=center] at (6.2,4.35)
+       {região de depleção\\(sem portadores móveis)};
+
+  % lacunas moveis no P
+  \foreach \x/\y in {0.6/2.1, 1.5/3.3, 2.3/2.4, 3.1/3.6, 3.9/2.0,
+                     1.0/2.8, 2.8/3.0, 4.3/3.2, 2.0/3.95, 3.5/2.7}{
+    \draw[manualred, thick] (\x,\y) circle (2.5pt);}
+  % eletrons moveis no N
+  \foreach \x/\y in {8.0/2.2, 8.8/3.4, 9.6/2.5, 10.4/3.7, 11.2/2.1,
+                     8.4/3.0, 10.0/3.1, 11.6/3.3, 9.2/3.9, 11.0/2.7}{
+    \fill[manualblue] (\x,\y) circle (2.5pt);}
+
+  % ions fixos na deplecao
+  \foreach \y in {2.1,2.95,3.8}{
+    \node[draw, circle, inner sep=0.6pt, font=\tiny, manualred, thick]
+         at (5.4,\y) {$-$};
+    \node[draw, circle, inner sep=0.6pt, font=\tiny, manualred, thick]
+         at (5.9,\y) {$-$};
+    \node[draw, circle, inner sep=0.6pt, font=\tiny, manualblue, thick]
+         at (6.5,\y) {$+$};
+    \node[draw, circle, inner sep=0.6pt, font=\tiny, manualblue, thick]
+         at (7.0,\y) {$+$};}
+
+  % difusao e deriva
+  \draw[manualred, -{Latex[length=1.8mm]}, thick] (4.3,1.15) -- (5.6,1.15);
+  \node[manualred, anchor=north, font=\tiny] at (4.95,1.05) {difusão};
+  \draw[manualblue, -{Latex[length=1.8mm]}, thick] (8.1,1.15) -- (6.8,1.15);
+  \node[manualblue, anchor=north, font=\tiny] at (7.45,1.05) {difusão};
+
+  % ================= faixa 2: campo =================
+  \draw[manualgreen!55!black, -{Latex[length=3mm]}, line width=2.2pt]
+       (7.4,0.2) -- (5.0,0.2);
+  \node[manualgreen!55!black, anchor=west, font=\scriptsize, align=left]
+       at (7.7,0.2) {campo elétrico interno $E$ --- do N (+) para o P ($-$),\\
+                      e portanto \textbf{contra} a difusão};
+  \node[anchor=east, font=\scriptsize, align=right] at (4.8,0.2)
+       {em equilíbrio,\\difusão e deriva se cancelam};
+
+  % ================= faixa 3: potencial =================
+  \draw[eixo] (-0.3,-2.6) -- (12.9,-2.6) node[anchor=west, font=\scriptsize] {$x$};
+  \draw[eixo] (-0.3,-2.75) -- (-0.3,-0.55) node[anchor=south, font=\scriptsize] {$V$};
+  \draw[curva] (0,-2.6) -- (5.0,-2.6)
+       .. controls (5.9,-2.6) and (6.5,-1.15) .. (7.4,-1.15) -- (12.4,-1.15);
+  \draw[auxiliar] (0,-1.15) -- (7.4,-1.15);
+  \draw[destaque, {Latex[length=1.6mm]}-{Latex[length=1.6mm]}]
+       (1.2,-2.6) -- (1.2,-1.15);
+  \node[manualred, anchor=west, font=\scriptsize, align=left] at (1.4,-1.87)
+       {barreira de potencial $V_{bi}$\\$\approx 0{,}7$ V no silício};
+  \node[anchor=north, font=\scriptsize] at (2.5,-2.7) {região P};
+  \node[anchor=north, font=\scriptsize] at (9.9,-2.7) {região N};
+
+\end{tikzpicture}
+```
+
+A junção PN em equilíbrio, sem nenhuma fonte externa. A região de depleção não é vazia: ela
+está cheia de **cargas fixas**, e são elas que criam o campo que segura a difusão. A barreira
+existe, mas **não se pode medi-la com um voltímetro** — a explicação está logo abaixo.
+
+:::
+
+As cargas fixas expostas criam um campo elétrico apontando do lado N (positivo) para o lado P
+(negativo). Esse campo empurra elétrons de volta para o N e lacunas de volta para o P — ou
+seja, **contra** a difusão. A depleção cresce até que os dois efeitos se equilibrem
+exatamente, e aí o sistema para.
+
+A diferença de potencial resultante é a **barreira** ou potencial de contato:
+
+$$ V_{bi} = \frac{kT}{q}\,\ln\!\frac{N_A N_D}{n_i^{2}}. $$
+
+O fator $kT/q$ aparece tantas vezes daqui em diante que merece nome próprio. Ele é a
+**tensão térmica**:
+
+$$ \boxed{\;V_T = \frac{kT}{q} = 25{,}9\ \text{mV a }300\ \text{K}\;} $$
+
+Vale a pena guardar "26 mV à temperatura ambiente" com o mesmo carinho com que se guarda
+"0,7 V". Com $N_A = N_D = 10^{16}$ cm⁻³ e $n_i = 10^{10}$ cm⁻³, a conta dá
+$V_{bi} = 0{,}0259 \times \ln(10^{12}) = 0{,}0259 \times 27{,}6 = 0{,}715$ V.
+
+::: {.callout-important}
+## Por que o voltímetro lê zero num diodo solto
+
+A barreira de 0,7 V está lá, e mesmo assim encostar as pontas de um voltímetro nos terminais
+de um diodo dá **zero**, sempre. Não é defeito do instrumento nem paradoxo.
+
+A razão é que a barreira da junção não é a única do circuito. Ao ligar as pontas, criam-se
+duas outras junções — metal-semicondutor em cada terminal — e a soma de todas as barreiras ao
+longo de um laço fechado é exatamente zero. Se não fosse, o diodo seria uma fonte de energia
+perpétua, alimentando uma carga sem nada em troca.
+
+Uma junção PN em equilíbrio é uma bateria que não entrega nada. Só quando algo **externo**
+desequilibra o sistema — uma tensão aplicada, luz incidindo, calor de um lado só — é que
+aparece corrente. Luz é o fotodiodo e a célula solar, assunto do @sec-cap-051; calor é o
+termopar, que não é semicondutor. Aqui, é tensão.
+:::
+
+## Polarizar a junção {#sec-046-polarizacao}
+
+Aplicar tensão externa muda a altura da barreira, e é só isso que um diodo faz.
+
+::: {#fig-046-polarizacao}
+
+```{.tikz}
+%%| filename: 046-polarizacao
+%%| alt: Dois painéis lado a lado comparando a junção PN sob polarização direta e sob polarização reversa. No painel da esquerda, rotulado polarização direta, uma bateria tem o terminal positivo ligado à região P e o negativo à região N; a região de depleção desenhada no centro do cristal é estreita, a barreira de potencial mostrada no gráfico abaixo é baixa, igual à barreira de equilíbrio menos a tensão aplicada, e uma seta larga atravessa o cristal indicando corrente grande, com a anotação de que a corrente cresce exponencialmente com a tensão aplicada. No painel da direita, rotulado polarização reversa, a bateria está invertida, com o positivo na região N e o negativo na região P; a região de depleção é bem mais larga, a barreira no gráfico abaixo é bem mais alta, igual à barreira de equilíbrio mais a tensão aplicada, e apenas uma seta fina indica a corrente de fuga, com a anotação de que ela vale poucos nanoampères e é feita de portadores minoritários. Uma nota entre os dois painéis registra que a largura da depleção varia com a tensão, e que é essa variação que faz a capacitância de junção.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= DIRETA =================
+  \begin{scope}[shift={(0,0)}]
+    \fill[manualred!12]  (0,1.5) rectangle (2.50,3.5);
+    \fill[white]         (2.50,1.5) rectangle (3.10,3.5);
+    \fill[manualblue!12] (3.10,1.5) rectangle (5.60,3.5);
+    \draw[thick] (0,1.5) rectangle (5.60,3.5);
+    \draw[manualgray] (2.50,1.5) -- (2.50,3.5);
+    \draw[manualgray] (3.10,1.5) -- (3.10,3.5);
+    \node[anchor=north west, font=\scriptsize\bfseries] at (0.15,3.42) {P};
+    \node[anchor=north east, font=\scriptsize\bfseries] at (5.45,3.42) {N};
+    \node[anchor=south, font=\tiny, align=center, manualgray] at (2.80,3.55)
+         {depleção \textbf{estreita}};
+
+    % bateria
+    \draw (0,2.40) -- (-0.8,2.40) -- (-0.8,0.5);
+    \draw (5.60,2.40) -- (6.4,2.40) -- (6.4,0.5);
+    \draw (-0.8,0.5) to[battery1, l={$V_D$}] (6.4,0.5);
+    \node[manualred, anchor=south east, font=\tiny] at (-0.05,2.48) {$+$};
+    \node[manualblue, anchor=south west, font=\tiny] at (5.65,2.48) {$-$};
+
+    % corrente
+    \draw[manualred, -{Latex[length=3mm]}, line width=3pt] (1.1,2.40) -- (4.5,2.40);
+    \node[manualred, anchor=south, font=\scriptsize] at (2.80,2.60) {$I$ grande};
+
+    % barreira
+    \draw[eixo] (-0.2,-1.4) -- (5.9,-1.4);
+    \draw[curva] (0,-1.4) -- (2.50,-1.4)
+         .. controls (2.72,-1.4) and (2.88,-0.95) .. (3.10,-0.95) -- (5.60,-0.95);
+    \draw[auxiliar] (0,-0.35) -- (5.60,-0.35);
+    \node[manualgray, anchor=south east, font=\tiny] at (5.55,-0.30)
+         {nível de $V_{bi}$ sem polarização};
+    \node[anchor=north, font=\scriptsize, align=center] at (2.80,-1.55)
+         {barreira \textbf{baixa}: $V_{bi} - V_D$};
+
+    \node[anchor=north, font=\scriptsize, align=center] at (2.80,-2.35)
+       {\textbf{polarização direta}\\
+        a barreira cai, a difusão volta a vencer,\\
+        e a corrente cresce \emph{exponencialmente}};
+  \end{scope}
+
+  % ================= REVERSA =================
+  \begin{scope}[shift={(8.6,0)}]
+    \fill[manualred!12]  (0,1.5) rectangle (1.90,3.5);
+    \fill[white]         (1.90,1.5) rectangle (3.70,3.5);
+    \fill[manualblue!12] (3.70,1.5) rectangle (5.60,3.5);
+    \draw[thick] (0,1.5) rectangle (5.60,3.5);
+    \draw[manualgray] (1.90,1.5) -- (1.90,3.5);
+    \draw[manualgray] (3.70,1.5) -- (3.70,3.5);
+    \node[anchor=north west, font=\scriptsize\bfseries] at (0.15,3.42) {P};
+    \node[anchor=north east, font=\scriptsize\bfseries] at (5.45,3.42) {N};
+    \node[anchor=south, font=\tiny, align=center, manualgray] at (2.80,3.55)
+         {depleção \textbf{larga}};
+
+    % bateria invertida
+    \draw (0,2.40) -- (-0.8,2.40) -- (-0.8,0.5);
+    \draw (5.60,2.40) -- (6.4,2.40) -- (6.4,0.5);
+    \draw (-0.8,0.5) to[battery1, l={$V_R$}, invert] (6.4,0.5);
+    \node[manualblue, anchor=south east, font=\tiny] at (-0.05,2.48) {$-$};
+    \node[manualred, anchor=south west, font=\tiny] at (5.65,2.48) {$+$};
+
+    % corrente de fuga
+    \draw[manualgray, -{Latex[length=2mm]}, line width=0.7pt] (1.6,2.05) -- (4.0,2.05);
+    \node[manualgray, anchor=south, font=\tiny, align=center] at (2.80,2.20)
+         {$I_S$: alguns nA (minoritários)};
+
+    % barreira
+    \draw[eixo] (-0.2,-1.4) -- (5.9,-1.4);
+    \draw[curva] (0,-1.4) -- (1.90,-1.4)
+         .. controls (2.45,-1.4) and (3.15,0.30) .. (3.70,0.30) -- (5.60,0.30);
+    \draw[auxiliar] (0,-0.35) -- (5.60,-0.35);
+    \node[manualgray, anchor=south east, font=\tiny] at (2.60,-0.30)
+         {nível de $V_{bi}$ sem polarização};
+    \node[anchor=north, font=\scriptsize, align=center] at (2.80,-1.55)
+         {barreira \textbf{alta}: $V_{bi} + V_R$};
+
+    \node[anchor=north, font=\scriptsize, align=center] at (2.80,-2.35)
+       {\textbf{polarização reversa}\\
+        a barreira sobe, a difusão morre,\\
+        e sobra só a corrente de minoritários};
+  \end{scope}
+
+  \node[manualgreen!55!black, anchor=north, font=\scriptsize, align=center]
+       at (7.1,-3.55)
+       {A largura da depleção \textbf{muda} com a tensão --- e uma camada isolante entre
+        duas regiões condutoras,\\ com espessura variável, é literalmente um capacitor
+        variável: a \textbf{capacitância de junção}.};
+
+\end{tikzpicture}
+```
+
+As duas polarizações. Toda a assimetria do diodo está aqui: a tensão aplicada **soma-se** à
+barreira num sentido e **subtrai-se** dela no outro, e a corrente depende exponencialmente da
+altura da barreira.
+
+:::
+
+**Polarização direta**: o positivo da fonte no lado P, o negativo no lado N. A tensão aplicada
+se opõe à barreira, que baixa para $V_{bi} - V_D$. Com a barreira mais baixa, muito mais
+portadores têm energia térmica suficiente para atravessá-la — e "muito mais" aqui é
+exponencial, porque a distribuição de energia térmica é exponencial. A depleção estreita, a
+difusão volta a vencer, e passa corrente.
+
+**Polarização reversa**: o positivo no lado N. A tensão aplicada **soma-se** à barreira, que
+sobe para $V_{bi} + V_R$. A difusão cessa completamente, a depleção alarga, e o que sobra é a
+corrente que **não depende** da barreira: os portadores minoritários que aparecem por geração
+térmica dentro ou perto da depleção e são varridos pelo campo. Essa é a **corrente de
+saturação reversa** $I_S$ — nanoampères num diodo de silício de sinal, e picoampères nos
+melhores.
+
+## A equação do diodo {#sec-046-shockley}
+
+Juntando tudo, e é este o resultado que o Volume 8 inteiro usa:
+
+$$ \boxed{\;I = I_S\left(e^{\,V/(n V_T)} - 1\right)\;} $$
+
+com $V_T = kT/q \approx 26$ mV a 300 K, $I_S$ a corrente de saturação reversa, e $n$ o
+**fator de idealidade**, entre 1 e 2 — perto de 1 quando domina a difusão, perto de 2 quando
+domina a recombinação dentro da depleção. Diodos retificadores de silício comuns ficam por
+volta de $n \approx 1{,}8$ na faixa de miliampère.
+
+Três leituras da fórmula, cada uma valendo mais do que a fórmula:
+
+**Em direta, com $V$ acima de uns 100 mV**, o termo $-1$ é desprezível e sobra
+$I \approx I_S e^{V/(nV_T)}$. Invertendo:
+
+$$ V = n V_T \ln\!\frac{I}{I_S}. $$
+
+A tensão é **logarítmica na corrente**. Multiplicar a corrente por dez soma
+$n V_T \ln 10 = 1{,}8 \times 25{,}9\ \text{mV} \times 2{,}303 \approx 107$ mV. É por isso que
+a queda direta é "quase constante": para ir de 1 mA a 100 mA, cem vezes mais corrente, a
+tensão sobe só cerca de 210 mV. **A queda de 0,7 V não é uma constante do material; é uma
+exponencial vista de longe.**
+
+**Em reversa, com $V$ mais negativo que uns $-100$ mV**, a exponencial some e sobra
+$I \approx -I_S$. Corrente constante, independente da tensão, e minúscula. Esse é o
+comportamento de "chave aberta".
+
+**Perto de zero**, a curva passa suavemente pela origem, sem descontinuidade nenhuma. Não
+existe "tensão de abertura" física: existe uma exponencial cuja escala vertical é tão brutal
+que, num gráfico linear, ela parece começar de repente. O @sec-cap-047 vai explorar
+exatamente esse ponto ao construir os modelos de diodo.
+
+## A junção e a temperatura {#sec-046-temperatura}
+
+Este é o parágrafo mais consequente do capítulo, e ele volta em todo circuito de potência
+deste manual.
+
+$I_S$ depende da geração térmica de pares elétron-lacuna, que depende exponencialmente da
+temperatura. Na prática:
+
+> **$I_S$ aproximadamente dobra a cada 10 °C de aumento.**
+
+Uma junção que vaza 5 nA a 25 °C vaza cerca de 160 nA a 75 °C, e cerca de 5 µA a 125 °C.
+
+O efeito sobre a **queda direta**, a corrente mantida constante, é o oposto e igualmente
+famoso:
+
+> **$V_F$ cai cerca de 2 mV por grau Celsius.**
+
+::: {#fig-046-temperatura}
+
+```{.tikz}
+%%| filename: 046-temperatura
+%%| alt: Gráfico da corrente direta de um diodo de silício em miliampères, no eixo vertical de zero a vinte, em função da tensão direta em volts, no eixo horizontal de zero vírgula três a zero vírgula nove. Três curvas exponenciais aparecem, todas com a mesma forma, deslocadas horizontalmente umas das outras. A curva mais à direita corresponde a zero grau Celsius, a do meio a vinte e cinco graus, e a mais à esquerda a setenta e cinco graus. Uma linha tracejada horizontal em dez miliampères cruza as três curvas, e setas horizontais marcam a distância entre os cruzamentos, com anotações indicando que a corrente constante a queda direta diminui cerca de dois milivolts por grau Celsius, de modo que os cinquenta graus entre a curva de vinte e cinco e a de setenta e cinco valem cerca de cem milivolts de deslocamento. Uma nota de rodapé no gráfico registra que, à tensão constante, o efeito se inverte e a corrente aumenta fortemente com a temperatura, o que é a origem da fuga térmica.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13cm, height=8.2cm,
+  xlabel={$V_F$ (V)}, ylabel={$I_F$ (mA)},
+  xmin=0.30, xmax=0.92, ymin=0, ymax=20,
+  xtick={0.3,0.4,0.5,0.6,0.7,0.8,0.9},
+  xticklabel style={/pgf/number format/fixed,
+                    /pgf/number format/precision=1,
+                    /pgf/number format/use comma},
+  ytick={0,5,10,15,20},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+  legend pos=north west, legend cell align=left,
+  legend style={font=\scriptsize, draw=manualgray!50},
+]
+
+% I = Is * exp((V + desl)/(n VT)) * 1000, em mA
+% n VT = 0,0565 V   Is = 1,7e-8 A
+\addplot[manualblue, very thick, domain=0.30:0.90, samples=200]
+  {1.7e-8*exp((x - 0.050)/0.0565)*1000};
+\addlegendentry{$0\ ^{\circ}$C}
+
+\addplot[manualgreen!55!black, very thick, domain=0.30:0.90, samples=200]
+  {1.7e-8*exp(x/0.0565)*1000};
+\addlegendentry{$25\ ^{\circ}$C}
+
+\addplot[manualred, very thick, domain=0.30:0.90, samples=200]
+  {1.7e-8*exp((x + 0.100)/0.0565)*1000};
+\addlegendentry{$75\ ^{\circ}$C}
+
+% linha de 10 mA
+\addplot[manualgray, dashed, thick, domain=0.30:0.92, samples=2] {10};
+
+\end{axis}
+
+% anotacoes fora do eixo
+\node[anchor=north, font=\scriptsize, align=center, manualred] at (6.5,-1.0)
+     {$\Delta V_F \approx -2$ mV/$^{\circ}$C \emph{a corrente constante}
+      --- os 50 $^{\circ}$C entre as curvas verde e vermelha valem $\approx 100$ mV};
+\node[anchor=north, font=\scriptsize, align=center] at (6.5,-1.75)
+     {\textbf{a tensão constante o efeito se inverte:} a corrente sobe muito com a
+      temperatura --- a origem da fuga térmica do Volume 9};
+
+\end{tikzpicture}
+```
+
+A mesma junção a três temperaturas. As curvas não mudam de forma; elas **andam para a
+esquerda** quando esquenta. A leitura depende de qual grandeza está fixa, e trocar uma pela
+outra é o erro clássico.
+
+:::
+
+Os dois enunciados parecem se contradizer e não se contradizem: são a mesma curva lida com
+variáveis diferentes fixadas. Com a **corrente** fixa, a tensão cai. Com a **tensão** fixa, a
+corrente sobe. E é a segunda leitura que queima componente: alimentar uma junção com tensão
+fixa é realimentação positiva térmica — mais temperatura, mais corrente, mais dissipação,
+mais temperatura. O @sec-cap-011 já tinha o vocabulário de dissipação; aqui aparece o
+mecanismo que o torna instável.
+
+Os dois números, guardados juntos, resolvem quase tudo:
+
+- $-2$ mV/°C na tensão direta, a corrente constante — a base do sensor de temperatura mais
+  barato que existe, e a razão pela qual polarização de transistor por tensão fixa de base é
+  um projeto ruim (Volume 9).
+- $I_S$ dobrando a cada 10 °C — a razão pela qual a corrente de fuga que era desprezível a
+  25 °C é um problema real a 100 °C.
+
+## Capacitância de junção {#sec-046-capacitancia}
+
+A região de depleção é uma camada sem portadores livres — isolante — entre duas regiões
+condutoras. Isso é a definição de capacitor do @sec-cap-021, e a capacitância vale
+$C = \varepsilon A / W$, com $W$ a largura da depleção.
+
+Só que $W$ **depende da tensão reversa**: mais reversa, mais larga a depleção, menor a
+capacitância. Aproximadamente,
+
+$$ C_j(V_R) = \frac{C_{j0}}{\left(1 + V_R/V_{bi}\right)^{m}}, $$
+
+com $m$ entre 1/3 e 1/2 conforme o perfil de dopagem. Três consequências, todas práticas:
+
+1. **Um diodo em reversa é um capacitor variável controlado por tensão.** Fabricado para isso,
+   chama-se **varicap**, e é como se sintoniza um rádio sem capacitor mecânico — @sec-cap-051.
+2. **Todo diodo tem capacitância parasita**, tipicamente de 1 a 100 pF conforme o tamanho da
+   pastilha. Em alta frequência ela contorna a junção e o diodo deixa de retificar. O
+   1N4148, com 4 pF, funciona até centenas de megahertz; um 1N5408 de 3 A, com dezenas de
+   picofarads, não serve para radiofrequência.
+3. **Há uma segunda capacitância, de difusão, que aparece em polarização direta** e vem da
+   carga armazenada de portadores minoritários. É ela que produz o **tempo de recuperação
+   reversa**: um diodo conduzindo em direta não corta instantaneamente quando a tensão se
+   inverte, porque a carga armazenada precisa ser retirada primeiro. Esse é o assunto que vai
+   decidir, no @sec-cap-048, por que um 1N4007 não serve numa fonte chaveada.
+
+## Ruptura em reversa {#sec-046-ruptura}
+
+A corrente reversa fica em $I_S$ enquanto a tensão reversa cresce — até um ponto em que ela
+não fica mais. Aumentando $V_R$ o bastante, a corrente dispara, e a tensão praticamente para
+de subir. É a **ruptura**, e há dois mecanismos distintos:
+
+**Avalanche.** Domina acima de uns 6 V. O campo na depleção acelera um portador minoritário a
+ponto de ele arrancar outro par elétron-lacuna ao colidir com a rede; os dois novos são
+acelerados e arrancam mais; e a multiplicação cresce em cascata. A tensão de avalanche
+**aumenta com a temperatura** — a rede vibra mais, o portador colide antes de ganhar energia
+suficiente, e é preciso mais campo.
+
+**Efeito Zener (túnel).** Domina abaixo de uns 5 V, em junções muito dopadas, onde a depleção
+é tão estreita que o campo arranca elétrons diretamente das ligações covalentes por
+tunelamento. A tensão de ruptura Zener **diminui com a temperatura**.
+
+Entre 5 e 6 V os dois mecanismos coexistem, e os coeficientes de temperatura opostos se
+cancelam. É por isso que **um Zener de 5,6 V é a referência de tensão mais estável que se
+consegue com uma junção sozinha** — um fato que parece coincidência e não é, e que o
+@sec-cap-050 vai usar.
+
+Nada disso destrói o diodo por si só. A ruptura é reversível **desde que a potência
+dissipada** — o produto da tensão de ruptura pela corrente, que é grande dos dois lados —
+fique dentro do que o encapsulamento suporta. Um Zener trabalha em ruptura a vida inteira. Um
+retificador comum, cuja folha de dados especifica uma tensão reversa máxima, não tem nem
+área nem caminho térmico para isso, e queima em milissegundos.
+
+## 🧪 Laboratório {#sec-046-lab}
+
+**Provar, com multímetro e uma resistência, que a junção PN é assimétrica, que sua queda
+direta é logarítmica na corrente e não constante, e que ela anda 2 mV por grau.**
+
+Este é um laboratório barato — três componentes e um multímetro — e ele mede três coisas que
+nenhuma quantidade de leitura substitui.
+
+### Material
+
+::: {.lab-material}
+- 1 multímetro digital com escala de teste de diodo (o símbolo ▷|)
+- 1 fonte ajustável de bancada, ou 2 pilhas de 1,5 V com suporte, ou fonte de 9 V
+- Diodos: 3 × 1N4148 (sinal, silício), 1 × 1N4007 (retificador, silício)
+- 1 diodo Schottky 1N5819, **se houver** (para a comparação da Parte 4)
+- 1 LED vermelho de 5 mm, comum (para a comparação da Parte 4)
+- Resistores 1/4 W: 100 Ω, 1 kΩ, 10 kΩ, 100 kΩ
+- 1 copo com água quente da torneira e 1 copo com água gelada, ou um ferro de solda
+- 1 termômetro comum, se houver
+- Protoboard, jumpers
+:::
+
+### Parte 1 — A assimetria, em trinta segundos
+
+1. Ponha o multímetro na escala de teste de diodo.
+2. Encoste a ponta vermelha no **ânodo** do 1N4148 (o lado **sem** a faixa) e a preta no
+   cátodo. Anote a leitura.
+3. Inverta as pontas. Anote.
+
+A leitura direta fica tipicamente entre 550 e 650 mV, e a reversa mostra `OL` ou `1.` —
+circuito aberto. Essa é a assimetria do @sec-046-polarizacao medida diretamente.
+
+Duas observações que valem mais que a medida:
+
+- **A escala de diodo não mede resistência**; ela força uma corrente conhecida, quase sempre
+  entre 0,5 mA e 1 mA, e mostra a tensão resultante. Por isso ela lê ~600 mV e não 0,7 V: a
+  0,7 V corresponderiam uns 20 mA, que o multímetro não fornece. Esse detalhe já é a Parte 2.
+- **Na escala de ohms, um diodo dá leituras sem sentido** e diferentes em cada faixa, porque
+  a tensão de teste varia. Diodo não tem resistência; tem curva.
+
+### Parte 2 — A queda direta é logarítmica, e aqui está a prova
+
+Monte a fonte em série com um resistor $R$ e o diodo, e meça a tensão **sobre o diodo** com o
+multímetro. A corrente sai da lei de Ohm aplicada ao resistor: meça a tensão sobre ele e
+divida por $R$ — não confie no valor nominal da fonte.
+
+Use $V_{\text{fonte}} = 9$ V e troque $R$:
+
+| $R$ | $I$ prevista (aprox.) | $V_F$ medida | $V_F$ prevista |
+|---|---|---|---|
+| 100 kΩ | 83 µA | | 0,49 V |
+| 10 kΩ | 0,84 mA | | 0,62 V |
+| 1 kΩ | 8,3 mA | | 0,75 V |
+| 100 Ω | 83 mA | | 0,88 V |
+
+: Um diodo 1N4148, quatro correntes, três décadas. A coluna prevista usa
+$V_F = n V_T \ln(I/I_S)$ com $n V_T = 56{,}5$ mV e $I_S = 1{,}7\times10^{-8}$ A; espere
+diferenças de algumas dezenas de milivolts entre exemplares. {#tbl-046-lab}
+
+1. Preencha a coluna medida.
+2. Para cada década de corrente, calcule a diferença de $V_F$ entre linhas consecutivas.
+
+**O resultado esperado é o ponto inteiro do laboratório**: cada fator de dez na corrente soma
+por volta de 110 a 130 mV na tensão, e não mais que isso. Mil vezes mais corrente, da
+primeira linha à última, e a queda subiu menos de 400 mV.
+
+::: {.callout-warning}
+## A última linha do ensaio
+
+Com 100 Ω e 9 V, o 1N4148 conduz cerca de 83 mA — acima dos 75 mA de corrente contínua
+máxima da folha de dados dele. Faça essa leitura **rápido**, em poucos segundos, e desligue.
+Melhor ainda: use o 1N4007, que aguenta 1 A, e observe que a queda dele é maior na mesma
+corrente, porque a pastilha é maior e o $I_S$ também.
+
+Aqui já aparece o @sec-cap-011 em ação: 0,88 V × 83 mA = 73 mW num encapsulamento de vidro
+que dissipa uns 350 mW no ar parado. Não queima, mas esquenta — e a Parte 3 explora
+justamente isso.
+:::
+
+3. Marque os quatro pontos em papel monolog, corrente no eixo logarítmico. Devem cair numa
+   **reta**, e a inclinação dessa reta é $n V_T \ln 10$. Divida por 2,303 e por 25,9 mV: o
+   resultado é o fator de idealidade $n$ do seu diodo, medido na sua bancada.
+
+### Parte 3 — Os 2 mV por grau
+
+1. Monte o diodo com $R = 10$ kΩ e 9 V (cerca de 0,84 mA, corrente baixa e estável).
+2. Anote $V_F$ à temperatura ambiente e anote a temperatura.
+3. Mergulhe o corpo do diodo — **só o corpo**, com os terminais secos e fora da água — na água
+   gelada. Espere estabilizar e anote.
+4. Repita com a água quente da torneira.
+5. Se tiver ferro de solda, aproxime-o **sem encostar** e observe a leitura em tempo real.
+
+Calcule $\Delta V_F / \Delta T$. O resultado deve ficar entre $-1{,}8$ e $-2{,}2$ mV/°C.
+
+Com água gelada a 5 °C e água quente a 55 °C, os 50 °C de diferença valem cerca de **100 mV**
+— uma variação enorme, fácil de ver em qualquer multímetro, e a razão pela qual "0,7 V" é
+uma aproximação de bancada e não uma constante de projeto.
+
+### Parte 4 — Materiais diferentes, barreiras diferentes
+
+Na escala de teste de diodo, meça a queda direta de cada um:
+
+| Dispositivo | Leitura esperada | Por quê |
+|---|---|---|
+| 1N4148 (silício) | 0,55 – 0,65 V | gap de 1,12 eV |
+| 1N4007 (silício, potência) | 0,50 – 0,60 V | mesma junção, área maior |
+| 1N5819 (Schottky) | 0,20 – 0,35 V | barreira metal-semicondutor |
+| LED vermelho | 1,6 – 1,8 V | gap do GaAsP, ~1,9 eV |
+| LED azul | 2,6 – 3,2 V | gap do InGaN, ~3,0 eV |
+
+: A queda direta é uma leitura direta da altura da barreira, que é uma leitura direta do
+material. Muitos multímetros não fornecem corrente suficiente para acender LED azul e
+mostram `OL` — o que é informação, não defeito. {#tbl-046-materiais}
+
+Ligue o LED vermelho com 9 V e 1 kΩ e observe que ele acende com cerca de 1,8 V sobre ele. O
+mesmo circuito, mesma corrente, tensões diferentes — e a diferença é a energia do gap, que
+no LED sai como fóton. Isso é o @sec-cap-051 inteiro em um parágrafo.
+
+### Parte 5 — A corrente reversa existe (e é pequena)
+
+1. Ligue o 1N4148 em **reversa** em série com 1 MΩ e 9 V.
+2. Meça a tensão sobre o resistor de 1 MΩ.
+
+Com $I_S$ de poucos nanoampères, a queda no resistor é de poucos milivolts — no limite do que
+um multímetro de bancada resolve, e frequentemente indistinguível de zero. **Isso já é o
+resultado**: a corrente reversa de um diodo de sinal em temperatura ambiente é desprezível
+para qualquer efeito prático.
+
+3. Aqueça o diodo com o ferro de solda aproximado e observe a leitura subir.
+
+É a duplicação a cada 10 °C, vista ao vivo. Se o multímetro tiver escala de corrente contínua
+em microampères, medir direto é mais claro; atenção para a resistência de derivação da escala,
+que o @sec-cap-004 já descreveu.
+
+**Variante simulada (plano B).** No ngspice, o modelo padrão de diodo já traz `is`, `n` e
+`tt`; uma varredura `.dc vin 0 1 0.005` com `.temp 0`, `.temp 27` e `.temp 75` reproduz a
+@fig-046-temperatura em três comandos, e uma varredura `.dc vin -100 0 0.5` num modelo com
+`bv=75` mostra a ruptura da @sec-046-ruptura, que na bancada custaria o diodo. No Falstad, o
+componente "diode" com o painel de propriedades aberto permite variar $I_S$ e ver a curva
+mudar em tempo real.
+
+## 🔥 Onde Queima {#sec-046-queima}
+
+**Tratar 0,7 V como constante do silício.** É o valor de um 1N4007 por volta de 10 mA a
+25 °C. A 1 µA são 0,45 V; a 1 A, quase 1,1 V; a 100 °C, 150 mV menos. Todo projeto que
+depende do valor exato da queda direta é frágil.
+
+**Alimentar um diodo com fonte de tensão sem resistor em série.** A curva é exponencial: a
+corrente é fixada pela tensão com sensibilidade de dez vezes por 60 a 120 mV. Uma fonte de
+0,8 V ajustada com o botão entrega o que a fonte conseguir, e o diodo abre. **Diodo se
+alimenta por corrente**, e o resistor em série é quem a define.
+
+**Esquecer que a fuga dobra a cada 10 °C.** Um projeto validado a 25 °C com 10 nA de fuga tem
+5 µA a 125 °C. Em circuito de alta impedância — integrador, sample-and-hold, entrada de
+amp-op — isso deixa de ser desprezível e vira erro dominante.
+
+**Polarizar junção com tensão fixa em circuito que esquenta.** Realimentação positiva térmica:
+mais temperatura → mais corrente → mais dissipação. É o mecanismo da fuga térmica, e ele
+destrói transistores de potência com regularidade (Volume 9).
+
+**Medir diodo na escala de ohms.** A leitura muda com a faixa porque a tensão de teste muda.
+Use a escala de diodo, que força corrente conhecida e mostra tensão.
+
+**Confundir a leitura da escala de diodo com $V_F$ de trabalho.** O multímetro força 0,5 a
+1 mA. O circuito real pode operar em 100 mA, onde a queda é 150 mV maior.
+
+**Achar que a barreira de 0,7 V pode ser medida com voltímetro.** As junções metal-semicondutor
+das pontas cancelam exatamente a barreira da junção. Ler zero é o resultado correto.
+
+**Ultrapassar a tensão reversa máxima de um retificador comum.** Ele entra em ruptura como
+qualquer junção, mas não tem área nem caminho térmico para dissipar o produto tensão ×
+corrente. Zener é projetado para viver em ruptura; 1N4007 não é.
+
+**Usar diodo comum de retificação em alta frequência.** A capacitância de junção contorna a
+junção e a carga armazenada impede o corte rápido. Um 1N4007 num conversor de 50 kHz conduz
+nos dois sentidos por parte do ciclo e esquenta absurdamente. É assunto do @sec-cap-048, e a
+raiz física está na @sec-046-capacitancia.
+
+**Encostar o ferro de solda no corpo do diodo por muito tempo.** Vale para o experimento da
+Parte 3 e para a montagem: junções de vidro têm terminal curto e o calor sobe rápido. Solde em
+poucos segundos, e segure o terminal com alicate entre a solda e o corpo se precisar de mais.
+
+## O que fica deste capítulo {#sec-046-resumo}
+
+O silício tem **quatro elétrons de valência** e um gap de **1,12 eV** — pequeno o bastante
+para que a agitação térmica quebre algumas ligações, grande o bastante para que sejam poucas.
+Cada ligação quebrada dá **dois** portadores: um elétron livre e uma **lacuna**, que se move
+como carga positiva. Semicondutor tem dois tipos de portador; metal tem um.
+
+**Dopagem** ajusta a condutividade em oito ordens de grandeza com um dopante para cada milhão
+de átomos. Grupo V doa elétrons e faz o **tipo N**; grupo III aceita elétrons e faz o
+**tipo P**. Os íons dopantes ficam **fixos na rede**, e o cristal continua neutro. Vale
+$np = n_i^{2}$, de modo que dopar tipo N não elimina as lacunas: torna-as **minoritárias**, e
+portador minoritário é sinônimo de "poucos e violentamente dependentes da temperatura".
+
+Um cristal dopado P de um lado e N do outro tem, na fronteira, difusão de portadores que
+descobre os **íons fixos** e cria a **região de depleção**. As cargas fixas produzem um campo
+que se opõe à difusão, e o equilíbrio se estabelece numa **barreira de potencial** de cerca
+de 0,7 V no silício — que **não se mede com voltímetro**, porque as junções das pontas a
+cancelam.
+
+Tensão externa **muda a altura da barreira**: em direta ela baixa, a depleção estreita e a
+corrente cresce exponencialmente; em reversa ela sobe, a depleção alarga e sobra só a corrente
+de minoritários $I_S$. Daí a equação do diodo,
+
+$$ I = I_S\left(e^{\,V/(nV_T)} - 1\right), \qquad V_T = \frac{kT}{q} \approx 26\ \text{mV a }300\ \text{K}, $$
+
+com $n$ entre 1 e 2. Invertida, ela diz que **a tensão é logarítmica na corrente**: cada
+década de corrente custa por volta de 60 mV ($n=1$) a 120 mV ($n=2$). É por isso que a queda
+direta parece constante — e é por isso que ela não é.
+
+**Temperatura, os dois números que se guardam juntos:** a corrente constante, $V_F$ cai
+**2 mV/°C**; a tensão constante, $I_S$ **dobra a cada 10 °C**. Não é contradição: é a mesma
+curva com variáveis diferentes fixadas. A segunda leitura é a que produz fuga térmica.
+
+A depleção é um isolante entre dois condutores cuja **espessura varia com a tensão** — ou
+seja, uma **capacitância de junção** controlada por tensão. Isso dá o varicap, dá a
+capacitância parasita que limita a frequência, e a capacitância de difusão dá o tempo de
+recuperação reversa.
+
+Em reversa suficiente vem a **ruptura**: **avalanche** acima de 6 V, com coeficiente de
+temperatura positivo, e **efeito Zener** abaixo de 5 V, com coeficiente negativo. Entre os
+dois eles se cancelam, e é por isso que a referência de tensão mais estável de uma junção só
+fica em torno de **5,6 V**.
+
+## Para o próximo capítulo {#sec-046-fecho}
+
+A física está posta, e ela é exponencial. Um circuito com uma exponencial dentro não se
+resolve com as ferramentas do Volume 3: não há superposição, não há impedância, e a análise
+nodal do @sec-cap-015 esbarra numa equação transcendental logo no primeiro nó.
+
+O @sec-cap-047 resolve isso da maneira que a engenharia sempre resolve — trocando a curva
+exata por modelos suficientemente bons, e sabendo quando cada um deixa de valer. São quatro:
+chave ideal, queda constante, queda mais resistência, e a exponencial completa. Escolher o
+modelo certo para a pergunta em mãos é a habilidade que este volume ensina, e é ela que faz
+alguém calcular uma fonte retificada em cinco minutos, de cabeça, e acertar.
