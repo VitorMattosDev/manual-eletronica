@@ -1,3 +1,785 @@
 # Curvas características e regiões de operação {#sec-cap-053}
 
-*(em elaboração)*
+O @sec-cap-052 mediu o transistor um ponto de cada vez: uma corrente de base, uma corrente de
+coletor, a razão entre elas. Foi o bastante para provar que a ação de transistor existe, e
+insuficiente para projetar qualquer coisa.
+
+Falta o retrato completo. O componente tem duas portas — base-emissor na entrada,
+coletor-emissor na saída — e quatro grandezas: $V_{BE}$, $I_B$, $V_{CE}$, $I_C$. Fixar duas
+delas determina as outras duas, e o mapa desse comportamento é o que se chama **curvas
+características**.
+
+Este capítulo levanta esse mapa e o lê. Ao final, três coisas que ficaram penduradas no
+capítulo anterior terão resposta:
+
+- Por onde exatamente passa a fronteira entre a saturação e a região ativa, e por que a
+  relação $I_C = \beta I_B$ deixa de valer do outro lado dela.
+- Por que $I_C$ **não** é perfeitamente constante na região ativa — o **efeito Early**, que é
+  a origem da resistência de saída de todo amplificador a transistor.
+- Como desenhar a reta de carga do @sec-cap-047 sobre essas curvas, agora com um terceiro
+  terminal escolhendo em que ponto dela o circuito vai parar.
+
+## A característica de saída {#sec-053-familia}
+
+O experimento é simples de descrever e trabalhoso de fazer: fixe $I_B$ num valor, varra
+$V_{CE}$ de zero para cima e anote $I_C$. Repita para vários $I_B$. O resultado é uma
+**família** de curvas, uma para cada corrente de base.
+
+::: {#fig-053-familia}
+
+```{.tikz}
+%%| filename: 053-familia
+%%| alt: Família de curvas características de saída de um transistor NPN. O eixo horizontal é a tensão coletor-emissor, de zero a doze volts; o eixo vertical é a corrente de coletor, de zero a dez miliampères. Cinco curvas azuis correspondem a correntes de base de dez, vinte, trinta, quarenta e cinquenta microampères. Cada curva sobe quase verticalmente de zero até cerca de dois décimos de volt e depois se torna quase horizontal, subindo de leve com a tensão. Os patamares ficam em torno de um vírgula cinco, três, quatro vírgula cinco, seis e sete vírgula cinco miliampères. Uma faixa vertical estreita e sombreada à esquerda, entre zero e cerca de três décimos de volt, é identificada como região de saturação, com a anotação de que ali a corrente de coletor é decidida pelo circuito externo e não pela corrente de base. A área grande à direita é identificada como região ativa, com a anotação de que ali a corrente de coletor vale beta vezes a corrente de base e quase não depende da tensão. A linha do eixo horizontal, correspondente à corrente de base zero, é identificada como corte, com a observação de que resta apenas a corrente de fuga. Uma seta à direita indica que, muito além da borda do gráfico, em quarenta volts, começa a região de ruptura. Uma anotação registra que o espaçamento vertical entre curvas vizinhas é o próprio beta, e que ele não é uniforme.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13.5cm, height=8.8cm,
+  xlabel={$V_{CE}$ (V)}, ylabel={$I_C$ (mA)},
+  xmin=0, xmax=12.6, ymin=0, ymax=10,
+  xtick={0,2,4,6,8,10,12},
+  ytick={0,2,4,6,8,10},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+]
+
+  % região de saturação
+  \fill[manualred!12] (axis cs:0,0) rectangle (axis cs:0.30,10);
+
+  % família: Ic = beta*Ib*(1+Vce/VA)*(1-exp(-Vce/0.08)), beta=150, VA=100 V
+  \addplot[curva, domain=0:12.6, samples=260] {1.50*(1+x/100)*(1-exp(-x/0.08))};
+  \addplot[curva, domain=0:12.6, samples=260] {3.00*(1+x/100)*(1-exp(-x/0.08))};
+  \addplot[curva, domain=0:12.6, samples=260] {4.50*(1+x/100)*(1-exp(-x/0.08))};
+  \addplot[curva, domain=0:12.6, samples=260] {6.00*(1+x/100)*(1-exp(-x/0.08))};
+  \addplot[curva, domain=0:12.6, samples=260] {7.50*(1+x/100)*(1-exp(-x/0.08))};
+
+  \node[manualblue, anchor=east, font=\tiny] at (axis cs:12.5,2.05) {$I_B = 10\ \mu$A};
+  \node[manualblue, anchor=east, font=\tiny] at (axis cs:12.5,3.75) {$20\ \mu$A};
+  \node[manualblue, anchor=east, font=\tiny] at (axis cs:12.5,5.45) {$30\ \mu$A};
+  \node[manualblue, anchor=east, font=\tiny] at (axis cs:12.5,7.15) {$40\ \mu$A};
+  \node[manualblue, anchor=east, font=\tiny] at (axis cs:12.5,8.85) {$50\ \mu$A};
+
+  % corte
+  \addplot[manualgray, very thick, domain=0:12.6, samples=2] {0.03};
+  \node[manualgray, anchor=south west, font=\tiny] at (axis cs:4.4,0.06)
+       {$I_B = 0$ --- \textbf{corte}: só a fuga $I_{CEO}$};
+
+  % rótulos das regiões
+  \node[manualred, anchor=south, font=\scriptsize] at (axis cs:1.5,9.15)
+       {\textbf{saturação}};
+  \draw[manualred, thin] (axis cs:1.25,9.1) -- (axis cs:0.34,8.6);
+  \node[manualred, anchor=north west, font=\tiny, align=left, text width=3.2cm]
+       at (axis cs:0.55,3.15)
+       {aqui quem decide $I_C$ é o \textbf{circuito externo}, não $I_B$:
+        $I_C < \beta I_B$};
+
+  \node[manualgreen!55!black, anchor=south, font=\scriptsize] at (axis cs:7.4,2.55)
+       {\textbf{região ativa}};
+  \node[manualgreen!55!black, anchor=north, font=\tiny, align=center, text width=5.4cm]
+       at (axis cs:7.4,2.5)
+       {$I_C = \beta I_B$, quase independente de $V_{CE}$ --- é aqui que se amplifica};
+
+  % espaçamento = beta
+  \draw[manualyellow, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}, thick]
+       (axis cs:9.0,4.79) -- (axis cs:9.0,6.38);
+  \draw[manualyellow, thin] (axis cs:9.0,6.45) -- (axis cs:9.5,8.95);
+  \node[manualyellow, anchor=east, font=\tiny, align=right, text width=5.6cm]
+       at (axis cs:11.6,9.4)
+       {$10\ \mu$A a mais na base $\Rightarrow$ $1{,}5$ mA a mais no coletor:
+        o espaçamento \textbf{é} $\beta$};
+
+  % ruptura
+  \draw[manualred, -{Latex[length=2mm]}, very thick]
+       (axis cs:11.6,0.55) -- (axis cs:12.5,0.55);
+  \node[manualred, anchor=south east, font=\tiny, align=right] at (axis cs:12.5,0.65)
+       {ruptura só lá em\\$V_{CEO} = 40$ V};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A característica de saída de um 2N3904 típico, com $\beta \approx 150$. Três regiões: a faixa
+estreita de saturação junto ao eixo vertical, a região ativa que ocupa quase todo o gráfico, e
+o corte sobre o eixo horizontal.
+:::
+
+Três leituras dessa figura sustentam o resto do volume.
+
+**A subida vertical, de zero a uns 0,2 V, é a saturação.** Ali as duas junções estão em
+direta, e o transistor se comporta como uma chave fechada com uma queda residual. A corrente
+que passa é a que o circuito externo permitir, e ela é **menor** que $\beta I_B$. A relação
+$I_C = \beta I_B$ não vale nessa região, e insistir nela é o erro que a Parte 3 do laboratório
+do @sec-cap-052 já mostrou de perto.
+
+**O patamar quase horizontal é a região ativa.** Dobrar $V_{CE}$ de 4 para 8 V muda $I_C$ em
+poucos por cento. É por isso que o transistor funciona como **fonte de corrente controlada**:
+ele entrega a corrente que $I_B$ pediu, indiferente ao que a carga faça com a tensão.
+
+**O espaçamento vertical entre curvas vizinhas é o próprio $\beta$.** Curvas igualmente
+espaçadas em $I_B$ produzem patamares igualmente espaçados em $I_C$ apenas se $\beta$ for
+constante — e o @sec-cap-052 já avisou que não é. Num levantamento real de bancada, o
+espaçamento se aperta nas correntes altas.
+
+## A característica de entrada {#sec-053-entrada}
+
+A porta de entrada é a junção base-emissor, e a curva $I_B \times V_{BE}$ é a curva de um
+diodo — a mesma exponencial do @sec-cap-052, deslocada para baixo por um fator $\beta$:
+
+$$ I_B = \frac{I_S}{\beta}\,e^{V_{BE}/V_T} $$
+
+Ela traz os mesmos 60 mV por década e os mesmos −2 mV/°C. Valores típicos de um transistor de
+sinal:
+
+| $I_B$ | $V_{BE}$ |
+|---|---|
+| 1 µA | 0,58 V |
+| 10 µA | 0,64 V |
+| 100 µA | 0,70 V |
+| 1 mA | 0,76 V |
+
+: A característica de entrada, em números. O "0,7 V" de folclore corresponde a
+$I_B \approx 100$ µA, isto é, a alguns miliampères de coletor. {#tbl-053-entrada}
+
+Há uma dependência de segunda ordem de $V_{CE}$: aumentar $V_{CE}$ estreita a base efetiva,
+o que reduz a recombinação, o que reduz $I_B$ para o mesmo $V_{BE}$. O efeito é pequeno — uns
+poucos por cento — e a próxima seção mostra que ele é o mesmo fenômeno visto do outro lado.
+
+## O efeito Early {#sec-053-early}
+
+Na região ativa as curvas **sobem**. Pouco, mas sobem, e essa inclinação não é imperfeição de
+medida: é física, tem nome e vira um parâmetro de projeto.
+
+::: {#fig-053-early}
+
+```{.tikz}
+%%| filename: 053-early
+%%| alt: Dois painéis. À esquerda, um gráfico com o eixo horizontal indo de menos cento e dez a quinze volts e o eixo vertical de zero a dez miliampères. As três curvas da região ativa, para correntes de base de vinte, trinta e quarenta microampères, aparecem à direita do zero, levemente inclinadas para cima, e são prolongadas por linhas tracejadas para a esquerda, atravessando o eixo vertical e convergindo todas para um único ponto sobre o eixo horizontal, em menos cem volts. Esse ponto é identificado como menos a tensão de Early. Uma anotação registra que a resistência de saída do transistor é a tensão de Early dividida pela corrente de coletor, e que para cem volts e dois miliampères isso dá cinquenta quilo-ohms. À direita, dois cortes da base do transistor, um acima do outro, mostrando por que a inclinação existe. No de cima, com tensão coletor-emissor baixa, a região de depleção da junção base-coletor é estreita e a base neutra restante é larga. No de baixo, com tensão coletor-emissor alta, a depleção avançou para dentro da base e a base neutra restante ficou mais estreita, com uma anotação de que base mais estreita significa menos recombinação, mais elétrons chegando ao coletor e portanto mais corrente de coletor com a mesma corrente de base.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+\begin{axis}[
+  name=esq,
+  width=10.5cm, height=7.4cm,
+  xlabel={$V_{CE}$ (V)}, ylabel={$I_C$ (mA)},
+  xmin=-112, xmax=16, ymin=0, ymax=8,
+  xtick={-100,-80,-60,-40,-20,0,15},
+  ytick={0,2,4,6,8},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+]
+  % prolongamentos (Ib = 20, 30 e 40 uA, beta = 150, VA = 100 V)
+  \addplot[manualgray, thin, dashed, domain=-100:0.4, samples=2] {3.00*(1+x/100)};
+  \addplot[curva, domain=0.4:16, samples=2] {3.00*(1+x/100)};
+  \addplot[manualgray, thin, dashed, domain=-100:0.4, samples=2] {4.50*(1+x/100)};
+  \addplot[curva, domain=0.4:16, samples=2] {4.50*(1+x/100)};
+  \addplot[manualgray, thin, dashed, domain=-100:0.4, samples=2] {6.00*(1+x/100)};
+  \addplot[curva, domain=0.4:16, samples=2] {6.00*(1+x/100)};
+  \node[ponto] at (axis cs:-100,0) {};
+  \node[manualred, anchor=south west, font=\scriptsize] at (axis cs:-99,0.2)
+       {$-V_A = -100$ V};
+
+  \draw[auxiliar] (axis cs:0,0) -- (axis cs:0,8);
+
+  \node[manualgreen!55!black, anchor=north west, font=\tiny, align=left, text width=4.2cm]
+       at (axis cs:-108,7.9)
+       {prolongadas para a esquerda, \textbf{todas} as curvas da região ativa cortam o eixo
+        no mesmo ponto};
+
+  \node[draw=manualgray, rounded corners=2pt, anchor=south east, align=left,
+        font=\scriptsize, inner sep=5pt] at (axis cs:14.5,0.25)
+       {$r_o = \dfrac{V_A}{I_C}$ \\[3pt]
+        $\dfrac{100}{2\ \text{mA}} = 50$ k$\Omega$};
+\end{axis}
+
+% ---------------- cortes da base ----------------
+\begin{scope}[shift={(0.4,-4.0)}]
+  \fill[manualblue!25] (0,0) rectangle (1.1,1.5);
+  \fill[manualred!22]  (1.1,0) rectangle (2.9,1.5);
+  \fill[pattern=north east lines, pattern color=manualgray!70] (2.45,0) rectangle (2.9,1.5);
+  \fill[manualblue!10] (2.9,0) rectangle (4.6,1.5);
+  \draw[thick] (0,0) rectangle (4.6,1.5);
+  \draw[thick] (1.1,0) -- (1.1,1.5);
+  \draw[thick] (2.9,0) -- (2.9,1.5);
+  \draw[manualgreen!55!black, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}]
+       (1.1,-0.25) -- (2.45,-0.25);
+  \node[anchor=north, font=\tiny, manualgreen!55!black] at (1.78,-0.3) {base neutra: larga};
+  \node[anchor=south, font=\scriptsize] at (2.3,1.65) {$V_{CE}$ \textbf{baixa}};
+\end{scope}
+
+\begin{scope}[shift={(6.6,-4.0)}]
+  \fill[manualblue!25] (0,0) rectangle (1.1,1.5);
+  \fill[manualred!22]  (1.1,0) rectangle (2.9,1.5);
+  \fill[pattern=north east lines, pattern color=manualgray!70] (1.75,0) rectangle (2.9,1.5);
+  \fill[manualblue!10] (2.9,0) rectangle (4.6,1.5);
+  \draw[thick] (0,0) rectangle (4.6,1.5);
+  \draw[thick] (1.1,0) -- (1.1,1.5);
+  \draw[thick] (2.9,0) -- (2.9,1.5);
+  \draw[manualred, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}]
+       (1.1,-0.25) -- (1.75,-0.25);
+  \node[anchor=north, font=\tiny, manualred] at (1.43,-0.3) {estreitou};
+  \node[anchor=south, font=\scriptsize] at (2.3,1.65) {$V_{CE}$ \textbf{alta}};
+\end{scope}
+
+\node[anchor=north, font=\scriptsize, align=center, text width=12cm] at (6.0,-5.0)
+     {a depleção da junção BC avança para dentro da base: \textbf{base mais estreita,
+      menos recombinação, mais $I_C$ com o mesmo $I_B$}};
+
+\end{tikzpicture}
+```
+
+O efeito Early. As curvas sobem porque a base efetiva encolhe quando $V_{CE}$ aumenta, e a
+inclinação, prolongada para trás, aponta sempre para o mesmo ponto do eixo: $-V_A$.
+:::
+
+O mecanismo é o da @fig-053-early à direita. A depleção da junção base-coletor avança para
+dentro da base quando $V_{CE}$ cresce (o @sec-cap-046 mostrou que a depleção cresce com a
+tensão reversa). A base neutra restante fica mais estreita, menos elétrons se recombinam nela,
+e portanto **mais** elétrons chegam ao coletor com a mesma corrente de base. $\beta$ sobe um
+pouco, e a curva sobe com ele.
+
+James Early descreveu isso em 1952, e o modelo que ficou é de uma simplicidade útil: as
+curvas, prolongadas para a esquerda, cruzam o eixo horizontal todas no mesmo ponto, em
+$-V_A$. A **tensão de Early** $V_A$ vale de 50 a 150 V num transistor de sinal, e é uma
+propriedade do processo, não do ponto de operação.
+
+Isso dá a expressão da região ativa com a inclinação incluída:
+
+$$ \boxed{\;I_C = \beta I_B \left(1 + \frac{V_{CE}}{V_A}\right)\;} $$
+
+e a **resistência de saída** do transistor, que é o inverso da inclinação:
+
+$$ \boxed{\;r_o = \frac{\partial V_{CE}}{\partial I_C} = \frac{V_A}{I_C}\;} $$
+
+Com $V_A = 100$ V e $I_C = 2$ mA, $r_o = 50$ kΩ. Guarde esse número: ele é o teto do ganho de
+tensão de um emissor comum, e o @sec-cap-052 já anunciou que o capítulo 056 vai esbarrar nele.
+
+::: {.callout-note}
+## Ler a inclinação como uma resistência
+
+Em toda a eletrônica linear, a inclinação de uma curva $I \times V$ tem dimensão de
+condutância, e o inverso dela é a resistência **incremental** naquele ponto — foi assim com a
+$r_d$ do diodo (@sec-cap-047) e com a $r_z$ do Zener (@sec-cap-050). O efeito Early é a mesma
+ideia na saída do transistor: $r_o$ é o que o resto do circuito enxerga entre coletor e
+emissor, em paralelo com a carga.
+:::
+
+## A reta de carga e o ponto quiescente {#sec-053-retacarga}
+
+As curvas descrevem o transistor. Falta o circuito. Ligue um resistor $R_C$ entre o coletor e
+a fonte $V_{CC}$, e a lei das malhas impõe uma segunda relação entre $I_C$ e $V_{CE}$:
+
+$$ V_{CC} = I_C R_C + V_{CE} \qquad\Longrightarrow\qquad
+   I_C = \frac{V_{CC} - V_{CE}}{R_C} $$
+
+que é uma **reta**, exatamente como a reta de carga do diodo no @sec-cap-047. Duas equações,
+duas incógnitas: a solução é o cruzamento.
+
+::: {#fig-053-retacarga}
+
+```{.tikz}
+%%| filename: 053-retacarga
+%%| alt: Gráfico com a família de curvas características e uma reta de carga sobreposta. O eixo horizontal é a tensão coletor-emissor de zero a onze volts e o vertical é a corrente de coletor de zero a onze miliampères. Cinco curvas correspondem a correntes de base de dez a cinquenta microampères. Uma reta vermelha vai do ponto dez miliampères sobre o eixo vertical até o ponto dez volts sobre o eixo horizontal, correspondendo a uma fonte de dez volts com resistor de coletor de um quilo-ohm. Está marcado que o corte da reta com o eixo vertical é a tensão da fonte dividida pelo resistor e o corte com o eixo horizontal é a própria tensão da fonte. O cruzamento da reta com a curva de trinta e três microampères é marcado como ponto quiescente Q, em cinco volts e cinco miliampères. Duas setas ao longo da reta mostram para onde o ponto se move quando a corrente de base aumenta, indo em direção à saturação no canto superior esquerdo, e quando diminui, indo em direção ao corte no canto inferior direito. Uma faixa sombreada em torno de Q indica a excursão possível do sinal, limitada de um lado pela saturação e do outro pelo corte, e uma anotação registra que colocar Q no meio da reta é o que maximiza essa excursão. Uma segunda reta tracejada, mais inclinada, corresponde a um resistor de coletor de quatrocentos e setenta ohms e mostra que trocar o resistor gira a reta em torno do ponto da tensão da fonte.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13.5cm, height=9.0cm,
+  xlabel={$V_{CE}$ (V)}, ylabel={$I_C$ (mA)},
+  xmin=0, xmax=11.6, ymin=0, ymax=11.5,
+  xtick={0,2,4,6,8,10},
+  ytick={0,2,4,6,8,10},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+]
+
+  \fill[manualred!12] (axis cs:0,0) rectangle (axis cs:0.30,11.5);
+
+  \addplot[manualblue!55, thick, domain=0:11.6, samples=240]
+    {1.50*(1+x/100)*(1-exp(-x/0.08))};
+  \addplot[manualblue!55, thick, domain=0:11.6, samples=240]
+    {3.00*(1+x/100)*(1-exp(-x/0.08))};
+  \addplot[manualblue!55, thick, domain=0:11.6, samples=240]
+    {6.00*(1+x/100)*(1-exp(-x/0.08))};
+  \addplot[manualblue!55, thick, domain=0:11.6, samples=240]
+    {7.50*(1+x/100)*(1-exp(-x/0.08))};
+  \addplot[manualblue!55, thick, domain=0:11.6, samples=240]
+    {9.00*(1+x/100)*(1-exp(-x/0.08))};
+  % curva de 33 uA, a que passa por Q
+  \addplot[curva, domain=0:11.6, samples=240]
+    {4.95*(1+x/100)*(1-exp(-x/0.08))};
+  \node[manualblue, anchor=south west, font=\tiny] at (axis cs:8.6,5.6)
+       {$I_B = 33\ \mu$A};
+
+  % reta de carga: Vcc = 10 V, Rc = 1 k
+  \addplot[destaque, very thick, domain=0:10, samples=2] {(10-x)/1.0};
+  \node[manualred, anchor=west, font=\tiny, align=left] at (axis cs:0.45,10.4)
+       {$\dfrac{V_{CC}}{R_C} = 10$ mA};
+  \node[manualred, anchor=west, font=\tiny] at (axis cs:10.15,1.1) {$V_{CC} = 10$ V};
+
+  % reta alternativa 470 ohms
+  \addplot[manualred!55, very thick, dashed, domain=0:10, samples=2] {(10-x)/0.47};
+  \node[manualred!70, anchor=north west, font=\tiny, align=left, text width=6cm]
+       at (axis cs:6.0,11.4)
+       {$R_C = 470\ \Omega$: a reta \textbf{gira} em torno de $V_{CC}$};
+
+  % ponto Q
+  \node[ponto] at (axis cs:5.0,5.0) {};
+  \node[anchor=south west, font=\scriptsize] at (axis cs:5.15,5.1) {\textbf{Q}};
+  \draw[auxiliar] (axis cs:0,5) -- (axis cs:5,5);
+  \draw[auxiliar] (axis cs:5,0) -- (axis cs:5,5);
+
+  % excursão de VCE, medida sobre o eixo
+  \draw[manualgreen!55!black, {Latex[length=1.6mm]}-{Latex[length=1.6mm]}, very thick]
+       (axis cs:0.35,0.42) -- (axis cs:9.9,0.42);
+  \node[manualgreen!55!black, anchor=south, font=\tiny, align=center, text width=7.4cm]
+       at (axis cs:4.6,0.5)
+       {excursão possível de $V_{CE}$: da saturação ao corte ---
+        \textbf{Q no meio da reta maximiza os dois lados}};
+
+  \node[manualgray, anchor=north east, font=\tiny, align=right] at (axis cs:3.4,2.7)
+       {mais $I_B$: Q sobe\\rumo à saturação};
+  \node[manualgray, anchor=north east, font=\tiny, align=right] at (axis cs:11.5,4.3)
+       {menos $I_B$: Q desce\\rumo ao corte};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A reta de carga desenhada sobre a família. O circuito externo escolhe a **reta**; a corrente de
+base escolhe o **ponto** sobre ela. O ponto escolhido em repouso é o ponto quiescente, Q.
+:::
+
+A reta é fixada por dois pontos que se acham de cabeça:
+
+- Com $V_{CE} = 0$ (transistor em curto imaginário): $I_C = V_{CC}/R_C$. É a **corrente de
+  saturação**, o teto absoluto do circuito.
+- Com $I_C = 0$ (transistor aberto): $V_{CE} = V_{CC}$. É o **corte**.
+
+Trocar $R_C$ **gira** a reta em torno do ponto $V_{CC}$ no eixo horizontal. Trocar $V_{CC}$
+translada a reta inteira.
+
+E o terceiro terminal escolhe **onde** sobre a reta o circuito vai parar. Esse é o **ponto
+quiescente**, ou ponto Q: o estado do circuito em repouso, sem sinal.
+
+::: {.callout-important}
+## Por que Q no meio
+
+Um sinal aplicado à base faz o ponto de operação **passear ao longo da reta de carga**, para
+cima e para baixo em torno de Q. Se Q estiver perto do topo, o sinal bate na saturação e o
+semiciclo é ceifado; perto da base, bate no corte e o outro semiciclo some.
+
+Com $V_{CC} = 10$ V e Q em $V_{CE} = 5$ V, sobram quase 5 V para cada lado — cerca de 9,4 V
+pico a pico de excursão. É o máximo que esse circuito entrega, e é por isso que a regra
+prática de polarização de amplificador é **$V_{CE} \approx V_{CC}/2$ em repouso**.
+
+Circuito de chave é o caso oposto: lá o ponto Q não fica no meio, fica **nas duas pontas** — e
+esse é exatamente o assunto do capítulo 054.
+:::
+
+### O exemplo numérico completo
+
+$V_{CC} = 10$ V, $R_C = 1$ kΩ, transistor com $\beta = 150$, alvo $V_{CE} = 5$ V.
+
+$$ I_C = \frac{V_{CC} - V_{CE}}{R_C} = \frac{10 - 5}{1000} = 5\ \text{mA}
+   \qquad\Longrightarrow\qquad
+   I_B = \frac{I_C}{\beta} = \frac{5\ \text{mA}}{150} = 33\ \mu\text{A} $$
+
+Para injetar 33 µA a partir dos mesmos 10 V, com $V_{BE} = 0{,}7$ V:
+
+$$ R_B = \frac{V_{CC} - V_{BE}}{I_B} = \frac{10 - 0{,}7}{33\ \mu\text{A}} = 282\ \text{k}\Omega
+   \;\longrightarrow\; \textbf{270 k}\boldsymbol{\Omega} \text{ (E24)} $$
+
+Recalculando com o valor comercial: $I_B = 9{,}3/270\text{k} = 34{,}4$ µA, $I_C = 5{,}2$ mA,
+$V_{CE} = 4{,}8$ V. Perfeitamente aceitável — **para este transistor**.
+
+E aqui está a armadilha que o volume inteiro persegue. Troque o transistor por outro do mesmo
+saquinho, com $\beta = 300$:
+
+$$ I_C = 300 \times 34{,}4\ \mu\text{A} = 10{,}3\ \text{mA} $$
+
+mas a reta de carga só permite 10 mA. **O transistor satura**, $V_{CE}$ desaba para 0,2 V, e o
+amplificador deixa de amplificar. Com $\beta = 100$, na outra ponta: $I_C = 3{,}4$ mA e
+$V_{CE} = 6{,}6$ V — vivo, mas com a excursão desequilibrada.
+
+Essa polarização, chamada **por corrente de base fixa**, é a mais simples que existe e é
+inutilizável na prática, porque o ponto Q é proporcional a $\beta$. Consertar isso é o assunto
+do capítulo 055.
+
+## A saturação vista de perto {#sec-053-saturacao}
+
+Na saturação, as duas junções estão em direta. A junção base-coletor conduzindo significa que
+o coletor **também** injeta portadores na base, no sentido contrário — é o modo ativo reverso
+somado ao direto. O saldo é uma corrente de coletor menor do que $\beta I_B$ pediria, e uma
+tensão residual pequena.
+
+Três números descrevem o regime:
+
+$$ V_{CE(\text{sat})} \approx 0{,}05\ \text{a}\ 0{,}3\ \text{V} \qquad
+   V_{BE(\text{sat})} \approx 0{,}8\ \text{V} \qquad
+   \beta_{\text{forçado}} = \frac{I_C}{I_B} < \beta $$
+
+O **$\beta$ forçado** é a razão que o circuito impõe, não a que o transistor tem. Se $I_B$ é
+grande o bastante para que $\beta_{\text{forçado}}$ caia para 10 ou 20, o transistor está em
+**saturação forte** e $V_{CE(\text{sat})}$ chega ao mínimo da folha de dados. Com
+$\beta_{\text{forçado}}$ perto de $\beta$, o transistor está na **fronteira** entre as regiões,
+e $V_{CE}$ fica em algum valor intermediário, instável e dependente do exemplar.
+
+| Regime | Condição | $V_{CE}$ | Uso |
+|---|---|---|---|
+| ativa | $I_C = \beta I_B$ | de 0,3 V a $V_{CC}$ | amplificador |
+| fronteira | $I_C \approx \beta I_B$ e $V_{CE} \approx 0{,}3$ V | 0,3 V | lugar nenhum: instável |
+| saturação forte | $\beta_{\text{forçado}} \le 20$ | 0,05 a 0,2 V | chave |
+
+: Os três regimes na vizinhança da fronteira. Projeto de chave mira a última linha com folga;
+projeto de amplificador mira a primeira, longe da fronteira. {#tbl-053-satur}
+
+A queda menor tem um preço, que o capítulo 054 vai cobrar: quanto mais forte a saturação, mais
+carga fica armazenada na base, e mais demora para o transistor **desligar**.
+
+## A área de operação segura {#sec-053-soa}
+
+As curvas dizem o que o transistor faz. A **SOA** — *safe operating area* — diz até onde ele
+pode fazê-lo sem morrer. São quatro limites simultâneos, e o mais fácil de esquecer é o da
+potência.
+
+::: {#fig-053-soa}
+
+```{.tikz}
+%%| filename: 053-soa
+%%| alt: Área de operação segura de um transistor de sinal, desenhada em eixos logarítmicos. O eixo horizontal é a tensão coletor-emissor, de zero vírgula um a cem volts; o vertical é a corrente de coletor, de um a mil miliampères. Quatro limites delimitam uma região sombreada. Em cima, uma reta horizontal em duzentos miliampères marca a corrente máxima de coletor. À direita, uma reta vertical em quarenta volts marca a tensão de ruptura coletor-emissor com base aberta. Na diagonal, uma reta descendente marca o limite de potência de seiscentos e vinte e cinco miliwatts, que em escala logarítmica é uma reta de inclinação menos um, passando por quarenta volts com quinze vírgula seis miliampères e por três vírgula um volts com duzentos miliampères. Uma quarta borda, em baixo, corresponde simplesmente às correntes pequenas. Dois pontos de operação estão marcados: um deles, com cinco volts e cem miliampères, está dentro da região segura de corrente e de tensão mas fora da reta de potência, e é assinalado em vermelho como quinhentos miliwatts perigosos; outro, com cinco volts e cinquenta miliampères, está dentro de tudo. Uma anotação registra que a curva de potência tem de ser reduzida quando a temperatura ambiente sobe, e que em regime pulsado a área utilizável é maior porque a massa térmica do encapsulamento absorve a energia.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13cm, height=8.6cm,
+  xlabel={$V_{CE}$ (V)}, ylabel={$I_C$ (mA)},
+  xmode=log, ymode=log,
+  xmin=0.1, xmax=100, ymin=1, ymax=1000,
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+]
+
+  % região segura (aproximada por um polígono em coordenadas log)
+  \fill[manualgreen!14]
+    (axis cs:0.1,1) -- (axis cs:0.1,200) -- (axis cs:3.125,200) --
+    (axis cs:40,15.6) -- (axis cs:40,1) -- cycle;
+
+  % limite de corrente
+  \addplot[manualblue, very thick, domain=0.1:3.125, samples=2] {200};
+  \node[manualblue, anchor=south west, font=\tiny] at (axis cs:0.12,215)
+       {$I_{C(\max)} = 200$ mA};
+
+  % limite de tensão
+  \draw[manualblue, very thick] (axis cs:40,1) -- (axis cs:40,15.6);
+  \node[manualblue, anchor=south, font=\tiny, ] at (axis cs:44,2.5)
+       {$V_{CEO} = 40$ V};
+
+  % limite de potência: Ic(mA) = 625/Vce
+  \addplot[manualred, very thick, domain=3.125:40, samples=60] {625/x};
+  \node[manualred, anchor=west, font=\tiny, align=left] at (axis cs:13,120)
+       {$P_D = 625$ mW\\($I_C V_{CE} = $ const.)};
+
+  % pontos
+  \node[ponto] at (axis cs:5,50) {};
+  \node[manualgreen!55!black, anchor=west, font=\tiny, align=left] at (axis cs:5.6,50)
+       {5 V $\times$ 50 mA $=$ 250 mW: \textbf{dentro}};
+
+  \node[ponto, fill=manualred] at (axis cs:5,100) {};
+  \node[manualred, anchor=south west, font=\tiny, align=left] at (axis cs:1.5,150)
+       {5 V $\times$ 100 mA $=$ 500 mW:\\corrente e tensão dentro dos limites,\\
+        \textbf{e ainda assim fora da SOA}};
+
+  \node[manualgray, anchor=south west, font=\tiny, align=left, text width=4.6cm]
+       at (axis cs:0.115,1.05)
+       {a 25 $^{\circ}$C e em regime contínuo. Mais quente, a reta de potência desce;
+        em pulso curto, ela sobe};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A área de operação segura de um 2N3904, em eixos logarítmicos, onde a hipérbole de potência
+constante vira uma reta. Os três limites se cruzam, e respeitar dois deles não basta.
+:::
+
+Os limites, na ordem em que costumam ser violados:
+
+1. **A hipérbole de potência**, $I_C V_{CE} \le P_D$. É a que pega quase todo mundo, porque
+   ela não corresponde a nenhum número isolado da folha de dados: exige multiplicar dois
+   valores que, cada um por si, estão perfeitamente dentro do permitido. O ponto vermelho da
+   @fig-053-soa é exatamente esse caso.
+2. **$V_{CEO}$**, a tensão de ruptura com a base aberta. Carga indutiva sem diodo de retorno
+   (@sec-cap-029) estoura esse limite em microssegundos.
+3. **$I_{C(\max)}$**, limitada pelos fios de ligação internos e pela metalização.
+4. **Segunda ruptura**, em transistores de potência: um ponto quente localizado concentra a
+   corrente e o dispositivo falha bem **abaixo** da hipérbole de potência, num canto de tensão
+   alta com corrente moderada. Em folha de dados de TO-220 e TO-247, a SOA aparece com um
+   segundo trecho, mais inclinado, marcando essa região.
+
+E o lembrete de sempre, que o @sec-cap-011 já formalizou: $P_D$ é dado a 25 °C. Acima disso,
+derrate — algo como 5 mW/°C num TO-92. A 60 °C de ambiente, os 625 mW viraram uns 450 mW.
+
+::: {.callout-warning}
+## O caso que engana: chave lenta
+
+Uma chave em corte dissipa $\approx 0$ (não há corrente). Em saturação, dissipa
+$I_C V_{CE(\text{sat})}$, que também é pouco. **O perigo está no meio.** Um transistor
+atravessando a região ativa devagar — porque o sinal de comando é lento, ou porque a base foi
+mal acionada — passa pelo pior ponto da hipérbole a cada comutação.
+
+Em chaveamento repetitivo, isso é uma dissipação média proporcional à frequência. É a razão de
+o capítulo 054 insistir em acionamento de base **forte e rápido**, e a mesma razão volta com
+força no Volume 10, no MOSFET de potência.
+:::
+
+## 🧪 Laboratório {#sec-053-lab}
+
+**Levantar a família de curvas características ponto a ponto, extrair a tensão de Early da
+inclinação, desenhar a reta de carga sobre a família e verificar o ponto Q medido, e medir
+$V_{CE(\text{sat})}$ em função do $\beta$ forçado.**
+
+### Material
+
+::: {.lab-material}
+- 1 fonte ajustável de bancada de 0 a 15 V
+- 1 segunda fonte ajustável, ou 1 bateria de 9 V com potenciômetro (para a base)
+- 2 multímetros digitais (com um só, o levantamento dobra de tempo)
+- 1 transistor 2N3904 ou BC547 (use o mesmo exemplar em todas as partes)
+- 1 transistor de potência TIP31C ou BD139, para a Parte 5
+- Resistores: 470 Ω, 1 kΩ, 10 kΩ, 100 kΩ, 220 kΩ, 270 kΩ, 470 kΩ, 1 MΩ
+- 1 potenciômetro de 1 MΩ (linear) e 1 de 100 kΩ
+- Papel milimetrado, ou uma planilha
+- 1 osciloscópio com entrada X-Y, **opcional**, para a variante da Parte 6
+:::
+
+### Parte 1 — Levantar a família
+
+Monte: fonte de base (9 V) → potenciômetro de 1 MΩ em série com 10 kΩ → base. Fonte principal
+→ resistor de 100 Ω → coletor. Emissor ao terra. O resistor de 100 Ω serve para medir $I_C$
+pela queda; ele é pequeno o bastante para quase não alterar $V_{CE}$.
+
+::: {.callout-note}
+Meça $I_B$ **também pela queda num resistor**, não pelo amperímetro em série: 10 kΩ entre o
+potenciômetro e a base, com o voltímetro nas pontas dele, dá $I_B$ sem perturbar a junção. É a
+mesma precaução do @sec-cap-052.
+:::
+
+1. Ajuste o potenciômetro até $I_B = 10$ µA. **Não mexa mais nele durante a varredura.**
+2. Varra a fonte principal e anote $I_C$ (pela queda em 100 Ω) e $V_{CE}$ (medido direto entre
+   coletor e emissor) para os valores da tabela.
+3. Reajuste $I_B$ e repita.
+
+| $V_{CE}$ | $I_B = 10$ µA | 20 µA | 30 µA | 40 µA |
+|---|---|---|---|---|
+| 0,1 V | | | | |
+| 0,2 V | | | | |
+| 0,3 V | | | | |
+| 0,5 V | | | | |
+| 1,0 V | | | | |
+| 2,0 V | | | | |
+| 5,0 V | | | | |
+| 8,0 V | | | | |
+| 10,0 V | | | | |
+
+: A família, ponto a ponto. Confira $I_B$ a cada mudança de $V_{CE}$ — ele deriva um pouco,
+por causa da própria dependência de $V_{CE}$ da @sec-053-entrada. {#tbl-053-lab1}
+
+Marque os pontos. Você acabou de desenhar a @fig-053-familia com o seu transistor.
+
+**O que observar:** as três primeiras linhas caem quase todas dentro da saturação, e é ali que
+está toda a ação vertical. Da quarta linha em diante, as curvas já são platôs.
+
+### Parte 2 — Extrair a tensão de Early
+
+1. Tome a coluna de $I_B = 30$ µA. Use os pontos de $V_{CE} = 2$ V e $V_{CE} = 10$ V.
+2. Calcule a inclinação: $\Delta I_C / \Delta V_{CE}$.
+3. A resistência de saída é o inverso: $r_o = \Delta V_{CE}/\Delta I_C$.
+4. A tensão de Early sai de $V_A = r_o I_C$, com $I_C$ tomado no meio da faixa.
+
+O esperado é $r_o$ de dezenas de quilo-ohms e $V_A$ entre 50 e 150 V. Se der $V_A$ negativa ou
+absurda, quase certamente $I_B$ derivou durante a varredura — refaça conferindo $I_B$ a cada
+ponto.
+
+**A medida é difícil de propósito.** O efeito Early muda $I_C$ em poucos por cento ao longo de
+todo o eixo; é uma diferença pequena entre números grandes, e é exatamente o tipo de medida em
+que o multímetro de 3½ dígitos chega ao limite. Vale fazer, porque entender por que ela é
+difícil vale mais do que o número.
+
+### Parte 3 — A reta de carga, verificada
+
+1. Monte o circuito da @sec-053-retacarga: $V_{CC} = 10$ V, $R_C = 1$ kΩ, $R_B = 270$ kΩ,
+   emissor ao terra.
+2. Meça $V_{CE}$, $I_C$ (pela queda em $R_C$) e $I_B$ (pela queda em $R_B$).
+3. Marque o ponto medido no gráfico da Parte 1, e desenhe a reta de carga por cima.
+
+O ponto tem de cair **sobre a reta**, e sobre a curva de $I_B$ correspondente. Se cair fora da
+reta, há erro de medida; se cair sobre a reta mas em outro $I_B$, o $\beta$ do seu exemplar é
+diferente do que você supôs — e é essa a informação interessante.
+
+4. **Agora troque o transistor** por outro do mesmo lote, sem mexer em mais nada. Meça
+   $V_{CE}$ de novo.
+
+A diferença entre os dois valores de $V_{CE}$, com absolutamente tudo o mais idêntico, é a
+demonstração experimental de por que a polarização por corrente de base fixa não é usável. Se
+um dos exemplares saturar ($V_{CE} < 0{,}3$ V), melhor ainda: o amplificador morreu por troca
+de componente.
+
+### Parte 4 — $V_{CE(\text{sat})}$ e o $\beta$ forçado
+
+Mantenha $R_C = 1$ kΩ e $V_{CC} = 10$ V, e troque $R_B$:
+
+| $R_B$ | $I_B$ | $\beta_{\text{forçado}} = I_C/I_B$ | $V_{CE}$ medida |
+|---|---|---|---|
+| 470 kΩ | 20 µA | | |
+| 220 kΩ | 42 µA | | |
+| 100 kΩ | 93 µA | | |
+| 10 kΩ | 930 µA | | |
+
+: A entrada na saturação, em quatro degraus. Calcule $I_C$ pela queda em $R_C$ e o $\beta$
+forçado com o $I_C$ medido. {#tbl-053-lab2}
+
+O que se espera ver: nas duas primeiras linhas, $V_{CE}$ ainda alta e $\beta_{\text{forçado}}$
+igual ao $\beta$ real. Na terceira, o transistor já está na fronteira. Na quarta,
+$\beta_{\text{forçado}} \approx 10$ e $V_{CE}$ no mínimo — **e note que $I_C$ praticamente não
+mudou entre a terceira e a quarta linha**. Toda a corrente de base extra foi desperdiçada, e
+é isso que "saturação forte" significa.
+
+### Parte 5 — A hipérbole de potência, sentida com o dedo
+
+::: {.callout-warning}
+Esta parte aquece o componente de propósito. Não passe dos valores indicados, não deixe o
+circuito ligado enquanto anota, e encoste no transistor com o **dorso** do dedo.
+:::
+
+1. Monte um TIP31C (TO-220, sem dissipador) com $V_{CC} = 10$ V e $R_C = 100$ Ω.
+2. Ajuste $I_B$ até $V_{CE} = 5$ V. A corrente é de 50 mA e a dissipação, $5 \times 0{,}05 =
+   250$ mW.
+3. Espere um minuto e toque o corpo. Morno.
+4. Aumente $V_{CC}$ para 20 V e reajuste $I_B$ até $V_{CE} = 10$ V. Agora são 100 mA e **1 W**.
+5. Espere trinta segundos e toque. Bem quente. **Desligue.**
+
+O TIP31C aguenta 40 W com dissipador e cerca de 2 W sem ele. Um watt já é inconfortável ao
+toque — e essa é a calibração que falta a quem só leu a folha de dados.
+
+### Parte 6 — A família na tela, de uma vez
+
+**Variante com osciloscópio.** Com um gerador de funções em rampa (ou uma senoide retificada)
+alimentando o coletor através de $R_C$, e o osciloscópio em modo X-Y — X na tensão de coletor,
+Y na queda de $R_C$ —, uma curva inteira aparece na tela em tempo real. Mudando $I_B$ à mão,
+você vê a curva subir e descer: é um traçador de curvas rudimentar, e foi assim que essas
+figuras foram levantadas por décadas.
+
+**Variante simulada (plano B).** No ngspice, a família inteira sai de duas linhas:
+
+```
+.dc vce 0 12 0.05 ib 10u 50u 10u
+.plot dc i(vce)
+```
+
+O varredura aninhada (`ib` como segunda variável) é exatamente o procedimento da Parte 1,
+executado em milissegundos. Para a Parte 2, `.dc vce 2 10 0.1` com o modelo declarando
+`vaf=100` dá a inclinação exata; mudar `vaf` e ver a inclinação mudar é a demonstração direta
+do efeito Early. No Falstad, o componente "transistor" com um resistor de coletor e um
+potenciômetro de base permite arrastar o ponto Q ao longo da reta de carga com o mouse.
+
+## 🔥 Onde Queima {#sec-053-queima}
+
+**Calcular $\beta$ com o transistor saturado.** É o erro mais comum do capítulo. Se
+$V_{CE} < 0{,}3$ V, a razão $I_C/I_B$ é o $\beta$ **forçado** pelo circuito, não o ganho do
+transistor, e ela pode dar 10 num componente cujo $\beta$ é 300. **Sempre confira $V_{CE}$
+antes de dividir.**
+
+**Supor as curvas perfeitamente horizontais.** $r_o = V_A/I_C$ é finita, e ela aparece em
+paralelo com a carga no cálculo de ganho do capítulo 056. Ignorá-la superestima o ganho
+máximo de um emissor comum.
+
+**Polarizar por corrente de base fixa e esperar repetibilidade.** O ponto Q é proporcional a
+$\beta$: 3 para 1 entre exemplares, mais 1 % por grau. O circuito funciona na bancada e falha
+na produção. O conserto é o capítulo 055.
+
+**Respeitar $I_{C(\max)}$ e $V_{CEO}$ e esquecer a hipérbole.** 5 V e 100 mA num 2N3904 estão
+dentro dos dois limites isolados e **fora** da SOA. Multiplique sempre.
+
+**Usar $P_D$ da folha de dados sem derrate.** 625 mW é a 25 °C, no ar livre, com o
+encapsulamento respirando. Dentro de uma caixa, a 50 °C, sobrou pouco mais da metade.
+
+**Deixar o transistor na fronteira entre ativa e saturação.** É a pior região possível:
+$V_{CE}$ instável, dependente do exemplar e da temperatura, e nem o ganho da região ativa nem
+a queda baixa da saturação. Projeto de amplificador fica longe dela; projeto de chave a
+atravessa depressa.
+
+**Comutar devagar por acionamento de base fraco.** O trânsito pela região ativa é onde a
+dissipação instantânea é máxima. Numa chave a 10 kHz, isso vira aquecimento médio real.
+
+**Medir $V_{CE}$ com a ponta de prova em 1× num circuito rápido.** A capacitância da ponta
+carrega o nó de coletor, que costuma ser de impedância alta. Em levantamento de curva CC não
+faz diferença; em qualquer coisa com transitório, mente. É a mesma armadilha do
+@sec-cap-042.
+
+**Esquecer que $I_B$ deriva durante a varredura de $V_{CE}$.** Com a base alimentada por
+resistor a partir de uma fonte fixa, $I_B$ muda um pouco quando $V_{CE}$ muda. Confira $I_B$ a
+cada ponto, ou o efeito Early medido será uma mistura de dois efeitos.
+
+**Confiar na SOA contínua para pulsos, e vice-versa.** Em pulso curto, a massa térmica do
+encapsulamento absorve a energia e a área utilizável é maior — a folha de dados traz curvas
+separadas por largura de pulso. Usar a curva errada erra por uma ordem de grandeza, nos dois
+sentidos.
+
+## O que fica deste capítulo {#sec-053-resumo}
+
+A **característica de saída** é a família $I_C \times V_{CE}$ com $I_B$ como parâmetro, e ela
+tem três regiões:
+
+- **Saturação**, de 0 a uns 0,3 V: as duas junções em direta, $I_C$ decidido pelo circuito
+  externo, $I_C < \beta I_B$. Chave fechada.
+- **Ativa**, o resto do gráfico: $I_C = \beta I_B$, quase independente de $V_{CE}$.
+  Amplificador.
+- **Corte**, sobre o eixo horizontal: só a fuga $I_{CEO}$. Chave aberta.
+
+O espaçamento vertical entre curvas vizinhas **é** $\beta$, e ele não é uniforme.
+
+A **característica de entrada** é a curva de um diodo: os mesmos 60 mV por década, os mesmos
+−2 mV/°C, com $I_B = I_S e^{V_{BE}/V_T}/\beta$.
+
+O **efeito Early** é a inclinação das curvas na região ativa. A depleção da junção BC avança
+para dentro da base quando $V_{CE}$ sobe, a base efetiva encolhe, menos portadores se
+recombinam e $I_C$ sobe:
+
+$$ I_C = \beta I_B\left(1 + \frac{V_{CE}}{V_A}\right), \qquad r_o = \frac{V_A}{I_C},
+   \qquad V_A = 50\ \text{a}\ 150\ \text{V} $$
+
+Com $V_A = 100$ V e $I_C = 2$ mA, $r_o = 50$ kΩ — e é esse número que limita o ganho do
+emissor comum.
+
+A **reta de carga** vem do circuito externo, não do transistor:
+
+$$ I_C = \frac{V_{CC} - V_{CE}}{R_C}, \qquad
+   \text{cortes em } \frac{V_{CC}}{R_C} \text{ e } V_{CC} $$
+
+O circuito escolhe a reta; $I_B$ escolhe o ponto sobre ela. O ponto em repouso é o **ponto
+quiescente Q**, e para amplificação ele vai perto do meio ($V_{CE} \approx V_{CC}/2$), que é
+onde a excursão de sinal é máxima nos dois sentidos.
+
+**A polarização por corrente de base fixa não sobrevive à dispersão de $\beta$.** No exemplo
+numérico, o mesmo circuito dá $V_{CE} = 6{,}6$ V com $\beta = 100$ e satura com $\beta = 300$.
+
+A **saturação** se descreve pelo **$\beta$ forçado**, $I_C/I_B$ imposto pelo circuito. Abaixo
+de 10 ou 20, a saturação é forte e $V_{CE(\text{sat})}$ chega ao mínimo — ao preço de carga
+armazenada na base, que atrasa o desligamento.
+
+A **SOA** são quatro limites simultâneos: $I_{C(\max)}$, $V_{CEO}$, a hipérbole
+$I_C V_{CE} \le P_D$ e, em potência, a segunda ruptura. **A hipérbole é a que pega**, porque
+não corresponde a nenhum número isolado da folha de dados.
+
+## Para o próximo capítulo {#sec-053-fecho}
+
+Este capítulo mostrou o mapa inteiro e recomendou o meio dele para amplificar. O capítulo 054
+faz o oposto: joga o ponto de operação para as **duas pontas** da reta de carga e nunca deixa
+ele parar no meio.
+
+Nas pontas, a dissipação é quase zero — no corte não há corrente, na saturação não há tensão —
+e o transistor vira uma chave que um sinal de 5 V comanda para ligar um relé, um motor ou uma
+lâmpada. As perguntas mudam de natureza: quanta corrente de base garante saturação **com o
+pior exemplar**, o que fazer com a energia da indutância quando a chave abre, quanto tempo
+o transistor leva para desligar depois que a base já foi cortada, e como acionar uma carga
+que não tem um terminal no terra.
+
+O capítulo 054 responde a todas, e ao final o leitor terá acionado uma carga de verdade com
+um transistor pela primeira vez.
