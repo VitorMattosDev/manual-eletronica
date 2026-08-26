@@ -1,3 +1,813 @@
 # Polarização: divisor de base, resistor de emissor e estabilidade térmica {#sec-cap-055}
 
-*(em elaboração)*
+O @sec-cap-054 fez uma chave funcionar com qualquer transistor do saquinho, e conseguiu isso
+por força bruta: se a corrente de base for cinco vezes maior do que o necessário, a saturação
+acontece de qualquer jeito. Chave é um estado, e estados toleram folga.
+
+**Amplificador não.** O ponto quiescente é um ponto, e o @sec-cap-053 já mostrou o estrago com
+números: o mesmo circuito de polarização por corrente de base fixa dá $V_{CE} = 6{,}6$ V com
+$\beta = 100$ e satura com $\beta = 300$. Trocar o transistor por outro do mesmo lote mata o
+amplificador.
+
+São dois inimigos, e eles são independentes:
+
+1. **A dispersão de $\beta$** — 3 para 1 entre exemplares, mais a variação com a corrente
+   (@sec-cap-052).
+2. **A deriva de $V_{BE}$** — −2 mV/°C, com o agravante de que ela **realimenta positivamente**:
+   mais quente, mais corrente, mais quente.
+
+Este capítulo elimina os dois com uma ideia só, e é a ideia mais importante do manual inteiro:
+**realimentação negativa**. Ao final, o ponto de operação vai depender de resistores — que têm
+tolerância de 1 % e coeficiente de temperatura de 100 ppm/°C — em vez de $\beta$ e $V_{BE}$,
+que não têm tolerância nenhuma que se possa usar num projeto.
+
+## Quatro maneiras de polarizar, e três que não servem {#sec-055-quatro}
+
+Vale ver as quatro lado a lado antes de qualquer álgebra, porque a comparação numérica é mais
+convincente que qualquer argumento.
+
+::: {#fig-055-quatro}
+
+```{.tikz}
+%%| filename: 055-quatro
+%%| alt: Quatro esquemas de polarização lado a lado, todos com alimentação de doze volts, resistor de coletor de dois vírgula quatro quilo-ohms e alvo de dois miliampères de corrente de coletor. O primeiro, chamado corrente de base fixa, tem apenas um resistor de oitocentos e vinte quilo-ohms do positivo para a base e o emissor no terra; abaixo dele, os valores de corrente de coletor para beta cinquenta, cento e cinquenta e trezentos são zero vírgula sessenta e sete, dois vírgula zero e quatro vírgula zero miliampères, uma faixa de seis para um, marcada em vermelho como inutilizável. O segundo, chamado realimentação de coletor, tem um resistor de quatrocentos e setenta quilo-ohms ligando o coletor à base em vez do positivo; os valores são zero vírgula noventa e seis, dois vírgula zero e dois vírgula oitenta e cinco miliampères, uma faixa de três para um, marcada em amarelo como melhor mas insuficiente. O terceiro, chamado divisor com resistor de emissor e apresentado como o padrão, tem um divisor de vinte e dois quilo-ohms e quatro vírgula sete quilo-ohms na base e um resistor de seiscentos e vinte ohms no emissor; os valores são dois vírgula zero três, dois vírgula treze e dois vírgula vinte e três miliampères, uma faixa de apenas um vírgula um para um, marcada em verde. O quarto, chamado fonte de corrente com alimentação simétrica, tem a base aterrada por um resistor e o emissor ligado a menos doze volts através de cinco vírgula seis quilo-ohms; os valores são praticamente idênticos nos três betas, marcados em verde como o melhor de todos, com a ressalva de que exige alimentação negativa.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- 1: corrente de base fixa ----------
+  \begin{scope}[shift={(0,0)}]
+    \draw (0,4.6) -- (2.6,4.6);
+    \node[anchor=south, font=\scriptsize] at (1.3,4.65) {$+12$ V};
+    \draw (2.6,4.6) to[R, l_={$2{,}4$ k}] (2.6,2.9);
+    \draw (0,4.6) to[R, l={$820$ k}] (0,2.9);
+    \node[npn, anchor=B] (Qa) at (0,2.3) {};
+    \draw (0,2.9) -- (0,2.3);
+    \draw (Qa.C) -| (2.6,2.9);
+    \draw (Qa.E) -- ++(0,-0.8) node[ground]{};
+    \node[anchor=north, font=\scriptsize\bfseries, align=center] at (1.3,-0.9)
+         {corrente de base fixa};
+  \end{scope}
+
+  % ---------- 2: realimentacao de coletor ----------
+  \begin{scope}[shift={(5.8,0)}]
+    \draw (0,4.6) -- (2.6,4.6);
+    \node[anchor=south, font=\scriptsize] at (1.3,4.65) {$+12$ V};
+    \draw (2.6,4.6) to[R, l_={$2{,}4$ k}] (2.6,2.9);
+    \node[npn, anchor=B] (Qb) at (0,2.3) {};
+    \draw (Qb.C) -| (2.6,2.9);
+    \node[ponto] at (2.6,2.9) {};
+    \draw (0,2.3) -- (0,4.05);
+    \draw (0,4.05) to[R, l={$470$ k}] (2.6,4.05);
+    \draw (2.6,4.05) -- (2.6,2.9);
+    \draw (Qb.E) -- ++(0,-0.8) node[ground]{};
+    \node[anchor=north, font=\scriptsize\bfseries, align=center] at (1.3,-0.9)
+         {realimentação de coletor};
+  \end{scope}
+
+  % ---------- 3: divisor + RE ----------
+  \begin{scope}[shift={(1.4,-7.0)}]
+    \draw (0,4.6) -- (2.6,4.6);
+    \node[anchor=south, font=\scriptsize] at (1.3,4.65) {$+12$ V};
+    \draw (2.6,4.6) to[R, l_={$2{,}4$ k}] (2.6,2.9);
+    \draw (0,4.6) to[R, l={$22$ k}] (0,3.1);
+    \draw (0,3.1) -- (0,2.3);
+    \node[ponto] at (0,2.6) {};
+    \draw (0,2.6) -- (-1.2,2.6);
+    \draw (-1.2,2.6) to[R, l={$4{,}7$ k}] (-1.2,1.0) node[ground]{};
+    \node[npn, anchor=B] (Qc) at (0,2.3) {};
+    \draw (Qc.C) -| (2.6,2.9);
+    \draw (Qc.E) -- ++(0,-0.35) coordinate (ec);
+    \draw (ec) to[R, l={$620$}] ++(0,-1.3) node[ground]{};
+    \node[anchor=north, font=\scriptsize\bfseries, align=center, manualgreen!55!black]
+         at (0.8,-0.9) {divisor $+$ $R_E$ --- \textbf{o padrão}};
+  \end{scope}
+
+  % ---------- 4: fonte de corrente ----------
+  \begin{scope}[shift={(7.2,-7.0)}]
+    \draw (0,4.6) -- (2.6,4.6);
+    \node[anchor=south, font=\scriptsize] at (1.3,4.65) {$+12$ V};
+    \draw (2.6,4.6) to[R, l_={$2{,}4$ k}] (2.6,2.9);
+    \node[npn, anchor=B] (Qd) at (0,2.3) {};
+    \draw (Qd.C) -| (2.6,2.9);
+    \draw (Qd.B) -- (-1.2,2.3);
+    \draw (-1.2,2.3) to[R, l={$10$ k}] (-1.2,0.9) node[ground]{};
+    \draw (Qd.E) -- ++(0,-0.35) coordinate (ed);
+    \draw (ed) to[R, l={$5{,}6$ k}] ++(0,-1.5);
+    \node[anchor=north, font=\scriptsize] at (0,0.2) {$-12$ V};
+    \draw (-0.25,0.4) -- (0.25,0.4);
+    \node[anchor=north, font=\scriptsize\bfseries, align=center] at (0.7,-0.9)
+         {alimentação simétrica};
+  \end{scope}
+
+  % ---------- tabela comparativa ----------
+  \node[anchor=north west, font=\scriptsize, align=left, inner sep=6pt,
+        draw=manualgray, rounded corners=3pt] at (0.0,-8.8)
+       {\begin{tabular}{lcccl}
+          \textbf{polarização} & $\beta=50$ & $\beta=150$ & $\beta=300$ & \textbf{faixa} \\
+          \hline
+          corrente de base fixa & $0{,}67$ mA & $2{,}00$ mA & $4{,}00$ mA
+            & \textcolor{manualred}{$\mathbf{6{:}1}$ --- inutilizável} \\
+          realimentação de coletor & $0{,}96$ mA & $2{,}00$ mA & $2{,}85$ mA
+            & \textcolor{manualyellow}{$3{:}1$ --- insuficiente} \\
+          divisor $+$ $R_E$ & $2{,}03$ mA & $2{,}13$ mA & $2{,}23$ mA
+            & \textcolor{manualgreen!55!black}{$\mathbf{1{,}1{:}1}$ --- serve} \\
+          alimentação simétrica & $2{,}00$ mA & $2{,}02$ mA & $2{,}03$ mA
+            & \textcolor{manualgreen!55!black}{$1{,}015{:}1$ --- melhor} \\
+        \end{tabular}};
+
+  \node[anchor=north west, font=\scriptsize, align=left, text width=13cm, manualblue]
+       at (0.0,-11.8)
+       {Mesma alimentação, mesmo $R_C$, mesmo alvo de $2$ mA. A diferença inteira está em
+        \textbf{quanto do ponto de operação depende de $\beta$} --- e as duas últimas linhas
+        praticamente não dependem.};
+
+\end{tikzpicture}
+```
+
+As quatro polarizações clássicas, com a corrente de coletor calculada para os três valores de
+$\beta$ que um saquinho de 2N3904 entrega. A terceira é a que este capítulo projeta em
+detalhe.
+:::
+
+**Corrente de base fixa.** $I_B$ é fixada pelo resistor, e $I_C = \beta I_B$ segue $\beta$
+diretamente. É a pior polarização possível e a única que aparece em circuito de brinquedo.
+
+**Realimentação de coletor.** O resistor de base vem do **coletor**, não do positivo. Se $I_C$
+sobe, $V_C$ cai, e a corrente de base cai junto: há realimentação negativa. Ela corrige, mas
+só parcialmente — 3 para 1 em vez de 6 para 1 — e tem um efeito colateral sério, que o
+capítulo 056 vai nomear (o mesmo caminho que estabiliza a polarização também realimenta o
+sinal e derruba o ganho e a impedância de entrada).
+
+**Divisor com resistor de emissor.** O padrão da indústria desde os anos 1950. É o assunto do
+resto do capítulo.
+
+**Alimentação simétrica.** Com $-V_{EE}$ disponível, a base vai direto ao terra e o emissor
+puxa corrente por um resistor grande contra a fonte negativa. A corrente fica
+$(V_{EE} - 0{,}7)/R_E$, praticamente independente de tudo. É o esquema usado dentro de todo
+amplificador operacional, e é o melhor — quando existe fonte negativa.
+
+## Por que o resistor de emissor funciona {#sec-055-realimentacao}
+
+O mecanismo é uma malha de causa e efeito que se fecha sobre si mesma.
+
+::: {#fig-055-realimentacao}
+
+```{.tikz}
+%%| filename: 055-realimentacao
+%%| alt: À esquerda, o circuito com divisor de base e resistor de emissor, com uma cadeia causal desenhada em torno dele como um laço fechado de quatro setas. A primeira seta diz que se a corrente de coletor sobe, por qualquer motivo, então a corrente de emissor sobe junto. A segunda diz que a tensão sobre o resistor de emissor sobe. A terceira diz que, como a tensão de base é fixada pelo divisor, a diferença entre base e emissor diminui. A quarta fecha o laço dizendo que menos tensão base-emissor significa menos corrente de coletor, opondo-se à subida original. Uma anotação registra que a correção é automática e vale para qualquer causa da perturbação, seja beta diferente, temperatura ou variação da alimentação. À direita, a redução do divisor ao equivalente de Thévenin: os dois resistores do divisor são substituídos por uma fonte de tensão igual à tensão da alimentação vezes a razão entre o resistor de baixo e a soma dos dois, em série com a resistência de Thévenin, que é o paralelo dos dois resistores. Abaixo, a equação exata da corrente de emissor, que é a diferença entre a tensão de Thévenin e a tensão base-emissor, dividida pela soma do resistor de emissor com a resistência de Thévenin dividida por beta mais um. Está destacado que o termo que contém beta é o único vilão, e que a condição de projeto é fazê-lo pequeno diante do resistor de emissor, o que dá a regra prática de que a resistência de Thévenin deve ser menor que um décimo do produto do menor beta pelo resistor de emissor.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= circuito com o laço =================
+  \begin{scope}
+    \draw (0,5.0) -- (2.6,5.0);
+    \node[anchor=south, font=\scriptsize] at (1.3,5.05) {$+V_{CC}$};
+    \draw (2.6,5.0) to[R, l_=$R_C$] (2.6,3.3);
+    \draw (0,5.0) to[R, l=$R_1$] (0,3.5);
+    \draw (0,3.5) -- (0,2.7);
+    \node[ponto] at (0,3.0) {};
+    \draw (0,3.0) -- (-1.4,3.0);
+    \draw (-1.4,3.0) to[R, l=$R_2$] (-1.4,1.4) node[ground]{};
+    \node[npn, anchor=B] (Q) at (0,2.7) {};
+    \draw (Q.C) -| (2.6,3.3);
+    \draw (Q.E) -- ++(0,-0.35) coordinate (ec);
+    \draw (ec) to[R, l=$R_E$] ++(0,-1.4) node[ground]{};
+    \node[anchor=north, font=\scriptsize, manualblue] at (-0.7,2.88) {$V_B$ fixo};
+    \node[anchor=west, font=\scriptsize] at (0.85,1.5) {$V_E$};
+  \end{scope}
+
+  % ================= a cadeia causal =================
+  \begin{scope}[shift={(4.6,0.4)}]
+    \node[draw=manualred, rounded corners=2pt, anchor=west, font=\scriptsize,
+          inner sep=4pt] (c1) at (0,4.2) {$I_C$ sobe (por qualquer motivo)};
+    \node[draw=manualgray, rounded corners=2pt, anchor=west, font=\scriptsize,
+          inner sep=4pt] (c2) at (0,3.2) {$V_E = I_E R_E$ sobe};
+    \node[draw=manualgray, rounded corners=2pt, anchor=west, font=\scriptsize,
+          inner sep=4pt] (c3) at (0,2.2) {$V_{BE} = V_B - V_E$ \textbf{diminui}};
+    \node[draw=manualgreen!55!black, rounded corners=2pt, anchor=west, font=\scriptsize,
+          inner sep=4pt] (c4) at (0,1.2) {$I_C$ \textbf{desce} --- a subida é anulada};
+
+    \draw[-{Latex[length=2mm]}, thick] (c1) -- (c2);
+    \draw[-{Latex[length=2mm]}, thick] (c2) -- (c3);
+    \draw[-{Latex[length=2mm]}, thick] (c3) -- (c4);
+    \draw[-{Latex[length=2mm]}, thick, manualgreen!55!black]
+         (c4.east) -- ++(0.5,0) -- ++(0,3.0) -- (c1.east);
+
+    \node[anchor=north west, font=\tiny, align=left, text width=6.4cm,
+          manualgreen!55!black] at (0,0.7)
+         {Vale para \textbf{qualquer} causa: exemplar de $\beta$ alto, junção aquecida,
+          alimentação que subiu. O laço não sabe nem precisa saber o motivo --- ele responde
+          ao efeito.};
+  \end{scope}
+
+  % ================= Thévenin =================
+  \begin{scope}[shift={(0.8,-5.6)}]
+    \draw (0,3.4) to[V, l=$V_{Th}$] (0,1.4);
+    \draw (0,3.4) -- (0,3.9);
+    \node[anchor=south, font=\tiny] at (0,3.95) {(terra do sinal)};
+    \draw (0,1.4) to[R, l=$R_{Th}$] (1.8,1.4);
+    \node[npn, anchor=B] (Qt) at (1.8,1.4) {};
+    \draw (Qt.C) -- ++(0,0.9) node[anchor=south, font=\scriptsize] {$R_C$};
+    \draw (Qt.E) -- ++(0,-0.35) coordinate (et);
+    \draw (et) to[R, l=$R_E$] ++(0,-1.3) node[ground]{};
+
+    \node[anchor=north west, font=\scriptsize, align=left] at (-1.6,-1.4)
+         {$V_{Th} = V_{CC}\dfrac{R_2}{R_1+R_2}$ \qquad $R_{Th} = R_1 \parallel R_2$};
+  \end{scope}
+
+  % ================= equação =================
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt] at (5.2,-2.4)
+       {$I_E = \dfrac{V_{Th} - V_{BE}}{R_E + \dfrac{R_{Th}}{\beta+1}}$
+        \qquad
+        \begin{minipage}{6.2cm}
+        O único termo com $\beta$ é
+        $\dfrac{R_{Th}}{\beta+1}$. Faça-o pequeno diante de $R_E$ e o resultado passa a
+        depender só de resistores: \\[3pt]
+        \textbf{regra de projeto:}\quad
+        $R_{Th} \le 0{,}1\,\beta_{\min} R_E$
+        \end{minipage}};
+
+\end{tikzpicture}
+```
+
+O laço de realimentação negativa, a redução de Thévenin do divisor e a equação exata da
+corrente de emissor. Toda a estabilidade está em tornar $R_{Th}/(\beta+1)$ desprezível diante
+de $R_E$.
+:::
+
+Comece pela cadeia causal, que é o argumento físico:
+
+1. Suponha que $I_C$ suba, por qualquer motivo — um exemplar com $\beta$ maior, a junção que
+   aqueceu, a alimentação que oscilou.
+2. $I_E \approx I_C$ sobe junto, e com ela a queda $V_E = I_E R_E$.
+3. A base está presa em $V_B$ pelo divisor. Logo $V_{BE} = V_B - V_E$ **diminui**.
+4. Menos $V_{BE}$ significa menos corrente — a exponencial do @sec-cap-052 — e a subida
+   original é anulada.
+
+O laço se fecha e se opõe à perturbação. É realimentação **negativa**, e ela não precisa saber
+qual foi a causa: responde ao efeito.
+
+A álgebra confirma. Escrevendo a malha da base para o terra, com o divisor já reduzido a
+$V_{Th}$ e $R_{Th}$:
+
+$$ V_{Th} = I_B R_{Th} + V_{BE} + I_E R_E $$
+
+e substituindo $I_B = I_E/(\beta+1)$:
+
+$$ \boxed{\;I_E = \frac{V_{Th} - V_{BE}}{R_E + \dfrac{R_{Th}}{\beta+1}}\;} $$
+
+**Todo o capítulo está nessa fração.** O único lugar onde $\beta$ aparece é o termo
+$R_{Th}/(\beta+1)$ no denominador. Se ele for pequeno diante de $R_E$, a expressão vira
+
+$$ I_E \approx \frac{V_{Th} - V_{BE}}{R_E}, $$
+
+que só contém resistores e uma queda de junção. Daí a regra de projeto clássica:
+
+$$ \boxed{\;R_{Th} \le 0{,}1\,\beta_{\min}\,R_E\;} $$
+
+com $\beta_{\min}$ lido na corrente de operação. É uma regra conservadora — o exemplo da
+próxima seção a viola por 25 % e ainda assim entrega ±5 % —, e por isso vale conhecê-la como
+ponto de partida e **verificar sempre com a expressão exata**.
+
+::: {.callout-note}
+## A mesma ideia, três vezes neste manual
+
+Um divisor rígido fixa a entrada; um resistor devolve uma amostra da saída em oposição; o
+resultado passa a depender de componentes passivos em vez de parâmetros do dispositivo.
+
+Foi o que o Zener fez com a tensão (@sec-cap-050), é o que $R_E$ faz com a corrente aqui, e é
+literalmente o que o amplificador operacional realimentado faz com o ganho, no Volume 11. A
+realimentação negativa **troca desempenho por previsibilidade**, e essa troca é quase sempre
+o negócio certo.
+:::
+
+## O projeto, passo a passo {#sec-055-projeto}
+
+Especificação: $V_{CC} = 12$ V, $I_C = 2$ mA, transistores 2N3904 com $\beta$ entre 50 e 300,
+excursão de sinal a maximizar.
+
+::: {#fig-055-projeto}
+
+```{.tikz}
+%%| filename: 055-projeto
+%%| alt: À esquerda, o esquema do amplificador polarizado, com todos os potenciais de nó anotados. A alimentação é de doze volts. O divisor de base tem vinte e dois quilo-ohms em cima e quatro vírgula sete quilo-ohms embaixo, produzindo uma tensão de base de um vírgula noventa e quatro volts. A tensão de emissor é de um vírgula trinta e três volts, sobre um resistor de emissor de seiscentos e vinte ohms, o que dá dois vírgula catorze miliampères de corrente de emissor. O resistor de coletor de dois vírgula quatro quilo-ohms produz uma queda de cinco vírgula catorze volts, deixando a tensão de coletor em seis vírgula oitenta e seis volts e a tensão coletor-emissor em cinco vírgula cinquenta e três volts. À direita, o orçamento de tensão desenhado como uma barra vertical dividida em três faixas empilhadas que somam os doze volts: embaixo, a faixa da tensão de emissor, de um vírgula trinta e três volt, identificada como o preço da estabilidade; no meio, a faixa da tensão coletor-emissor, de cinco vírgula cinquenta e três volts, identificada como a excursão disponível; em cima, a faixa da queda no resistor de coletor, de cinco vírgula catorze volts, identificada como o que vira ganho. Anotações registram o compromisso: aumentar a tensão de emissor melhora a estabilidade e a linearidade mas rouba excursão, e a prática comum é reservar de dez a vinte por cento da alimentação para ela. Abaixo, a verificação de dispersão: para beta cinquenta, cento e cinquenta e trezentos, as correntes de emissor calculadas pela fórmula exata são dois vírgula zero três, dois vírgula catorze e dois vírgula vinte e três miliampères, uma variação de menos e mais cinco por cento.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquema anotado =================
+  \begin{scope}
+    \draw (-1.4,5.4) -- (2.8,5.4);
+    \node[anchor=south, font=\scriptsize] at (0.7,5.45) {$+12{,}00$ V};
+
+    \draw (2.8,5.4) to[R, l_={$R_C = 2{,}4$ k}] (2.8,3.5);
+    \draw (-1.4,5.4) to[R, l={$R_1 = 22$ k}] (-1.4,3.6);
+    \draw (-1.4,3.6) -- (-1.4,2.8);
+    \node[ponto] at (-1.4,3.1) {};
+    \draw (-1.4,3.1) -- (-2.8,3.1);
+    \draw (-2.8,3.1) to[R, l={$R_2 = 4{,}7$ k}] (-2.8,1.3) node[ground]{};
+
+    \node[npn, anchor=B] (Q) at (-1.4,2.8) {};
+    \draw (Q.C) -| (2.8,3.5);
+    \node[ponto] at (2.8,3.5) {};
+    \draw (Q.E) -- ++(0,-0.4) coordinate (ec);
+    \draw (ec) to[R, l={$R_E = 620$}] ++(0,-1.5) node[ground]{};
+
+    % anotações de nó
+    \node[manualblue, anchor=west, font=\scriptsize] at (-1.15,3.35) {$V_B = 1{,}94$ V};
+    \node[manualblue, anchor=west, font=\scriptsize] at (-0.5,1.55) {$V_E = 1{,}33$ V};
+    \node[manualblue, anchor=west, font=\scriptsize] at (2.95,3.5) {$V_C = 6{,}86$ V};
+    \node[manualgreen!55!black, anchor=west, font=\scriptsize] at (-0.2,2.4)
+         {$V_{CE} = 5{,}53$ V};
+    \node[manualgreen!55!black, anchor=west, font=\scriptsize] at (0.9,0.55)
+         {$I_E = 2{,}14$ mA};
+  \end{scope}
+
+  % ================= orçamento de tensão =================
+  \begin{scope}[shift={(7.4,0.5)}]
+    % 12 V mapeados em 5 cm
+    \fill[manualred!30]   (0,0) rectangle (1.6,0.554);
+    \fill[manualblue!25]  (0,0.554) rectangle (1.6,2.858);
+    \fill[manualgreen!30] (0,2.858) rectangle (1.6,5.0);
+    \draw[thick] (0,0) rectangle (1.6,5.0);
+    \draw[thick] (0,0.554) -- (1.6,0.554);
+    \draw[thick] (0,2.858) -- (1.6,2.858);
+
+    \node[anchor=west, font=\tiny, align=left] at (1.75,0.28)
+         {$V_E = 1{,}33$ V --- \textbf{o preço da estabilidade}};
+    \node[anchor=west, font=\tiny, align=left] at (1.75,1.7)
+         {$V_{CE} = 5{,}53$ V --- \textbf{a excursão disponível}};
+    \node[anchor=west, font=\tiny, align=left] at (1.75,3.93)
+         {$I_C R_C = 5{,}14$ V --- \textbf{o que vira ganho}};
+
+    \draw[{Latex[length=1.4mm]}-{Latex[length=1.4mm]}] (-0.35,0) -- (-0.35,5.0);
+    \node[anchor=east, font=\tiny, rotate=90, anchor=south] at (-0.4,2.5) {$12$ V};
+
+    \node[anchor=north, font=\tiny, align=center, text width=7cm] at (2.6,-0.3)
+         {mais $V_E$: mais estável e mais linear, menos excursão. \textbf{A prática é
+          reservar de $10$ a $20$ \% da alimentação para $V_E$.}};
+  \end{scope}
+
+  % ================= verificação =================
+  \node[draw=manualgreen!55!black, thick, rounded corners=3pt, anchor=north west,
+        align=left, font=\scriptsize, inner sep=7pt] at (-2.8,-1.4)
+       {\textbf{Verificação com a fórmula exata}
+        \quad $V_{Th} = 2{,}112$ V, \; $R_{Th} = 3{,}87$ k$\Omega$ \\[4pt]
+        \begin{tabular}{lccc}
+          $\beta$ & $50$ & $150$ & $300$ \\ \hline
+          $R_{Th}/(\beta+1)$ & $76\ \Omega$ & $26\ \Omega$ & $13\ \Omega$ \\
+          $I_E$ & $2{,}03$ mA & $2{,}14$ mA & $2{,}23$ mA \\
+          $V_{CE}$ & $5{,}77$ V & $5{,}53$ V & $5{,}32$ V \\
+        \end{tabular} \\[4pt]
+        Seis vezes de dispersão em $\beta$ viram \textbf{$\pm 5$ \%} em $I_C$ e menos de
+        meio volt em $V_{CE}$.};
+
+\end{tikzpicture}
+```
+
+O projeto completo, com os potenciais de cada nó, o orçamento de tensão da alimentação e a
+verificação nos três valores de $\beta$.
+:::
+
+**Passo 1 — escolher $V_E$.** Ele é o preço da estabilidade: quanto maior, mais o
+$(V_{Th} - V_{BE})/R_E$ domina, e menos as variações de $V_{BE}$ importam. E é também o
+prejuízo: cada volt em $V_E$ é um volt a menos de excursão. A prática é **10 a 20 % de
+$V_{CC}$**, ou pelo menos 1 V.
+
+$$ V_E = 1{,}2\ \text{V} \qquad\Longrightarrow\qquad
+   R_E = \frac{1{,}2}{2\ \text{mA}} = 600\ \Omega
+   \;\rightarrow\; \mathbf{620}\ \boldsymbol{\Omega}\ \text{(E24)} $$
+
+**Passo 2 — a tensão de base.** $V_B = V_E + V_{BE} = 1{,}2 + 0{,}7 = 1{,}94$ V (usando
+$V_E$ recalculado com o resistor comercial, $2\ \text{mA} \times 620 = 1{,}24$ V).
+
+**Passo 3 — o divisor, e quão rígido ele precisa ser.** A corrente do divisor tem de ser
+grande diante de $I_B$, para que a base não "puxe" a tensão do divisor para baixo. A regra é
+
+$$ I_{\text{div}} \ge 10\,I_{B(\max)} = 10 \times \frac{I_C}{\beta_{\min}}
+   = 10 \times \frac{2\ \text{mA}}{50} = 400\ \mu\text{A} $$
+
+$$ R_2 = \frac{V_B}{I_{\text{div}}} = \frac{1{,}94}{400\ \mu\text{A}} = 4{,}85\ \text{k}\Omega
+   \;\rightarrow\; \mathbf{4{,}7}\ \textbf{k}\boldsymbol{\Omega} $$
+
+$$ R_1 = \frac{V_{CC} - V_B}{I_{\text{div}} + I_{B(\max)}}
+   = \frac{10{,}06}{440\ \mu\text{A}} = 22{,}9\ \text{k}\Omega
+   \;\rightarrow\; \mathbf{22}\ \textbf{k}\boldsymbol{\Omega} $$
+
+**Passo 4 — $R_C$ e o ponto quiescente.** Sobram $12 - 1{,}33 = 10{,}67$ V para dividir entre
+$R_C$ e o transistor. Repartir meio a meio maximizaria a excursão simétrica; na prática se dá
+um pouco mais a $R_C$, porque ele é o que vira ganho (capítulo 056):
+
+$$ R_C = 2{,}4\ \text{k}\Omega \quad\Longrightarrow\quad
+   I_C R_C = 5{,}14\ \text{V}, \quad V_{CE} = 5{,}53\ \text{V} $$
+
+**Passo 5 — verificar com a fórmula exata, nos dois extremos de $\beta$.**
+
+$$ V_{Th} = 12 \times \frac{4{,}7}{22 + 4{,}7} = 2{,}112\ \text{V}, \qquad
+   R_{Th} = 22 \parallel 4{,}7 = 3{,}87\ \text{k}\Omega $$
+
+| $\beta$ | $R_{Th}/(\beta+1)$ | $I_E$ | $V_{CE}$ |
+|---|---|---|---|
+| 50 | 76 Ω | 2,03 mA | 5,77 V |
+| 150 | 26 Ω | 2,14 mA | 5,53 V |
+| 300 | 13 Ω | 2,23 mA | 5,32 V |
+
+: O ponto quiescente para o pior, o típico e o melhor exemplar. Compare com a primeira linha
+da tabela da @fig-055-quatro. {#tbl-055-verif}
+
+Seis vezes de dispersão em $\beta$ produzem **±5 %** em $I_C$ e menos de meio volt em $V_{CE}$.
+A regra conservadora pedia $R_{Th} \le 3{,}1$ kΩ e o projeto ficou com 3,87 kΩ — violando-a em
+25 % e ainda assim entregando um resultado excelente. **É por isso que a verificação exata
+manda, e a regra só orienta.**
+
+**Passo 6 — verificar a temperatura.** Com $V_{BE}$ caindo 2 mV/°C e $V_{Th}$ fixo, o numerador
+da fração **aumenta** 2 mV por grau:
+
+$$ \frac{\Delta I_E}{\Delta T} = \frac{2\ \text{mV/}^{\circ}\text{C}}{620\ \Omega}
+   = 3{,}2\ \mu\text{A/}^{\circ}\text{C} $$
+
+Numa excursão de 0 a 70 °C, isso são 224 µA sobre 2,14 mA — cerca de **+10 %**. Aceitável,
+previsível, e sem nenhuma tendência a fugir.
+
+::: {.callout-important}
+## O contraste que justifica o capítulo
+
+Polarize a mesma etapa fixando $V_{BE}$ com um divisor rígido e **sem** $R_E$. Os mesmos 70 °C
+deslocam $V_{BE}$ em 140 mV, e a exponencial do @sec-cap-052 responde com
+
+$$ \frac{I_{C2}}{I_{C1}} = e^{0{,}140/0{,}026} = 217 $$
+
+Duzentas vezes, contra os 10 % de agora. Na prática o transistor não chega a 217 vezes: ele
+satura, ou queima, ou entra em **fuga térmica** — mais corrente aquece mais, o que dá ainda
+mais corrente. **$R_E$ é o que impede isso**, e é por isso que ele não é opcional.
+:::
+
+## A fuga térmica, e o resistor de emissor em potência {#sec-055-fuga}
+
+Em transistor de sinal, com 20 mW de dissipação, a fuga térmica é uma curiosidade. Em
+potência, é um modo de morte comum.
+
+A condição de estabilidade térmica é uma comparação entre dois efeitos: quanto a dissipação
+aquece a junção, e quanto o aquecimento aumenta a dissipação. Se o segundo superar o primeiro,
+o processo diverge.
+
+$$ \frac{\partial P_D}{\partial T_J} \cdot R_{\theta JA} < 1 $$
+
+::: {#fig-055-temperatura}
+
+```{.tikz}
+%%| filename: 055-temperatura
+%%| alt: Gráfico da corrente de coletor em função da temperatura, de zero a oitenta graus Celsius no eixo horizontal e de zero a seis miliampères no eixo vertical, para três polarizações diferentes, todas ajustadas para dois miliampères a vinte e cinco graus. A curva do divisor com resistor de emissor é praticamente uma reta horizontal, subindo de dois vírgula zero seis a dois vírgula trinta e dois miliampères ao longo de toda a faixa, uma variação de cerca de dez por cento. A curva da polarização por corrente de base fixa sobe de forma moderada, de um vírgula seis a dois vírgula nove miliampères, acompanhando o aumento do beta com a temperatura. A curva da polarização por tensão base-emissor fixa é uma exponencial que dispara: ela já dobra por volta dos trinta e quatro graus e sai pela borda superior do gráfico antes dos quarenta graus, com uma anotação registrando que na prática ela não chega lá, porque o transistor satura, ou entra em fuga térmica e queima. Uma faixa sombreada marca a região de operação típica de vinte a setenta graus.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13cm, height=8.2cm,
+  xlabel={temperatura da junção ($^{\circ}$C)}, ylabel={$I_C$ (mA)},
+  xmin=0, xmax=80, ymin=0, ymax=6,
+  xtick={0,10,20,30,40,50,60,70,80},
+  ytick={0,1,2,3,4,5,6},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+]
+
+  \fill[manualgray!12] (axis cs:20,0) rectangle (axis cs:70,6);
+  \node[manualgray, anchor=south, font=\tiny] at (axis cs:45,0.08)
+       {faixa de operação típica};
+
+  % VBE fixa: exponencial
+  \addplot[manualred, very thick, domain=0:39.3, samples=120]
+    {2*exp((x-25)/13)};
+  \node[manualred, anchor=south west, font=\tiny, align=left]
+       at (axis cs:41,4.4)
+       {$V_{BE}$ \textbf{fixa, sem} $R_E$:\\dobra a cada $9\ ^{\circ}$C.\\
+        Na prática não chega aqui ---\\satura, ou entra em \textbf{fuga térmica}};
+  \draw[manualred, -{Latex[length=2mm]}, thick]
+       (axis cs:39.3,5.7) -- (axis cs:40.8,5.95);
+
+  % corrente de base fixa: Ic = beta(T)*Ib, beta sobe 0,8 %/C
+  \addplot[manualyellow, very thick, domain=0:80, samples=2]
+    {2*(1+0.008*(x-25))};
+  \node[manualyellow, anchor=west, font=\tiny, align=left] at (axis cs:60,3.35)
+       {corrente de base fixa:\\$\beta$ sobe $0{,}8$ \%/$^{\circ}$C};
+
+  % divisor + RE
+  \addplot[manualgreen!55!black, very thick, domain=0:80, samples=2]
+    {2.06+0.0032*x};
+  \node[manualgreen!55!black, anchor=west, font=\tiny, align=left] at (axis cs:47,1.5)
+       {divisor $+$ $R_E$: $+10$ \% em $70\ ^{\circ}$C};
+  \draw[manualgreen!55!black, thin] (axis cs:52,1.72) -- (axis cs:56,2.24);
+
+\end{axis}
+\end{tikzpicture}
+```
+
+A mesma corrente de repouso de 2 mA, obtida de três maneiras, em função da temperatura. A
+diferença não é de grau: é entre um circuito que deriva 10 % e um que se autodestrói.
+:::
+
+Três providências, em ordem de importância:
+
+1. **Resistor de emissor**, pelo mecanismo deste capítulo inteiro.
+2. **Resistência térmica baixa** — dissipador, pasta térmica —, o que reduz $R_{\theta JA}$ e o
+   ganho do laço térmico. O @sec-cap-011 tem a conta.
+3. **Não polarizar por $V_{BE}$ fixa** em nada que dissipe mais que algumas centenas de
+   miliwatts.
+
+::: {.callout-note}
+## Resistores de balanceamento em transistores paralelos
+
+Dois transistores de potência em paralelo, sem nada entre eles, **não** dividem a corrente. O
+que tiver $V_{BE}$ ligeiramente menor puxa mais, esquenta mais, tem $V_{BE}$ ainda menor, e
+acaba com toda a corrente — o mesmo mecanismo do paralelo de diodos do @sec-cap-047.
+
+O conserto é o mesmo deste capítulo: um resistor de emissor pequeno em cada transistor, de
+0,1 a 0,47 Ω, chamado **resistor de balanceamento** ou *ballast*. Ele custa alguns décimos de
+volt de queda e converte um arranjo instável em um estável. Todo amplificador de áudio com
+saída em paralelo tem esses resistores, e eles são visíveis a olho nu na placa.
+:::
+
+## O que o resistor de emissor custa {#sec-055-custo}
+
+Realimentação negativa troca desempenho por previsibilidade, e a conta chega em três parcelas:
+
+**Excursão.** $V_E$ é tensão que a saída não pode usar. Com 12 V de alimentação, reservar
+1,33 V para $V_E$ deixa 5,53 V de $V_{CE}$ em repouso, o que limita a excursão em torno de Q.
+
+**Ganho.** Este é o custo grande, e o capítulo 056 vai quantificá-lo: com $R_E$ presente em
+CA, o ganho de tensão do emissor comum despenca de $-g_m R_C$ para $\approx -R_C/R_E$ — no
+projeto acima, de umas 200 vezes para 3,9 vezes.
+
+A saída clássica é um **capacitor de desvio** (*bypass*) em paralelo com $R_E$: em CC ele é
+circuito aberto e a polarização continua estabilizada; em CA ele é curto e $R_E$ desaparece do
+caminho do sinal. Ganha-se estabilidade **e** ganho — ao custo de piorar a linearidade e a
+impedância de entrada, o que é exatamente a discussão do capítulo 056.
+
+**Impedância de entrada.** O divisor $R_1 \parallel R_2$ — 3,87 kΩ no projeto — aparece em
+paralelo com a entrada do transistor e carrega a fonte de sinal. Divisor mais rígido dá
+polarização melhor e impedância de entrada pior. É um compromisso direto, e o capítulo 056 o
+resolve com números.
+
+## O mesmo circuito com PNP {#sec-055-pnp}
+
+Tudo se inverte e nada muda. Emissor no **positivo**, $R_E$ entre o emissor e $V_{CC}$,
+coletor para o terra através de $R_C$, divisor de base com as mesmas proporções medidas a
+partir de $V_{CC}$:
+
+$$ V_{EB} = V_{CC} - V_E - \ldots \qquad
+   I_E = \frac{(V_{CC} - V_{Th}) - 0{,}7}{R_E + R_{Th}/(\beta+1)} $$
+
+A fórmula é a mesma, com as tensões medidas a partir do positivo em vez do terra. O erro comum
+é montar o divisor com $R_1$ e $R_2$ trocados: num PNP, o resistor **de cima** é o que fixa a
+tensão em relação ao emissor.
+
+## 🧪 Laboratório {#sec-055-lab}
+
+**Montar as três polarizações lado a lado, trocar os transistores nas três e medir a dispersão
+do ponto quiescente; depois aquecer as três e medir a deriva.**
+
+### Material
+
+::: {.lab-material}
+- 1 fonte ajustável de bancada de 0 a 15 V
+- 2 multímetros digitais
+- **4 transistores 2N3904 ou BC547**, comprados soltos, de preferência de lotes diferentes
+- Resistores (E24, 1/4 W): 620 Ω, 1 kΩ, 2,4 kΩ, 4,7 kΩ, 10 kΩ, 22 kΩ, 47 kΩ, 470 kΩ, 820 kΩ
+- 1 potenciômetro de 10 kΩ (multivoltas, se houver)
+- 1 capacitor de 100 µF eletrolítico (para a variante da Parte 6)
+- 1 ferro de solda (só como fonte de calor) e 1 lata de ar comprimido invertida, ou gelo em
+  saco plástico, para esfriar
+- Protoboard, jumpers
+:::
+
+::: {.callout-note}
+Este roteiro tem valor científico se você **numerar os transistores** com caneta e usar sempre
+os mesmos quatro, na mesma ordem, nos três circuitos. A comparação é entre polarizações, não
+entre exemplares — e só numerando se garante isso.
+:::
+
+### Parte 1 — Medir o $\beta$ dos quatro exemplares
+
+Antes de tudo, caracterize a sua amostra pelo método da Parte 4 do laboratório do
+@sec-cap-052: $R_C = 2{,}4$ kΩ, $R_B = 470$ kΩ, $V_{CC} = 12$ V, emissor ao terra.
+
+| Transistor | $I_B$ | $I_C$ | $\beta$ |
+|---|---|---|---|
+| \#1 | | | |
+| \#2 | | | |
+| \#3 | | | |
+| \#4 | | | |
+
+: Os quatro exemplares, caracterizados. Confirme $V_{CE} > 1$ V antes de dividir.
+{#tbl-055-lab1}
+
+Guarde esses números: eles são a variável independente de todo o resto do laboratório.
+
+### Parte 2 — Polarização por corrente de base fixa
+
+Monte: $V_{CC} = 12$ V, $R_C = 2{,}4$ kΩ, $R_B = 820$ kΩ do positivo à base, emissor ao terra.
+
+Meça $V_{CE}$ e $I_C$ com **cada um dos quatro transistores**, sem mudar mais nada.
+
+| Transistor | $\beta$ (Parte 1) | $I_C$ | $V_{CE}$ |
+|---|---|---|---|
+| \#1 | | | |
+| \#2 | | | |
+| \#3 | | | |
+| \#4 | | | |
+
+: A polarização por corrente de base fixa, com quatro exemplares. {#tbl-055-lab2}
+
+Trace $I_C$ contra $\beta$. A relação é uma **reta pela origem** — é literalmente
+$I_C = \beta I_B$. Se algum exemplar saturou ($V_{CE} < 0{,}5$ V), anote: o amplificador
+morreu por troca de componente, e essa é a demonstração central do capítulo.
+
+### Parte 3 — Divisor com resistor de emissor
+
+Monte o circuito da @fig-055-projeto: $R_1 = 22$ kΩ, $R_2 = 4{,}7$ kΩ, $R_C = 2{,}4$ kΩ,
+$R_E = 620$ Ω.
+
+Com o transistor \#1, meça e confira contra o projeto:
+
+| Nó | Previsto | Medido |
+|---|---|---|
+| $V_B$ | 1,94 V | |
+| $V_E$ | 1,33 V | |
+| $V_C$ | 6,86 V | |
+| $V_{BE} = V_B - V_E$ | 0,70 V | |
+| $I_E = V_E/620$ | 2,14 mA | |
+
+: A conferência nó a nó. Meça sempre **contra o terra**, e calcule as diferenças.
+{#tbl-055-lab3}
+
+Agora repita $V_{CE}$ e $I_C$ com os quatro transistores e compare a dispersão com a da
+@tbl-055-lab2. Você deve ver algo como 6:1 na Parte 2 contra menos de 1,15:1 aqui.
+
+### Parte 4 — Realimentação de coletor
+
+Troque o $R_B$ de 820 kΩ pela ligação **do coletor à base** com 470 kΩ, retirando $R_E$.
+Meça os quatro exemplares de novo.
+
+A dispersão fica no meio do caminho entre as duas anteriores. Isso confirma que a correção
+existe e é parcial — e o capítulo 056 explica por que ela não é a escolha preferida mesmo
+assim.
+
+### Parte 5 — A deriva térmica, nos três circuitos
+
+::: {.callout-warning}
+Aproxime o ferro de solda quente do **corpo** do transistor, sem encostar, por poucos
+segundos. Não aqueça a protoboard, que deforma.
+:::
+
+Com o transistor \#1 fixo, em cada um dos três circuitos:
+
+1. Anote $V_{CE}$ à temperatura ambiente.
+2. Aqueça o transistor por dez segundos e anote $V_{CE}$ de novo.
+3. Deixe esfriar (ou acelere com o ar comprimido invertido) e confirme que a leitura volta.
+
+| Circuito | $V_{CE}$ frio | $V_{CE}$ quente | $\Delta$ |
+|---|---|---|---|
+| base fixa | | | |
+| realimentação de coletor | | | |
+| divisor $+$ $R_E$ | | | |
+
+: A deriva térmica das três polarizações. {#tbl-055-lab4}
+
+O circuito com $R_E$ mal se move. Os outros dois derivam de forma clara, e o de base fixa
+tende a **continuar derivando** enquanto o calor estiver ali — que é a fuga térmica começando.
+
+### Parte 6 — Quão rígido o divisor precisa ser
+
+De volta ao circuito da Parte 3, substitua $R_2$ por valores cada vez maiores, reajustando
+$R_1$ para manter $V_B$ na mesma vizinhança:
+
+| $R_1$ | $R_2$ | $R_{Th}$ | $I_{\text{div}}$ | $I_C$ medida (\#1 e \#4) |
+|---|---|---|---|---|
+| 22 kΩ | 4,7 kΩ | 3,9 kΩ | 400 µA | |
+| 47 kΩ | 10 kΩ | 8,2 kΩ | 190 µA | |
+| 220 kΩ | 47 kΩ | 39 kΩ | 40 µA | |
+| 1 MΩ | 220 kΩ | 180 kΩ | 9 µA | |
+
+: O divisor perdendo rigidez. Meça sempre com os dois exemplares de $\beta$ mais diferente.
+{#tbl-055-lab5}
+
+A dispersão entre \#1 e \#4 **cresce linha a linha**, e na última o circuito voltou a se
+comportar como polarização por corrente de base. Você acabou de medir o termo
+$R_{Th}/(\beta+1)$ deixando de ser desprezível.
+
+7. **O capacitor de desvio.** Ponha 100 µF em paralelo com $R_E$ (positivo para o emissor) e
+   confira que **nada muda em CC** — todas as tensões continuam iguais. O efeito dele é só em
+   CA, e é o assunto do próximo capítulo.
+
+**Variante simulada (plano B).** No ngspice, a demonstração inteira cabe num `.step`:
+declare o modelo do transistor com `bf=50`, `bf=150` e `bf=300` e rode `.op` para cada
+polarização. A tabela da @fig-055-quatro sai pronta. Para a Parte 5, `.temp 0 25 50 75` mostra
+a deriva sem ferro de solda, e comparar as colunas dos quatro circuitos é a lição do capítulo
+em uma tela. No Falstad, o circuito "Common emitter amplifier" já vem com divisor e $R_E$; o
+menu do transistor permite mudar $\beta$ ao vivo e ver o ponto Q quase não se mexer.
+
+## 🔥 Onde Queima {#sec-055-queima}
+
+**Polarizar por corrente de base fixa em qualquer coisa que precise funcionar duas vezes.**
+O ponto Q é proporcional a $\beta$. Funciona na bancada, falha na segunda unidade montada.
+
+**Fixar $V_{BE}$ com um divisor rígido e sem $R_E$.** É a receita da fuga térmica: −2 mV/°C
+com $V_{BE}$ presa multiplica a corrente por duzentos numa excursão de 70 °C. Em potência,
+isso destrói o transistor em segundos.
+
+**Fazer $R_E$ pequeno demais para economizar excursão.** Abaixo de uns 10 % de $V_{CC}$ em
+$V_E$, a queda deixa de dominar a variação de $V_{BE}$ e a estabilidade some. Se a excursão não
+cabe, o problema é a alimentação, não $R_E$.
+
+**Usar um divisor de alta impedância para economizar consumo.** A regra
+$I_{\text{div}} \ge 10 I_B$ existe porque a base **puxa** corrente. Com o divisor mole, $V_B$
+cai quando $\beta$ é baixo e o circuito volta a depender de $\beta$ — como a Parte 6 do
+laboratório mede linha a linha.
+
+**Aplicar a regra $R_{Th} \le 0{,}1\beta R_E$ com o $\beta$ típico.** Ela só protege se for
+usada com o $\beta$ **mínimo**, e na corrente de operação. Com $\beta$ típico ela dá uma falsa
+sensação de margem.
+
+**Esquecer que $R_E$ mata o ganho em CA.** Sem capacitor de desvio, $A_v \approx -R_C/R_E$:
+o projeto deste capítulo daria ganho de 3,9 em vez de 200. Não é defeito — é o próximo
+capítulo.
+
+**Ligar o capacitor de desvio com a polaridade invertida.** O emissor é positivo em relação ao
+terra num NPN. Eletrolítico invertido abre, esquenta e às vezes explode. E o pior: com ele
+aberto, o circuito **continua funcionando**, só que com um trigésimo do ganho — um defeito que
+não se vê no multímetro.
+
+**Não verificar a dissipação do próprio divisor.** Um divisor de 400 µA em 12 V consome
+4,8 mW, o que é nada. Um divisor de 4 mA consome 48 mW, o que já é comparável ao consumo da
+etapa. Em circuito a bateria, a polarização pode custar mais que o sinal.
+
+**Paralelar transistores de potência sem resistor de balanceamento.** Sem os 0,1 a 0,47 Ω em
+cada emissor, o de menor $V_{BE}$ toma toda a corrente. É o mesmo mecanismo dos diodos em
+paralelo do @sec-cap-047.
+
+**Trocar $R_1$ por $R_2$ num circuito PNP.** No PNP as tensões se medem a partir do positivo, e
+o resistor de cima é o que fixa a tensão relativa ao emissor. Montado ao contrário, o
+transistor fica cortado ou saturado.
+
+**Confiar em $V_{BE} = 0{,}7$ V ao medir.** Meça $V_B$ e $V_E$ contra o terra e subtraia. Se a
+diferença der 0,6 V, a corrente é menor do que você projetou; se der 0,75 V, é maior. Essa
+diferença é o instrumento de diagnóstico mais rápido que existe num estágio polarizado.
+
+## O que fica deste capítulo {#sec-055-resumo}
+
+São **dois inimigos**: a dispersão de $\beta$ (3 para 1 entre exemplares) e a deriva de
+$V_{BE}$ (−2 mV/°C, com realimentação positiva embutida). Uma única providência resolve os
+dois: **realimentação negativa por resistor de emissor**.
+
+O mecanismo é uma cadeia causal fechada: $I_C \uparrow \Rightarrow V_E \uparrow \Rightarrow
+V_{BE} \downarrow \Rightarrow I_C \downarrow$. Ele não precisa saber a causa da perturbação.
+
+A equação exata, com o divisor reduzido a Thévenin:
+
+$$ I_E = \frac{V_{Th} - V_{BE}}{R_E + \dfrac{R_{Th}}{\beta+1}}, \qquad
+   V_{Th} = V_{CC}\frac{R_2}{R_1+R_2}, \qquad R_{Th} = R_1 \parallel R_2 $$
+
+**O único termo com $\beta$ é $R_{Th}/(\beta+1)$.** Torná-lo desprezível diante de $R_E$ é o
+projeto inteiro, e a regra de partida é $R_{Th} \le 0{,}1\,\beta_{\min} R_E$ — conservadora, e
+sempre a ser confirmada pela fórmula exata nos dois extremos de $\beta$.
+
+**O procedimento, em seis passos:**
+
+1. $V_E$ entre 10 e 20 % de $V_{CC}$ (ou pelo menos 1 V) → $R_E = V_E/I_C$.
+2. $V_B = V_E + 0{,}7$.
+3. $I_{\text{div}} \ge 10\,I_{B(\max)}$ → $R_2 = V_B/I_{\text{div}}$,
+   $R_1 = (V_{CC}-V_B)/(I_{\text{div}}+I_B)$.
+4. $R_C$ com o que sobra, repartido entre queda e $V_{CE}$.
+5. Verificar $I_E$ e $V_{CE}$ com $\beta_{\min}$ e $\beta_{\max}$.
+6. Verificar a deriva térmica: $\Delta I_E/\Delta T = (2\ \text{mV/}^{\circ}\text{C})/R_E$.
+
+No exemplo — 12 V, 2 mA, $R_E = 620\ \Omega$, divisor de 22 k/4,7 k, $R_C = 2{,}4$ kΩ — seis
+vezes de dispersão em $\beta$ viram **±5 %** em $I_C$, e 70 °C viram +10 %. A mesma etapa com
+$V_{BE}$ fixa variaria **duzentas vezes**.
+
+**O custo** vem em três parcelas: excursão perdida em $V_E$, ganho de tensão derrubado para
+$\approx -R_C/R_E$, e impedância de entrada carregada pelo divisor. As três são o assunto do
+próximo capítulo.
+
+Em potência, o mesmo resistor de emissor é o que impede a **fuga térmica**, e a versão miniatura
+dele — 0,1 a 0,47 Ω por transistor — é o que faz dispositivos em paralelo dividirem a corrente.
+
+## Para o próximo capítulo {#sec-055-fecho}
+
+O ponto de operação agora é estável, previsível e repetível. Falta a razão de existir de tudo
+isso: **o sinal**.
+
+O capítulo 056 aplica uma tensão pequena na base do circuito que acabamos de projetar e mede o
+que sai do coletor. As perguntas são de outra natureza:
+
+- Quanto vale o ganho, e de que ele depende? A resposta envolve uma grandeza nova, a
+  **transcondutância** $g_m = I_C/V_T$, que sai direto da exponencial do @sec-cap-052 e não
+  depende de $\beta$ nenhum.
+- Por que a saída aparece **invertida** em relação à entrada, e o que isso significa.
+- Quanto o estágio carrega a fonte de sinal, e quanto ele consegue entregar à etapa seguinte —
+  impedância de entrada e de saída, os dois números que decidem se dois blocos podem ser
+  ligados um no outro.
+- Até que amplitude a saída continua parecida com a entrada, e o que exatamente acontece
+  quando ela deixa de ser: **distorção e ceifamento**.
+- E o compromisso central do estágio: o capacitor de desvio devolve o ganho e leva embora a
+  linearidade. A solução é uma dose parcial de $R_E$ em CA, e ela tem nome —
+  **degeneração de emissor**.
