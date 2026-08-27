@@ -1,3 +1,1023 @@
 # JFET e MOSFET: princípio de funcionamento {#sec-cap-059}
 
-*(em elaboração)*
+O Volume 9 inteiro girou em torno de uma frase: no transistor bipolar, **corrente controla
+corrente**. Uma corrente de base pequena comanda uma corrente de coletor $\beta$ vezes maior, e
+quase todo problema prático do volume — a dispersão de $\beta$, a deriva de $V_{BE}$, a
+impedância de entrada finita, a necessidade de um divisor de base rígido — nasce do fato de
+que a entrada **consome** alguma coisa.
+
+Este volume começa com um dispositivo em que ela não consome. No transistor de efeito de campo
+— o FET —, **tensão controla corrente**, e o terminal de controle é, em corrente contínua, um
+circuito aberto. Não há $\beta$. Não há divisor rígido. Não há corrente de base a somar no
+orçamento. Um resistor de 1 MΩ na entrada é perfeitamente normal.
+
+Em troca, aparecem três coisas novas que o bipolar não tinha: um limiar de condução
+($V_{th}$) que varia de peça para peça de um fator dois ou três, uma porta que é um
+**capacitor** — e que por isso puxa corrente de pico enorme durante a comutação —, e uma
+camada de óxido de poucas dezenas de nanômetros que a eletricidade estática do seu corpo
+consegue furar em silêncio.
+
+Este capítulo cobre a física: por que um campo elétrico controla corrente sem gastar corrente,
+como o JFET e o MOSFET fazem isso de maneiras diferentes, o que os símbolos querem dizer, e
+que armadilhas práticas vêm junto. As curvas ficam para o @sec-cap-060 e o chaveamento de
+potência para o @sec-cap-061.
+
+## Duas maneiras de controlar corrente {#sec-059-duascontroles}
+
+::: {#fig-059-controle}
+
+```{.tikz}
+%%| filename: 059-controle
+%%| alt: Comparação lado a lado de dois circuitos. À esquerda, um transistor bipolar NPN com um resistor de base ligado a uma fonte de controle e um resistor de coletor ligado a doze volts. Uma seta vermelha indica corrente entrando pela base, anotada como quatorze microampères, e uma seta azul indica corrente saindo pelo coletor, anotada como dois miliampères. Abaixo, o texto: corrente controla corrente, e a entrada consome. À direita, um MOSFET de canal N com a porta ligada diretamente a uma fonte de controle sem resistor de polarização e um resistor de dreno ligado a doze volts. Uma anotação sobre a porta registra corrente de porta de aproximadamente um nanoampère, com o comentário de que é fuga do óxido, e uma seta azul indica dois miliampères no dreno. Abaixo, o texto: tensão controla corrente, e a entrada não consome nada em corrente contínua. Entre os dois circuitos, uma tabela compara a razão entre a corrente de saída e a corrente de entrada: cento e cinquenta no bipolar, dois milhões no MOSFET.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= BJT =================
+  \begin{scope}
+    \node[anchor=south, font=\small\bfseries] at (1.6,3.6) {bipolar};
+
+    \node[npn, anchor=B] (Q) at (1.6,0.6) {};
+    \draw (Q.C) to[R, l=$R_C$, *-] ++(0,2.0) node[vcc]{$12$ V};
+    \draw (Q.E) -- ++(0,-0.8) node[ground]{};
+    \draw (Q.B) to[R, l_=$R_B$] ++(-2.2,0) coordinate(vin);
+    \draw (vin) -- ++(-0.5,0) node[anchor=east, font=\small] {$v_{in}$};
+
+    \draw[-{Latex[length=2mm]}, manualred, very thick] (-0.2,0.95) -- (0.4,0.95);
+    \node[manualred, anchor=south, font=\scriptsize] at (0.1,1.05) {$14\ \mu$A};
+
+    \draw[-{Latex[length=2mm]}, manualblue, very thick] (2.35,2.3) -- (2.35,1.7);
+    \node[manualblue, anchor=west, font=\scriptsize] at (2.45,2.0) {$2$ mA};
+
+    \node[anchor=north, align=center, font=\scriptsize, text width=4.2cm] at (1.4,-2.0)
+      {\textbf{corrente controla corrente}\\ a entrada \emph{consome}};
+  \end{scope}
+
+  % ================= MOSFET =================
+  \begin{scope}[shift={(8.4,0)}]
+    \node[anchor=south, font=\small\bfseries] at (1.6,3.6) {MOSFET};
+
+    \node[nigfete, anchor=G] (M) at (1.6,0.6) {};
+    \draw (M.D) to[R, l=$R_D$, *-] ++(0,2.0) node[vcc]{$12$ V};
+    \draw (M.S) -- ++(0,-0.8) node[ground]{};
+    \draw (M.G) -- ++(-2.7,0) coordinate(vin2);
+    \draw (vin2) -- ++(-0.5,0) node[anchor=east, font=\small] {$v_{in}$};
+
+    \draw[-{Latex[length=2mm]}, manualred, very thick] (-0.2,0.95) -- (0.4,0.95);
+    \node[manualred, anchor=south, font=\scriptsize, align=center] at (0.1,1.05)
+      {$\approx 1$ nA\\[-1pt]\tiny(fuga do óxido)};
+
+    \draw[-{Latex[length=2mm]}, manualblue, very thick] (2.35,2.3) -- (2.35,1.7);
+    \node[manualblue, anchor=west, font=\scriptsize] at (2.45,2.0) {$2$ mA};
+
+    \node[anchor=north, align=center, font=\scriptsize, text width=4.6cm] at (1.4,-2.0)
+      {\textbf{tensão controla corrente}\\ a entrada não consome \emph{nada} em CC};
+  \end{scope}
+
+  % ================= comparação =================
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=center,
+        font=\scriptsize, inner sep=6pt] at (6.0,-3.4)
+       {\begin{tabular}{lcc}
+          & bipolar & MOSFET \\ \hline
+          $I_{\text{saída}} / I_{\text{entrada}}$ & $150$ & $2\,000\,000$ \\
+        \end{tabular}};
+
+\end{tikzpicture}
+```
+
+O mesmo trabalho — 2 mA numa carga — feito pelos dois dispositivos. O que muda é o preço
+cobrado da fonte de sinal.
+:::
+
+Os dois circuitos da @fig-059-controle entregam 2 mA à carga. O bipolar cobra 14 µA da fonte
+de sinal para isso; o MOSFET cobra um nanoampère, que é fuga, não sinal. A razão entre a
+corrente controlada e a corrente de controle é 150 num caso e dois milhões no outro.
+
+O mecanismo por trás dessa diferença é físico, e vale entender antes de qualquer fórmula.
+
+No bipolar, a corrente de coletor **existe porque** portadores foram injetados na base pela
+junção base-emissor. Injetar portadores é fazer corrente atravessar uma junção polarizada
+diretamente, e nenhuma junção conduz de graça. A corrente de base é uma perda inevitável do
+processo de injeção — não é um efeito colateral que um projeto melhor eliminaria.
+
+No FET, não há injeção. Existe um pedaço de silício dopado — o **canal** — ligando os dois
+terminais de potência, e existe um eletrodo de controle, a **porta**, que fica **do lado de
+fora do canal**, separado dele por uma barreira isolante. A porta não injeta nada: ela cria um
+campo elétrico, e o campo muda a quantidade de portadores livres disponível dentro do canal.
+Mais portadores, mais condução. Menos portadores, menos condução.
+
+Um campo elétrico não é uma corrente. Manter um campo custa carga armazenada, não carga em
+trânsito — e carga armazenada é o que um capacitor guarda. É por isso que a porta de um FET,
+em regime permanente, não consome corrente, e é por isso que ela consome muita corrente
+durante a transição. As duas frases são a mesma frase, e é a segunda que vai dominar o
+@sec-cap-061 e o @sec-cap-062.
+
+Existem duas maneiras de construir essa barreira isolante, e elas dão os dois dispositivos do
+título.
+
+## O JFET: um canal estrangulado por uma junção {#sec-059-jfet}
+
+A primeira solução é a mais antiga e a mais simples de entender: use uma **junção PN
+polarizada reversamente** como isolante.
+
+O @sec-cap-046 mostrou que uma junção PN reversa tem uma região de depleção — uma faixa
+esvaziada de portadores livres — e que essa faixa **engorda** quando a tensão reversa aumenta.
+O JFET (*junction FET*) explora exatamente isso.
+
+::: {#fig-059-jfet}
+
+```{.tikz}
+%%| filename: 059-jfet
+%%| alt: Três cortes transversais lado a lado de um JFET de canal N, mostrando o efeito de tensões de porta cada vez mais negativas. Em cada corte, um bloco horizontal azul-claro representa o canal de silício tipo N, com o terminal de fonte à esquerda e o terminal de dreno à direita. Acima e abaixo do canal há dois blocos vermelhos de silício tipo P mais fortemente dopado, ligados entre si e ao terminal de porta. Entre cada bloco P e o canal há uma faixa cinza tracejada representando a região de depleção. No primeiro corte, com tensão porta-fonte igual a zero, as faixas de depleção são finas e sobra uma abertura larga de canal condutor, anotada como canal largo e corrente de dreno de saturação máxima. No segundo corte, com tensão porta-fonte de menos um vírgula cinco volt, as faixas engordaram e a abertura do canal está visivelmente mais estreita, anotada como canal estrangulado e corrente reduzida. No terceiro corte, com tensão porta-fonte igual à tensão de estrangulamento de menos três volts, as duas faixas de depleção se encontram no meio, fechando completamente o canal, anotada como canal fechado e corrente praticamente nula. Abaixo dos três cortes, um aviso destaca que a junção porta-canal precisa permanecer polarizada reversamente e que aplicar tensão de porta positiva num JFET de canal N a coloca em condução direta, destruindo o isolamento da entrada.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \def\jfet#1#2#3#4{%
+    \begin{scope}[shift={(#1,0)}]
+      % canal n
+      \fill[manualblue!15] (0,0) rectangle (3.4,2.4);
+      \draw[thin] (0,0) rectangle (3.4,2.4);
+      \node[font=\scriptsize, manualblue!60!black] at (1.7,1.2) {canal $n$};
+
+      % blocos p+
+      \fill[manualred!30] (0.9,2.05) rectangle (2.5,2.4);
+      \draw[thin] (0.9,2.05) rectangle (2.5,2.4);
+      \node[font=\tiny] at (1.7,2.22) {$p^{+}$};
+      \fill[manualred!30] (0.9,0) rectangle (2.5,0.35);
+      \draw[thin] (0.9,0) rectangle (2.5,0.35);
+      \node[font=\tiny] at (1.7,0.17) {$p^{+}$};
+
+      % depleção (altura #2)
+      \fill[manualgray!25] (0.9,2.05-#2) rectangle (2.5,2.05);
+      \draw[dashed, manualgray, thin] (0.9,2.05-#2) -- (2.5,2.05-#2);
+      \fill[manualgray!25] (0.9,0.35) rectangle (2.5,0.35+#2);
+      \draw[dashed, manualgray, thin] (0.9,0.35+#2) -- (2.5,0.35+#2);
+
+      % terminais
+      \draw[very thick] (0,0.9) -- (-0.7,0.9) node[anchor=east, font=\scriptsize] {S};
+      \draw[very thick] (3.4,0.9) -- (4.1,0.9) node[anchor=west, font=\scriptsize] {D};
+      \draw[very thick] (0.9,2.22) -- (0.2,2.22) -- (0.2,3.1) -- (1.7,3.1);
+      \draw[very thick] (0.9,0.17) -- (0.2,0.17) -- (0.2,2.22);
+      \draw[very thick] (1.7,3.1) -- (1.7,3.4) node[anchor=south, font=\scriptsize] {G};
+
+      \node[anchor=south, font=\scriptsize\bfseries] at (1.7,3.7) {#3};
+      \node[anchor=north, align=center, font=\scriptsize, text width=3.9cm] at (1.7,-0.3) {#4};
+    \end{scope}}
+
+  \jfet{0}{0.30}{$V_{GS}=0$}{canal largo\\$I_D = I_{DSS}$ (máxima)}
+  \jfet{6.0}{0.62}{$V_{GS}=-1{,}5$ V}{canal estreitado\\$I_D$ cai}
+  \jfet{12.0}{0.85}{$V_{GS}=V_P=-3$ V}{canal fechado\\$I_D \approx 0$}
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=14.2cm] at (7.8,-1.6)
+       {\textbf{A junção porta-canal tem de ficar reversa.}
+        Num JFET de canal $n$ isso significa $V_{GS} \le 0$. Aplicar $V_{GS}$ positivo
+        polariza a junção diretamente: a porta passa a conduzir como um diodo comum, a
+        impedância de entrada desaba de $10^{9}\ \Omega$ para algumas centenas de ohms e o
+        dispositivo deixa de ser um FET.};
+
+\end{tikzpicture}
+```
+
+O JFET de canal $n$ em três tensões de porta. A porta nunca conduz — ela só engorda a região
+de depleção, e a depleção come o canal por dentro.
+:::
+
+O canal é uma barra de silício tipo $n$ com um contato em cada ponta: a **fonte** (*source*,
+S) e o **dreno** (*drain*, D). Enfiados nessa barra, acima e abaixo, dois blocos de silício
+tipo $p^{+}$ ligados entre si formam a **porta** (*gate*, G).
+
+Com $V_{GS} = 0$, as junções porta-canal têm só a depleção de equilíbrio, fina. Sobra uma
+abertura larga de silício $n$ neutro, e a barra conduz bem. A corrente que passa nessa
+condição, com $V_{DS}$ suficiente, é a $I_{DSS}$ — *drain-to-source current with gate
+shorted*, a corrente de dreno com a porta em curto com a fonte. É o **valor máximo** que
+aquele JFET entrega.
+
+Tornando $V_{GS}$ negativo, as junções ficam mais reversas, as depleções engordam e a abertura
+condutora encolhe. A corrente cai. Num certo valor negativo — a **tensão de estrangulamento**,
+$V_P$ (*pinch-off*), também escrita $V_{GS(\text{off})}$ — as duas depleções se encontram no
+meio, o canal fecha e a corrente praticamente cessa.
+
+Três consequências, e as três importam:
+
+**O JFET conduz com porta em zero.** Ele é um dispositivo **normalmente ligado**, ou de modo
+depleção: para desligá-lo é preciso ir buscar uma tensão negativa. Isso é o oposto do bipolar
+e o oposto do MOSFET que a próxima seção apresenta, e é a razão de o JFET ser péssimo como
+chave lógica e ótimo como fonte de corrente (basta ligar a porta à fonte, e ele entrega
+$I_{DSS}$ com dois terminais).
+
+**A porta nunca deve ficar positiva.** A entrada de altíssima impedância do JFET **é** a
+junção reversa. Um sinal que empurre $V_{GS}$ acima de +0,5 V a polariza diretamente, e a
+impedância de entrada desaba de gigaohms para centenas de ohms — não queima nada
+necessariamente, mas descaracteriza o circuito inteiro.
+
+**A impedância de entrada é alta, mas não infinita, e piora com a temperatura.** A corrente
+reversa de uma junção é da ordem de 1 nA a 25 °C e **dobra a cada 10 °C**, como o
+@sec-cap-047 estabeleceu. A 85 °C ela já é umas 60 vezes maior. Em circuitos de altíssima
+impedância isso é o limite real.
+
+::: {.callout-note}
+## Por que o JFET ainda existe
+
+Ele perdeu para o MOSFET em chaveamento e em lógica, mas continua vivo em dois nichos:
+**entradas de altíssima impedância com pouco ruído** (pré-amplificadores de captador
+piezoelétrico, de fotodiodo, de eletrodo de pH) e **fontes de corrente de dois terminais**.
+O JFET tem ruído $1/f$ muito menor que o MOSFET, porque a corrente passa pelo miolo do
+silício e não raspando na interface com o óxido, onde ficam as armadilhas de carga.
+
+Na bancada, o 2N5457 e o J310 custam pouco e valem estar na gaveta.
+:::
+
+## O MOSFET: um canal criado por um capacitor {#sec-059-mosfet}
+
+A segunda solução é trocar a junção reversa por um isolante de verdade: uma camada de dióxido
+de silício, o mesmo vidro da janela, com algumas dezenas de nanômetros de espessura. Metal (ou
+silício policristalino) em cima, óxido no meio, semicondutor embaixo — **metal-óxido-
+semicondutor**, MOS. Daí o nome.
+
+E aí a ideia deixa de ser estrangular um canal que já existe. Passa a ser **criar** um canal
+onde não havia nenhum.
+
+::: {#fig-059-mosfet}
+
+```{.tikz}
+%%| filename: 059-mosfet
+%%| alt: Dois cortes transversais lado a lado de um MOSFET de canal N de enriquecimento. Em cada corte, um bloco grande rosado representa o substrato de silício tipo P. Dentro dele, na superfície superior, há duas ilhas azuis de silício tipo N mais fortemente dopado: a da esquerda é a fonte e a da direita é o dreno. Entre as duas ilhas, sobre a superfície, há uma fina camada amarela de dióxido de silício e, sobre ela, uma barra cinza que é o eletrodo de porta. Cada corte tem quatro terminais: fonte, porta, dreno e o contato de substrato embaixo. No primeiro corte, com tensão porta-fonte igual a zero, não há canal entre as ilhas: uma anotação registra que fonte e dreno são duas junções PN costa a costa e que o dispositivo bloqueia, com corrente de dreno praticamente nula. No segundo corte, com tensão porta-fonte acima da tensão de limiar, sinais de mais estão desenhados ao longo da porta e sinais de menos logo abaixo do óxido, e uma faixa azul escura fina liga a fonte ao dreno logo abaixo do óxido, identificada como camada de inversão ou canal N induzido. Uma anotação registra que o canal foi criado pelo campo, que quanto maior a tensão de porta mais espessa a camada, e uma seta indica a corrente de dreno fluindo pelo canal. Abaixo dos dois cortes, uma caixa registra que o substrato é ligado internamente à fonte na maioria dos MOSFETs discretos, e que essa ligação é o que cria o diodo de corpo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \def\mos#1#2#3#4{%
+    \begin{scope}[shift={(#1,0)}]
+      % substrato p
+      \fill[manualred!12] (0,0) rectangle (5.2,2.2);
+      \draw[thin] (0,0) rectangle (5.2,2.2);
+      \node[font=\scriptsize] at (2.6,0.55) {substrato $p$};
+
+      % ilhas n+
+      \fill[manualblue!35] (0.45,1.65) rectangle (1.55,2.2);
+      \draw[thin] (0.45,1.65) rectangle (1.55,2.2);
+      \node[font=\tiny] at (1.0,1.92) {$n^{+}$};
+      \fill[manualblue!35] (3.65,1.65) rectangle (4.75,2.2);
+      \draw[thin] (3.65,1.65) rectangle (4.75,2.2);
+      \node[font=\tiny] at (4.2,1.92) {$n^{+}$};
+
+      % oxido e porta
+      \fill[manualyellow!35] (1.35,2.2) rectangle (3.85,2.42);
+      \draw[thin] (1.35,2.2) rectangle (3.85,2.42);
+      \fill[manualgray!55] (1.35,2.42) rectangle (3.85,2.68);
+      \draw[thin] (1.35,2.42) rectangle (3.85,2.68);
+      \node[anchor=west, font=\tiny] at (3.95,2.62) {SiO$_2$ + porta};
+      \draw[manualgray, thin] (3.92,2.6) -- (3.7,2.31);
+
+      % canal (espessura #2)
+      \ifdim#2pt>0pt
+        \fill[manualblue!70] (1.55,2.2-#2) rectangle (3.65,2.2);
+      \fi
+
+      % terminais
+      \draw[very thick] (1.0,2.2) -- (1.0,3.2) node[anchor=south, font=\scriptsize] {S};
+      \draw[very thick] (4.2,2.2) -- (4.2,3.2) node[anchor=south, font=\scriptsize] {D};
+      \draw[very thick] (2.6,2.68) -- (2.6,3.2) node[anchor=south, font=\scriptsize] {G};
+      \draw[very thick] (2.6,0) -- (2.6,-0.5) node[anchor=north, font=\scriptsize] {B};
+
+      \node[anchor=south, font=\scriptsize\bfseries] at (2.6,3.6) {#3};
+      \node[anchor=north, align=center, font=\scriptsize, text width=5.2cm] at (2.6,-0.9) {#4};
+    \end{scope}}
+
+  \mos{0}{0}{$V_{GS} = 0$}{sem canal: fonte e dreno são \textbf{duas junções PN costa a costa}\\$I_D \approx 0$}
+  \mos{7.4}{0.18}{$V_{GS} > V_{th}$}{o campo puxou elétrons para a superfície e \textbf{criou} um canal $n$\\$I_D$ flui}
+
+  % cargas no segundo painel
+  \foreach \x in {1.7,2.1,2.5,2.9,3.3} {
+    \node[manualred, font=\tiny] at (7.4+\x,2.55) {$+$};
+    \node[white, font=\tiny] at (7.4+\x,2.11) {$-$};
+  }
+  \node[anchor=north, font=\tiny, manualblue!60!black, align=center] at (10.0,1.45)
+       {camada de inversão\\(canal $n$ induzido)};
+  \draw[-{Latex[length=1.6mm]}, manualblue, thick] (10.0,1.5) -- (10.0,2.0);
+
+  \draw[-{Latex[length=2mm]}, manualblue, very thick] (9.0,2.95) -- (10.4,2.95);
+  \node[manualblue, anchor=south, font=\tiny] at (9.7,3.0) {$I_D$};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.6cm] at (6.3,-2.3)
+       {\textbf{O quarto terminal.} O substrato (B, de \emph{bulk} ou \emph{body}) é um
+        terminal de verdade. Em circuitos integrados ele é acessível e serve para ajustar
+        $V_{th}$. Em praticamente todo MOSFET \textbf{discreto} ele vem soldado à fonte
+        dentro do encapsulamento — e é essa ligação que cria o \emph{diodo de corpo} da
+        figura seguinte.};
+
+\end{tikzpicture}
+```
+
+O MOSFET de canal $n$ de enriquecimento. Com a porta em zero não existe canal nenhum: o
+caminho de dreno para fonte é um par de junções costa a costa. O canal é fabricado pelo campo.
+:::
+
+Comece pelo corte da esquerda, com a porta em zero. De dreno para fonte existem duas junções
+PN em série e **em oposição**: $n^{+}$ do dreno, substrato $p$, $n^{+}$ da fonte. Qualquer que
+seja a polaridade aplicada entre dreno e fonte, uma das duas junções está reversa. O
+dispositivo bloqueia. A corrente de dreno é a fuga de uma junção reversa — nanoampères.
+
+Agora aplique uma tensão positiva na porta. A estrutura porta-óxido-substrato é literalmente
+um capacitor de placas paralelas, e o que um capacitor faz é acumular carga: cargas positivas
+na placa de cima. Para equilibrá-las, o campo empurra para longe as lacunas do substrato $p$
+logo abaixo do óxido e atrai para lá os poucos elétrons livres disponíveis.
+
+Com pouca tensão, o resultado é só uma faixa esvaziada de lacunas — a **depleção**. Não
+conduz. Mas conforme a tensão sobe, chega um ponto em que a concentração de elétrons na
+superfície ultrapassa a concentração de lacunas: aquele pedacinho de silício, que era tipo
+$p$, passa a se comportar como tipo $n$. É a **camada de inversão**, e ela é um fio de silício
+$n$ ligando a ilha $n^{+}$ da fonte à ilha $n^{+}$ do dreno.
+
+A tensão em que isso acontece é a **tensão de limiar**, $V_{th}$ (também $V_{GS(\text{th})}$ ou
+$V_T$ — este manual usa $V_{th}$ para não colidir com a tensão térmica $V_T$ do Volume 9).
+
+Acima de $V_{th}$, quanto maior $V_{GS}$, mais denso o canal e melhor a condução. O canal é
+*enriquecido* pela tensão de porta — daí o nome **modo enriquecimento** (*enhancement*), e daí
+a propriedade que faz este dispositivo dominar a eletrônica digital inteira: **com a porta em
+zero, ele está desligado**. Normalmente aberto, como um botão de campainha.
+
+::: {.callout-note}
+## Existe MOSFET de depleção também
+
+Se o fabricante implanta dopagem $n$ na região do canal já na fábrica, o canal existe de
+saída e o dispositivo conduz com $V_{GS} = 0$ — um **MOSFET de depleção**, que se desliga com
+$V_{GS}$ negativo, igual ao JFET. A diferença para o JFET é que a porta continua isolada por
+óxido, então $V_{GS}$ **positivo** também é permitido e aumenta ainda mais a condução.
+
+É um bicho raro no comércio (o BSS159N é um dos poucos correntes) e aparece mais dentro de
+circuitos integrados, como carga ativa. Vale conhecer o símbolo, que a @fig-059-familia
+mostra, para não confundi-lo com o de enriquecimento numa folha de dados.
+:::
+
+## O diodo de corpo {#sec-059-diodocorpo}
+
+O substrato ligado à fonte tem uma consequência que não é detalhe de fabricação, é
+característica de projeto — e é a que mais pega quem vem do bipolar.
+
+Se o substrato $p$ está no potencial da fonte, então a junção substrato-dreno é uma junção PN
+com o ânodo na fonte e o cátodo no dreno. Um diodo. Ele existe **sempre**, ele está no
+esquemático mesmo quando não desenhado, e ele conduz quando o dreno fica mais negativo que a
+fonte — independentemente do que a porta esteja fazendo.
+
+::: {#fig-059-diodocorpo}
+
+```{.tikz}
+%%| filename: 059-diodocorpo
+%%| alt: Dois circuitos lado a lado com o mesmo MOSFET de canal N de enriquecimento desenhado com o diodo de corpo explícito entre fonte e dreno, ânodo na fonte e cátodo no dreno. No circuito da esquerda, a alimentação de doze volts está na polaridade correta: a carga liga o positivo ao dreno e a fonte vai ao terra, com a porta em zero volt. Uma anotação verde registra que o diodo de corpo está reverso, que o MOSFET bloqueia e que a corrente é praticamente nula, funcionando como esperado. No circuito da direita, a alimentação foi invertida: o negativo está na carga e o positivo no terra. Uma anotação vermelha registra que o diodo de corpo agora está diretamente polarizado, que a corrente circula pela carga passando pelo diodo mesmo com a porta em zero volt, e que o MOSFET desligado não bloqueia nada nesse sentido. Abaixo, uma caixa observa que essa é a razão pela qual um MOSFET sozinho não serve como proteção contra inversão de polaridade sem estar orientado corretamente, e que o mesmo diodo é aproveitado de propósito em retificação síncrona e em pontes de meia ponte.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= polaridade correta =================
+  \begin{scope}
+    \node[anchor=south, font=\small\bfseries] at (1.8,4.2) {polaridade correta};
+
+    \node[nigfete, bodydiode, anchor=S] (M) at (1.4,0.4) {};
+    \draw (M.D) to[R, l=carga] ++(0,2.4) coordinate(top);
+    \draw (top) -- (3.4,3.4) to[battery1, l_=$12$ V] (3.4,0.4) -- (M.S);
+    \draw (M.S) -- ++(0,-0.5) node[ground]{};
+    \draw (M.G) -- ++(-1.3,0) node[anchor=east, font=\scriptsize] {$0$ V};
+
+    \node[manualgreen!60!black, anchor=north, align=center, font=\scriptsize] at (1.6,-0.7)
+      {diodo \textbf{reverso}: bloqueia, $I \approx 0$ \checkmark};
+  \end{scope}
+
+  % ================= polaridade invertida =================
+  \begin{scope}[shift={(7.6,0)}]
+    \node[anchor=south, font=\small\bfseries] at (1.8,4.2) {alimentação invertida};
+
+    \node[nigfete, bodydiode, anchor=S] (N) at (1.4,0.4) {};
+    \draw (N.D) to[R, l=carga] ++(0,2.4) coordinate(top2);
+    \draw (top2) -- (3.4,3.4) to[battery1, l=$12$ V, invert] (3.4,0.4) -- (N.S);
+    \draw (N.S) -- ++(0,-0.5) node[ground]{};
+    \draw (N.G) -- ++(-1.3,0) node[anchor=east, font=\scriptsize] {$0$ V};
+
+    \draw[-{Latex[length=2mm]}, manualred, very thick] (2.45,1.0) -- (2.45,2.0);
+
+    \node[manualred, anchor=north, align=center, font=\scriptsize] at (1.6,-0.7)
+      {diodo \textbf{direto}: conduz,\\a porta não manda mais nada};
+  \end{scope}
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.4cm] at (5.6,-2.1)
+       {\textbf{O diodo de corpo existe sempre.} Um MOSFET conduz num sentido quando
+        desligado, e isso não é defeito: em retificação síncrona e em meia ponte o diodo é
+        \emph{aproveitado} de propósito. Mas significa que um MOSFET sozinho \textbf{não} é uma
+        chave bidirecional, e que a orientação dele numa proteção contra inversão de
+        polaridade decide se o circuito protege ou só parece proteger. Voltaremos a isso
+        no Volume 12.};
+
+\end{tikzpicture}
+```
+
+Com o dreno positivo, o diodo de corpo está reverso e a porta manda. Com a alimentação
+invertida, o diodo conduz e a porta perdeu o comando.
+:::
+
+Duas leituras práticas nascem daí.
+
+**A ruim:** um MOSFET de canal $n$ com a fonte no terra não é uma chave capaz de bloquear
+tensão negativa no dreno. Se o circuito precisa bloquear nos dois sentidos, o arranjo é dois
+MOSFETs em série **costa a costa**, com as fontes unidas, para que os dois diodos de corpo
+fiquem em oposição. É assim que funcionam os interruptores de carga de bateria e os relés de
+estado sólido.
+
+**A boa:** o diodo já está lá, aguenta a corrente nominal do dispositivo e é grátis. Em
+conversores chaveados de meia ponte e em retificação síncrona ele é o caminho de retorno
+durante o tempo morto — assunto do capítulo 075, no Volume 12. E na bancada ele é o teste de
+continuidade que identifica dreno e fonte de um MOSFET sem marcação, como o laboratório vai
+usar.
+
+## A família completa {#sec-059-familia}
+
+Quatro escolhas independentes geram a família: junção ou óxido, canal $n$ ou canal $p$,
+enriquecimento ou depleção.
+
+::: {#fig-059-familia}
+
+```{.tikz}
+%%| filename: 059-familia
+%%| alt: Painel com cinco símbolos de transistores de efeito de campo dispostos em linha, cada um com o nome do tipo acima e a faixa de tensão porta-fonte de operação abaixo. O primeiro é o MOSFET de canal N de enriquecimento, com a barra de canal desenhada em três segmentos separados e a seta do substrato apontando para dentro; abaixo, a anotação diz que ele está desligado com zero volt e liga com tensão porta-fonte positiva acima do limiar, e que é o tipo mais comum, usado em toda a lógica digital e em chaves de lado baixo. O segundo é o MOSFET de canal P de enriquecimento, com a seta do substrato apontando para fora; abaixo, a anotação diz que ele está desligado com zero volt e liga com tensão porta-fonte negativa, e que é usado em chaves de lado alto. O terceiro é o MOSFET de canal N de depleção, com a barra de canal desenhada contínua; abaixo, a anotação diz que ele conduz com zero volt e aceita tensão de porta positiva ou negativa. O quarto é o JFET de canal N, com a seta da porta apontando para dentro; abaixo, a anotação diz que ele conduz com zero volt, desliga com tensão de porta negativa e que tensão positiva é proibida. O quinto é o JFET de canal P; abaixo, a anotação diz que ele conduz com zero volt e desliga com tensão de porta positiva. Ao lado, uma caixa explica como ler qualquer símbolo de efeito de campo em três passos: a barra de canal segmentada indica enriquecimento e a barra contínua indica depleção; a seta apontando para dentro indica canal N e apontando para fora indica canal P; e o terminal com a seta é sempre o substrato, que nos dispositivos discretos vem ligado à fonte.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % canal n: dreno em cima, fonte embaixo
+  \def\simbn#1#2#3#4{%
+    \begin{scope}[shift={(#1,0)}]
+      \node[anchor=south, font=\scriptsize\bfseries, align=center, text width=2.8cm] at (0.55,2.7) {#3};
+      \node[#2, anchor=G] (s) at (0,0) {};
+      \draw (s.D) -- ++(0,0.6) node[anchor=south, font=\tiny] {D};
+      \draw (s.S) -- ++(0,-0.6) node[anchor=north, font=\tiny] {S};
+      \draw (s.G) -- ++(-0.6,0) node[anchor=east, font=\tiny] {G};
+      \node[anchor=north, align=center, font=\tiny, text width=3.0cm] at (0.55,-1.85) {#4};
+    \end{scope}}
+
+  % canal p: circuitikz inverte — a fonte fica em cima
+  \def\simbp#1#2#3#4{%
+    \begin{scope}[shift={(#1,0)}]
+      \node[anchor=south, font=\scriptsize\bfseries, align=center, text width=2.8cm] at (0.55,2.7) {#3};
+      \node[#2, anchor=G] (s) at (0,0) {};
+      \draw (s.S) -- ++(0,0.6) node[anchor=south, font=\tiny] {S};
+      \draw (s.D) -- ++(0,-0.6) node[anchor=north, font=\tiny] {D};
+      \draw (s.G) -- ++(-0.6,0) node[anchor=east, font=\tiny] {G};
+      \node[anchor=north, align=center, font=\tiny, text width=3.0cm] at (0.55,-1.85) {#4};
+    \end{scope}}
+
+  \simbn{0}{nigfete}{MOSFET $n$\\enriquecimento}
+       {\textbf{desligado} em $0$ V\\liga com $V_{GS} > V_{th} > 0$\\[2pt]\emph{o mais comum:
+        lógica, chave de lado baixo}}
+  \simbp{3.4}{pigfete}{MOSFET $p$\\enriquecimento}
+       {\textbf{desligado} em $0$ V\\liga com $V_{GS} < V_{th} < 0$\\[2pt]\emph{chave de lado alto}}
+  \simbn{6.8}{nigfetd}{MOSFET $n$\\depleção}
+       {\textbf{conduz} em $0$ V\\$V_{GS}$ positivo ou negativo\\[2pt]\emph{raro fora de CIs}}
+  \simbn{10.2}{njfet}{JFET $n$}
+       {\textbf{conduz} em $0$ V\\desliga com $V_{GS} < 0$\\[2pt]\emph{$V_{GS} > 0$ é proibido}}
+  \simbp{13.6}{pjfet}{JFET $p$}
+       {\textbf{conduz} em $0$ V\\desliga com $V_{GS} > 0$}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=14.2cm] at (7.1,-4.2)
+       {\textbf{Ler qualquer símbolo de efeito de campo, em três passos:}
+        \begin{enumerate}\itemsep1pt
+          \item \textbf{barra do canal} — três segmentos separados: enriquecimento
+                (canal não existe em $0$ V). Barra contínua: depleção (canal já existe).
+          \item \textbf{seta} — apontando \emph{para dentro} do dispositivo: canal $n$.
+                Para fora: canal $p$. (É a seta da junção substrato-canal, e ela aponta
+                de $p$ para $n$, como todo símbolo de diodo.)
+          \item \textbf{onde a seta está} — no terminal do meio, é o substrato, que nos
+                discretos vem ligado à fonte de fábrica.
+        \end{enumerate}};
+
+\end{tikzpicture}
+```
+
+Os cinco tipos que aparecem na prática, com a faixa útil de $V_{GS}$ de cada um. A regra de
+leitura vale para qualquer símbolo de FET que você encontrar.
+:::
+
+Na prática, 90 % do que você vai usar neste manual é a primeira coluna: **MOSFET de canal $n$,
+enriquecimento**. É ele que o @sec-cap-061 usa como chave de potência e é dele que a lógica
+CMOS do capítulo 092 é feita.
+
+A característica de transferência resume a diferença entre as famílias melhor que qualquer
+texto:
+
+::: {#fig-059-transferencia}
+
+```{.tikz}
+%%| filename: 059-transferencia
+%%| alt: Gráfico com a corrente de dreno no eixo vertical, em miliampères, de zero a onze, e a tensão porta-fonte no eixo horizontal, de menos quatro a mais cinco volts. Três curvas partem de posições diferentes. A curva azul, identificada como MOSFET de canal N de enriquecimento com tensão de limiar de dois volts, é exatamente zero em toda a região à esquerda de dois volts e cresce como uma parábola a partir daí, passando por cerca de um vírgula sete miliampère em três volts e chegando a quase sete miliampères em quatro volts; um ponto preto marca a tensão de limiar sobre o eixo horizontal, em dois volts. A curva vermelha, identificada como JFET de canal N com corrente de saturação de cinco miliampères e tensão de estrangulamento de menos três volts, é zero à esquerda de menos três volts e cresce até cinco miliampères em zero volt, valor marcado com um ponto e anotado como corrente de dreno de saturação; além de zero volt ela continua tracejada, com uma anotação indicando que essa região é proibida no JFET porque a junção de porta entraria em condução direta. A curva verde, identificada como MOSFET de canal N de depleção com corrente de saturação de dois vírgula quatro miliampères, é zero à esquerda de menos dois volts, passa por dois vírgula quatro miliampères em zero volt e continua crescendo para tensões positivas de porta, chegando a cerca de nove vírgula seis miliampères em mais dois volts, porque o óxido permite tensão de porta positiva. Uma faixa cinza vertical cobre toda a região à esquerda do eixo zero, marcada como a que exige tensão negativa de porta. Uma caixa abaixo do gráfico registra que só o dispositivo de enriquecimento passa pela origem com corrente nula, e que é por isso que ele, e não o JFET, virou o transistor da eletrônica digital: uma entrada em zero volt significa desligado, sem precisar de alimentação negativa na placa.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13cm, height=8cm,
+  xlabel={$V_{GS}$ (V)}, ylabel={$I_D$ (mA)},
+  xmin=-4.2, xmax=5.2, ymin=0, ymax=11,
+  axis lines=left, grid=both, grid style={manualgray!20},
+  legend pos=north west, legend cell align=left,
+  font=\footnotesize,
+]
+  % faixa que exige VGS negativo
+  \fill[manualgray!12] (axis cs:-4.2,0) rectangle (axis cs:0,11);
+  \node[manualgray, font=\tiny, anchor=north west, align=left]
+       at (axis cs:-4.1,10.6) {exige $V_{GS}$\\negativo};
+
+  % MOSFET enriquecimento: Vth = 2 V
+  \addplot[curva, domain=2:4.5, samples=80] {1.7*(x-2)^2};
+  \addlegendentry{MOSFET $n$ enriquecimento ($V_{th}=2$ V)}
+  \addplot[curva, domain=-4.2:2, samples=2, forget plot] {0};
+
+  % JFET: IDSS = 5 mA, VP = -3 V
+  \addplot[destaque, domain=-3:0, samples=80] {5*(1+x/3)^2};
+  \addlegendentry{JFET $n$ ($I_{DSS}=5$ mA, $V_P=-3$ V)}
+  \addplot[destaque, dashed, domain=0:1.0, samples=30, forget plot] {5*(1+x/3)^2};
+  \addplot[destaque, domain=-4.2:-3, samples=2, forget plot] {0};
+
+  % MOSFET depleção: outro par de parâmetros, e segue para VGS>0
+  \addplot[manualgreen, very thick, domain=-2:2.2, samples=80] {2.4*(1+x/2)^2};
+  \addlegendentry{MOSFET $n$ depleção ($I_{DSS}=2{,}4$ mA)}
+  \addplot[manualgreen, very thick, domain=-4.2:-2, samples=2, forget plot] {0};
+
+  \node[ponto] at (axis cs:2,0) {};
+  \node[manualblue, anchor=south east, font=\tiny] at (axis cs:1.92,0.2) {$V_{th}$};
+  \node[ponto] at (axis cs:0,5) {};
+  \node[manualred, anchor=south east, font=\tiny] at (axis cs:-0.1,5.2) {$I_{DSS}$};
+  \node[manualred, anchor=west, font=\tiny, align=left] at (axis cs:1.05,7.0)
+       {tracejado =\\proibido no JFET};
+  \draw[-{Latex[length=1.4mm]}, manualred] (axis cs:1.05,7.0) -- (axis cs:0.75,7.6);
+\end{axis}
+
+\node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=6pt, text width=12.4cm] at (0,-1.2)
+     {Só o dispositivo de \textbf{enriquecimento} passa pela origem com corrente nula. É por
+      isso que ele — e não o JFET, que era mais antigo e mais fácil de fabricar — virou o
+      transistor da eletrônica digital: uma entrada em $0$ V significa \emph{desligado},
+      sem precisar de nenhuma alimentação negativa na placa.};
+
+\end{tikzpicture}
+```
+
+A característica de transferência dos três tipos de canal $n$. A posição em que a curva corta
+o eixo horizontal é a identidade do dispositivo.
+:::
+
+## A porta é um capacitor, não um circuito aberto {#sec-059-portacapacitor}
+
+Vale insistir nisto porque é a fonte de mais surpresas de bancada do volume: a porta não
+consome corrente **em corrente contínua**. Em transição, ela consome bastante.
+
+Um IRF540N tem capacitância de entrada $C_{iss} \approx 1\,960$ pF. Para levá-lo de 0 V a 10 V
+é preciso injetar carga:
+
+$$ Q = C V = 1{,}96 \text{ nF} \times 10 \text{ V} \approx 20 \text{ nC} $$
+
+(a folha de dados diz $Q_G = 71$ nC, maior por causa do efeito Miller — assunto do
+@sec-cap-061; a conta acima é o piso, não o valor real).
+
+Se você quiser fazer essa transição em 100 ns, a corrente média que a porta exige é
+
+$$ I = \frac{Q}{t} = \frac{71 \text{ nC}}{100 \text{ ns}} = 0{,}71 \text{ A} $$
+
+**Setecentos e dez miliampères** — de um dispositivo cuja folha de dados anuncia corrente de
+porta de 100 nA. Os dois números estão certos: um é regime permanente, o outro é transitório.
+Confundi-los é ligar a porta de um MOSFET de potência direto num pino de microcontrolador
+capaz de 20 mA e concluir, corretamente, que o MOSFET esquenta sem explicação. O
+@sec-cap-062 é inteiro sobre isso.
+
+Duas consequências imediatas para qualquer circuito com MOSFET:
+
+**A porta flutuante é um problema, não uma economia.** Uma porta desconectada mantém a última
+carga que recebeu, e o acoplamento capacitivo do resto do circuito passa a controlá-la. O
+resultado é um MOSFET meio ligado, dissipando, sem que nada no esquemático explique por quê.
+**Todo MOSFET leva um resistor de porta para o terra** (10 kΩ a 100 kΩ) — a mesma regra do
+@sec-cap-054 para a base do bipolar, e pela mesma razão, só que aqui ela é ainda mais
+importante porque não há corrente de fuga nenhuma para descarregar a porta sozinha.
+
+**A porta armazena carga por muito tempo.** Isso vai virar uma demonstração no laboratório: dá
+para ligar um LED com um MOSFET, tirar o fio da porta e o LED continuar aceso por minutos. Com
+um bipolar isso é impossível.
+
+## $V_{th}$: o parâmetro que nunca entra numa conta {#sec-059-vth}
+
+A folha de dados do IRF540N declara, na linha $V_{GS(\text{th})}$:
+
+| Parâmetro | Mín. | Típ. | Máx. | Condição |
+|---|---|---|---|---|
+| $V_{GS(\text{th})}$ | 2,0 | — | 4,0 | $V_{DS} = V_{GS}$, $I_D = 250$ µA |
+
+: A especificação de limiar de um MOSFET de potência típico. Note a ausência de valor típico —
+o fabricante nem finge que existe um. {#tbl-059-vth}
+
+Um fator dois entre o mínimo e o máximo, na mesma linha de produção, no mesmo lote. E não há
+coluna "típico", porque o fabricante não garante nada além dos extremos.
+
+Isso é pior que a dispersão de $\beta$ do @sec-cap-055, e a lição do Volume 9 se aplica com
+força redobrada:
+
+::: {.callout-important}
+## A regra que vale para o volume inteiro
+
+**Parâmetro de dispositivo entra em projeto só como desigualdade.**
+
+Um projeto correto com este IRF540N garante $V_{GS} \ge 10$ V para ligar (folgadamente acima
+do $V_{th}$ máximo de 4,0 V, e no valor em que o $R_{DS(\text{on})}$ é especificado) e
+$V_{GS} \le 0{,}5$ V para desligar (folgadamente abaixo do $V_{th}$ mínimo de 2,0 V).
+
+Um projeto errado é qualquer um que use "$V_{th} = 3$ V" numa conta que decide alguma coisa.
+Esse valor não existe. Existe uma faixa, e o circuito tem de funcionar nos dois extremos dela.
+:::
+
+Duas propriedades térmicas fecham o quadro, e elas puxam em sentidos opostos:
+
+**$V_{th}$ cai com a temperatura**, tipicamente de 2 a 6 mV/°C. Um MOSFET quente liga mais
+fácil. Isso é o inverso do que se quer numa chave que deveria estar desligada perto de um
+dissipador quente, e é mais uma razão para o resistor de porta ao terra.
+
+**$R_{DS(\text{on})}$ sobe com a temperatura**, tipicamente dobrando entre 25 °C e 125 °C. Isto
+é uma **boa** notícia, e é a diferença mais importante entre MOSFET e bipolar em potência: um
+MOSFET que esquenta conduz pior e naturalmente empurra corrente para os vizinhos. **MOSFETs em
+paralelo se equilibram sozinhos**; bipolares em paralelo disparam termicamente e precisam de
+resistores de equalização no emissor. O @sec-cap-061 volta a isso com números.
+
+::: {.callout-tip}
+## Nível lógico ou não: a pergunta que decide o componente
+
+Um MOSFET "comum" como o IRF540N precisa de 10 V de porta para entregar o
+$R_{DS(\text{on})}$ de catálogo. Ligado a um pino de 5 V, e pior ainda de 3,3 V, ele conduz
+mal, esquenta e às vezes nem liga.
+
+Um MOSFET **de nível lógico** (*logic level*) — IRLZ44N, IRL540N, BSS138, AO3400 — é
+fabricado com $V_{th}$ mais baixo e especifica $R_{DS(\text{on})}$ em $V_{GS} = 4{,}5$ V ou
+2,5 V. A letra **L** no código da International Rectifier significa exatamente isso.
+
+**Como conferir em dez segundos:** procure na folha de dados a condição em que
+$R_{DS(\text{on})}$ é especificado. Se disser $V_{GS} = 10$ V e só isso, não acione com 5 V.
+:::
+
+## MOSFET ou bipolar {#sec-059-comparacao}
+
+| | Bipolar (BJT) | MOSFET |
+|---|---|---|
+| Controle | corrente ($I_B$) | tensão ($V_{GS}$) |
+| Entrada em CC | $r_\pi$, alguns kΩ | $> 10^{9}\ \Omega$ |
+| Entrada em transição | pequena | **capacitiva, corrente de pico alta** |
+| Queda em condução | $V_{CE(\text{sat})} \approx 0{,}2$ V, quase fixa | $I_D \times R_{DS(\text{on})}$, proporcional à corrente |
+| Melhor em | corrente **baixa**: 0,2 V × 0,1 A = 20 mW | corrente **alta**: 0,04 Ω × 10 A² = 4 W, contra 2 W do BJT... mas em 1 A o MOSFET faz 40 mW e o BJT 200 mW |
+| Dispersão do limiar | $V_{BE}$ previsível (±50 mV) | $V_{th}$ varia 2:1 |
+| Deriva térmica | $V_{BE}$ cai 2 mV/°C → **disparo térmico** | $R_{DS(\text{on})}$ sobe → **autoequaliza** |
+| Em paralelo | precisa de resistor de emissor | direto |
+| Velocidade | limitada pela carga armazenada na base | limitada pela carga da porta |
+| Fragilidade | robusto a estática | **óxido fura com ESD** |
+| Ganho de tensão em pequenos sinais | alto ($g_m = I_C/V_T$) | menor para a mesma corrente |
+
+: A escolha honesta entre os dois. Nenhuma linha diz "melhor" — todas dizem "melhor em quê".
+{#tbl-059-comparacao}
+
+A linha da queda em condução merece atenção porque é contraintuitiva. O bipolar saturado tem
+uma queda **quase constante** de uns 0,2 V; o MOSFET ligado tem uma **resistência**. Em
+corrente baixa a resistência ganha fácil (0,04 Ω × 0,1 A = 4 mV contra 200 mV). Em corrente
+muito alta a conta se inverte, e é por isso que o IGBT — que é literalmente um MOSFET
+controlando a base de um bipolar — domina acima de umas centenas de ampères.
+
+Para tudo o que este manual faz, o MOSFET ganha em chaveamento e o bipolar ganha em
+amplificação de pequenos sinais de baixo ruído.
+
+## Componentes reais para a bancada {#sec-059-componentes}
+
+| Componente | Tipo | Destaques | Para quê |
+|---|---|---|---|
+| **2N7000** / **BS170** | MOSFET $n$, TO-92 | 60 V, 200 mA, $R_{DS(on)} \approx 5\ \Omega$, $V_{th}$ 0,8 a 3 V | o "BC548 dos MOSFETs": experimentos, chave de sinal |
+| **IRF540N** | MOSFET $n$, TO-220 | 100 V, 33 A, 44 mΩ, $V_{th}$ 2 a 4 V | potência, **não** é de nível lógico |
+| **IRLZ44N** | MOSFET $n$ nível lógico, TO-220 | 55 V, 47 A, 22 mΩ em $V_{GS}=5$ V | potência acionada por microcontrolador |
+| **BSS138** | MOSFET $n$, SOT-23 | 50 V, 200 mA, $V_{th}$ 0,8 a 1,5 V | SMD, tradutor de nível $I^2C$ |
+| **IRF9540N** | MOSFET $p$, TO-220 | 100 V, 23 A, 117 mΩ | chave de lado alto |
+| **2N5457** | JFET $n$, TO-92 | $I_{DSS}$ 1 a 5 mA, $V_P$ −0,5 a −6 V | entrada de alta impedância |
+| **J310** | JFET $n$, TO-92 | $I_{DSS}$ 24 a 60 mA | RF, fonte de corrente |
+| **CD4007** | 3 pares CMOS, DIP-14 | MOSFETs $n$ e $p$ com todos os terminais acessíveis | estudar CMOS; será útil no capítulo 092 |
+
+: O que vale ter na gaveta. Note a dispersão declarada de $V_P$ do 2N5457: de −0,5 V a −6 V, um
+fator doze. {#tbl-059-componentes}
+
+::: {.callout-warning}
+## Pinagem: confira, sempre
+
+TO-92 não tem padrão único. O 2N7000 é **S-G-D** olhando a face chata da esquerda para a
+direita; o BS170, do mesmo formato e da mesma função, é **D-G-S** — exatamente invertido. Já
+queimou muita gente que trocou um pelo outro num soquete.
+
+O TO-220 é mais estável: **G-D-S**, e o dreno é também a **aba metálica**. A aba de um TO-220
+está no potencial do dreno, não no terra — parafusá-la direto num dissipador aterrado
+curto-circuita o dreno. Use o isolador de mica ou silicone com bucha plástica, ou um
+dissipador isolado.
+:::
+
+## ESD: a falha que não faz barulho {#sec-059-esd}
+
+O óxido de porta tem entre 50 e 100 nm. O campo de ruptura do SiO₂ é da ordem de
+$8 \times 10^{6}$ V/cm, o que dá uma tensão de ruptura de algumas dezenas de volts — daí o
+limite de $\pm 20$ V para $V_{GS}$ que quase toda folha de dados declara, e daí o limite mais
+apertado (±12 V, às vezes ±8 V) dos dispositivos de nível lógico, que têm óxido mais fino.
+
+Andar sobre carpete em dia seco acumula alguns **quilovolts** no corpo. Isso é duas ordens de
+grandeza acima do limite.
+
+O detalhe cruel é que a falha por ESD frequentemente **não é catastrófica**. O óxido não abre
+um buraco: ele fica com um caminho de fuga. O MOSFET continua funcionando na bancada, com
+corrente de porta que passou de 10 nA para 10 µA — invisível num teste rápido. Semanas depois,
+em campo, o caminho de fuga cresce e o dispositivo morre. Não há como diagnosticar isso pelo
+sintoma.
+
+A prática mínima, que custa nada:
+
+1. Antes de pegar o componente, **toque numa parte metálica aterrada** (a carcaça de um
+   equipamento com plugue de três pinos, o dissipador de uma fonte ligada). Isso descarrega
+   você.
+2. Guarde MOSFETs no **saco preto condutivo** ou espetados na **espuma preta** que veio com
+   eles — a espuma preta é condutiva e curto-circuita os terminais entre si. A espuma branca
+   ou rosa **não** serve para armazenamento, só para transporte de coisa robusta.
+3. Solde com o ferro **aterrado**, e prefira soldar a porta por último.
+4. Em dia seco, umidade abaixo de 40 %, redobre o cuidado. É quando a estática de fato acumula.
+
+MOSFETs de potência modernos trazem diodos de proteção internos na porta, e muitos toleram
+descargas de 2 kV no modelo do corpo humano. Isso ajuda e não substitui o hábito.
+
+## 🧪 Laboratório {#sec-059-lab}
+
+O objetivo é medir a diferença que o capítulo inteiro afirma: uma entrada que não consome
+corrente, um limiar que varia de peça para peça, e um diodo que ninguém desenhou.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 2 | MOSFET **2N7000** (TO-92) | dois exemplares, para ver a dispersão |
+| 1 | MOSFET **IRF540N** ou **IRLZ44N** (TO-220) | o de potência, para comparar |
+| 1 | JFET **2N5457** ou **J310** (TO-92) | Parte 5 |
+| 1 | Transistor **BC548** | a comparação com o bipolar |
+| 1 | LED vermelho de 5 mm | |
+| 1 | Resistor 330 Ω | limitador do LED |
+| 1 | Resistor 1 kΩ | dreno/coletor da Parte 6 |
+| 1 | Resistor 10 kΩ | base do BC548 |
+| 1 | Resistor 100 kΩ | resistor de porta |
+| 1 | Resistor 1 MΩ | Parte 2 |
+| 1 | Resistor 220 Ω | Parte 5 |
+| 1 | Potenciômetro 10 kΩ linear | varredura de $V_{GS}$ |
+| 1 | Capacitor 100 nF cerâmico | desacoplamento |
+| 1 | Multímetro com teste de diodo | |
+| 1 | Fonte ajustável 0 a 15 V | ou 9 V de pilha para as partes 1 a 4 |
+| 1 | Protoboard e jumpers | |
+
+**Antes de começar:** toque numa parte metálica aterrada antes de manusear os MOSFETs, e
+mantenha-os na espuma preta até a hora de espetar. Confira a pinagem do @tbl-059-componentes —
+2N7000 é S-G-D, e o BS170 é o inverso.
+
+### Parte 1 — A porta que não puxa corrente
+
+Monte dois circuitos idênticos exceto pelo transistor: LED + 330 Ω do positivo de 9 V para o
+dreno (ou coletor), fonte (ou emissor) no terra.
+
+- **BC548:** resistor de 10 kΩ da base para o +9 V.
+- **2N7000:** porta ligada **direto** ao +9 V, sem resistor.
+
+1. Confirme que os dois LEDs acendem.
+2. Meça a corrente de base do BC548: multímetro em µA, em série com o resistor de 10 kΩ.
+   Espere algo perto de $(9 - 0{,}7)/10\text{k} = 830$ µA.
+3. Meça a corrente de porta do 2N7000, em série com o fio da porta. No multímetro comum a
+   leitura vai ser **0,0 µA** — abaixo do fundo de escala.
+
+O ponto não é o número, é a incapacidade do instrumento de ver o número. A corrente real está
+na casa dos nanoampères, três ordens de grandeza abaixo do que um multímetro de bancada
+resolve.
+
+### Parte 2 — O LED que fica aceso sozinho
+
+Este é o experimento que torna a coisa concreta.
+
+1. No circuito do 2N7000, tire o fio que liga a porta ao +9 V. **Não** coloque resistor
+   nenhum: deixe a porta literalmente no ar.
+2. Encoste um fio do +9 V na porta por um instante e tire.
+
+O LED **fica aceso**. A carga que entrou na porta não tem por onde sair: o óxido é isolante e a
+única fuga é de nanoampères. Dependendo da umidade do ar e da limpeza da protoboard, ele fica
+aceso por minutos.
+
+3. Encoste um fio do terra na porta. O LED apaga na hora, e fica apagado.
+4. Aproxime o dedo da porta sem tocar, esfregue os pés no chão antes. O LED pisca, acende
+   sozinho, oscila. **Isso é a porta flutuante do @sec-059-portacapacitor**, e é exatamente o
+   comportamento que arruína um projeto real.
+5. Agora coloque o resistor de 100 kΩ da porta para o terra e repita o passo 4. O LED fica
+   apagado, imóvel, indiferente ao dedo.
+
+Anote a diferença entre os passos 4 e 5. É o motivo de o resistor de porta ao terra ser
+obrigatório.
+
+::: {.callout-warning}
+## Não faça isso com um MOSFET de que você gosta
+
+A porta flutuante do passo 4 é exatamente a condição em que uma descarga estática entra
+direto no óxido. O 2N7000 é barato e é por isso que ele é o cobaia aqui. Não repita o
+experimento com um MOSFET caro, e desfaça o arranjo assim que terminar.
+:::
+
+### Parte 3 — Medir $V_{th}$, e ver a dispersão
+
+Um MOSFET com porta ligada ao dreno está sempre na região de saturação (o @sec-cap-060 explica
+por quê), então $V_{GS}$ medido nessa ligação, numa corrente pequena, é uma boa estimativa de
+$V_{th}$ — é literalmente a condição que a folha de dados usa.
+
+1. Ligue o resistor de 10 kΩ do +9 V ao dreno do 2N7000 nº 1. Ligue a porta ao dreno. Fonte no
+   terra.
+2. Meça a tensão porta-fonte. A corrente é $(9 - V_{GS})/10\text{k}$, algo perto de 0,7 mA.
+3. Repita com o 2N7000 nº 2, **sem mudar mais nada**.
+4. Repita com o IRF540N (ou IRLZ44N).
+
+| Dispositivo | $V_{GS}$ medido | Faixa da folha de dados |
+|---|---|---|
+| 2N7000 nº 1 | | 0,8 a 3,0 V |
+| 2N7000 nº 2 | | 0,8 a 3,0 V |
+| IRF540N | | 2,0 a 4,0 V |
+| IRLZ44N | | 1,0 a 2,0 V |
+
+: Três medidas de limiar, e a faixa que o fabricante garante para cada um. {#tbl-059-lab1}
+
+Os dois 2N7000, comprados no mesmo saquinho, provavelmente diferem em 200 a 500 mV. Faça a
+mesma medida com dois BC548 (base ligada ao coletor, mesmo resistor) e compare a dispersão:
+os $V_{BE}$ vão diferir em umas poucas dezenas de milivolts.
+
+**É essa tabela que justifica a regra da desigualdade.** Se o seu circuito precisasse de um
+valor de $V_{th}$, qual dos dois 2N7000 você usaria na conta?
+
+### Parte 4 — O diodo que ninguém desenhou
+
+Com o MOSFET **fora** do circuito, na mão:
+
+1. Multímetro na função de teste de diodo. Ponta vermelha na fonte, preta no dreno: a leitura
+   é de uns 0,5 a 0,7 V. **O diodo de corpo conduz.**
+2. Inverta as pontas: vermelha no dreno, preta na fonte. A leitura é de circuito aberto (`OL`).
+3. Encoste o dedo simultaneamente na porta e no dreno para carregá-la, e repita o passo 2. Em
+   alguns MOSFETs a leitura muda, porque você ligou o canal com a estática do próprio dedo.
+   Toque porta e fonte juntas para descarregar antes de seguir.
+
+O teste do passo 1 é a maneira prática de **identificar dreno e fonte** de um MOSFET de canal
+$n$ sem marcação: o diodo conduz da fonte para o dreno.
+
+### Parte 5 — O JFET conduz sozinho
+
+1. Monte o 2N5457 com o resistor de 220 Ω do +9 V ao dreno, fonte no terra, **porta ligada
+   direto à fonte** ($V_{GS} = 0$).
+2. Meça a tensão sobre o resistor de 220 Ω e calcule $I_D$. Esse é o $I_{DSS}$ do seu
+   exemplar. Compare com a faixa de catálogo (1 a 5 mA para o 2N5457).
+3. Agora ligue o potenciômetro de 10 kΩ entre o terra e o **negativo** de uma segunda fonte (ou
+   uma pilha de 1,5 V invertida), com o cursor na porta, e torne $V_{GS}$ progressivamente
+   negativo.
+4. Anote $V_{GS}$ e $I_D$ a cada 0,2 V até a corrente cair abaixo de 1 % do $I_{DSS}$. Esse
+   valor de $V_{GS}$ é o seu $V_P$.
+
+Note que o JFET **precisou** de tensão negativa. Um circuito de chaveamento alimentado só por
+uma fonte positiva não tem como desligá-lo — o que responde de vez por que a lógica digital
+não é feita de JFETs.
+
+### Parte 6 — A porta como capacitor, com número
+
+1. Volte ao 2N7000 com LED e 330 Ω no dreno.
+2. Ligue um resistor de 1 MΩ do +9 V à porta, e o de 100 kΩ da porta ao terra.
+3. Ligue a alimentação e cronometre (ou observe) o LED acender.
+
+A porta forma um RC com o divisor: $R = 1\text{M} \parallel 100\text{k} \approx 91$ kΩ, e o
+2N7000 tem $C_{iss} \approx 60$ pF. A constante de tempo é
+
+$$ \tau = 91 \text{ k}\Omega \times 60 \text{ pF} \approx 5{,}5 \ \mu\text{s} $$
+
+o que é rápido demais para o olho. Troque o resistor de 1 MΩ por 10 MΩ (ou associe dez de 1 MΩ
+em série) e ponha um capacitor de 100 nF da porta ao terra: agora $\tau \approx 0{,}9$ ms, e
+com o osciloscópio na porta a subida exponencial do @sec-cap-025 aparece inteira, com o LED
+acendendo no cruzamento de $V_{th}$.
+
+**É o mesmo transitório RC do Volume 4**, e é ele que vai limitar a velocidade de comutação no
+@sec-cap-062.
+
+**Variante simulada (plano B).** No ngspice ou no LTspice, um `.dc VGS 0 5 0.01` sobre um
+2N7000 com o modelo do fabricante reproduz a curva de transferência da
+@fig-059-transferencia em segundos, e permite algo que a bancada não permite: varrer o
+parâmetro `VTO` do modelo entre 0,8 V e 3,0 V com `.step param` e ver as curvas se
+deslocarem. É a dispersão da @tbl-059-lab1 vista de uma vez só. No Falstad, o componente
+"N-channel MOSFET" com o mostrador de corrente ligado ilustra a Parte 2 com a porta
+flutuante — clique com o botão direito na porta e escolha desconectar.
+
+## 🔥 Onde Queima {#sec-059-queima}
+
+**Estática na porta, e o dano que não aparece.** É a causa número um de MOSFET morto. E a
+falha parcial — fuga de porta que subiu de nanoampères para microampères — passa por todo teste
+de bancada e mata o equipamento em campo. Toque num metal aterrado antes de pegar o
+componente; guarde na espuma preta.
+
+**Porta flutuante.** Sem resistor para o terra, a porta guarda carga, capta acoplamento e
+deixa o MOSFET meio ligado, dissipando sem que o esquemático explique. 10 kΩ a 100 kΩ da porta
+à fonte, sempre. E note a diferença para o bipolar: a base tem $r_\pi$ e se descarrega
+sozinha; a porta não tem nada.
+
+**Exceder $V_{GS(\text{máx})}$.** Quase sempre ±20 V, e menos em dispositivos de nível lógico.
+Não é um limite de "faixa recomendada": é a tensão que fura o óxido. Uma indutância parasita no
+laço de porta consegue produzir sobretensão sozinha, e é por isso que drivers de porta levam
+Zener de grampeamento — @sec-cap-062.
+
+**Acionar um MOSFET de 10 V com um pino de 3,3 V ou 5 V.** Ele não liga por completo, fica na
+região linear, e o $R_{DS(\text{on})}$ efetivo é dez vezes o de catálogo. Sintoma: o MOSFET
+esquenta e a carga recebe menos do que deveria. Use um de nível lógico, ou um driver.
+
+**Usar $V_{th}$ como um número.** Ele varia 2:1 no mesmo lote e cai com a temperatura. Só entra
+em projeto como desigualdade: garantir $V_{GS}$ bem acima do máximo para ligar, e bem abaixo do
+mínimo para desligar.
+
+**Esquecer o diodo de corpo.** O MOSFET desligado conduz da fonte para o dreno. Um MOSFET
+sozinho não bloqueia nos dois sentidos, e uma proteção contra inversão de polaridade montada
+com a orientação errada não protege nada — só parece proteger, o que é pior.
+
+**Parafusar o TO-220 direto no dissipador aterrado.** A aba metálica é o **dreno**. Isolador de
+mica ou de silicone com bucha plástica, sem exceção — e confira com o multímetro depois de
+apertar o parafuso, porque a bucha racha.
+
+**Trocar 2N7000 por BS170 sem conferir a pinagem.** Mesmo encapsulamento, mesma função,
+pinagem invertida.
+
+**Aplicar $V_{GS}$ positivo num JFET de canal $n$.** A junção de porta entra em condução
+direta, a impedância de entrada desaba e o circuito muda de comportamento. Não queima na hora,
+mas o ganho e a polarização vão para o espaço, e o sintoma é confuso.
+
+**Achar que a porta é infinita em corrente.** Em CC ela é. Em transição, um IRF540N em 100 ns
+pede quase 1 A instantâneo. Pino de microcontrolador não entrega isso, e o resultado é uma
+transição lenta na qual o MOSFET passa longos microssegundos na região linear, dissipando
+como um resistor.
+
+**Medir $V_{th}$ com a função de teste de diodo do multímetro na porta.** Não funciona: a porta
+é isolada e a leitura é `OL` para sempre, o que não significa que o MOSFET esteja bom nem ruim.
+A medida de $V_{th}$ é a da Parte 3, com resistor e alimentação.
+
+## O que fica deste capítulo {#sec-059-resumo}
+
+No FET, **tensão controla corrente**, e o terminal de controle é isolado do caminho da
+corrente. Isso troca todos os problemas do bipolar por um conjunto diferente de problemas.
+
+**O JFET** tem a porta isolada por uma junção PN reversa. A depleção dessa junção estrangula
+um canal que já existe: ele conduz $I_{DSS}$ com $V_{GS} = 0$ e desliga em $V_{GS} = V_P < 0$.
+Tensão de porta positiva é proibida. Vive em entradas de alta impedância e baixo ruído.
+
+**O MOSFET** tem a porta isolada por óxido de silício. A estrutura porta-óxido-substrato é um
+capacitor, e o campo dele **cria** um canal por inversão quando $V_{GS} > V_{th}$. Em
+$V_{GS} = 0$ o caminho dreno-fonte são duas junções costa a costa, e o dispositivo bloqueia —
+é o **modo enriquecimento**, e é ele que viabiliza a eletrônica digital.
+
+**O símbolo se lê em três passos:** barra de canal segmentada é enriquecimento e contínua é
+depleção; seta para dentro é canal $n$ e para fora é canal $p$; a seta está no substrato.
+
+**O substrato vem ligado à fonte** em quase todo dispositivo discreto, e isso cria o **diodo de
+corpo**, do source ao dreno. Ele conduz sempre que o dreno fica negativo, independentemente da
+porta. Às vezes é um estorvo, às vezes é o componente que faz o conversor funcionar.
+
+**A porta não consome corrente em CC** ($< 100$ nA) **e consome muito em transição**:
+
+$$ Q_G = C_{iss} \, \Delta V_{GS}, \qquad I_{\text{porta}} = \frac{Q_G}{t_{\text{transição}}} $$
+
+Para um IRF540N em 100 ns, isso dá 0,71 A. Os dois fatos convivem, e o segundo é o assunto dos
+dois capítulos seguintes.
+
+**$V_{th}$ varia 2:1** no mesmo lote e cai de 2 a 6 mV/°C. Por isso:
+
+::: {.callout-important}
+Parâmetro de dispositivo entra em projeto **só como desigualdade**. Nunca como número numa
+conta que decide alguma coisa.
+:::
+
+**$R_{DS(\text{on})}$ sobe com a temperatura**, o que faz MOSFETs em paralelo se equalizarem
+sozinhos — a diferença mais importante para o bipolar em aplicações de potência.
+
+**O óxido tem 50 a 100 nm** e fura com a estática do corpo humano, muitas vezes sem falhar na
+hora. Resistor de porta ao terra, respeito ao $V_{GS(\text{máx})}$ de ±20 V e um toque no metal
+aterrado antes de pegar o componente resolvem quase tudo.
+
+## Para o próximo capítulo {#sec-059-fecho}
+
+Este capítulo estabeleceu **que** a tensão de porta controla a condução do canal. Falta o
+**quanto**.
+
+O @sec-cap-060 levanta a família de curvas do MOSFET, e ela tem duas regiões com nomes
+próprios que não têm equivalente exato no bipolar. Na **região ôhmica**, com $V_{DS}$ pequeno,
+o MOSFET se comporta como um resistor cujo valor a porta ajusta — e é essa a região em que uma
+chave ligada opera, onde mora o $R_{DS(\text{on})}$. Na **região de saturação**, com $V_{DS}$
+grande, a corrente para de depender de $V_{DS}$ e passa a depender só de $V_{GS}$, como o
+coletor do bipolar na região ativa — e é essa a região em que um amplificador opera.
+
+Uma armadilha de vocabulário vem junto, e é bom já saber dela: **"saturação" significa coisas
+opostas nos dois dispositivos**. Bipolar saturado é bipolar em condução plena, com pouca tensão
+sobre ele. MOSFET saturado é MOSFET com bastante tensão sobre ele, entregando corrente
+constante — o análogo da região *ativa* do bipolar. Um MOSFET usado como chave ligada está na
+região **ôhmica**, não na de saturação.
+
+E a lei que rege tudo isso deixa de ser a exponencial de Shockley e passa a ser uma parábola:
+
+$$ I_D = \frac{k}{2}\left(V_{GS} - V_{th}\right)^{2} $$
+
+Uma parábola tem uma consequência imediata que o Volume 9 não tinha: a transcondutância deixa
+de ser $I_C/V_T$, que só depende da corrente, e passa a depender também de quanto silício o
+fabricante colocou no dispositivo. É de lá que sai o fato de um MOSFET ter, para a mesma
+corrente, bem menos ganho que um bipolar — e o preço que se paga pela porta isolada.
