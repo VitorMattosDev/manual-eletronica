@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 56/104 |
-| **Contíguos até** | **056** — sem nenhum buraco no meio do livro |
+| **Progresso** | 57/104 |
+| **Contíguos até** | **057** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 057** | Coletor comum e base comum |
+| **Próximo capítulo: 058** | Modelo de pequenos sinais e análise em CA (fecha o Volume 9) |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -28,7 +28,8 @@ de carga com o ponto Q e a área de operação segura; o 054 traz a chave de lad
 $\beta$ forçado, o diodo de retorno, os tempos de comutação, o lado alto com PNP e o
 Darlington; o 055 traz a polarização por divisor com resistor de emissor, a fórmula
 exata com Thévenin e a estabilidade térmica; o 056 traz a transcondutância, o ganho, as
-duas impedâncias, a reta de carga em CA, a degeneração de emissor e o efeito Miller.
+duas impedâncias, a reta de carga em CA, a degeneração de emissor e o efeito Miller;
+o 057 traz o seguidor de emissor, a base comum e o cascode.
 
 Convenções do Volume 8 que o Volume 9 herda: valor comercial recalculado depois do
 arredondamento, pior caso verificado nos dois extremos, e `.tikz` com `circuitikz` para
@@ -151,7 +152,7 @@ cinco ocorrências como aviso.
 - [x] 054 — O BJT como chave: corte, saturação e acionamento de cargas — `capitulos/054-o-bjt-como-chave-corte-saturacao-e-acionamento-de.qmd`
 - [x] 055 — Polarização: divisor de base, resistor de emissor e estabilidade térmica — `capitulos/055-polarizacao-divisor-de-base-resistor-de-emissor-e.qmd`
 - [x] 056 — Emissor comum: ganho, impedâncias e limitações — `capitulos/056-emissor-comum-ganho-impedancias-e-limitacoes.qmd`
-- [ ] 057 — Coletor comum e base comum — `capitulos/057-coletor-comum-e-base-comum.qmd`
+- [x] 057 — Coletor comum e base comum — `capitulos/057-coletor-comum-e-base-comum.qmd`
 - [ ] 058 — Modelo de pequenos sinais e análise em CA — `capitulos/058-modelo-de-pequenos-sinais-e-analise-em-ca.qmd`
 
 

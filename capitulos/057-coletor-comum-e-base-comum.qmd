@@ -1,3 +1,791 @@
 # Coletor comum e base comum {#sec-cap-057}
 
-*(em elaboração)*
+O @sec-cap-056 terminou com um diagnóstico incômodo. O emissor comum tem ganho de tensão de
+200 e dois defeitos que se combinam mal: **impedância de entrada baixa** (1,2 kΩ) e
+**impedância de saída alta** (2,4 kΩ). Ligue dois desses em cascata e o segundo carrega o
+primeiro; ligue uma carga de 220 Ω na saída e sobram 8 % do sinal.
+
+O transistor tem três terminais, e até agora só uma das três maneiras de usá-los foi
+explorada. As outras duas existem exatamente para resolver o que o emissor comum não resolve.
+
+- **Coletor comum**, o seguidor de emissor: ganho de tensão ≈ 1 — ele não amplifica tensão
+  nenhuma —, mas com entrada de dezenas de quilo-ohms e saída de dezenas de ohms. Ele **casa**
+  impedâncias, e por isso está na saída de quase todo circuito analógico já construído.
+- **Base comum**: entrada de poucos ohms, ganho de tensão alto e **não invertido**, e —
+  o ponto que decide tudo em alta frequência — **imune ao efeito Miller**.
+
+Ao final, a combinação das duas com o emissor comum resolve os dois problemas do @sec-cap-056:
+o seguidor conserta a saída, e o **cascode** conserta a banda.
+
+## Coletor comum: o seguidor de emissor {#sec-057-seguidor}
+
+O sinal entra pela base e sai pelo **emissor**. O coletor vai direto à alimentação, que em CA
+é terra — daí o nome.
+
+::: {#fig-057-seguidor}
+
+```{.tikz}
+%%| filename: 057-seguidor
+%%| alt: À esquerda, o esquema de um seguidor de emissor: alimentação de doze volts ligada direto ao coletor, divisor de base de vinte e quatro quilo-ohms e trinta e três quilo-ohms, resistor de emissor de três quilo-ohms, capacitor de acoplamento na entrada e outro na saída, que é tomada no emissor. Os potenciais estão anotados: base em seis vírgula noventa e cinco volts, emissor em seis vírgula zero seis volts, corrente de emissor de dois vírgula zero dois miliampères, e tensão coletor-emissor de cinco vírgula noventa e quatro volts. Ao lado, duas formas de onda sobrepostas mostram o comportamento: a tensão de base e a tensão de emissor têm exatamente a mesma amplitude e a mesma fase, e a de emissor está deslocada para baixo por uma queda constante de zero vírgula sete volt. Uma anotação registra que o emissor segue a base, e que é daí que vem o nome. À direita, o resumo numérico do estágio: ganho de tensão de zero vírgula nove nove seis sem carga, impedância de entrada de treze vírgula cinco quilo-ohms, impedância de saída de dezesseis vírgula sete ohms e ganho de corrente igual a beta mais um. Uma anotação final destaca que o ganho de tensão é menor que um, o ganho de corrente é enorme, e portanto o ganho de potência é enorme: o estágio não amplifica tensão, ele amplifica corrente.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquema =================
+  \begin{scope}
+    \draw (-1.4,5.6) -- (1.0,5.6);
+    \node[anchor=south, font=\scriptsize] at (-0.2,5.65) {$+12$ V};
+
+    \draw (-1.4,5.6) to[R, l={$R_1 = 24$ k}] (-1.4,3.4);
+    \node[ponto] at (-1.4,3.4) {};
+    \draw (-1.4,3.4) to[R, l={$R_2 = 33$ k}] (-1.4,1.4) node[ground]{};
+
+    \draw (-4.4,3.4) to[C, l=$C_1$] (-2.8,3.4);
+    \draw (-2.8,3.4) -- (0,3.4);
+    \node[anchor=east, font=\scriptsize] at (-4.5,3.4) {$v_s$};
+    \node[manualblue, anchor=south, font=\scriptsize] at (-0.75,3.5) {$V_B = 6{,}95$ V};
+
+    \node[npn, anchor=B] (Q) at (0,3.4) {};
+    \draw (Q.C) -- (Q.C |- 0,5.6);
+    \draw (Q.E) -- ++(0,-0.6) coordinate (ec);
+    \node[ponto] at (ec) {};
+    \draw (ec) to[R, l_={$R_E = 3$ k}] ++(0,-1.7) node[ground]{};
+    \draw (ec) to[C, l={$C_2$}] ++(2.2,0) coordinate (out);
+    \node[anchor=west, font=\scriptsize] at (out) {$v_o$};
+
+    \node[manualgreen!55!black, anchor=west, font=\scriptsize] at (3.05,1.7)
+         {$V_E = 6{,}06$ V};
+    \node[manualgreen!55!black, anchor=west, font=\scriptsize] at (3.05,1.2)
+         {$I_E = 2{,}02$ mA};
+    \node[anchor=west, font=\scriptsize] at (0.75,4.8) {$V_{CE} = 5{,}94$ V};
+  \end{scope}
+
+  % ================= formas de onda =================
+  \begin{scope}[shift={(5.6,2.6)}]
+    \draw[eixo] (0,-1.6) -- (5.6,-1.6);
+    \draw[auxiliar] (0,0.9) -- (5.6,0.9);
+    \draw[auxiliar] (0,0.2) -- (5.6,0.2);
+    \node[anchor=east, font=\tiny, manualblue] at (-0.1,0.9) {$6{,}95$ V};
+    \node[anchor=east, font=\tiny, manualgreen!55!black] at (-0.1,0.2) {$6{,}06$ V};
+
+    \draw[curva, very thick, samples=140, domain=0:5.4, smooth]
+         plot (\x, {0.9 + 0.7*sin(\x*180/1.35)});
+    \draw[manualgreen!55!black, very thick, samples=140, domain=0:5.4, smooth]
+         plot (\x, {0.2 + 0.7*sin(\x*180/1.35)});
+
+    \node[manualblue, anchor=west, font=\tiny] at (5.7,1.5) {$v_B$};
+    \node[manualgreen!55!black, anchor=west, font=\tiny] at (5.7,0.8) {$v_E$};
+
+    \draw[manualred, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}] (2.7,0.9) -- (2.7,0.2);
+    \node[manualred, anchor=west, font=\tiny] at (2.8,0.55) {$0{,}7$ V, constante};
+
+    \node[anchor=north, font=\tiny, align=center, text width=6cm] at (2.8,-1.8)
+         {\textbf{Mesma amplitude, mesma fase}, deslocada de uma queda de junção.
+          O emissor \emph{segue} a base --- e daí o nome.};
+  \end{scope}
+
+  % ================= resumo numérico =================
+  \node[draw=manualgreen!55!black, thick, rounded corners=3pt, anchor=north west,
+        align=left, font=\scriptsize, inner sep=7pt] at (0.6,-1.4)
+       {\begin{tabular}{ll}
+          $A_v = \dfrac{R_E \parallel R_L}{r_e + R_E \parallel R_L}$
+            & $= 0{,}996$ (sem carga) \\[6pt]
+          $Z_{in} = R_1 \parallel R_2 \parallel \beta(r_e + R_E\!\parallel\!R_L)$
+            & $= 13{,}5$ k$\Omega$ \\[6pt]
+          $Z_{out} = r_e + \dfrac{R_s \parallel R_1 \parallel R_2}{\beta+1}$
+            & $= 16{,}7\ \Omega$ \\[6pt]
+          $A_i = \beta + 1$ & $= 151$ \\
+        \end{tabular}};
+
+  \node[anchor=north west, font=\scriptsize, align=left, text width=11.0cm, manualblue]
+       at (-0.6,-4.4)
+       {Ganho de tensão \textbf{menor que 1}; ganho de corrente \textbf{enorme}. Logo o ganho
+        de \emph{potência} é enorme --- o estágio não amplifica tensão, ele amplifica
+        \textbf{corrente}, que é exatamente o que falta na saída de um emissor comum.};
+
+\end{tikzpicture}
+```
+
+O seguidor de emissor. A saída copia a entrada com uma queda constante de 0,7 V, e as duas
+impedâncias são o oposto das do emissor comum.
+:::
+
+### O ganho, e por que ele é quase 1
+
+O emissor está preso à base por uma junção de 0,7 V. Se a base sobe 1 V, o emissor sobe 1 V —
+a queda de junção não muda muito, porque ela é logarítmica na corrente.
+
+Formalmente, o sinal se divide entre $r_e$ e a carga de emissor:
+
+$$ \boxed{\;A_v = \frac{R_E \parallel R_L}{r_e + (R_E \parallel R_L)}\;} $$
+
+Com $R_E = 3$ kΩ e $r_e = 12{,}9\ \Omega$, sem carga: $A_v = 3000/3012{,}9 = 0{,}996$. **Nunca
+maior que 1, e sem inversão.**
+
+Com carga pesada o ganho cai, porque $r_e$ deixa de ser desprezível:
+
+| $R_L$ | $R_E \parallel R_L$ | $A_v$ |
+|---|---|---|
+| ∞ | 3,0 kΩ | 0,996 |
+| 1 kΩ | 750 Ω | 0,983 |
+| 100 Ω | 96,8 Ω | 0,882 |
+| 22 Ω | 21,8 Ω | 0,628 |
+
+: O seguidor com carga. Mesmo alimentando 100 Ω, ele entrega 88 % — coisa que o emissor comum
+do @sec-cap-056, com $Z_{out} = 2{,}4$ kΩ, não faria nem de longe. {#tbl-057-seguidor}
+
+### As duas impedâncias, e o transformador de resistência
+
+Aqui está a ideia central do capítulo, e ela vale a pena ser dita como uma frase: **o
+transistor transforma resistências pelo fator $\beta+1$, e o sentido da transformação depende
+de por onde se olha.**
+
+::: {#fig-057-impedancias}
+
+```{.tikz}
+%%| filename: 057-impedancias
+%%| alt: Dois diagramas lado a lado explicando a transformação de resistências. À esquerda, olhando para dentro da base: um transistor com um resistor no emissor, e uma seta apontando para a base indicando o que se vê dali. A anotação explica que a mesma tensão de sinal aparece sobre o resistor de emissor, mas a corrente que entra pela base é beta mais um vezes menor que a que passa pelo emissor, de modo que a razão entre tensão e corrente é beta mais um vezes maior: olhando para a base, vê-se a resistência de emissor multiplicada por beta mais um. Com três quilo-ohms e beta cento e cinquenta, isso dá quatrocentos e cinquenta e dois quilo-ohms. À direita, olhando para dentro do emissor: o mesmo transistor com uma resistência de fonte ligada à base, e uma seta apontando para o emissor. A anotação explica que agora a corrente é beta mais um vezes maior e a tensão é a mesma, de modo que a resistência aparece dividida por beta mais um, somada à resistência intrínseca de emissor. Com seiscentos ohms de fonte e beta cento e cinquenta, isso dá dezesseis vírgula sete ohms. Uma faixa embaixo resume a regra: da base para o emissor, divide-se por beta mais um; do emissor para a base, multiplica-se por beta mais um. Uma advertência em vermelho registra que o divisor de polarização fica em paralelo com a resistência vista na base e portanto limita a impedância de entrada: de nada adianta ver quatrocentos e cinquenta quilo-ohms na base se o divisor tem catorze quilo-ohms.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= olhando para a base =================
+  \begin{scope}
+    \node[anchor=south, font=\scriptsize\bfseries] at (1.0,4.4) {olhando para a \textbf{base}};
+    \node[npn, anchor=B] (Q1) at (0,2.4) {};
+    \draw (Q1.C) -- ++(0,0.9) node[anchor=south, font=\tiny] {$+V_{CC}$};
+    \draw (Q1.E) -- ++(0,-0.4) coordinate (e1);
+    \draw (e1) to[R, l={$R_E = 3$ k}] ++(0,-1.5) node[ground]{};
+    \draw (Q1.B) -- ++(-1.6,0) coordinate (b1);
+    \draw[manualblue, -{Latex[length=2mm]}, very thick] (b1) ++(-0.9,0) -- ++(0.75,0);
+    \node[manualblue, anchor=east, font=\scriptsize] at ($(b1)+(-0.95,0)$) {$r_{in}$};
+
+    \node[anchor=north west, font=\tiny, align=left, text width=5.2cm] at (-2.6,-0.2)
+         {A mesma tensão de sinal aparece sobre $R_E$, mas a corrente de base é
+          $(\beta{+}1)$ vezes \emph{menor}. \\[3pt]
+          $\Rightarrow$ \; $r_{in} = (\beta+1)(r_e + R_E)$ \\[3pt]
+          $= 151 \times 3013 = \mathbf{455}$ \textbf{k}$\boldsymbol{\Omega}$};
+  \end{scope}
+
+  % ================= olhando para o emissor =================
+  \begin{scope}[shift={(8.4,0)}]
+    \node[anchor=south, font=\scriptsize\bfseries] at (0.6,4.4)
+         {olhando para o \textbf{emissor}};
+    \node[npn, anchor=B] (Q2) at (0,2.4) {};
+    \draw (Q2.C) -- ++(0,0.9) node[anchor=south, font=\tiny] {$+V_{CC}$};
+    \draw (Q2.B) to[R, l={$R_s = 600$}] ++(-2.4,0) node[ground]{};
+    \draw (Q2.E) -- ++(0,-0.5) coordinate (e2);
+    \draw[manualblue, -{Latex[length=2mm]}, very thick] ($(e2)+(0,-0.9)$) -- ++(0,0.75);
+    \node[manualblue, anchor=north, font=\scriptsize] at ($(e2)+(0,-0.95)$) {$r_{out}$};
+
+    \node[anchor=north west, font=\tiny, align=left, text width=5.2cm] at (-2.6,-0.2)
+         {A corrente de emissor é $(\beta{+}1)$ vezes \emph{maior} que a de base, com a mesma
+          tensão. \\[3pt]
+          $\Rightarrow$ \; $r_{out} = r_e + \dfrac{R_s}{\beta+1}$ \\[3pt]
+          $= 12{,}9 + 4 = \mathbf{16{,}9}\ \boldsymbol{\Omega}$};
+  \end{scope}
+
+  % ================= a regra =================
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=center,
+        font=\scriptsize, inner sep=7pt, text width=12.4cm] at (5.2,-3.4)
+       {\textbf{A regra, nas duas direções:}
+        da base para o emissor \textbf{divide-se} por $\beta+1$; \;
+        do emissor para a base \textbf{multiplica-se} por $\beta+1$.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north, align=center,
+        font=\scriptsize, inner sep=7pt, text width=12.4cm] at (5.2,-4.9)
+       {\textbf{E a ressalva que estraga metade dos projetos:} o divisor de polarização fica
+        em \emph{paralelo} com $r_{in}$. De nada adianta enxergar $455$ k$\Omega$ na base se
+        $R_1 \parallel R_2$ vale $13{,}9$ k$\Omega$ --- e é ele que manda em $Z_{in}$.};
+
+\end{tikzpicture}
+```
+
+A transformação de resistências pelo fator $\beta+1$, nos dois sentidos. É essa transformação
+que faz o seguidor de emissor funcionar, e é o divisor de polarização que limita o quanto dela
+se aproveita.
+:::
+
+$$ \boxed{\;Z_{in} = R_1 \parallel R_2 \parallel (\beta+1)(r_e + R_E \parallel R_L)\;} $$
+$$ \boxed{\;Z_{out} = r_e + \frac{R_s \parallel R_1 \parallel R_2}{\beta+1}\;} $$
+
+No circuito da @fig-057-seguidor, sem carga e com $\beta = 150$:
+
+$$ (\beta+1)(r_e + R_E) = 151 \times 3013 = 455\ \text{k}\Omega
+   \qquad
+   Z_{in} = 13\,900 \parallel 455\,000 = 13{,}5\ \text{k}\Omega $$
+
+**O divisor engoliu tudo.** O transistor oferecia 455 kΩ e a polarização entregou 13,5 kΩ.
+Quem precisa de impedância de entrada realmente alta usa uma das duas saídas: alimentação
+simétrica com a base aterrada por um resistor grande (a quarta polarização do @sec-cap-055),
+ou **bootstrap** — um capacitor que leva o sinal do emissor de volta ao ponto médio do
+divisor, fazendo com que os dois lados do resistor se movam juntos, o que multiplica a
+resistência aparente dele.
+
+E a saída:
+
+$$ Z_{out} = 12{,}9 + \frac{600 \parallel 13\,900}{151} = 12{,}9 + 3{,}8 = 16{,}7\ \Omega $$
+
+Dezesseis ohms. **Trezentas vezes menor que a impedância de saída do emissor comum**, e
+suficiente para alimentar um fone de ouvido.
+
+::: {.callout-note}
+## Onde o seguidor aparece na prática
+
+- **Buffer entre estágios**: emissor comum (ganho, saída alta) seguido de coletor comum
+  (saída baixa). É a receita padrão, e a Parte 4 do laboratório a monta.
+- **Elemento de passagem de fonte linear**: o Zener do @sec-cap-050 fixa a tensão na base, e
+  o seguidor entrega a corrente. A tensão de saída é $V_Z - 0{,}7$ V, e a corrente é
+  $\beta+1$ vezes a que o Zener precisa fornecer. Foi essa combinação que o @sec-cap-050
+  prometeu para o Volume 9.
+- **Estágio de saída de áudio**: dois seguidores complementares, NPN e PNP, um empurrando e
+  outro puxando — assunto do Volume 11.
+- **Isolar uma carga capacitiva**: um cabo longo é um capacitor, e um emissor comum ligado
+  direto nele perde a banda inteira. O seguidor, com $Z_{out}$ de dezenas de ohms, não perde.
+:::
+
+::: {.callout-warning}
+## O seguidor com resistor de emissor não empurra os dois lados igual
+
+A corrente que o seguidor **fornece** à carga pode ser grande — é $\beta+1$ vezes a de base.
+A corrente que ele **absorve** é limitada por $R_E$: no pior caso, o transistor corta e a
+carga só é alimentada por $R_E$.
+
+Com $R_E = 3$ kΩ e uma carga de 100 Ω, o semiciclo negativo só consegue puxar 2 mA, e a saída
+ceifa por baixo muito antes de ceifar por cima. Esse é o limite de todo estágio **classe A**,
+e a solução é o par complementar do Volume 11.
+:::
+
+## Base comum {#sec-057-basecomum}
+
+Terceira e última maneira: o sinal entra pelo **emissor**, a base fica aterrada em CA por um
+capacitor, e a saída sai do coletor.
+
+::: {#fig-057-basecomum}
+
+```{.tikz}
+%%| filename: 057-basecomum
+%%| alt: À esquerda, o esquema de um amplificador em base comum: divisor de polarização na base com um capacitor de desvio ligando a base ao terra, resistor de emissor por onde entra o sinal através de um capacitor de acoplamento, e resistor de coletor de dois vírgula quatro quilo-ohms de onde sai o sinal. Anotações registram que a impedância de entrada é apenas a resistência intrínseca de emissor, cerca de treze ohms, que o ganho de tensão é mais o paralelo do resistor de coletor com a carga dividido pela resistência intrínseca, ou seja, cento e oitenta e cinco, e que não há inversão de fase. À direita, a explicação de por que não há efeito Miller: a capacitância entre base e coletor tem uma de suas placas ligada à base, que está aterrada em corrente alternada, de modo que ela aparece simplesmente do coletor para o terra, sem nenhuma multiplicação pelo ganho. Uma comparação registra que no emissor comum essa mesma capacitância de quatro picofarads virava oitocentos e quatro picofarads na entrada, ao passo que aqui ela continua sendo quatro picofarads na saída, e por isso a base comum funciona até frequências próximas da frequência de transição do transistor. Embaixo, duas formas de onda mostram a entrada no emissor e a saída no coletor em fase, ao contrário do emissor comum.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquema =================
+  \begin{scope}
+    \draw (-3.4,5.4) -- (0.8,5.4);
+    \node[anchor=south, font=\scriptsize] at (-1.3,5.45) {$+12$ V};
+
+    \draw (-3.4,5.4) to[R, l={$R_1$}] (-3.4,3.4);
+    \node[ponto] at (-3.4,3.4) {};
+    \draw (-3.4,3.4) to[R, l={$R_2$}] (-3.4,1.4) node[ground]{};
+
+    \draw (-3.4,3.4) -- (-1.2,3.4);
+    \node[ponto] at (-2.3,3.4) {};
+    \draw (-2.3,3.4) to[C, l={$C_B$}] (-2.3,1.9) node[ground]{};
+    \node[manualblue, anchor=west, font=\tiny, align=left] at (-1.9,2.95)
+         {base aterrada\\em CA};
+
+    \node[npn, anchor=B] (Q) at (-1.2,3.4) {};
+    \draw (Q.C) -- ++(0,0.6) coordinate (cc);
+    \node[ponto] at (cc) {};
+    \draw (cc) to[R, l={$R_C = 2{,}4$ k}] (cc |- 0,5.4);
+    \draw (cc) to[C, l={$C_2$}] ++(2.4,0) node[anchor=west, font=\scriptsize] {$v_o$};
+
+    \draw (Q.E) -- ++(0,-0.7) coordinate (ec);
+    \node[ponto] at (ec) {};
+    \draw (ec) to[R, l_={$R_E$}] ++(0,-1.7) node[ground]{};
+    \draw (ec) -- ++(1.8,0) coordinate (ein);
+    \draw (ein) to[C, l={$C_1$}] ++(0,-1.7)
+          node[anchor=north, font=\scriptsize] {$v_s$};
+    \node[manualred, anchor=north west, font=\tiny, align=left, text width=4.0cm]
+         at (3.2,1.4)
+         {\textbf{o sinal entra pelo emissor}: $Z_{in} = r_e \approx 13\ \Omega$};
+  \end{scope}
+
+  % ================= sem Miller =================
+  \begin{scope}[shift={(8.2,3.0)}]
+    \node[npn, anchor=B] (Qm) at (0,0) {};
+    \draw (Qm.B) -- ++(-1.4,0) coordinate (bg);
+    \node[ponto] at ($(bg)+(0.5,0)$) {};
+    \draw (bg) node[ground]{};
+    \draw (Qm.C) -- ++(0,1.0) coordinate (cm);
+    \node[ponto] at (cm) {};
+    \draw (cm) -- ++(0.8,0) node[anchor=west, font=\scriptsize] {$v_o$};
+    \draw (Qm.E) -- ++(0,-1.0) node[anchor=north, font=\scriptsize] {$v_s$};
+    % Cbc: da base (terra em CA) ao coletor
+    \draw[manualred, thick] ($(bg)+(0.5,0)$) -- ++(0,2.2) coordinate (ba);
+    \draw[manualred, thick] (ba) to[C, l={$C_{bc}$}] ($(cm)+(0,1.2)$);
+    \draw[manualred, thick] ($(cm)+(0,1.2)$) -- (cm);
+
+    \node[manualred, anchor=north west, font=\tiny, align=left, text width=5.6cm]
+         at (-1.8,-1.8)
+         {Uma das placas de $C_{bc}$ está na \textbf{base}, que é terra em CA. Ela vai
+          simplesmente do coletor para o terra --- \textbf{sem multiplicação nenhuma}.};
+
+    \node[draw=manualgreen!55!black, thick, rounded corners=2pt, anchor=north west,
+          align=left, font=\tiny, inner sep=5pt] at (-1.8,-3.4)
+         {emissor comum: \; $4$ pF $\rightarrow$ \textbf{804 pF} na entrada \\
+          base comum: \; $4$ pF $\rightarrow$ \textbf{4 pF} na saída \\[3pt]
+          $\Rightarrow$ a base comum funciona até perto de $f_T$};
+  \end{scope}
+
+  % ================= formas de onda =================
+  \begin{scope}[shift={(0.4,-4.6)}]
+    \draw[eixo] (0,0) -- (5.6,0);
+    \draw[curva, very thick, samples=140, domain=0:5.4, smooth]
+         plot (\x, {0.45*sin(\x*180/1.35)});
+    \draw[manualgreen!55!black, very thick, samples=140, domain=0:5.4, smooth]
+         plot (\x, {1.5 + 1.3*sin(\x*180/1.35)});
+    \draw[auxiliar] (0,1.5) -- (5.6,1.5);
+    \node[manualblue, anchor=west, font=\tiny] at (5.7,0.2) {$v_s$ (emissor)};
+    \node[manualgreen!55!black, anchor=west, font=\tiny] at (5.7,1.6) {$v_o$ (coletor)};
+    \node[anchor=north, font=\tiny, align=center, text width=6.6cm] at (2.8,-0.4)
+         {\textbf{Em fase} --- ao contrário do emissor comum. A corrente que entra pelo
+          emissor sai pelo coletor: mais entrada, mais corrente, e o sinal atravessa sem
+          inverter.};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+A base comum. A entrada é o emissor, o que dá impedância de entrada de poucos ohms; e a base
+aterrada em CA blinda a entrada da saída, o que elimina o efeito Miller.
+:::
+
+Os quatro números:
+
+$$ Z_{in} = r_e \parallel R_E \approx r_e, \qquad
+   A_v = +\frac{R_C \parallel R_L}{r_e}, \qquad
+   Z_{out} \approx R_C, \qquad A_i = \alpha \approx 1 $$
+
+Com $I_E = 2$ mA e $R_C = 2{,}4$ kΩ: $Z_{in} = 13\ \Omega$, $A_v = +185$.
+
+**O mesmo ganho de tensão do emissor comum, sem a inversão** — e com uma impedância de entrada
+duzentas vezes menor. O ganho de corrente é $\alpha$, isto é, praticamente 1: a base comum não
+amplifica corrente nenhuma. Ela troca uma corrente de baixa tensão por uma corrente de alta
+tensão, e é por isso que o nome antigo dela era "amplificador de tensão por transferência de
+corrente" — de onde, aliás, vem a palavra *transistor*.
+
+### Por que não há efeito Miller
+
+O @sec-cap-056 mostrou que $C_{bc}$ mata a banda do emissor comum porque as duas placas dela se
+movem em sentidos opostos. Na base comum, **uma das placas está na base, que é terra em CA**.
+$C_{bc}$ vira uma capacitância comum do coletor para o terra, sem multiplicação:
+
+| | $C_{bc}$ efetiva | onde ela aparece | banda |
+|---|---|---|---|
+| emissor comum | $(1+\lvert A_v\rvert)C_{bc} = 804$ pF | na entrada | 0,5 MHz |
+| base comum | $C_{bc} = 4$ pF | na saída | dezenas de MHz |
+
+: O efeito Miller nas duas configurações. A base comum opera até perto de $f_T$.
+{#tbl-057-miller}
+
+Onde a base comum aparece sozinha: **amplificador de RF**, onde a banda é tudo e a fonte é um
+cabo de 50 Ω. E aqui a impedância de entrada baixa deixa de ser defeito e vira recurso — para
+casar 50 Ω basta escolher a corrente:
+
+$$ r_e = 50\ \Omega \quad\Longrightarrow\quad I_E = \frac{26\ \text{mV}}{50\ \Omega}
+   = 0{,}52\ \text{mA} $$
+
+Um casamento de impedância feito com uma corrente de polarização, sem nenhum componente
+adicional.
+
+## O cascode: o melhor dos dois {#sec-057-cascode}
+
+A base comum tem a banda e não tem impedância de entrada. O emissor comum tem impedância de
+entrada e não tem banda. Empilhe os dois.
+
+::: {#fig-057-cascode}
+
+```{.tikz}
+%%| filename: 057-cascode
+%%| alt: À esquerda, o esquema do cascode: dois transistores empilhados. O de baixo está em emissor comum, com o sinal entrando na base e o emissor aterrado através do resistor de emissor com capacitor de desvio. O coletor dele vai direto ao emissor do transistor de cima. O de cima está em base comum: a base é fixada por um divisor e aterrada em corrente alternada por um capacitor, e o coletor dele vai ao resistor de coletor de dois vírgula quatro quilo-ohms, de onde sai o sinal. À direita, a explicação em três passos. Primeiro: o transistor de baixo enxerga como carga não o resistor de coletor, mas a impedância de entrada do transistor de cima, que é a resistência intrínseca de emissor, cerca de treze ohms. Segundo: portanto o ganho do estágio de baixo é menos treze dividido por treze, ou seja, aproximadamente menos um, e a capacitância Miller vista na entrada é apenas duas vezes a capacitância base-coletor, oito picofarads em vez de oitocentos e quatro. Terceiro: o ganho de tensão inteiro é entregue pelo transistor de cima, que está em base comum e é imune a Miller, e vale menos o resistor de coletor dividido pela resistência intrínseca, ou seja, cento e oitenta e cinco. O resultado final está destacado: ganho de emissor comum com banda de base comum, cento e oitenta e cinco vezes até dezenas de megahertz, contra meio megahertz do emissor comum sozinho.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquema =================
+  \begin{scope}
+    \draw (-2.8,7.0) -- (1.6,7.0);
+    \node[anchor=south, font=\scriptsize] at (-0.2,7.05) {$+12$ V};
+
+    % Q2 em base comum, em cima
+    \node[npn, anchor=E] (Q2) at (0,3.9) {};
+    \draw (Q2.C) -- ++(0,0.6) coordinate (c2);
+    \node[ponto] at (c2) {};
+    \draw (c2) to[R, l={$R_C = 2{,}4$ k}] (c2 |- 0,7.0);
+    \draw (c2) to[C, l={$C_2$}] ++(2.2,0) node[anchor=west, font=\scriptsize] {$v_o$};
+
+    % divisor da base de Q2
+    \draw (-2.8,7.0) to[R, l={$R_A$}] (-2.8,5.6);
+    \draw (-2.8,5.6) -- (-2.8,5.0);
+    \node[ponto] at (-2.0,5.3) {};
+    \draw (-2.8,5.3) -- (-4.0,5.3);
+    \draw (-4.0,5.3) to[C, l={$C_B$}] (-4.0,3.9) node[ground]{};
+    \draw (-2.8,5.0) to[R, l={$R_B$}] (-2.8,3.6) node[ground]{};
+    \draw (-2.8,5.3) -- (Q2.B);
+
+    % Q1 em emissor comum, embaixo
+    \node[npn, anchor=C] (Q1) at (0,3.9) {};
+    \draw (Q1.B) -- ++(-1.2,0) coordinate (b1);
+    \node[ponto] at (b1) {};
+    \draw (b1) to[C, l_={$C_1$}] ++(-1.4,0)
+          node[anchor=east, font=\scriptsize] {$v_s$};
+    \draw (b1) -- ++(0,1.0) coordinate (b1u);
+    \draw (b1u) to[R, l={$R_1$}] (b1u |- 0,7.0);
+    \draw (b1) -- ++(0,-0.9) coordinate (b1d);
+    \draw (b1d) to[R, l_={$R_2$}] ++(0,-1.4) node[ground]{};
+
+    \draw (Q1.E) -- ++(0,-0.4) coordinate (e1);
+    \node[ponto] at (e1) {};
+    \draw (e1) to[R, l_={$R_E$}] ++(0,-1.5) node[ground]{};
+    \draw (e1) -- ++(1.4,0) coordinate (e1b);
+    \draw (e1b) to[C, l={$C_E$}] ++(0,-1.5) node[ground]{};
+
+    \node[manualblue, anchor=west, font=\tiny, align=left] at (1.0,4.8)
+         {$Q_2$: base comum};
+    \node[manualgreen!55!black, anchor=west, font=\tiny, align=left] at (1.0,2.4)
+         {$Q_1$: emissor comum};
+  \end{scope}
+
+  % ================= a explicação =================
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.6cm] at (4.0,7.0)
+       {\textbf{1.} O coletor de $Q_1$ não enxerga $R_C$: enxerga a \emph{entrada} de $Q_2$,
+        que é $r_e \approx 13\ \Omega$. \\[5pt]
+        \textbf{2.} Logo o ganho de $Q_1$ é
+        $A_{v1} = -\dfrac{13}{13} \approx \mathbf{-1}$, e a capacitância Miller na entrada é
+        $(1+1)C_{bc} = \mathbf{8}$ \textbf{pF} em vez de $804$ pF. \\[5pt]
+        \textbf{3.} O ganho de tensão inteiro vem de $Q_2$, que está em base comum e é
+        \emph{imune} a Miller:
+        $A_v = -\dfrac{R_C}{r_e} = \mathbf{-185}$.};
+
+  \node[draw=manualgreen!55!black, thick, rounded corners=3pt, anchor=north west,
+        align=left, font=\scriptsize, inner sep=7pt, text width=7.6cm] at (4.0,2.4)
+       {\textbf{Resultado: ganho de emissor comum com banda de base comum.} \\[4pt]
+        $185$ vezes até dezenas de MHz, contra $0{,}5$ MHz do emissor comum sozinho ---
+        e com a impedância de entrada do emissor comum, que a base comum sozinha não tem.};
+
+  \node[anchor=north west, font=\scriptsize, align=left, text width=7.6cm, manualblue]
+       at (4.0,0.0)
+       {O preço: um transistor a mais, um divisor a mais, e $V_{CE}$ repartido entre os dois
+        --- o que come excursão. Em circuito integrado, onde transistor é barato e espaço é
+        caro, o cascode é a norma.};
+
+\end{tikzpicture}
+```
+
+O cascode: emissor comum embaixo, base comum em cima. O transistor de cima segura o coletor do
+de baixo praticamente parado, e um coletor parado não multiplica $C_{bc}$.
+:::
+
+O truque é sutil e vale enunciar devagar. O efeito Miller multiplica $C_{bc}$ por $1 + |A_v|$,
+onde $A_v$ é o ganho **do estágio em que ela está**. Se o coletor de $Q_1$ mal se mexe, não há
+multiplicação.
+
+E ele mal se mexe porque a carga que $Q_1$ enxerga não é $R_C$: é a impedância de entrada de
+$Q_2$, que está em base comum e vale $r_e \approx 13\ \Omega$. O ganho de $Q_1$ é então
+$-13/13 \approx -1$, e $C_{in} = C_{be} + 2C_{bc} = 16$ pF em vez de 804 pF.
+
+A corrente de sinal, porém, atravessa $Q_1$ e $Q_2$ inteira ($\alpha \approx 1$) e chega a
+$R_C$. O ganho total é o mesmo do emissor comum: $-R_C/r_e = -185$.
+
+**Ganho de emissor comum, banda de base comum.** O cascode está dentro de praticamente todo
+amplificador de RF discreto, de todo estágio de entrada de osciloscópio e de quase todo
+amplificador operacional de banda larga.
+
+## As três configurações, lado a lado {#sec-057-comparacao}
+
+::: {#fig-057-comparacao}
+
+```{.tikz}
+%%| filename: 057-comparacao
+%%| alt: Comparação das três configurações do transistor bipolar, cada uma com um pequeno esquema e uma coluna de números. A primeira é o emissor comum, com entrada na base e saída no coletor: ganho de tensão alto e negativo, cento e noventa e oito; ganho de corrente igual a beta; impedância de entrada média, um vírgula dois quilo-ohms; impedância de saída alta, dois vírgula quatro quilo-ohms; banda estreita, meio megahertz, por causa do efeito Miller; e uso típico como amplificador de tensão de uso geral. A segunda é o coletor comum, com entrada na base e saída no emissor: ganho de tensão de aproximadamente um, sem inversão; ganho de corrente igual a beta mais um; impedância de entrada alta, treze vírgula cinco quilo-ohms; impedância de saída muito baixa, dezessete ohms; banda larga; e uso típico como buffer, casador de impedâncias e estágio de saída. A terceira é a base comum, com entrada no emissor e saída no coletor: ganho de tensão alto e positivo, cento e oitenta e cinco; ganho de corrente de aproximadamente um; impedância de entrada muito baixa, treze ohms; impedância de saída alta, dois vírgula quatro quilo-ohms; banda muito larga, sem efeito Miller; e uso típico em rádio-frequência, casamento com cabo de cinquenta ohms e como metade de cima do cascode. Uma anotação final registra a regra de ouro: o terminal comum é o que não é nem entrada nem saída, e a entrada pela base dá impedância alta, a entrada pelo emissor dá impedância baixa, a saída pelo coletor dá ganho de tensão e a saída pelo emissor dá ganho de corrente.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- emissor comum ----------
+  \begin{scope}[shift={(0,0)}]
+    \node[npn, anchor=B] (Qa) at (0,0) {};
+    \draw (Qa.B) -- ++(-1.1,0) node[anchor=east, font=\tiny, manualblue] {in};
+    \draw (Qa.C) -- ++(0,0.5) coordinate (ca);
+    \node[ponto] at (ca) {};
+    \draw (ca) -- ++(0,0.7) node[anchor=south, font=\tiny] {$+V$};
+    \draw (ca) -- ++(1.0,0) node[anchor=west, font=\tiny, manualred] {out};
+    \draw (Qa.E) -- ++(0,-0.7) node[ground]{};
+    \node[anchor=south, font=\scriptsize\bfseries] at (0.1,2.7) {emissor comum};
+  \end{scope}
+
+  % ---------- coletor comum ----------
+  \begin{scope}[shift={(5.4,0)}]
+    \node[npn, anchor=B] (Qb) at (0,0) {};
+    \draw (Qb.B) -- ++(-1.1,0) node[anchor=east, font=\tiny, manualblue] {in};
+    \draw (Qb.C) -- ++(0,1.2) node[anchor=south, font=\tiny] {$+V$};
+    \draw (Qb.E) -- ++(0,-0.5) coordinate (cb);
+    \node[ponto] at (cb) {};
+    \draw (cb) -- ++(0,-0.7) node[ground]{};
+    \draw (cb) -- ++(1.0,0) node[anchor=west, font=\tiny, manualred] {out};
+    \node[anchor=south, font=\scriptsize\bfseries] at (0.1,2.7) {coletor comum};
+  \end{scope}
+
+  % ---------- base comum ----------
+  \begin{scope}[shift={(10.8,0)}]
+    \node[npn, anchor=B] (Qc) at (0,0) {};
+    \draw (Qc.B) -- ++(-1.1,0) node[ground]{};
+    \draw (Qc.C) -- ++(0,0.5) coordinate (cc2);
+    \node[ponto] at (cc2) {};
+    \draw (cc2) -- ++(0,0.7) node[anchor=south, font=\tiny] {$+V$};
+    \draw (cc2) -- ++(1.0,0) node[anchor=west, font=\tiny, manualred] {out};
+    \draw (Qc.E) -- ++(0,-1.0) node[anchor=north, font=\tiny, manualblue] {in};
+    \node[anchor=south, font=\scriptsize\bfseries] at (0.1,2.7) {base comum};
+  \end{scope}
+
+  % ---------- tabela ----------
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt] at (-1.4,-2.2)
+       {\begin{tabular}{lccc}
+          & \textbf{emissor comum} & \textbf{coletor comum} & \textbf{base comum} \\ \hline
+          entrada / saída & base / coletor & base / emissor & emissor / coletor \\
+          $A_v$ & $-198$ (alto, invertido) & $\approx +1$ & $+185$ (alto, direto) \\
+          $A_i$ & $\beta$ & $\beta+1$ & $\alpha \approx 1$ \\
+          $Z_{in}$ & $1{,}2$ k$\Omega$ & $13{,}5$ k$\Omega$ & $13\ \Omega$ \\
+          $Z_{out}$ & $2{,}4$ k$\Omega$ & $17\ \Omega$ & $2{,}4$ k$\Omega$ \\
+          banda & $0{,}5$ MHz (Miller) & larga & muito larga \\
+          uso & ganho de tensão & \emph{buffer}, saída & RF, cascode \\
+        \end{tabular}};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.4cm] at (-1.4,-6.4)
+       {\textbf{A regra que dispensa decorar a tabela:} \\[3pt]
+        entrar pela \textbf{base} $\Rightarrow$ impedância de entrada \emph{alta}; \quad
+        entrar pelo \textbf{emissor} $\Rightarrow$ \emph{baixa}. \\[3pt]
+        sair pelo \textbf{coletor} $\Rightarrow$ ganho de \emph{tensão}; \quad
+        sair pelo \textbf{emissor} $\Rightarrow$ ganho de \emph{corrente}.};
+
+\end{tikzpicture}
+```
+
+As três configurações e os seis números que as distinguem. O terminal "comum" é o que não é
+nem entrada nem saída.
+:::
+
+## 🧪 Laboratório {#sec-057-lab}
+
+**Montar o seguidor e medir o ganho unitário e a impedância de saída de dezenas de ohms;
+alimentar uma carga que o emissor comum não conseguiria; montar a base comum e confirmar o
+ganho não invertido; e comparar a banda das três configurações.**
+
+### Material
+
+::: {.lab-material}
+- 1 fonte de bancada de 12 V
+- 1 gerador de funções (10 Hz a 5 MHz, se possível)
+- 1 osciloscópio de 2 canais
+- 2 multímetros digitais
+- 3 transistores 2N3904 ou BC547
+- Resistores: 22 Ω, 100 Ω, 220 Ω, 620 Ω, 1 kΩ, 2,4 kΩ, 3 kΩ, 4,7 kΩ, 10 kΩ, 22 kΩ, 24 kΩ,
+  33 kΩ
+- Capacitores: 100 nF, 1 µF, 4,7 µF, 10 µF, 220 µF
+- 1 potenciômetro de 1 kΩ e 1 de 10 kΩ
+- 1 alto-falante pequeno de 8 Ω ou um fone de ouvido velho (para a Parte 3)
+- Protoboard, jumpers
+:::
+
+### Parte 1 — O seguidor, em CC e em CA
+
+Monte o circuito da @fig-057-seguidor: $R_1 = 24$ kΩ, $R_2 = 33$ kΩ, $R_E = 3$ kΩ,
+$C_1 = C_2 = 4{,}7\ \mu$F.
+
+1. Confirme em CC: $V_B \approx 6{,}95$ V, $V_E \approx 6{,}06$ V, $V_{BE} \approx 0{,}7$ V.
+2. Aplique 1 kHz com 1 V de pico (sim, **um volt** — o seguidor aguenta sinais grandes, ao
+   contrário do emissor comum).
+3. Meça a amplitude na base e no emissor. A razão deve dar 0,99 e alguma coisa.
+4. **Observe a fase:** os dois traços estão sobrepostos, sem inversão.
+5. Aumente o sinal até 4 V de pico e veja onde a saída ceifa. Anote qual dos dois semiciclos
+   ceifa primeiro e relacione com o aviso da seção @sec-057-seguidor.
+
+### Parte 2 — A impedância de saída
+
+1. Sem carga, meça a amplitude de saída.
+2. Ligue $R_L = 100\ \Omega$ e meça de novo.
+3. $Z_{out} = R_L\left(\dfrac{v_{\text{sem}}}{v_{\text{com}}} - 1\right)$
+
+O previsto é da ordem de 17 Ω. **Compare com o mesmo experimento feito no emissor comum**
+(Parte 5 do laboratório do @sec-cap-056), onde o resultado foi 2,3 kΩ. É a diferença entre
+alimentar 100 Ω e não alimentar.
+
+4. Repita com $R_L = 22\ \Omega$ e confirme que a saída ainda existe.
+
+### Parte 3 — Uma carga que só o seguidor alimenta
+
+1. Ligue o alto-falante de 8 Ω (ou o fone) na saída do seguidor através de um eletrolítico de
+   220 µF. Aplique 1 kHz. **Você vai ouvir.**
+2. Agora ligue o mesmo alto-falante na saída do emissor comum do @sec-cap-056, com o mesmo
+   sinal. Praticamente nada sai.
+3. Volte ao emissor comum e ligue a saída dele à **entrada do seguidor**, e o alto-falante à
+   saída do seguidor.
+
+O terceiro caso é o ponto do capítulo: ganho do emissor comum, corrente do seguidor. Meça a
+amplitude no alto-falante nas três montagens e compare.
+
+::: {.callout-warning}
+Não deixe o alto-falante ligado por muito tempo com sinal grande: o seguidor está em classe A
+e o transistor dissipa continuamente. Com 8 Ω de carga e $R_E$ de 3 kΩ, o alto-falante recebe
+pouca potência, mas confira o aquecimento do transistor com o dedo.
+:::
+
+### Parte 4 — Medir a impedância de entrada, e ver o divisor limitando
+
+1. Insira o potenciômetro de 10 kΩ em série com a entrada e use o método da metade
+   (@sec-cap-056, Parte 4).
+2. O resultado deve dar por volta de 13 kΩ, não 455 kΩ.
+3. **Agora troque o divisor** por $R_1 = 220$ kΩ e $R_2 = 330$ kΩ (mesma proporção, dez vezes
+   mais alto) e repita.
+
+$Z_{in}$ sobe bastante — e o ponto de operação piora, exatamente pelo que o @sec-cap-055
+previu. Meça $V_E$ nos dois casos e confirme o compromisso.
+
+### Parte 5 — Base comum
+
+Monte: divisor de base $R_1 = 22$ kΩ / $R_2 = 4{,}7$ kΩ, $R_E = 620\ \Omega$,
+$R_C = 2{,}4$ kΩ, capacitor de 10 µF **da base para o terra**, entrada acoplada por 1 µF ao
+**emissor**, saída acoplada por 1 µF do coletor.
+
+1. Aplique 1 kHz com sinal pequeno **no emissor** (uns 5 mV — use o divisor 100:1).
+2. Meça o ganho. O previsto é da ordem de +185.
+3. **Observe a fase:** entrada e saída estão em fase. É a diferença visível em relação ao
+   emissor comum.
+4. Meça $Z_{in}$ pelo método da metade, usando o potenciômetro de 1 kΩ. O resultado deve ser de
+   poucas dezenas de ohms — e é a menor impedância de entrada que você vai medir neste manual.
+5. Compare o valor medido com $26/I_E$.
+
+### Parte 6 — A banda, nas três configurações
+
+Com sinal pequeno e sem carga, varra a frequência até achar $f_H$ (queda de 3 dB) em cada uma:
+
+| Configuração | ganho medido | $f_H$ medida | $\lvert A_v\rvert \times f_H$ |
+|---|---|---|---|
+| emissor comum (@sec-cap-056) | | | |
+| coletor comum | | | |
+| base comum | | | |
+
+: A banda das três configurações. A última coluna é o produto ganho-banda.
+{#tbl-057-lab1}
+
+O emissor comum trava em algumas centenas de quilohertz; as outras duas vão muito além do que
+um gerador de bancada comum alcança. **Se o seu gerador não passa de 1 MHz**, a comparação
+ainda funciona: basta constatar que o emissor comum já caiu e as outras duas não caíram.
+
+### Parte 7 — O cascode
+
+Monte a @fig-057-cascode: $Q_1$ em emissor comum com $R_E = 620\ \Omega$ desviado por 220 µF,
+$Q_2$ empilhado com a base em 7 V (divisor $R_A = 10$ kΩ / $R_B = 15$ kΩ) e desviada por
+10 µF, $R_C = 2{,}4$ kΩ.
+
+1. Confirme em CC: $V_E(Q_1) \approx 1{,}3$ V, $V_C(Q_1) = V_E(Q_2) \approx 6{,}3$ V,
+   $V_C(Q_2) \approx 7$ V.
+2. Meça o ganho em 1 kHz. Deve ser parecido com o do emissor comum sozinho.
+3. Meça $f_H$. Deve ser **muito** maior.
+
+Ganho igual, banda muito maior, um transistor a mais. É o negócio que o cascode oferece, e vê-lo
+funcionar na bancada é mais convincente do que a álgebra.
+
+**Variante simulada (plano B).** No ngspice, `.ac dec 20 10 1e9` nos quatro circuitos, com as
+curvas sobrepostas, é a @tbl-057-lab1 em um gráfico. O experimento decisivo é comparar emissor
+comum e cascode com o mesmo `cjc`: as curvas coincidem em ganho e divergem em uma década e
+meia de banda. Para a Parte 2, `.tf v(out) vin` dá impedância de entrada e de saída
+diretamente, sem o método da metade. No Falstad, os circuitos "Emitter follower" e "Common
+base amplifier" estão prontos na biblioteca.
+
+## 🔥 Onde Queima {#sec-057-queima}
+
+**Esperar ganho de tensão de um seguidor.** Ele é 0,99. O seguidor amplifica **corrente**, e
+serve para casar impedâncias — quem quer ganho de tensão põe um emissor comum antes dele.
+
+**Achar que o seguidor tem impedância de entrada altíssima.** Ela é $R_1 \parallel R_2$ em
+paralelo com o que o transistor oferece, e o divisor quase sempre manda. 455 kΩ do transistor
+com um divisor de 13,9 kΩ dão 13,5 kΩ.
+
+**Esquecer que o seguidor em classe A não puxa corrente.** Ele empurra com $\beta+1$ vezes a
+corrente de base e puxa apenas o que $R_E$ deixa. Com carga pesada, o semiciclo negativo
+ceifa primeiro. Estágio de saída de verdade é complementar.
+
+**Deixar o seguidor sem resistor de base em circuito de RF.** O seguidor de emissor com carga
+capacitiva e fonte indutiva é um oscilador conhecido: a transformação de impedância pelo
+transistor pode virar resistência negativa. Um resistor de 47 a 220 Ω em série com a base
+resolve, e é por isso que ele aparece em tantos esquemas sem explicação.
+
+**Ligar o capacitor de desvio da base comum no lugar errado.** Ele vai **da base para o
+terra**, não em paralelo com $R_E$. Se ele for parar no emissor, o circuito vira um emissor
+comum com a entrada em curto.
+
+**Aplicar sinal grande na entrada de uma base comum.** $Z_{in}$ é de 13 Ω: uma fonte de 1 V
+com 50 Ω de saída injetaria 20 mA no emissor, o que muda o ponto de operação e ceifa tudo. A
+base comum trabalha com sinais de corrente pequenos.
+
+**Usar base comum esperando ganho de corrente.** $A_i = \alpha \approx 1$. Ela nunca entrega
+mais corrente do que recebeu.
+
+**Montar o cascode e esquecer o desvio da base do transistor de cima.** Sem o capacitor de
+base, $Q_2$ não está em base comum, o coletor de $Q_1$ volta a se mover, e o efeito Miller
+volta com ele — junto com o ganho, o que torna o defeito difícil de ver.
+
+**Esquecer que o cascode divide $V_{CE}$ entre dois transistores.** Com 12 V de alimentação e
+dois transistores em série, sobra pouco para a excursão. Cascode é natural em circuito
+integrado e apertado em 5 V.
+
+**Medir a fase e concluir a configuração errada.** Emissor comum inverte; coletor comum e base
+comum não. Se você esperava inversão e não a vê, provavelmente a saída está no emissor.
+
+**Ignorar o resistor de emissor do seguidor no cálculo térmico.** Com $V_E = 6$ V e 2 mA, o
+transistor dissipa $5{,}94 \times 2\ \text{mA} = 12$ mW em repouso — e mais com sinal, porque
+classe A dissipa **mais** com sinal grande em algumas partes do ciclo.
+
+## O que fica deste capítulo {#sec-057-resumo}
+
+**Coletor comum (seguidor de emissor)** — entrada na base, saída no emissor:
+
+$$ A_v = \frac{R_E \parallel R_L}{r_e + R_E \parallel R_L} \approx 1, \qquad
+   A_i = \beta+1 $$
+$$ Z_{in} = R_1 \parallel R_2 \parallel (\beta+1)(r_e + R_E \parallel R_L), \qquad
+   Z_{out} = r_e + \frac{R_s \parallel R_1 \parallel R_2}{\beta+1} $$
+
+Sem inversão, ganho de tensão sempre menor que 1, ganho de **corrente** enorme. No exemplo:
+$A_v = 0{,}996$, $Z_{in} = 13{,}5$ kΩ, $Z_{out} = 16{,}7\ \Omega$.
+
+A ideia por trás: **o transistor transforma resistências por $\beta+1$**. Da base para o
+emissor divide-se; do emissor para a base multiplica-se. E **o divisor de polarização limita o
+quanto disso se aproveita** na entrada.
+
+**Base comum** — entrada no emissor, saída no coletor:
+
+$$ Z_{in} \approx r_e, \qquad A_v = +\frac{R_C \parallel R_L}{r_e}, \qquad
+   Z_{out} \approx R_C, \qquad A_i = \alpha \approx 1 $$
+
+Ganho de tensão igual ao do emissor comum e **sem inversão**; impedância de entrada de poucos
+ohms, que vira recurso quando se quer casar 50 Ω (basta escolher $I_E = 0{,}52$ mA). E, o
+essencial: **sem efeito Miller**, porque a base aterrada em CA impede que $C_{bc}$ seja
+multiplicada. Banda até perto de $f_T$.
+
+**Cascode** — emissor comum embaixo, base comum em cima. O de baixo enxerga como carga o $r_e$
+do de cima, tem ganho $\approx -1$, e por isso não sofre Miller; o de cima entrega o ganho de
+tensão inteiro e é imune por construção. **Ganho de emissor comum com banda de base comum.**
+
+E a regra que substitui a tabela: **entrar pela base dá impedância alta, entrar pelo emissor dá
+impedância baixa; sair pelo coletor dá ganho de tensão, sair pelo emissor dá ganho de
+corrente.**
+
+## Para o próximo capítulo {#sec-057-fecho}
+
+Três configurações, três conjuntos de fórmulas, e um padrão que já deve estar visível: todas
+elas saem das mesmas duas grandezas — $g_m$ (ou $r_e$) e $\beta$ — combinadas com os
+resistores em volta.
+
+Isso não é coincidência. É sinal de que existe **um único modelo** por trás das três, e que as
+fórmulas deste capítulo e do anterior são casos particulares dele.
+
+O capítulo 058 fecha o Volume 9 construindo esse modelo: substituir o transistor por um
+circuito equivalente — uma resistência $r_\pi$ entre base e emissor, uma fonte de corrente
+$g_m v_{be}$ entre coletor e emissor, uma resistência $r_o$ em paralelo com ela — e resolver o
+que sobra com análise nodal (@sec-cap-015) e Thévenin (@sec-cap-018), como se o transistor
+nunca tivesse existido.
+
+Com ele, deduzir o ganho de qualquer estágio deixa de ser exercício de memória e vira
+exercício dos Volumes 2 e 3. E o mesmo modelo, com outros nomes para os mesmos elementos,
+volta no Volume 10 para o MOSFET e no Volume 11 para o amplificador operacional.
