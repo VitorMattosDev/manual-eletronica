@@ -1,3 +1,898 @@
 # Baterias, células e circuitos de carga {#sec-cap-076}
 
-*(em elaboração)*
+::: {.callout-warning}
+## Química, não eletrônica
+
+Uma bateria é o único componente deste manual que **guarda a própria energia** e que pode
+liberá-la toda de uma vez. Uma célula de lítio de 2600 mAh guarda cerca de 35 kJ — mais ou menos
+o que há em 1 grama de TNT, e com muito menos aviso.
+
+Quatro regras que valem em todo o capítulo, e das quais nenhuma é negociável:
+
+- **Nunca carregue uma célula de lítio sem circuito de carga apropriado.** Não é uma fonte de
+  tensão ligada nos terminais. O perfil CC-CV da @fig-076-carga não é uma recomendação de
+  desempenho: é o que impede a deposição de lítio metálico e o curto interno que vem depois.
+- **Nunca curto-circuite, perfure, deforme ou aqueça uma célula.** Uma célula de lítio danificada
+  pode entrar em fuga térmica minutos ou horas depois, sem sinal prévio.
+- **Nunca descarregue uma célula de lítio abaixo do mínimo da química** (2,5 V para Li-íon,
+  2,0 V para LiFePO₄). Abaixo disso o coletor de cobre se dissolve, e recarregar a célula depois
+  disso é o que produz curto interno.
+- **Célula inchada, quente sem motivo, ou com cheiro adocicado vai para o descarte**, ao ar
+  livre, hoje. Não se testa, não se recupera, não se guarda "para ver depois".
+
+O laboratório deste capítulo usa **NiMH e chumbo-ácido selado** nos experimentos de carga, que
+toleram erro; as medidas com lítio são todas **de descarga**, com célula protegida, corrente
+moderada e supervisão. Carregar lítio no roteiro é feito **exclusivamente com um CI de carga
+dedicado** — nunca com fonte de bancada ajustada na mão.
+:::
+
+Os quatro capítulos anteriores trataram a origem da energia como um dado: havia uma tomada. Este
+capítulo tira essa hipótese, e o que aparece no lugar não se parece com nada visto até aqui.
+
+Uma bateria **não é uma fonte de tensão**. O @sec-cap-020 já tinha ensinado a modelar fontes
+reais com uma resistência interna, e esse modelo continua útil — mas insuficiente, porque numa
+bateria:
+
+- **A tensão de circuito aberto depende do estado de carga**, e a relação entre as duas é uma
+  curva característica da química, não uma reta.
+- **A resistência interna cresce** com a descarga, com o frio e com a idade.
+- **A capacidade depende da corrente com que se descarrega** — e para chumbo-ácido a dependência
+  é brutal.
+- **A recarga exige um procedimento**, específico da química, e não apenas uma tensão aplicada
+  aos terminais.
+
+E há uma diferença de natureza: o erro de projeto num circuito com bateria não produz uma
+medição errada. Produz uma célula estufada, um equipamento que não liga no frio, ou — na química
+mais densa — fogo.
+
+## O modelo, e por que ele não basta {#sec-076-modelo}
+
+::: {#fig-076-modelo}
+
+```{.tikz}
+%%| filename: 076-modelo
+%%| alt: Figura em duas partes sobre o modelo elétrico de uma bateria. À esquerda, o circuito equivalente: uma fonte de tensão ideal cujo valor é anotado como dependente do estado de carga, em série com um resistor que representa a resistência ôhmica, e em seguida um bloco formado por um resistor em paralelo com um capacitor, que representa a polarização de transferência de carga com constante de tempo de segundos a dezenas de segundos, chegando finalmente aos terminais externos. Três anotações registram que a fonte não é constante e sim função do estado de carga; que a resistência ôhmica cresce com a descarga, com o frio e com a idade; e que o ramo resistor-capacitor em paralelo é o que explica por que a tensão de uma bateria sobe de volta alguns segundos depois de a carga ser removida, fenômeno chamado recuperação. À direita, um gráfico da tensão nos terminais ao longo do tempo durante um ensaio de pulso de corrente: a tensão está estável no valor de circuito aberto, cai instantaneamente num degrau quando o pulso de corrente começa, o que corresponde à queda na resistência ôhmica; continua caindo mais devagar, de forma exponencial, durante o pulso, o que corresponde ao ramo resistor-capacitor carregando; quando o pulso termina, sobe instantaneamente pelo mesmo degrau ôhmico e depois continua subindo lentamente de volta em direção ao valor de circuito aberto. Anotações marcam cada um dos quatro trechos e registram que esse ensaio de pulso é como se mede na bancada a resistência interna e a constante de tempo de polarização, sem instrumento nenhum além de um resistor de carga, um cronômetro e um voltímetro. Uma caixa final registra a consequência prática mais importante: medir a tensão de uma bateria sem carga informa muito pouco, porque a queda ôhmica só aparece sob corrente, e uma célula velha com resistência interna alta pode ler tensão perfeitamente normal em circuito aberto e desabar assim que a carga entra.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- circuito ----------------
+  \draw (0.6,3.4) to[battery1, l=$V_{oc}(SoC)$] (0.6,0.9);
+  \draw (0.6,3.4) -- (1.6,3.4);
+  \draw (1.6,3.4) to[R, l={$R_\Omega$}] (3.6,3.4);
+  \node[ponto] at (3.6,3.4) {};
+
+  \draw (3.6,3.4) to[R, l={$R_p$}] (6.2,3.4);
+  \node[ponto] at (6.2,3.4) {};
+  \draw (3.6,4.4) to[C, l={$C_p$}] (6.2,4.4);
+  \draw (3.6,3.4) -- (3.6,4.4);
+  \draw (6.2,3.4) -- (6.2,4.4);
+
+  \draw (6.2,3.4) -- (7.4,3.4);
+  \node[ponto] at (7.4,3.4) {};
+  \draw (0.6,0.9) -- (7.4,0.9);
+  \node[ponto] at (7.4,0.9) {};
+  \node[anchor=west, font=\scriptsize, align=left] at (7.55,2.15) {terminais};
+  \draw[<->,>=stealth, manualgray] (7.7,3.3) -- (7.7,1.0);
+
+  \node[manualred, anchor=north east, font=\tiny, align=right, text width=2.5cm] at (0.35,3.0)
+       {$V_{oc}$ \textbf{não é constante}: depende do estado de carga};
+  \draw[manualblue, thin] (2.6,3.55) -- (2.6,4.9);
+  \node[manualblue, anchor=south, font=\tiny, align=center, text width=3.0cm] at (2.6,4.95)
+       {$R_\Omega$: cresce com a descarga, com o \textbf{frio} e com a idade};
+  \draw[manualgreen, thin] (4.9,4.55) -- (4.9,5.3);
+  \node[manualgreen, anchor=south, font=\tiny, align=center, text width=3.6cm] at (4.9,5.35)
+       {\textbf{polarização}: $\tau$ de segundos a dezenas de segundos --- é a
+        \emph{recuperação}};
+
+  % ---------------- ensaio de pulso ----------------
+  \begin{scope}[shift={(9.4,0)}]
+    \draw[eixo] (0,0.5) -- (7.0,0.5) node[anchor=north west, font=\scriptsize] {$t$};
+    \draw[eixo] (0,0.3) -- (0,4.6) node[anchor=south east, font=\scriptsize] {$v$};
+
+    \draw[curva, line width=1.3pt] (0.2,4.0) -- (1.4,4.0);
+    \draw[curva, line width=1.3pt] (1.4,4.0) -- (1.4,3.1);
+    \draw[curva, line width=1.3pt, samples=60, domain=1.4:4.0, variable=\x]
+         plot ({\x}, {2.35 + 0.75*exp(-1.5*(\x-1.4))});
+    \draw[curva, line width=1.3pt] (4.0,2.37) -- (4.0,3.27);
+    \draw[curva, line width=1.3pt, samples=60, domain=4.0:6.8, variable=\x]
+         plot ({\x}, {4.0 - 0.73*exp(-1.5*(\x-4.0))});
+
+    \draw[auxiliar] (0.2,4.0) -- (6.9,4.0);
+    \node[anchor=south east, font=\tiny, manualgray] at (6.9,4.05) {$V_{oc}$};
+
+    \draw[<->,>=stealth, manualred] (1.15,3.98) -- (1.15,3.12);
+    \node[anchor=east, font=\tiny, manualred, align=right] at (1.1,3.55) {degrau\\$I R_\Omega$};
+
+    \node[anchor=north west, font=\tiny, manualgreen, align=left] at (2.0,3.0)
+         {exponencial:\\$R_p C_p$ carregando};
+    \node[anchor=north west, font=\tiny, manualgreen, align=left] at (4.7,3.35)
+         {\textbf{recuperação}};
+
+    \draw[<->,>=stealth, manualgray] (1.45,0.75) -- (3.95,0.75);
+    \node[anchor=south, font=\tiny, manualgray] at (2.7,0.78) {pulso de corrente};
+  \end{scope}
+
+  % ---------------- caixa ----------------
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.6cm] at (-0.3,-1.0)
+       {\textbf{Medir a tensão de uma bateria \emph{sem carga} informa muito pouco.} A queda
+        ôhmica só aparece sob corrente.
+        \\[3pt]
+        Uma célula velha, com $R_\Omega$ três vezes maior, lê \emph{tensão perfeitamente normal}
+        em circuito aberto e \textbf{desaba assim que a carga entra} --- que é exatamente o
+        sintoma de "a bateria está boa mas o aparelho não liga".
+        \\[3pt]
+        O ensaio de pulso da direita levanta $R_\Omega$, $R_p$ e $C_p$ com um resistor de carga,
+        um cronômetro e um voltímetro. É o método do laboratório deste capítulo.};
+
+\end{tikzpicture}
+```
+
+O modelo de bateria, e o ensaio de pulso que o levanta. Os dois degraus verticais dão
+$R_\Omega$; as duas exponenciais dão $R_p C_p$.
+:::
+
+O modelo tem três elementos e cada um responde por um comportamento observável.
+
+**$V_{oc}(SoC)$** é a tensão de circuito aberto em função do estado de carga (*state of charge*).
+Ela é a assinatura da química, e a @fig-076-quimicas mostra por que isso importa tanto: em
+LiFePO₄ a curva é tão plana que a tensão praticamente **não informa** o estado de carga, enquanto
+em Li-íon ela é inclinada o bastante para servir de indicador grosseiro.
+
+**$R_\Omega$** é a resistência ôhmica — eletrólito, coletores, terminais. Ela produz um degrau
+**instantâneo** de tensão quando a corrente muda, e é o que se mede com o ensaio de pulso.
+
+**$R_p \parallel C_p$** é a polarização por transferência de carga, com constante de tempo de
+segundos a dezenas de segundos. É ela que explica a **recuperação**: uma bateria "descarregada"
+que descansa dez minutos volta a ter tensão e a entregar um pouco mais de energia. Não é magia
+nem memória — é o capacitor $C_p$ descarregando.
+
+::: {.callout-tip}
+## O que "mAh" quer dizer, e o que não quer
+
+A capacidade em miliampères-hora é o produto da corrente pelo tempo até um limite de tensão
+especificado. Três ressalvas que a etiqueta não traz:
+
+**Depende da corrente.** A capacidade é medida a uma corrente de referência — tipicamente
+$C/5$ ou $C/20$, onde $C$ é a capacidade nominal. Descarregar mais rápido dá menos energia, e o
+efeito é dramático em chumbo-ácido (o efeito Peukert): uma bateria de 7 Ah entrega 7 Ah em 20
+horas e menos de 4 Ah em uma hora.
+
+**Depende da tensão de corte.** Uma célula "2600 mAh até 3,0 V" tem menos que 2600 mAh se o seu
+circuito desligar em 3,3 V.
+
+**mAh não é energia.** Energia é Wh, e $Wh = Ah \times V_{médio}$. Comparar uma célula de
+1,2 V/2000 mAh com uma de 3,7 V/2000 mAh pelo mAh é comparar errado por um fator de 3.
+
+E o **C-rate** é a taxa expressa em múltiplos da capacidade: 1C descarrega a bateria inteira em
+uma hora, 0,5C em duas, 2C em meia. É a unidade em que fabricantes especificam corrente máxima
+de carga e de descarga, e usá-la evita a confusão entre uma célula de 500 mAh e uma de 5 Ah.
+:::
+
+## As químicas que o leitor encontra {#sec-076-quimicas}
+
+::: {#fig-076-quimicas}
+
+```{.tikz}
+%%| filename: 076-quimicas
+%%| alt: Gráfico das curvas de descarga de cinco químicas de bateria, com a tensão por célula no eixo vertical de zero vírgula oito a quatro vírgula dois volts e a capacidade descarregada em porcentagem no eixo horizontal de zero a cem por cento. A curva de lítio-íon, em azul e a mais alta de todas, parte de quatro vírgula dois volts, desce suavemente até cerca de três vírgula sete volts na metade da descarga e depois cai mais rápido, terminando em três volts, sendo a única com inclinação suficiente para que a tensão sirva de indicador aproximado do estado de carga. A curva de fosfato de ferro-lítio, em verde, parte de três vírgula quatro volts, cai rapidamente para três vírgula dois e permanece num platô notavelmente plano por quase toda a descarga, despencando apenas nos últimos dez por cento, o que torna a leitura de tensão praticamente inútil como indicador de carga. A curva de níquel-metal hidreto, em vermelho, parte de um vírgula quatro volts, tem um platô em torno de um vírgula dois e cai no fim, e tem também uma leve depressão característica no início. A curva alcalina, em laranja, parte de um vírgula cinco volts e desce continuamente e sem platô até menos de um volt, o que a torna a única cuja tensão indica bem o estado de carga mas também a que menos serve para alimentar circuitos que exigem tensão estável. A curva de chumbo-ácido por célula, em cinza, parte de dois vírgula um volts e desce até um vírgula setenta e cinco. Uma tabela ao lado compara as cinco químicas em sete linhas: tensão nominal por célula, energia específica em watt-hora por quilograma, número típico de ciclos, taxa de autodescarga por mês, corrente de pico admissível, exigência de circuito de proteção e observação principal. A alcalina não é recarregável, tem cento e cinquenta watt-hora por quilograma e autodescarga muito baixa. O níquel-metal hidreto tem um vírgula dois volt nominal, cerca de cem watt-hora por quilograma, quinhentos a mil ciclos e autodescarga alta, salvo nas versões de baixa autodescarga. O chumbo-ácido tem dois volts por célula, apenas trinta e cinco watt-hora por quilograma, mas tolera correntes de pico enormes e é barato. O lítio-íon tem três vírgula sete volts nominais, duzentos e cinquenta watt-hora por quilograma, quinhentos a mil ciclos, e exige circuito de proteção obrigatório. O fosfato de ferro-lítio tem três vírgula dois volts, cento e vinte watt-hora por quilograma, mas dois mil a cinco mil ciclos e é a química de lítio mais segura, com fuga térmica muito menos provável.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=9.8cm, height=7.6cm,
+    xmin=0, xmax=100, ymin=0.8, ymax=4.3,
+    xlabel={capacidade descarregada (\%)}, ylabel={tensão por célula (V)},
+    xtick={0,20,40,60,80,100},
+    ytick={1.0,1.5,2.0,2.5,3.0,3.5,4.0},
+    yticklabels={$1{,}0$,$1{,}5$,$2{,}0$,$2{,}5$,$3{,}0$,$3{,}5$,$4{,}0$},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+
+  % Li-ion
+  \addplot[curva, line width=1.4pt] coordinates {
+    (0,4.20) (5,4.05) (15,3.92) (30,3.82) (50,3.72) (70,3.62) (85,3.50) (95,3.30) (100,3.00)};
+  % LiFePO4
+  \addplot[manualgreen, line width=1.4pt] coordinates {
+    (0,3.45) (3,3.30) (10,3.25) (30,3.23) (60,3.21) (85,3.17) (93,3.05) (100,2.60)};
+  % NiMH
+  \addplot[destaque, line width=1.3pt] coordinates {
+    (0,1.42) (4,1.32) (10,1.28) (35,1.25) (65,1.22) (85,1.18) (95,1.10) (100,0.95)};
+  % alcalina
+  \addplot[manualyellow, line width=1.3pt] coordinates {
+    (0,1.55) (15,1.42) (35,1.32) (55,1.24) (75,1.15) (90,1.05) (100,0.90)};
+  % chumbo-acido (por celula)
+  \addplot[manualgray, line width=1.3pt] coordinates {
+    (0,2.10) (10,2.02) (35,1.97) (65,1.93) (85,1.88) (95,1.82) (100,1.75)};
+
+  \node[anchor=west, font=\tiny, manualblue]   at (axis cs:33,3.95) {\textbf{Li-íon}};
+  \node[anchor=west, font=\tiny, manualgreen]  at (axis cs:33,3.02)
+       {\textbf{LiFePO$_4$} --- platô \emph{plano demais} para indicar carga};
+  \node[anchor=west, font=\tiny, manualgray]   at (axis cs:40,2.13) {chumbo-ácido (por célula)};
+  \node[anchor=west, font=\tiny, manualyellow] at (axis cs:52,1.44) {alcalina};
+  \node[anchor=east, font=\tiny, manualred]    at (axis cs:31,1.10) {NiMH};
+
+\end{axis}
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.2cm] at (9.2,7.2)
+       {\begin{tabular}{@{}p{1.35cm}p{0.72cm}p{0.72cm}p{0.72cm}p{1.35cm}@{}}
+          & \tiny alcal. & \tiny NiMH & \tiny Pb & \tiny Li \\[2pt]
+          \tiny V/célula & \tiny 1,5 & \tiny 1,2 & \tiny 2,0 & \tiny 3,7 / 3,2 \\
+          \tiny Wh/kg & \tiny 150 & \tiny 100 & \tiny 35 & \tiny 250 / 120 \\
+          \tiny ciclos & \tiny --- & \tiny 500 & \tiny 300 & \tiny 800 / 3000 \\
+          \tiny autodesc. & \tiny 0,3 \% & \tiny 15 \% & \tiny 4 \% & \tiny 2 \% \\
+          \tiny pico & \tiny baixo & \tiny médio & \tiny \textbf{alto} & \tiny alto \\
+          \tiny proteção & \tiny não & \tiny não & \tiny não & \tiny \textbf{sim} \\
+        \end{tabular}
+        \\[4pt]
+        Autodescarga \textbf{por mês}. NiMH de \emph{baixa autodescarga} fica em 1 a 2 \%.
+        \\[3pt]
+        A última coluna traz \textbf{Li-íon / LiFePO$_4$}. O fosfato troca densidade por
+        \textbf{ciclos e segurança}: fuga térmica é muito menos provável.};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.2cm] at (9.2,1.9)
+       {\textbf{A forma da curva decide se dá para medir a carga pela tensão.}
+        \\[3pt]
+        \textbf{Alcalina:} desce sem platô --- a tensão indica bem, e por isso mesmo a
+        alimentação nunca é estável.
+        \\[2pt]
+        \textbf{Li-íon:} inclinação suficiente para um indicador grosseiro.
+        \\[2pt]
+        \textbf{LiFePO$_4$:} 3,2 V do começo ao fim. Medir tensão \textbf{não diz nada} --- é
+        preciso \emph{contar coulombs}.};
+
+\end{tikzpicture}
+```
+
+As cinco curvas de descarga. O formato da curva não é um detalhe: ele decide se é possível
+estimar a carga restante medindo a tensão.
+:::
+
+Vale um comentário sobre cada química, do ponto de vista de quem projeta.
+
+**Alcalina** é primária (não recarregável), barata, com autodescarga desprezível — o que a torna
+imbatível para o que fica anos parado, como um controle remoto ou um detector de fumaça. O
+problema para o projetista é a curva: a tensão cai continuamente de 1,5 V para menos de 1,0 V, o
+que exige que o circuito funcione numa faixa larga. É a aplicação natural de um **boost**
+(@sec-cap-075).
+
+**NiMH** é a recarregável de formato AA/AAA. Tolera bem abuso, tem 1,2 V nominais — o que a torna
+substituta direta da alcalina em quase tudo — e tinha autodescarga alta até as versões de baixa
+autodescarga resolverem o problema. A recarga é o assunto delicado: a curva de tensão é tão plana
+que o critério de fim de carga precisa ser **outra coisa** (a @fig-076-carga trata disso).
+
+**Chumbo-ácido selado** (VRLA/SLA) é pesado e tem energia específica ruim, e continua insuperável
+onde o peso não importa e o pico de corrente importa muito: partida de motor, no-break, alarme.
+Custa pouco por watt-hora, tolera flutuação permanente, e morre por sulfatação se ficar
+descarregada.
+
+**Li-íon** é a densidade máxima disponível, com 3,7 V nominais que dispensam associação em série
+em muitos casos. Exige circuito de proteção **sempre**, e o perfil de carga é rígido.
+
+**LiFePO₄** troca densidade (120 contra 250 Wh/kg) por ciclos (3000 contra 800) e por segurança:
+a estrutura do fosfato é muito mais estável termicamente, e a fuga térmica exige condições muito
+mais extremas. É a escolha para o que fica carregando o tempo todo — solar, no-break, e
+substituição de chumbo-ácido.
+
+## O perfil de carga {#sec-076-carga}
+
+::: {#fig-076-carga}
+
+```{.tikz}
+%%| filename: 076-carga
+%%| alt: Gráfico do perfil de carga de corrente constante seguida de tensão constante para uma célula de lítio-íon, com três curvas ao longo de três horas. O eixo horizontal é o tempo em horas, de zero a três; o eixo vertical da esquerda é a tensão em volts, de dois vírgula cinco a quatro vírgula cinco; o eixo da direita é a corrente em unidades de C-rate, de zero a um. A primeira fase, marcada em cinza claro e chamada pré-carga, ocorre quando a célula está abaixo de três volts e usa apenas dez por cento da corrente nominal, com duração curta. A segunda fase, marcada em azul e chamada corrente constante, mantém a corrente em zero vírgula cinco C enquanto a tensão sobe continuamente de três até quatro vírgula dois volts, ocupando cerca de uma hora e um quarto e entregando aproximadamente oitenta por cento da carga total. A terceira fase, marcada em verde e chamada tensão constante, começa quando a tensão atinge quatro vírgula dois volts e mantém essa tensão fixa enquanto a corrente decai exponencialmente; ela dura quase o dobro do tempo da fase anterior e entrega apenas os vinte por cento restantes. A carga termina quando a corrente cai abaixo de um limiar de corte, tipicamente entre três e cinco por cento da capacidade nominal, marcado por uma linha tracejada horizontal. Anotações registram que a fase de corrente constante é rápida e a de tensão constante é lenta, e que essa assimetria explica a regra prática de que carregar até oitenta por cento leva um terço do tempo de carregar até cem por cento. Um destaque em vermelho registra que a tensão de quatro vírgula dois volts precisa ser respeitada com precisão melhor que um por cento, porque exceder essa tensão deposita lítio metálico na forma de dendritos, que perfuram o separador e provocam curto interno; e que carregar abaixo de zero grau Celsius produz o mesmo efeito mesmo com a tensão correta, razão pela qual todo carregador sério mede a temperatura da célula. Uma segunda caixa compara com as outras químicas: chumbo-ácido usa o mesmo perfil de corrente constante seguida de tensão constante, com tensão de absorção em torno de dois vírgula quatro volts por célula seguida de flutuação permanente em dois vírgula vinte e sete; NiMH não pode usar tensão constante porque a curva é plana demais, e o fim de carga é detectado pela queda de tensão característica de alguns milivolts após o pico, chamada menos delta V, ou pela derivada da temperatura, ou por temporizador; e alcalina não se recarrega.
+
+\begin{tikzpicture}
+\begin{axis}[
+    name=ax,
+    width=11.0cm, height=7.4cm,
+    xmin=0, xmax=3, ymin=2.5, ymax=4.6,
+    xlabel={tempo (h)}, ylabel={tensão da célula (V)},
+    xtick={0,0.5,1,1.5,2,2.5,3},
+    xticklabels={$0$,$0{,}5$,$1$,$1{,}5$,$2$,$2{,}5$,$3$},
+    ytick={2.5,3.0,3.5,4.0,4.2,4.5},
+    yticklabels={$2{,}5$,$3{,}0$,$3{,}5$,$4{,}0$,$4{,}2$,$4{,}5$},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+
+  \fill[manualgray!18] (axis cs:0,2.5) rectangle (axis cs:0.18,4.6);
+  \fill[manualblue!10] (axis cs:0.18,2.5) rectangle (axis cs:1.42,4.6);
+  \fill[manualgreen!12] (axis cs:1.42,2.5) rectangle (axis cs:3,4.6);
+
+  % tensao
+  \addplot[curva, line width=1.5pt] coordinates {
+    (0,2.75) (0.18,3.00) (0.4,3.42) (0.7,3.70) (1.0,3.92) (1.2,4.06) (1.42,4.20)
+    (2,4.20) (3,4.20)};
+
+  \draw[auxiliar] (axis cs:0,4.2) -- (axis cs:3,4.2);
+
+  \node[anchor=south, font=\tiny, manualgray, align=center] at (axis cs:0.09,4.25)
+       {pré-\\carga};
+  \node[anchor=south, font=\scriptsize, manualblue] at (axis cs:0.80,4.32)
+       {\textbf{corrente constante}};
+  \node[anchor=south, font=\scriptsize, manualgreen] at (axis cs:2.20,4.32)
+       {\textbf{tensão constante}};
+  \node[anchor=north, font=\tiny, manualblue, align=center] at (axis cs:0.80,3.30)
+       {$\approx 80$ \% da carga\\em $\approx 1/3$ do tempo};
+  \node[anchor=north, font=\tiny, manualgreen, align=center] at (axis cs:2.20,3.30)
+       {os \textbf{20 \%} finais\\custam \textbf{2/3} do tempo};
+\end{axis}
+
+% eixo de corrente
+\begin{axis}[
+    width=11.0cm, height=7.4cm,
+    at={(ax.south west)}, anchor=south west,
+    xmin=0, xmax=3, ymin=0, ymax=1.15,
+    axis y line*=right, axis x line=none,
+    ylabel={corrente (C)}, ytick={0,0.25,0.5,0.75,1.0},
+    yticklabels={$0$,$0{,}25$,$0{,}50$,$0{,}75$,$1{,}0$},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={manualred},
+    y label style={manualred}, ytick style={manualred},
+    yticklabel style={manualred},
+    samples=120,
+]
+  \addplot[destaque, line width=1.4pt, dashed] coordinates {(0,0.05) (0.18,0.05)};
+  \addplot[destaque, line width=1.4pt, dashed] coordinates {(0.18,0.50) (1.42,0.50)};
+  \addplot[destaque, line width=1.4pt, dashed, domain=1.42:3]
+      {0.50*exp(-2.4*(x-1.42))};
+  \draw[manualgray, dashed] (axis cs:0,0.04) -- (axis cs:3,0.04);
+  \node[anchor=south east, font=\tiny, manualgray] at (axis cs:2.98,0.05)
+       {corte: 3 a 5 \% de $C$};
+  \node[anchor=west, font=\tiny, manualred] at (axis cs:0.62,0.55) {$I = 0{,}5\,C$};
+\end{axis}
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.6cm] at (11.4,7.0)
+       {\textbf{Os 4,2 V não são um alvo de desempenho.}
+        \\[3pt]
+        Eles precisam ser respeitados com precisão melhor que \textbf{1 \%}. Acima disso,
+        deposita-se \textbf{lítio metálico} em dendritos, que perfuram o separador e produzem
+        \textbf{curto interno}.
+        \\[3pt]
+        E carregar \textbf{abaixo de 0 °C} faz a mesma coisa \emph{com a tensão certa} --- é
+        por isso que todo carregador sério mede a \textbf{temperatura} da célula.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.6cm] at (11.4,2.4)
+       {\textbf{E nas outras químicas}
+        \\[3pt]
+        \textbf{Chumbo-ácido:} mesmo CC-CV. Absorção em 2,40 V/célula, depois
+        \emph{flutuação} permanente em 2,27 V/célula.
+        \\[3pt]
+        \textbf{NiMH:} \emph{não} pode usar CV --- a curva é plana demais. O fim de carga é
+        detectado por $-\Delta V$ (a queda de alguns mV \emph{depois} do pico), por $dT/dt$,
+        ou por temporizador.
+        \\[3pt]
+        \textbf{Alcalina:} não se recarrega.};
+
+\end{tikzpicture}
+```
+
+O perfil CC-CV. A assimetria entre as duas fases é o que explica por que carregar até 80 % é
+tão mais rápido que carregar até 100 %.
+:::
+
+O perfil de corrente constante seguida de tensão constante é a resposta a uma restrição dupla:
+a célula não pode receber mais que uma certa **corrente** (senão a polarização eleva a tensão
+interna além do seguro) nem chegar acima de uma certa **tensão** (senão deposita lítio metálico).
+
+O carregador, portanto, limita o que for mais restritivo em cada momento:
+
+1. **Pré-carga.** Se a célula está abaixo de ~3,0 V, ela foi maltratada. Carrega-se com 10 % da
+   corrente até subir. Se não subir em alguns minutos, a célula está morta e o carregador
+   **desiste** — o que é uma proteção, não um defeito.
+2. **Corrente constante.** A corrente fica no valor escolhido (0,5C a 1C) e a tensão sobe
+   sozinha. Rápido: 80 % da carga.
+3. **Tensão constante.** A tensão fica presa em 4,2 V e a corrente decai exponencialmente. Lento:
+   os 20 % restantes.
+4. **Corte.** Quando a corrente cai abaixo de 3 a 5 % de $C$, encerra-se. **Não se mantém uma
+   célula de lítio em flutuação**, ao contrário do chumbo-ácido: ficar em 4,2 V permanentemente
+   degrada a célula.
+
+::: {.callout-important}
+## As duas maneiras de matar uma célula de lítio devagar
+
+Além dos modos de falha catastróficos, há dois que apenas encurtam a vida — e que quase todo
+produto de consumo comete deliberadamente, trocando vida útil por autonomia percebida.
+
+**Manter a célula cheia.** Uma célula guardada a 100 % perde capacidade muito mais rápido que uma
+guardada a 40 a 60 %. É por isso que fabricantes despacham baterias com meia carga, e é por isso
+que os modos de "carga otimizada" dos aparelhos modernos param em 80 % e só completam pouco antes
+do uso.
+
+**Carregar rápido demais e no frio.** Corrente alta aumenta a polarização, o que aproxima a
+tensão interna do limite de deposição. Corrente alta **no frio** é o pior caso — e por isso
+sistemas sérios reduzem a corrente por temperatura.
+
+A regra prática que sai daí: para máxima vida útil, opere entre **20 % e 80 %** de carga e evite
+carga rápida quando não for necessário. Uma célula assim usada faz 2 a 3 vezes mais ciclos que
+uma ciclada de 0 a 100 %.
+:::
+
+## Proteção, BMS e associação {#sec-076-protecao}
+
+::: {#fig-076-protecao}
+
+```{.tikz}
+%%| filename: 076-protecao
+%%| alt: Figura em duas partes sobre proteção de células de lítio e associação. À esquerda, o circuito de proteção de uma célula única, do tipo que vem soldado dentro de toda célula comercial de lítio: a célula está à esquerda, e em série com o terminal negativo há dois MOSFETs de canal N ligados em oposição, ou seja, com os drenos ou as fontes unidos de modo que os diodos de corpo fiquem em sentidos contrários, o que permite bloquear a corrente nos dois sentidos; um circuito integrado de proteção monitora a tensão da célula e a queda sobre os MOSFETs, que serve de medida da corrente, e comanda as duas portas. Anotações registram as quatro funções: desligar em sobretensão acima de quatro vírgula vinte e cinco volts durante a carga; desligar em subtensão abaixo de dois vírgula cinco volts durante a descarga; desligar em sobrecorrente, medida como queda sobre os MOSFETs; e desligar em curto-circuito, com resposta em microssegundos. Um destaque explica por que são necessários dois MOSFETs e não um: um MOSFET sozinho conduziria pelo diodo de corpo em um dos sentidos, tornando a proteção inútil naquele sentido. À direita, um diagrama de associação de células em série, com quatro células empilhadas formando um pacote de quatro S, e ao lado de cada junção entre células um circuito de balanceamento representado por um resistor em série com uma chave em paralelo com cada célula. Anotações registram que células em série não se equilibram sozinhas, que pequenas diferenças de capacidade e de autodescarga fazem as tensões divergirem ao longo dos ciclos, e que sem balanceamento a célula mais fraca atinge o limite superior antes das outras durante a carga e o limite inferior antes das outras durante a descarga, de modo que a capacidade utilizável do pacote inteiro fica limitada pela pior célula e essa célula é a que mais sofre. Registra também a distinção entre balanceamento passivo, que dissipa o excesso da célula mais cheia num resistor e é o método comum, e balanceamento ativo, que transfere carga da célula mais cheia para a mais vazia e é mais caro. Uma caixa final trata da associação em paralelo, registrando que células em paralelo se equilibram sozinhas em tensão, mas que só devem ser postas em paralelo se forem do mesmo modelo, do mesmo lote e com o mesmo estado de carga inicial, porque diferenças de tensão entre células paralelas produzem correntes de equalização que podem ser de dezenas de ampères no instante da ligação.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= protecao de celula unica =================
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=south west, font=\scriptsize] at (-0.2,6.5)
+         {\textbf{Proteção de célula única}};
+
+    % celula
+    \draw (0.5,4.0) to[battery1] (0.5,1.6);
+    \node[anchor=east, font=\tiny] at (0.25,2.8) {célula};
+
+    % trilho positivo
+    \draw (0.5,4.0) -- (6.3,4.0);
+    \node[ponto] at (6.3,4.0) {};
+    \node[anchor=west, font=\scriptsize] at (6.45,4.0) {$+$};
+
+    % retorno negativo pelos dois MOSFETs (fonte comum)
+    \draw (0.5,1.6) -- (2.3,1.6);
+    \node[nmos] (m1) at (2.3,1.05) {};
+    \draw (m1.D) -- (2.3,1.6);
+    \node[nmos, xscale=-1] (m2) at (4.5,1.05) {};
+    \draw (m1.S) -- (2.3,0.35) -- (4.5,0.35) -- (m2.S);
+    \node[ponto] at (3.4,0.35) {};
+    \node[anchor=north, font=\tiny, manualgray] at (3.4,0.28) {fonte comum};
+    \draw (m2.D) -- (4.5,1.6) -- (6.3,1.6);
+    \node[ponto] at (6.3,1.6) {};
+    \node[anchor=west, font=\scriptsize] at (6.45,1.6) {$-$};
+
+    % CI de protecao
+    \node[draw, thick, rounded corners=2pt, minimum width=1.9cm, minimum height=0.8cm,
+          fill=white, font=\tiny, align=center] (ci) at (3.4,2.75) {CI de\\proteção};
+    \draw (ci.north west) -- (2.95,3.35) -- (1.3,3.35) -- (1.3,4.0);
+    \node[ponto] at (1.3,4.0) {};
+    \draw (ci.north east) -- (3.85,3.35) -- (5.5,3.35) -- (5.5,1.6);
+    \node[ponto] at (5.5,1.6) {};
+    \draw (ci.west) -- (1.75,2.75) -- (1.75,1.05) -- (m1.G);
+    \draw (ci.east) -- (5.05,2.75) -- (5.05,1.05) -- (m2.G);
+
+    \node[anchor=south, font=\tiny] at (2.3,1.72) {$Q_1$};
+    \node[anchor=south, font=\tiny] at (4.5,1.72) {$Q_2$};
+
+    \node[draw=manualred, thick, rounded corners=2pt, anchor=north west, align=left,
+          font=\tiny, inner sep=4pt, text width=6.6cm] at (-0.2,-0.35)
+         {\textbf{Quatro funções, e nenhuma é opcional:}
+          \ \textbf{(1)} sobretensão --- desliga acima de 4,25 V na carga;
+          \ \textbf{(2)} subtensão --- desliga abaixo de 2,5 V na descarga;
+          \ \textbf{(3)} sobrecorrente --- medida como queda sobre os MOSFETs;
+          \ \textbf{(4)} curto-circuito --- resposta em \textbf{µs}.};
+
+    \node[draw=manualblue, thick, rounded corners=2pt, anchor=north west, align=left,
+          font=\tiny, inner sep=4pt, text width=6.6cm] at (-0.2,-2.75)
+         {\textbf{Por que \emph{dois} MOSFETs.} Um só conduziria pelo \textbf{diodo de corpo}
+          num dos sentidos, e a proteção seria inútil nesse sentido.
+          \\[2pt]
+          Ligados em oposição, os dois diodos de corpo ficam contrários: nada passa com as duas
+          portas desligadas.};
+  \end{scope}
+
+  % ================= associacao em serie =================
+  \begin{scope}[shift={(8.6,0)}]
+    \node[anchor=south west, font=\scriptsize] at (-0.2,6.5)
+         {\textbf{Associação em série (4S) e balanceamento}};
+
+    \foreach \i/\lab in {0/{$B_4$}, 1/{$B_3$}, 2/{$B_2$}, 3/{$B_1$}} {
+      \draw (0.9,0.35+\i*1.45) to[battery1] (0.9,1.35+\i*1.45);
+      \node[anchor=east, font=\tiny] at (0.62,0.85+\i*1.45) {\lab};
+      \node[ponto] at (0.9,0.35+\i*1.45) {};
+      \node[ponto] at (0.9,1.35+\i*1.45) {};
+      % ramo de balanceamento em paralelo com a celula
+      \draw (0.9,0.35+\i*1.45) -- (2.7,0.35+\i*1.45);
+      \draw (0.9,1.35+\i*1.45) -- (2.7,1.35+\i*1.45);
+      \draw (2.7,1.35+\i*1.45) to[R] (2.7,0.90+\i*1.45);
+      \draw (2.7,0.90+\i*1.45) to[nos] (2.7,0.35+\i*1.45);
+    }
+    % ligacao em serie entre as celulas
+    \foreach \i in {0,1,2} { \draw (0.9,1.35+\i*1.45) -- (0.9,1.80+\i*1.45); }
+
+    \draw (0.9,5.70) -- (0.9,6.10);
+    \node[anchor=south, font=\scriptsize] at (0.9,6.15) {$+$};
+    \draw (0.9,0.35) -- (0.9,-0.05);
+    \node[anchor=north, font=\scriptsize] at (0.9,-0.1) {$-$};
+
+    \draw[manualgray, thin] (3.1,2.9) -- (3.8,2.9);
+    \node[anchor=west, font=\tiny, align=left, text width=2.7cm] at (3.85,2.9)
+         {um resistor + uma chave por célula: \textbf{balanceamento passivo}};
+
+    \node[draw=manualred, thick, rounded corners=2pt, anchor=north west, align=left,
+          font=\tiny, inner sep=4pt, text width=6.6cm] at (-0.2,-0.55)
+         {\textbf{Células em série \emph{não} se equilibram sozinhas.} Pequenas diferenças de
+          capacidade e de autodescarga fazem as tensões divergirem ciclo após ciclo.
+          \\[2pt]
+          Sem balanceamento, a \textbf{pior célula} atinge o limite superior antes na carga e o
+          inferior antes na descarga: ela limita o pacote inteiro --- \emph{e} é a que mais
+          sofre.
+          \\[2pt]
+          \textbf{Passivo} queima o excesso num resistor (comum); \textbf{ativo} transfere carga
+          entre células (caro).};
+
+    \node[draw=manualgreen, thick, rounded corners=2pt, anchor=north west, align=left,
+          font=\tiny, inner sep=4pt, text width=6.6cm] at (-0.2,-3.6)
+         {\textbf{Em paralelo é o contrário:} células paralelas se equilibram sozinhas em
+          tensão.
+          \\[2pt]
+          Mas só ponha em paralelo células do \textbf{mesmo modelo, mesmo lote e mesmo estado de
+          carga}. Uma diferença de 0,3 V entre duas células de baixa impedância produz dezenas
+          de ampères no instante da ligação.};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+A proteção de célula única — que vem soldada dentro de toda célula comercial — e o problema do
+balanceamento em série. Os dois MOSFETs em oposição existem por causa do diodo de corpo.
+:::
+
+::: {.callout-warning}
+## Célula "protegida" e célula "nua" não são a mesma coisa
+
+Uma célula 18650 comprada solta pode vir de duas formas, e a diferença não é visível de relance:
+
+- **Protegida:** tem uma pequena placa com o CI e os dois MOSFETs soldada no terminal negativo,
+  sob a capa plástica. É uns 2 mm mais comprida, e o terminal negativo fica ligeiramente
+  ressaltado.
+- **Nua:** não tem nada. É a que se usa em pacotes com BMS externo — porque o BMS faz o
+  trabalho — e é **perigosa** se usada solta num circuito sem proteção.
+
+Como distinguir: meça o comprimento (65 mm nua, 67 a 70 mm protegida) e procure a tira metálica
+que sobe pela lateral sob a capa.
+
+E há um caso pior: células de segunda mão recuperadas de pacotes de notebook, vendidas com
+capacidade fantasiosa. Uma célula que diz "9900 mAh" num 18650 está mentindo — a densidade
+máxima real de um 18650 hoje é de cerca de 3500 mAh.
+:::
+
+## Dimensionar um sistema alimentado a bateria {#sec-076-projeto}
+
+::: {#fig-076-projeto}
+
+```{.tikz}
+%%| filename: 076-projeto
+%%| alt: Diagrama de projeto de um sistema alimentado a bateria, apresentado em seis passos numerados em coluna, com um gráfico de barras ao lado. O passo um levanta o orçamento de energia, listando os três modos de operação do aparelho: em repouso profundo consome quarenta microampères de forma contínua; acordado e medindo consome oito miliampères durante trinta segundos a cada hora; e transmitindo consome cento e vinte miliampères durante dois segundos a cada hora. O passo dois calcula a corrente média resultante somando as contribuições ponderadas pela fração de tempo, obtendo cento e setenta e três vírgula três microampères, e destaca que o repouso responde por vinte e três por cento do total, o que faz dele quase sempre o alvo mais fácil de otimização. O passo três faz a estimativa ingênua: uma célula de dois mil e seiscentos miliampères-hora dividida por essa corrente média dá quinze mil horas, ou um vírgula sete ano. O passo quatro aplica os três descontos que quase sempre são esquecidos: a autodescarga da célula, de dois por cento ao mês, que equivale a cinquenta e dois miliampères-hora por mês ou seiscentos e vinte e quatro por ano; o consumo do próprio circuito de proteção, de três microampères, ou vinte e seis miliampères-hora por ano; e o fato de que a capacidade utilizável entre os limites de tensão do circuito é de cerca de noventa por cento da nominal. O passo cinco recalcula: o consumo útil anual é de mil quinhentos e dezoito miliampères-hora, ao qual se somam os seiscentos e vinte e quatro da autodescarga e os vinte e seis da proteção, totalizando dois mil cento e sessenta e nove por ano contra dois mil trezentos e quarenta utilizáveis, o que dá autonomia realista de um vírgula zero oito ano, trinta e sete por cento abaixo da estimativa ingênua. O passo seis verifica o pior caso de corrente de pico no frio: a menos vinte graus a resistência interna triplica, indo de quarenta e cinco para cerca de cento e trinta e cinco miliohms, o que na transmissão de cento e vinte miliampères produz apenas dezesseis milivolts de queda; mas registra que com uma célula velha de quatrocentos miliohms e um pico de um ampère a queda seria de quatrocentos milivolts, e aí o regulador entraria em dropout justamente durante a transmissão. O gráfico de barras ao lado mostra a repartição do consumo anual entre quatro parcelas: repouso com trezentos e cinquenta miliampères-hora, medindo com quinhentos e oitenta e quatro, transmitindo com quinhentos e oitenta e quatro, e autodescarga com seiscentos e vinte e quatro, evidenciando que a autodescarga é a maior parcela isolada, maior que qualquer modo de operação, e responde por vinte e nove por cento do orçamento anual, o que leva à conclusão de que num projeto de longuíssima duração escolher a química pesa mais do que otimizar o firmware.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \tikzset{passo/.style={draw, thick, rounded corners=3pt, anchor=north west,
+                         align=left, font=\scriptsize, inner sep=6pt, text width=9.6cm}}
+
+  \node[passo, draw=manualgreen] (p1) at (0,0)
+       {\textbf{1. O orçamento de energia começa pelos \emph{modos}.}
+        \\[2pt]
+        repouso profundo: \ \ 40 µA \ durante 23,9 h/dia \\
+        acordado, medindo: \ 8 mA \ \ durante 30 s por hora \\
+        transmitindo: \ \ \ \ \ \ \ 120 mA \ durante 2 s por hora};
+
+  \node[passo, draw=manualblue] (p2) at (0,-2.15)
+       {\textbf{2. A corrente média}
+        \[ \bar{I} = 40 + 8000\frac{30}{3600} + 120000\frac{2}{3600} = \mathbf{174}\ \mu\text{A} \]
+        O \textbf{repouso} responde por 23 \% --- e é quase sempre o alvo mais fácil.};
+
+  \node[passo, draw=manualblue] (p3) at (0,-4.05)
+       {\textbf{3. A estimativa ingênua.} Célula de 2600 mAh:
+        \ $2600/0{,}174 = 14\,900$ h $= \mathbf{1{,}7}$ \textbf{ano}.};
+
+  \node[passo, draw=manualred] (p4) at (0,-5.25)
+       {\textbf{4. Os três descontos que todo mundo esquece}
+        \\[2pt]
+        \textbf{autodescarga} 2 \%/mês $\Rightarrow$ 52 mAh/mês, ou \textbf{624 mAh/ano} \\
+        \textbf{o circuito de proteção} consome 3 µA $\Rightarrow$ 26 mAh/ano \\
+        \textbf{capacidade utilizável} entre os limites do circuito: $\approx 90$ \%};
+
+  \node[passo, draw=manualgreen] (p5) at (0,-7.55)
+       {\textbf{5. A autonomia realista.} Útil por ano:
+        $0{,}1733 \times 8760 = 1518$ mAh. Mais 624 de autodescarga e 26 da proteção:
+        \textbf{2169 mAh/ano} contra \textbf{2340} utilizáveis (90 \% de 2600).
+        \\[2pt]
+        $\Rightarrow$ \ \textbf{1,08 ano} --- \textbf{37 \% abaixo} da estimativa ingênua.};
+
+  \node[passo, draw=manualred] (p6) at (0,-9.5)
+       {\textbf{6. E o pior caso de \emph{pico}, no frio.} A $-20$ °C a resistência interna
+        \textbf{triplica}: $R_\Omega$ vai de 45 m$\Omega$ a $\approx 135$ m$\Omega$.
+        \\[2pt]
+        $\Delta V = 0{,}120 \times 0{,}135 = \mathbf{16}$ \textbf{mV} na transmissão --- pouco.
+        Mas com uma célula \emph{velha} de 400 m$\Omega$ e um pico de 1 A, seriam
+        \textbf{400 mV}, e aí o regulador entra em \emph{dropout} no meio da transmissão.};
+
+  % ---------------- barras ----------------
+  \begin{scope}[shift={(10.4,-9.0)}]
+    \draw[eixo] (0,0) -- (0,6.2);
+    \draw[eixo] (0,0) -- (5.4,0);
+    \node[rotate=90, anchor=south, font=\scriptsize] at (-0.55,3.1) {mAh por ano};
+
+    \foreach \x/\h/\c/\lab in {0.7/3.06/manualgray/repouso, 1.9/5.11/manualblue/medindo,
+                               3.1/5.11/manualgreen/{trans-\\mitindo},
+                               4.3/5.46/manualred/{auto-\\descarga}} {
+      \fill[\c!45, draw=\c, thick] (\x-0.35,0) rectangle (\x+0.35,\h);
+      \node[anchor=north, font=\tiny, align=center] at (\x,-0.1) {\lab};
+    }
+    \node[anchor=south, font=\tiny] at (0.7,3.11) {350};
+    \node[anchor=south, font=\tiny] at (1.9,5.16) {584};
+    \node[anchor=south, font=\tiny] at (3.1,5.16) {584};
+    \node[anchor=south, font=\tiny, manualred] at (4.3,5.51) {\textbf{624}};
+
+    \node[draw=manualred, thick, rounded corners=2pt, anchor=north, align=center,
+          font=\tiny, inner sep=4pt, text width=5.0cm] at (2.5,-0.95)
+         {\textbf{A autodescarga é a maior parcela isolada} --- maior que \emph{qualquer} modo
+          de operação, e 29 \% do orçamento anual.
+          \\[2pt]
+          Num projeto de longuíssima duração, escolher a \emph{química} pesa mais que otimizar
+          o firmware.};
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O projeto de autonomia em seis passos. O passo 4 é o que separa uma estimativa de uma previsão —
+e o gráfico mostra por quê.
+:::
+
+::: {.callout-note}
+## Contar coulombs, e por que ele é necessário
+
+Estimar carga restante pela tensão funciona mal em Li-íon e **não funciona** em LiFePO₄, pelo
+motivo da @fig-076-quimicas: o platô é plano demais.
+
+A alternativa é o **contador de coulombs** (*coulomb counter*, ou *fuel gauge*): um circuito que
+integra a corrente ao longo do tempo, somando o que entra e subtraindo o que sai. Um
+resistor de detecção de miliohms, um amplificador, um conversor A/D e um acumulador.
+
+Ele tem duas limitações que precisam ser tratadas:
+
+- **O erro acumula.** Qualquer desvio de offset no amplificador vira erro crescente. Por isso
+  todo contador de coulombs precisa de pontos de **recalibração** — tipicamente a célula cheia
+  (fim da fase CV) e a célula vazia (limiar de subtensão).
+- **Ele não sabe a capacidade real da célula**, que cai com a idade. Os medidores modernos
+  aprendem a capacidade a cada ciclo completo, o que é o motivo de a estimativa de um aparelho
+  novo ser ruim e melhorar depois de alguns ciclos.
+
+O @sec-cap-067 já tem o bloco de entrada: um amplificador de instrumentação sobre um resistor de
+detecção. E o capítulo 080 fecha a cadeia com o conversor A/D.
+:::
+
+## 🧪 Laboratório {#sec-076-lab}
+
+O objetivo é levantar o modelo da @fig-076-modelo com um ensaio de pulso, medir uma curva de
+descarga real, ver o efeito Peukert, carregar NiMH e chumbo-ácido com critérios diferentes, e
+observar o comportamento de um CI de carga de lítio — **sem** improvisar a carga de lítio na mão.
+
+::: {.callout-warning}
+## Antes de começar
+
+**A carga de lítio no roteiro é feita exclusivamente com o TP4056 (ou equivalente), com célula
+protegida.** Não há nenhum passo em que uma fonte de bancada seja ligada diretamente numa célula
+de lítio.
+
+Cinco cuidados:
+
+1. **Fusível** de 2 A em série com qualquer célula durante os ensaios de descarga.
+2. **Resistores de carga com potência folgada.** 3,7 V em 3,9 Ω dissipa 3,5 W: use um de 10 W, e
+   ele **vai** ficar quente demais para tocar.
+3. **Nunca deixe um ensaio de descarga sem supervisão**, e desligue ao chegar ao limite de
+   tensão da química.
+4. **Célula quente, inchada ou com cheiro:** interrompa, desconecte e leve para fora.
+5. **Ao mexer com chumbo-ácido:** os terminais entregam dezenas de ampères num curto. Tire
+   anel, relógio e pulseira, e use ferramenta com cabo isolado.
+:::
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | Célula **18650 protegida** ou pacote com BMS | Partes 1, 2, 5 |
+| 2 | Pilhas **NiMH AA** (uma delas usada/velha) | Partes 1, 3, 4 |
+| 2 | Pilhas **alcalinas AA** (uma nova, uma usada) | Partes 1, 3 |
+| 1 | Bateria **chumbo-ácido selada 6 V ou 12 V, 1,2 a 7 Ah** | Partes 1, 4 |
+| 1 | Módulo **TP4056** com proteção (DW01 + FS8205) | Parte 5 |
+| 1 | Carregador de NiMH com $-\Delta V$ | Parte 4 — comparação |
+| — | Resistores de carga: 1 Ω/10 W, 3,9 Ω/10 W, 10 Ω/5 W, 22 Ω/5 W, 47 Ω/5 W, 100 Ω/2 W | |
+| 1 | **Porta-pilhas** AA com fios | |
+| 2 | Multímetros (um fica no ensaio inteiro) | |
+| 1 | Osciloscópio | Parte 2 — para ver o degrau |
+| 1 | Cronômetro (o do celular serve) | |
+| 1 | Termômetro infravermelho | Parte 4 |
+| — | Fusível 2 A + porta-fusível, jacarés isolados | |
+
+**Variante simulada (plano B).** O modelo da @fig-076-modelo simula bem no LTspice com uma fonte
+de tensão, dois resistores e um capacitor, e o ensaio de pulso reproduz a forma de onda
+exatamente. O que a simulação **não** dá — e que é o conteúdo real do capítulo — é a dependência
+com temperatura, com idade e com corrente. Se não houver bancada, ao menos faça a Parte 1, que
+precisa só de um multímetro e de pilhas velhas da gaveta.
+
+### Parte 1 — A medida que quase todo mundo faz errado
+
+1. Pegue quatro pilhas: alcalina nova, alcalina usada, NiMH carregada, NiMH velha.
+2. Meça a tensão **sem carga** de cada uma. Anote.
+3. Agora ligue **10 Ω** em cada uma e meça de novo, **imediatamente**.
+
+A ordem de classificação muda. Uma alcalina "usada" que lia 1,4 V em aberto pode cair para 0,9 V
+sob carga, enquanto a NiMH que lia 1,25 V mal se move.
+
+4. Calcule $R_\Omega$ de cada uma: $R_\Omega = (V_{aberto} - V_{carga})/I$.
+
+Este é o experimento inteiro do primeiro quadro do capítulo, e ele leva cinco minutos.
+
+### Parte 2 — O ensaio de pulso completo
+
+1. Com a célula 18650 (ou a NiMH), ligue o resistor de 3,9 Ω através de uma chave.
+2. Com o osciloscópio em acoplamento CC e base de tempo lenta (1 s/div), feche a chave e observe.
+
+Você deve ver a forma de onda da @fig-076-modelo: **degrau** vertical, depois **exponencial**.
+
+3. Meça o degrau e calcule $R_\Omega$.
+4. Meça a amplitude e a constante de tempo da exponencial: dão $R_p$ e $C_p$.
+5. Abra a chave e observe a **recuperação** — o degrau para cima e a subida lenta.
+6. Repita com a célula **fria** (dez minutos na geladeira, em saco fechado).
+
+$R_\Omega$ cresce visivelmente. É a razão de o passo 6 do projeto existir.
+
+### Parte 3 — Levantar uma curva de descarga
+
+1. Monte a NiMH AA com o resistor de 10 Ω (≈ 120 mA, ou 0,06C numa de 2000 mAh) e o multímetro
+   medindo tensão.
+2. Anote a tensão a cada 15 minutos.
+3. **Interrompa em 1,0 V.** Abaixo disso a célula sofre.
+4. Trace a curva e compare com a @fig-076-quimicas.
+5. Integre: $\text{Capacidade} = I \times t$. Compare com o valor da etiqueta.
+
+Uma NiMH usada costuma dar 60 a 80 % do nominal, e essa medida é o teste honesto de uma pilha
+velha.
+
+### Parte 4 — O efeito Peukert, e os dois critérios de fim de carga
+
+1. Com a bateria de chumbo-ácido, descarregue por 10 minutos com **47 Ω** e anote a tensão final.
+2. Deixe descansar 30 minutos.
+3. Descarregue por 10 minutos com **10 Ω** (quase cinco vezes a corrente).
+
+A queda de tensão é muito mais que cinco vezes maior. É o efeito Peukert, e ele é o motivo de a
+capacidade de uma bateria de chumbo depender tanto da corrente.
+
+4. **Recarregue com o perfil correto:** fonte de bancada em limitação de corrente de 0,1C,
+   ajustada em 2,40 V por célula (7,2 V para 6 V nominais, 14,4 V para 12 V). Observe a corrente
+   cair sozinha quando a tensão chega ao alvo — é a transição CC → CV acontecendo na sua bancada.
+5. Ao chegar a 0,02C, baixe a tensão para 2,27 V/célula: é a **flutuação**.
+6. **Agora o contraste com NiMH:** carregue a NiMH com corrente constante de 0,1C, medindo tensão
+   **e temperatura** a cada 10 minutos.
+
+A tensão sobe, forma um patamar, **passa por um máximo** e cai alguns milivolts. Nesse ponto a
+temperatura começa a subir depressa. É o $-\Delta V$, e é por isso que NiMH não pode ser
+carregada por tensão constante: **não há tensão de alvo**; há um evento a detectar.
+
+7. Compare com o carregador comercial: ele desliga no mesmo ponto.
+
+### Parte 5 — O CI de carga de lítio, observado
+
+1. Ligue o módulo TP4056 a 5 V e à célula 18650 **protegida**, descarregada até uns 3,4 V.
+2. Meça a corrente de carga e a tensão da célula a cada 5 minutos.
+3. Trace as duas curvas.
+
+Você vai ver a @fig-076-carga se desenhar: corrente constante enquanto a tensão sobe, e depois
+tensão presa em 4,2 V com a corrente decaindo.
+
+4. **Meça a tensão final com o multímetro mais preciso que tiver.** Deve estar entre 4,18 e
+   4,22 V. Se estiver acima de 4,25 V, **descarte o módulo** — módulos baratos de má qualidade
+   existem, e este é o parâmetro que não admite erro.
+5. Anote o tempo das duas fases separadamente e verifique a assimetria da @fig-076-carga.
+6. **A proteção:** com a célula carregada, ligue uma carga de 1 Ω por um instante (mais de 3 A).
+   A proteção deve desligar. Desconecte a carga e verifique que ela religa.
+
+Não repita esse teste muitas vezes, e não o faça com célula nua.
+
+## 🔥 Onde Queima {#sec-076-queima}
+
+**Carregar lítio com fonte de bancada "ajustada em 4,2 V".** Uma fonte de bancada tem tolerância,
+deriva térmica e transitório de ligação. E não faz pré-carga, não corta ao fim, não mede
+temperatura e não desiste de uma célula morta. CI de carga, sempre.
+
+**Confiar na tensão de circuito aberto para julgar uma bateria.** A queda ôhmica só aparece sob
+carga. Célula velha lê normal em aberto e desaba com a carga.
+
+**Estimar carga restante pela tensão em LiFePO₄.** O platô é plano demais: entre 20 % e 90 % de
+carga a tensão varia menos que a tolerância do seu voltímetro. Conte coulombs.
+
+**Ligar células em paralelo com estados de carga diferentes.** 0,3 V de diferença entre duas
+células de 30 mΩ produzem 5 A de corrente de equalização no instante do contato — e o pico
+inicial é muito maior. Equalize antes, com um resistor em série.
+
+**Montar um pacote em série sem balanceamento.** As células divergem, a pior limita todo o
+pacote, e é ela que passa a receber sobretensão na carga. Um pacote 4S de lítio sem BMS é uma
+questão de tempo.
+
+**Descarregar lítio abaixo do mínimo.** Abaixo de 2,5 V (2,0 V em LiFePO₄) o coletor de cobre se
+dissolve, e recarregar depois disso deposita cobre no separador. A célula pode até voltar a
+funcionar — e é exatamente aí que ela fica perigosa.
+
+**Comprar 18650 "9900 mAh".** A densidade real máxima de um 18650 é de cerca de 3500 mAh.
+Qualquer número acima disso é mentira, e a célula por baixo costuma ser recuperada de pacote
+usado.
+
+**Esquecer a autodescarga no orçamento de energia.** Em projeto de longa duração ela é a maior
+parcela isolada — no gráfico da @fig-076-projeto, maior que qualquer modo de operação e 29 % do
+orçamento anual.
+
+**Dimensionar a corrente de pico pela temperatura ambiente da bancada.** A $-20$ °C a resistência
+interna triplica. Um pico que causava 100 mV de queda passa a causar 300 mV, e o regulador entra
+em *dropout* justamente durante a transmissão.
+
+**Manter lítio permanentemente em flutuação.** Ao contrário do chumbo-ácido, lítio **não** deve
+ficar preso em 4,2 V. Carregou, desliga o carregador.
+
+**Guardar célula de lítio cheia por meses.** A degradação a 100 % é muito mais rápida que a 40 a
+60 %. Para guardar, descarregue até uns 3,7 V.
+
+**Usar bateria de chumbo-ácido descarregada por muito tempo.** A sulfatação é progressiva e
+irreversível depois de algumas semanas. Uma bateria de no-break que passou o verão descarregada
+não volta.
+
+**Curto-circuitar chumbo-ácido "só para ver a corrente".** Uma SLA de 7 Ah entrega mais de 100 A
+num curto franco. O terminal derrete, a chave de fenda solda e o eletrólito ferve.
+
+## O que fica deste capítulo {#sec-076-resumo}
+
+**Uma bateria não é uma fonte de tensão.** O modelo mínimo tem três elementos:
+
+$$ V_{oc}(SoC) \ + \ R_\Omega \ + \ (R_p \parallel C_p) $$
+
+$R_\Omega$ dá o degrau instantâneo; $R_p C_p$ dá a exponencial e a recuperação. O **ensaio de
+pulso** levanta os três com resistor, cronômetro e voltímetro.
+
+**Medir tensão sem carga informa muito pouco.** Célula velha lê normal em aberto.
+
+**mAh depende da corrente e da tensão de corte, e não é energia.** Energia é Wh, e o **C-rate** é
+a unidade correta para especificar correntes.
+
+**As cinco químicas**, e o que decide a escolha: alcalina (primária, autodescarga desprezível,
+curva inclinada), NiMH (1,2 V, tolerante, $-\Delta V$ para carregar), chumbo-ácido (pesado,
+barato, pico enorme, morre sulfatado), Li-íon (densidade máxima, proteção obrigatória) e LiFePO₄
+(menos densidade, muito mais ciclos e mais segurança, platô plano demais para medir carga).
+
+**O perfil CC-CV**: pré-carga → corrente constante (80 % da carga, 1/3 do tempo) → tensão
+constante (20 % da carga, 2/3 do tempo) → corte em 3 a 5 % de $C$. Os 4,2 V exigem precisão
+melhor que 1 %, e carregar abaixo de 0 °C deposita lítio metálico mesmo com a tensão certa.
+
+**A proteção de célula única** tem quatro funções e **dois** MOSFETs — porque um só conduziria
+pelo diodo de corpo num dos sentidos.
+
+**Em série, células não se equilibram sozinhas**; a pior limita o pacote e é a que mais sofre.
+Em paralelo se equilibram, mas só devem ser ligadas com o mesmo estado de carga.
+
+**O orçamento de energia** tem seis passos, e o quarto — autodescarga, consumo da proteção,
+capacidade utilizável — é o que separa 1,7 ano de estimativa de 1,08 ano de realidade.
+
+## Para o próximo capítulo {#sec-076-fecho}
+
+O Volume 12 já produziu energia limpa e estável de cinco maneiras diferentes: transformador e
+retificador, regulador linear, regulador integrado, conversor chaveado e bateria.
+
+Falta o assunto que este volume — e o Volume 11 antes dele — invocou dezenas de vezes como regra
+de bancada sem nunca explicar: **de que exatamente serve aquele capacitor de 100 nF colado ao
+pino de alimentação**, por que ele precisa ser cerâmico, por que "junto ao pino" é uma exigência
+literal, e por que existe um segundo capacitor maior ao lado dele.
+
+E o assunto maior que contém esse: **para onde volta a corrente**. Todo circuito deste manual
+desenhou o retorno como um símbolo de terra e parou aí. O capítulo 077 mostra que o terra é um
+condutor real, com impedância real, e que a corrente que volta por ele **escolhe o caminho** —
+não o mais curto, e sim o de menor impedância, o que em alta frequência é uma coisa bem
+diferente.
+
+Daí saem as malhas de terra, o ponto único de aterramento e quando ele é uma má ideia, a
+separação entre terra analógico e digital, o desacoplamento como problema de impedância em vez de
+"colocar um capacitor", e a proteção do que entra e sai da placa: TVS, varistor, diodo de
+retorno, fusível repositivo e proteção contra inversão de polaridade.
+
+É o capítulo que fecha o Volume 12 — e é, na prática, o mais reutilizado de todos, porque cada
+placa que o leitor montar daqui em diante depende dele.

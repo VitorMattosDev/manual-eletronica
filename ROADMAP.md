@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 75/104 |
-| **Contíguos até** | **075** — sem nenhum buraco no meio do livro |
+| **Progresso** | 76/104 |
+| **Contíguos até** | **076** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 076** | Baterias, células e circuitos de carga |
+| **Próximo capítulo: 077** | Aterramento, malhas de terra, desacoplamento e proteção |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -123,7 +123,16 @@ dominando** (5,4 mV com cerâmico contra 97 mV com eletrolítico de mesma capaci
 descontínuo como comportamento normal em carga leve; o laço de controle precisando de compensação
 porque o filtro $LC$ dá 180° de atraso, e o modo corrente como alternativa de primeira ordem; e o
 **laço de comutação** — área $\times\ di/dt$ virando sobretensão real no dreno, com as quatro
-regras de layout (075).
+regras de layout (075); a bateria como o que **não** é fonte de tensão, com o modelo de três
+elementos ($V_{oc}(SoC)$, $R_\Omega$, $R_p \parallel C_p$) e o **ensaio de pulso** que o levanta
+com resistor, cronômetro e voltímetro; por que medir tensão sem carga informa quase nada; o que
+mAh quer dizer e não quer (depende da corrente e do corte, e não é energia — Wh é), e o C-rate; as
+cinco químicas com o formato da curva decidindo se dá para estimar carga pela tensão (LiFePO₄ tem
+platô plano demais); o perfil **CC-CV** com pré-carga, os 4,2 V exigindo 1 % de precisão, o
+carregar abaixo de 0 °C depositando lítio metálico com a tensão certa, e os critérios alternativos
+das outras químicas ($-\Delta V$ em NiMH, flutuação em chumbo-ácido); a proteção de célula única
+com **dois** MOSFETs por causa do diodo de corpo; balanceamento em série e o cuidado com paralelo;
+e o orçamento de energia em seis passos, com autodescarga como a maior parcela isolada (076).
 
 O capítulo 071 já montara a ponte para o fim do volume: o desacoplamento, invocado seis vezes
 como regra de bancada ao longo do Volume 11, ganha explicação própria no capítulo 077.
@@ -282,7 +291,7 @@ para conteúdo real e o verificador não as lista mais.
 - [x] 073 — Fontes lineares: do transformador ao regulador — `capitulos/073-fontes-lineares-do-transformador-ao-regulador.qmd`
 - [x] 074 — Reguladores integrados: série, LDO e dissipação térmica — `capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.qmd`
 - [x] 075 — Fontes chaveadas: buck, boost e buck-boost — `capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.qmd`
-- [ ] 076 — Baterias, células e circuitos de carga — `capitulos/076-baterias-celulas-e-circuitos-de-carga.qmd`
+- [x] 076 — Baterias, células e circuitos de carga — `capitulos/076-baterias-celulas-e-circuitos-de-carga.qmd`
 - [ ] 077 — Aterramento, malhas de terra, desacoplamento e proteção — `capitulos/077-aterramento-malhas-de-terra-desacoplamento-e.qmd`
 
 
