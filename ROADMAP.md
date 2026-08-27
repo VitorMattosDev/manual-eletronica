@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 59/104 |
-| **Contíguos até** | **059** — sem nenhum buraco no meio do livro |
+| **Progresso** | 60/104 |
+| **Contíguos até** | **060** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 060** | Curvas, região ôhmica e região de saturação |
+| **Próximo capítulo: 061** | O MOSFET como chave de potência: RDS(on), efeito Miller e dissipação |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -31,7 +31,10 @@ reflexão, parâmetros $h$ e modelo em alta frequência (058).
 
 **Volume 10 em andamento** (capítulos 059 a 064, MOSFETs e amplificação): princípio de
 funcionamento do JFET e do MOSFET, modo depleção e modo enriquecimento, diodo de corpo,
-leitura dos símbolos, a porta como capacitor e a dispersão de $V_{th}$ (059).
+leitura dos símbolos, a porta como capacitor e a dispersão de $V_{th}$ (059); região ôhmica e
+região de saturação, a armadilha de vocabulário em relação ao bipolar, $R_{DS(on)}$, lei
+quadrática e seu limite honesto em potência, extração por $\sqrt{I_D}$, $g_m \propto \sqrt{I_D}$
+e o modelo de pequenos sinais sem $r_\pi$ (060).
 
 Convenções que o Volume 10 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -161,7 +164,7 @@ cinco ocorrências como aviso.
 ### Volume 10 — MOSFETs e Amplificação
 
 - [x] 059 — JFET e MOSFET: princípio de funcionamento — `capitulos/059-jfet-e-mosfet-principio-de-funcionamento.qmd`
-- [ ] 060 — Curvas, região ôhmica e região de saturação — `capitulos/060-curvas-regiao-ohmica-e-regiao-de-saturacao.qmd`
+- [x] 060 — Curvas, região ôhmica e região de saturação — `capitulos/060-curvas-regiao-ohmica-e-regiao-de-saturacao.qmd`
 - [ ] 061 — O MOSFET como chave de potência: RDS(on), efeito Miller e dissipação — `capitulos/061-o-mosfet-como-chave-de-potencia-rds-on-efeito.qmd`
 - [ ] 062 — Drivers de gate e a comutação real — `capitulos/062-drivers-de-gate-e-a-comutacao-real.qmd`
 - [ ] 063 — Classes de amplificador: A, B, AB, C e D — `capitulos/063-classes-de-amplificador-a-b-ab-c-e-d.qmd`

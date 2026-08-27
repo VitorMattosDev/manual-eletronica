@@ -1,3 +1,888 @@
 # Curvas, região ôhmica e região de saturação {#sec-cap-060}
 
-*(em elaboração)*
+O @sec-cap-059 estabeleceu **que** a tensão de porta comanda a condução do canal. Este
+capítulo estabelece **quanto**, e a resposta tem duas metades que se comportam de maneiras
+completamente diferentes.
+
+Com pouca tensão entre dreno e fonte, o MOSFET é um **resistor** cujo valor a porta ajusta. É
+nessa metade que opera uma chave ligada, e o número que a caracteriza é o
+$R_{DS(\text{on})}$ — o parâmetro mais consultado de qualquer folha de dados de MOSFET de
+potência.
+
+Com bastante tensão entre dreno e fonte, o MOSFET é uma **fonte de corrente** comandada pela
+porta. É nessa metade que opera um amplificador, e o número que a caracteriza é a
+transcondutância $g_m$.
+
+Antes de qualquer coisa, um aviso de vocabulário que o @sec-cap-059 prometeu e que vale
+repetir em negrito, porque ele confunde quem vem do Volume 9:
+
+::: {.callout-warning}
+## "Saturação" significa o **oposto** nos dois dispositivos
+
+| | Bipolar | MOSFET |
+|---|---|---|
+| desligado | corte | corte |
+| **chave ligada** (pouca tensão sobre ele) | **saturação** | **região ôhmica** (ou tríodo) |
+| **amplificador** (corrente independente da tensão de saída) | **ativa** | **saturação** |
+
+Um bipolar saturado está em condução plena, com 0,2 V sobre ele. Um MOSFET saturado tem
+**bastante** tensão sobre ele e está entregando corrente constante.
+
+Quem diz "o MOSFET satura quando eu ligo a chave" está dizendo o contrário do que quer dizer.
+Uma chave ligada opera na região **ôhmica**.
+:::
+
+## A família de curvas de saída {#sec-060-curvas}
+
+A medida é a mesma do @sec-cap-053: fixe $V_{GS}$, varra $V_{DS}$, registre $I_D$. Repita para
+vários $V_{GS}$.
+
+::: {#fig-060-saidas}
+
+```{.tikz}
+%%| filename: 060-saidas
+%%| alt: Gráfico das curvas de saída de um MOSFET de canal N. No eixo horizontal está a tensão dreno-fonte, de zero a seis volts; no eixo vertical, a corrente de dreno, de zero a trinta miliampères. Quatro curvas azuis correspondem a tensões porta-fonte crescentes de dois vírgula cinco, dois vírgula oito, três vírgula um e três vírgula quatro volts, para um dispositivo de tensão de limiar de dois volts. Cada curva sobe rapidamente a partir da origem numa região à esquerda, depois dobra o joelho e segue quase horizontal, com uma inclinação pequena e positiva, até a borda direita do gráfico. Os patamares horizontais das quatro curvas ficam em aproximadamente três, oito, quinze e vinte e cinco miliampères, mostrando que o espaçamento entre curvas cresce conforme a tensão de porta aumenta, o que é a assinatura da lei quadrática. Uma curva vermelha tracejada em forma de parábola passa por todos os joelhos e separa o gráfico em duas regiões, identificadas por sombreamento: a região à esquerda da parábola, sombreada em amarelo claro, é a região ôhmica, anotada como a região em que o MOSFET se comporta como um resistor controlado pela porta e onde opera uma chave ligada; a região à direita, sombreada em azul claro, é a região de saturação, anotada como a região em que o MOSFET se comporta como fonte de corrente controlada pela tensão de porta e onde opera um amplificador. A parábola de fronteira está rotulada com a condição tensão dreno-fonte igual a tensão porta-fonte menos tensão de limiar, que é a tensão de sobrecarga. Uma anotação registra que a inclinação residual das curvas na região de saturação é a modulação do comprimento de canal, análoga ao efeito Early do transistor bipolar.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13.5cm, height=8.5cm,
+  xlabel={$V_{DS}$ (V)}, ylabel={$I_D$ (mA)},
+  xmin=0, xmax=6, ymin=0, ymax=30,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  clip=false,
+]
+  % regiões sombreadas: ôhmica é acima da parábola, saturação abaixo/à direita
+  \fill[manualyellow!14] (axis cs:0,0) rectangle (axis cs:6,30);
+  \addplot[draw=none, fill=manualblue!10, domain=0:1.55, samples=80] {12.5*x^2} \closedcycle;
+  \fill[manualblue!10] (axis cs:1.55,0) rectangle (axis cs:6,30);
+
+  % curvas: k = 25 mA/V^2, Vth = 2 V, lambda = 0.02
+  \foreach \vov in {0.5, 0.8, 1.1, 1.4} {
+    \edef\temp{\noexpand\addplot[curva, domain=0:6, samples=240]
+      {x < \vov ? 25*(\vov*x - x*x/2) : 12.5*\vov*\vov*(1+0.02*(x-\vov))};}
+    \temp
+  }
+
+  % fronteira
+  \addplot[destaque, dashed, thick, domain=0:1.55, samples=60] {12.5*x^2};
+
+  \node[manualblue, anchor=west, font=\tiny] at (axis cs:6.05,25.5) {$V_{GS}=3{,}4$ V};
+  \node[manualblue, anchor=west, font=\tiny] at (axis cs:6.05,15.4) {$3{,}1$ V};
+  \node[manualblue, anchor=west, font=\tiny] at (axis cs:6.05,8.2) {$2{,}8$ V};
+  \node[manualblue, anchor=west, font=\tiny] at (axis cs:6.05,3.2) {$2{,}5$ V};
+
+  % rótulos acima da área do gráfico, com setas apontando para dentro
+  \node[anchor=south, font=\scriptsize, align=center, text width=3.0cm] at (axis cs:0.45,31.2)
+       {\textbf{região ôhmica}\\\emph{resistor} — chave ligada};
+  \draw[-{Latex[length=1.4mm]}, manualgray] (axis cs:0.45,31.0) -- (axis cs:0.62,22.0);
+
+  \node[manualred, anchor=south, font=\scriptsize, align=center] at (axis cs:2.8,31.2)
+       {fronteira: $V_{DS} = V_{GS}-V_{th} = V_{OV}$};
+  \draw[-{Latex[length=1.4mm]}, manualred] (axis cs:2.8,31.0) -- (axis cs:1.52,28.2);
+
+  \node[anchor=south, font=\scriptsize, align=center, text width=4.8cm] at (axis cs:5.1,31.2)
+       {\textbf{região de saturação}\\\emph{fonte de corrente} — amplificador};
+
+  \node[manualgray, anchor=north west, font=\tiny, align=left, text width=2.3cm]
+       at (axis cs:6.05,21.5)
+       {a leve subida das curvas é a modulação do comprimento de canal — o "efeito Early"
+        do MOSFET};
+\end{axis}
+\end{tikzpicture}
+```
+
+As curvas de saída de um MOSFET de canal $n$ com $V_{th} = 2$ V. A parábola tracejada é a
+fronteira entre as duas regiões, e ela é o gráfico de $I_D = (k/2)V_{DS}^2$.
+:::
+
+Três coisas para notar antes de qualquer fórmula.
+
+**A fronteira entre as regiões não é uma reta vertical.** No bipolar, a fronteira entre
+saturação e ativa é aproximadamente $V_{CE} = 0{,}2$ V, praticamente independente da corrente.
+No MOSFET, a fronteira é uma **parábola**: quanto mais corrente, maior a tensão de dreno
+necessária para sair da região ôhmica. Um MOSFET conduzindo 25 mA só entra em saturação acima
+de 1,4 V; conduzindo 3 mA, já em 0,5 V.
+
+**O espaçamento entre curvas cresce.** No bipolar, curvas de $I_B$ igualmente espaçados dão
+curvas de $I_C$ igualmente espaçadas — porque $I_C = \beta I_B$ é linear. Aqui, passos iguais
+de $V_{GS}$ dão saltos crescentes de $I_D$. É a assinatura da lei quadrática.
+
+**As curvas não são horizontais na saturação.** Sobem devagar, exatamente como no
+@sec-cap-053. A causa física é diferente (aqui é o ponto de estrangulamento que se desloca, e
+não a base que se estreita), mas o efeito de circuito é idêntico: uma resistência de saída
+finita $r_o$.
+
+## Por que existe o estrangulamento {#sec-060-estrangulamento}
+
+A explicação está inteira numa observação: **a tensão que cria o canal não é a mesma nos dois
+extremos dele**.
+
+::: {#fig-060-canal}
+
+```{.tikz}
+%%| filename: 060-canal
+%%| alt: Três cortes transversais lado a lado de um MOSFET de canal N, mostrando como a forma do canal muda conforme a tensão dreno-fonte aumenta. Em todos, o substrato tipo P é um bloco rosado, as ilhas de fonte e dreno são blocos azuis marcados n mais, e sobre a superfície há a camada de óxido e o eletrodo de porta. No primeiro corte, com tensão dreno-fonte muito pequena, o canal azul escuro entre fonte e dreno tem espessura uniforme; a anotação diz que a tensão porta-canal é praticamente a mesma nos dois extremos, que o canal é um resistor uniforme e que essa é a região ôhmica. No segundo corte, com tensão dreno-fonte igual à tensão de sobrecarga, o canal tem forma de cunha: espesso no lado da fonte e afinando até desaparecer exatamente na borda do dreno; a anotação diz que na ponta do dreno a tensão porta-dreno caiu até a tensão de limiar e o canal fecha ali, o que é o ponto de estrangulamento e a fronteira entre as duas regiões. No terceiro corte, com tensão dreno-fonte maior que a tensão de sobrecarga, o canal em cunha termina antes de chegar ao dreno, e entre o fim do canal e a ilha do dreno há uma faixa cinza de depleção que os elétrons atravessam arrastados pelo campo; a anotação diz que o ponto de estrangulamento recuou na direção da fonte, que a tensão sobre o pedaço de canal que restou continua sendo a tensão de sobrecarga e que por isso a corrente para de crescer, o que é a região de saturação. Abaixo, uma caixa registra que o pequeno encurtamento adicional do canal para tensões de dreno maiores é a modulação do comprimento de canal, e que é dela que vem a inclinação residual das curvas.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \def\corte#1#2#3#4#5{%
+    \begin{scope}[shift={(#1,0)}]
+      \fill[manualred!12] (0,0) rectangle (4.6,1.9);
+      \draw[thin] (0,0) rectangle (4.6,1.9);
+      \node[font=\tiny] at (2.3,0.5) {substrato $p$};
+
+      \fill[manualblue!35] (0.35,1.45) rectangle (1.25,1.9);
+      \draw[thin] (0.35,1.45) rectangle (1.25,1.9);
+      \node[font=\tiny] at (0.8,1.68) {$n^{+}$};
+      \fill[manualblue!35] (3.35,1.45) rectangle (4.25,1.9);
+      \draw[thin] (3.35,1.45) rectangle (4.25,1.9);
+      \node[font=\tiny] at (3.8,1.68) {$n^{+}$};
+
+      \fill[manualyellow!35] (1.15,1.9) rectangle (3.45,2.08);
+      \draw[thin] (1.15,1.9) rectangle (3.45,2.08);
+      \fill[manualgray!55] (1.15,2.08) rectangle (3.45,2.30);
+      \draw[thin] (1.15,2.08) rectangle (3.45,2.30);
+
+      % canal em cunha: espessura #2 na fonte, #3 no dreno, terminando em x = #4
+      \fill[manualblue!70] (1.25,1.9) -- (#4,1.9) -- (#4,1.9-#3) -- (1.25,1.9-#2) -- cycle;
+      % depleção entre fim do canal e o dreno
+      \ifdim#4pt<3.35pt
+        \fill[manualgray!30] (#4,1.9) rectangle (3.35,1.72);
+      \fi
+
+      \draw[very thick] (0.8,1.9) -- (0.8,2.75) node[anchor=south, font=\tiny] {S};
+      \draw[very thick] (3.8,1.9) -- (3.8,2.75) node[anchor=south, font=\tiny] {D};
+      \draw[very thick] (2.3,2.30) -- (2.3,2.75) node[anchor=south, font=\tiny] {G};
+
+      \node[anchor=south, font=\scriptsize\bfseries, align=center, text width=4.6cm]
+           at (2.3,3.15) {#5};
+    \end{scope}}
+
+  \corte{0}{0.22}{0.21}{3.35}{$V_{DS} \ll V_{OV}$}
+  \corte{5.2}{0.24}{0.004}{3.35}{$V_{DS} = V_{OV}$}
+  \corte{10.4}{0.26}{0.004}{2.70}{$V_{DS} > V_{OV}$}
+
+  \node[anchor=north, align=center, font=\tiny, text width=4.6cm] at (2.3,-0.3)
+       {$V_{GD} \approx V_{GS}$ nos dois extremos:\\canal de espessura \textbf{uniforme}\\[3pt]
+        \textbf{resistor} — região ôhmica};
+  \node[anchor=north, align=center, font=\tiny, text width=4.6cm] at (7.5,-0.3)
+       {na ponta do dreno, $V_{GD} = V_{th}$:\\o canal \textbf{fecha exatamente ali}\\[3pt]
+        \textbf{estrangulamento} — a fronteira};
+  \node[anchor=north, align=center, font=\tiny, text width=4.6cm] at (12.7,-0.3)
+       {o estrangulamento \textbf{recua};\\sobre o canal restante ainda há $V_{OV}$\\[3pt]
+        \textbf{corrente constante} — saturação};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=14.4cm] at (7.5,-2.2)
+       {\textbf{De onde vem a inclinação residual.} No terceiro corte, subir mais $V_{DS}$
+        empurra o ponto de estrangulamento um pouco mais para a esquerda. O canal efetivo fica
+        mais \emph{curto}, e canal mais curto conduz melhor — logo $I_D$ sobe um pouquinho.
+        É a \textbf{modulação do comprimento de canal}, o análogo exato do efeito Early do
+        capítulo 053, com a mesma consequência de circuito: uma resistência de saída finita.};
+
+\end{tikzpicture}
+```
+
+O canal visto de perto. A cunha existe porque a tensão porta-canal cai ao longo do caminho:
+vale $V_{GS}$ no lado da fonte e $V_{GS} - V_{DS}$ no lado do dreno.
+:::
+
+Acompanhe pela @fig-060-canal.
+
+O canal se forma onde a tensão entre a porta e o silício logo abaixo dela ultrapassa $V_{th}$.
+No lado da **fonte**, essa tensão é $V_{GS}$. No lado do **dreno**, é $V_{GD} = V_{GS} -
+V_{DS}$ — menor, porque o dreno está mais positivo.
+
+Com $V_{DS}$ muito pequeno, os dois extremos são praticamente iguais, o canal tem espessura
+uniforme e se comporta como uma barra de material condutor: um **resistor**.
+
+Conforme $V_{DS}$ sobe, a ponta do dreno vai ficando mais fina que a da fonte. O canal vira uma
+cunha, e a resistência efetiva aumenta — é por isso que a curva na região ôhmica **dobra**, em
+vez de seguir reta.
+
+Em $V_{DS} = V_{GS} - V_{th}$, a tensão porta-dreno chega exatamente a $V_{th}$, e o canal
+fecha bem na borda do dreno. Esse é o **estrangulamento** (*pinch-off*), e é a fronteira. A
+grandeza $V_{GS} - V_{th}$ aparece tanto que ganha nome próprio: **tensão de sobrecarga** ou
+tensão de excesso, $V_{OV}$ (*overdrive*).
+
+$$ \boxed{V_{OV} \equiv V_{GS} - V_{th}} $$
+
+Acima dessa tensão, o ponto de estrangulamento **recua** na direção da fonte. E aqui está a
+sutileza que explica a saturação: a tensão sobre o trecho de canal que sobrou continua sendo
+$V_{OV}$ — todo o excesso, $V_{DS} - V_{OV}$, aparece sobre a faixa estrangulada. O canal vê
+sempre a mesma tensão, então conduz sempre a mesma corrente. Os elétrons que chegam ao fim do
+canal são arrastados pelo campo intenso da faixa de depleção até o dreno, e a corrente **não
+depende mais de $V_{DS}$**.
+
+É a mesma lógica da região ativa do bipolar, contada com outra física.
+
+## As duas equações {#sec-060-equacoes}
+
+**Região ôhmica** ($V_{DS} < V_{OV}$):
+
+$$ I_D = k\left[\left(V_{GS}-V_{th}\right)V_{DS} - \frac{V_{DS}^{2}}{2}\right]
+       = k\left[V_{OV}\,V_{DS} - \frac{V_{DS}^{2}}{2}\right] $$
+
+**Região de saturação** ($V_{DS} \ge V_{OV}$):
+
+$$ I_D = \frac{k}{2}\,V_{OV}^{2}\,\left(1 + \lambda V_{DS}\right) $$
+
+**Corte** ($V_{GS} < V_{th}$): $I_D \approx 0$.
+
+As duas se encontram, como devem: substituindo $V_{DS} = V_{OV}$ na primeira,
+
+$$ I_D = k\left[V_{OV}^{2} - \frac{V_{OV}^{2}}{2}\right] = \frac{k}{2}V_{OV}^{2}, $$
+
+que é exatamente a segunda com $\lambda = 0$. A fronteira é contínua, e é a parábola tracejada
+da @fig-060-saidas.
+
+O parâmetro $k$ (às vezes escrito $k_n$, ou $\beta$ — nome infeliz, que não tem nada a ver com
+o $\beta$ do bipolar) reúne a física e a geometria:
+
+$$ k = \mu_n C_{ox} \frac{W}{L} $$
+
+$\mu_n$ é a mobilidade dos elétrons, $C_{ox}$ é a capacitância do óxido por unidade de área, e
+$W/L$ é a razão entre a largura e o comprimento do canal. Os dois primeiros são do processo de
+fabricação; $W/L$ é a escolha de projeto. **É por isso que um MOSFET de potência não é um
+MOSFET de sinal com o mesmo silício:** ele tem um $W/L$ milhares de vezes maior, obtido pondo
+milhões de células em paralelo.
+
+::: {.callout-note}
+## $k$ não aparece na folha de dados
+
+Nenhum fabricante de componente discreto publica $k$. O que ele publica é o
+$R_{DS(\text{on})}$ numa condição, a curva de transferência e as curvas de saída. A próxima
+seção mostra como extrair $k$ do $R_{DS(\text{on})}$, que é o caminho prático.
+
+Em projeto de circuito integrado, ao contrário, $\mu_n C_{ox}$ é uma constante do processo
+publicada no *design kit*, e $W/L$ é literalmente o que o projetista desenha.
+:::
+
+## A região ôhmica e o $R_{DS(\text{on})}$ {#sec-060-rdson}
+
+Para $V_{DS}$ bem pequeno, o termo $V_{DS}^2/2$ some diante de $V_{OV}V_{DS}$, e a equação
+ôhmica vira uma reta:
+
+$$ I_D \approx k\,V_{OV}\,V_{DS} \qquad\Longrightarrow\qquad
+   \boxed{R_{DS(\text{on})} = \frac{V_{DS}}{I_D} = \frac{1}{k\,V_{OV}}
+        = \frac{1}{k\left(V_{GS}-V_{th}\right)}} $$
+
+::: {#fig-060-ohmica}
+
+```{.tikz}
+%%| filename: 060-ohmica
+%%| alt: Gráfico ampliado da região ôhmica de um MOSFET 2N7000. No eixo horizontal está a tensão dreno-fonte, de zero a zero vírgula seis volt; no eixo vertical, a corrente de dreno, de zero a cento e vinte miliampères. Três curvas azuis sólidas partem da origem, uma para cada tensão porta-fonte: quatro volts, seis volts e dez volts. A curva de dez volts é a mais íngreme e a de quatro volts a menos íngreme. Junto de cada curva sólida há uma reta tracejada cinza que parte da origem com a mesma inclinação inicial, representando o resistor ideal equivalente. Perto da origem as curvas e as retas coincidem; conforme a tensão dreno-fonte cresce, cada curva sólida vai ficando abaixo da sua reta tracejada, porque o canal em cunha aumenta a resistência efetiva. Três anotações registram a resistência de condução correspondente à inclinação inicial de cada curva: cinco ohms para dez volts de porta, dez ohms para seis volts e vinte ohms para quatro volts. Uma caixa abaixo registra a fórmula da resistência de condução como um dividido pelo produto do parâmetro k pela tensão de sobrecarga, observa que dobrar a tensão de sobrecarga reduz a resistência à metade e que essa é a razão de o mesmo MOSFET ser especificado com resistências muito diferentes conforme a tensão de porta, e alerta que a aproximação de resistor vale enquanto a tensão dreno-fonte for pequena diante da tensão de sobrecarga.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13cm, height=8cm,
+  xlabel={$V_{DS}$ (V)}, ylabel={$I_D$ (mA)},
+  xmin=0, xmax=0.6, ymin=0, ymax=125,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  clip=false,
+]
+  % k = 25 mA/V^2, Vth = 2 V
+  \foreach \vov in {2,4,8} {
+    \edef\temp{\noexpand\addplot[auxiliar, domain=0:0.6, samples=2] {25*\vov*x};}
+    \temp
+    \edef\temp{\noexpand\addplot[curva, domain=0:0.6, samples=100] {25*(\vov*x - x*x/2)};}
+    \temp
+  }
+
+  \node[manualblue, anchor=west, font=\scriptsize, align=left] at (axis cs:0.615,115)
+       {$V_{GS}=10$ V\\$R_{DS(on)} = 5\ \Omega$};
+  \node[manualblue, anchor=west, font=\scriptsize, align=left] at (axis cs:0.615,55)
+       {$6$ V\\$10\ \Omega$};
+  \node[manualblue, anchor=west, font=\scriptsize, align=left] at (axis cs:0.615,25)
+       {$4$ V\\$20\ \Omega$};
+
+  \node[manualgray, anchor=north west, font=\tiny, align=left] at (axis cs:0.015,123)
+       {tracejado: o resistor ideal\\(a curva real fica \emph{abaixo},\\porque a cunha estreita o canal)};
+\end{axis}
+
+\node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=6pt, text width=12.8cm] at (0,-1.1)
+     {$R_{DS(\text{on})} = 1/[k(V_{GS}-V_{th})]$ — \textbf{dobrar a sobrecarga corta a
+      resistência pela metade.} É por isso que a mesma peça é especificada com $5\ \Omega$ em
+      $V_{GS}=10$ V e $20\ \Omega$ em $V_{GS}=4$ V, e é por isso que acionar um MOSFET com
+      tensão de porta insuficiente é um erro térmico, não um erro lógico. A aproximação de
+      resistor vale enquanto $V_{DS} \ll V_{OV}$; a partir daí a curva dobra.};
+
+\end{tikzpicture}
+```
+
+A região ôhmica do 2N7000 ampliada, com $k = 25$ mA/V² e $V_{th} = 2$ V. A inclinação na
+origem é $1/R_{DS(\text{on})}$.
+:::
+
+Essa fórmula é o motor de duas conclusões práticas.
+
+**A resistência de condução depende de $V_{GS}$, e depende forte.** Não existe "o
+$R_{DS(\text{on})}$ do componente": existe o $R_{DS(\text{on})}$ **naquela tensão de porta**. A
+@fig-060-ohmica mostra o 2N7000 com 5 Ω em 10 V, 10 Ω em 6 V e 20 Ω em 4 V. É o mesmo
+componente. É por isso que o @sec-cap-059 insistiu na distinção entre MOSFET comum e de nível
+lógico.
+
+**Ela dá o caminho para extrair $k$.** Invertendo:
+
+$$ k = \frac{1}{R_{DS(\text{on})}\left(V_{GS} - V_{th}\right)} $$
+
+Para o 2N7000, com $R_{DS(\text{on})} = 5\ \Omega$ especificado em $V_{GS} = 10$ V e
+$V_{th} \approx 2$ V:
+
+$$ k = \frac{1}{5 \times 8} = 0{,}025 \text{ A/V}^{2} = 25 \text{ mA/V}^{2} $$
+
+É o valor usado em todas as figuras deste capítulo.
+
+::: {.callout-important}
+## O limite honesto da lei quadrática
+
+A lei quadrática é uma boa descrição de MOSFETs de canal longo em corrente moderada. Em
+**MOSFET de potência conduzindo dezenas de ampères** ela superestima a corrente, às vezes por
+um fator dois ou três, porque o campo elétrico intenso degrada a mobilidade dos portadores e a
+característica se aproxima de uma **reta**, não de uma parábola.
+
+Confira: para o IRLZ44N, $R_{DS(\text{on})} = 22$ mΩ em $V_{GS} = 5$ V com $V_{th} \approx
+1{,}5$ V dá $k = 1/(0{,}022 \times 3{,}5) = 13$ A/V². A lei quadrática prevê então
+$g_m = k V_{OV} = 45$ S; a folha de dados declara $g_{fs} = 19$ S em 25 A. **Um fator 2,4 de
+erro.**
+
+Isso não invalida o modelo — ele continua sendo a maneira certa de entender *o formato* das
+curvas e de projetar amplificadores de sinal. Mas para dimensionar potência, **use a curva da
+folha de dados**, não a parábola. Este manual seguirá essa regra.
+:::
+
+## Extrair $V_{th}$ e $k$ de medidas: o truque da raiz {#sec-060-raiz}
+
+Na região de saturação, tirando a raiz quadrada dos dois lados de $I_D = (k/2)V_{OV}^2$:
+
+$$ \sqrt{I_D} = \sqrt{\frac{k}{2}}\;\left(V_{GS} - V_{th}\right) $$
+
+**Uma reta.** Se você medir $I_D$ para vários $V_{GS}$ e traçar $\sqrt{I_D}$ contra $V_{GS}$, o
+resultado é uma reta cuja interseção com o eixo horizontal é $V_{th}$ e cuja inclinação é
+$\sqrt{k/2}$. Dois parâmetros de um gráfico só.
+
+::: {#fig-060-raiz}
+
+```{.tikz}
+%%| filename: 060-raiz
+%%| alt: Gráfico com a raiz quadrada da corrente de dreno no eixo vertical, em raiz de miliampère, de zero a oito, e a tensão porta-fonte no eixo horizontal, de um vírgula cinco a quatro volts. Doze pontos pretos representam medidas de bancada e caem quase exatamente sobre uma reta azul crescente. A reta foi prolongada para trás como uma linha tracejada e cruza o eixo horizontal em dois volts, ponto marcado e anotado como a tensão de limiar obtida por extrapolação. Um triângulo de inclinação desenhado sobre a reta indica que a inclinação vale a raiz de k sobre dois, e uma anotação registra o valor três vírgula cinco quatro raízes de miliampère por volt, do qual se obtém k igual a vinte e cinco miliampères por volt ao quadrado. Nas duas extremidades, faixas cinza marcam onde a reta deixa de valer: à esquerda, abaixo de aproximadamente dois volts, a região de sublimiar, em que a corrente real é pequena mas não nula e decai exponencialmente em vez de bruscamente; à direita, em corrente alta, a região de degradação da mobilidade, em que os pontos reais caem abaixo da reta. Uma caixa abaixo registra que esse é o método padrão de extração usado pelos próprios fabricantes e que ele deve ser ajustado apenas sobre o trecho central, ignorando as duas extremidades.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13cm, height=8cm,
+  xlabel={$V_{GS}$ (V)}, ylabel={$\sqrt{I_D}$ \ ($\sqrt{\text{mA}}$)},
+  xmin=1.5, xmax=4.1, ymin=0, ymax=8,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  clip=false,
+]
+  \fill[manualgray!14] (axis cs:1.5,0) rectangle (axis cs:2.05,8);
+  \fill[manualgray!14] (axis cs:3.75,0) rectangle (axis cs:4.1,8);
+
+  % reta ideal
+  \addplot[curva, domain=2:3.9, samples=2] {3.536*(x-2)};
+  \addplot[auxiliar, domain=1.7:2, samples=2] {3.536*(x-2)};
+
+  % "medidas"
+  \addplot[only marks, mark=*, mark size=1.3pt, black] coordinates {
+    (2.15,0.48) (2.25,0.91) (2.35,1.26) (2.50,1.79) (2.65,2.28) (2.80,2.79)
+    (2.95,3.38) (3.10,3.85) (3.25,4.44) (3.40,4.92) (3.55,5.41) (3.70,5.86)};
+
+  % pontos que desviam nas pontas
+  \addplot[only marks, mark=*, mark size=1.3pt, manualgray] coordinates {
+    (1.90,0.16) (2.00,0.24) (3.85,6.20)};
+
+  \node[ponto] at (axis cs:2,0) {};
+  \node[manualred, anchor=west, font=\scriptsize, align=left] at (axis cs:2.12,1.20)
+       {$V_{th} = 2{,}0$ V\\{\tiny por extrapolação}};
+  \draw[-{Latex[length=1.4mm]}, manualred] (axis cs:2.10,1.05) -- (axis cs:2.01,0.14);
+
+  % triangulo de inclinacao
+  \draw[manualgray, thin] (axis cs:3.0,3.536) -- (axis cs:3.5,3.536) -- (axis cs:3.5,5.304);
+  \node[manualgray, anchor=west, font=\tiny, align=left] at (axis cs:3.55,4.3)
+       {inclinação $=\sqrt{k/2}$\\$=3{,}54 \Rightarrow k = 25$ mA/V$^2$};
+
+  \node[manualgray, anchor=south, font=\tiny, align=center, rotate=90] at (axis cs:1.72,3.0)
+       {sublimiar};
+  \node[manualgray, anchor=south, font=\tiny, align=center, rotate=90] at (axis cs:3.93,3.0)
+       {mobilidade degrada};
+\end{axis}
+
+\node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=6pt, text width=12.8cm] at (0,-1.3)
+     {\textbf{Este é o método que o próprio fabricante usa} para publicar $V_{th}$. Ajuste a
+      reta apenas ao \emph{trecho central} das medidas: perto do limiar a corrente decai
+      exponencialmente e não a zero (região de sublimiar, que a lógica CMOS chama de
+      \emph{corrente de fuga}), e em corrente alta a mobilidade degrada e os pontos caem
+      abaixo da reta.};
+
+\end{tikzpicture}
+```
+
+O truque da raiz. A lei quadrática vira uma reta, e dois parâmetros saem de uma régua.
+:::
+
+## A transcondutância, e o preço da porta isolada {#sec-060-gm}
+
+Transcondutância é a mesma definição do @sec-cap-056: quanta corrente de saída sai por volt de
+entrada, no ponto de operação.
+
+$$ g_m \equiv \left.\frac{\partial I_D}{\partial V_{GS}}\right|_{Q}
+        = k\,V_{OV} = \frac{2 I_D}{V_{OV}} = \sqrt{2 k I_D} $$
+
+As três formas são a mesma conta, e cada uma é conveniente numa situação. A terceira é a mais
+reveladora: **$g_m$ do MOSFET cresce com a raiz da corrente**. No bipolar, $g_m = I_C/V_T$
+cresce **proporcional** à corrente.
+
+Essa diferença de expoente é a coisa mais importante desta seção.
+
+::: {#fig-060-gm}
+
+```{.tikz}
+%%| filename: 060-gm
+%%| alt: Gráfico em escala logarítmica nos dois eixos, comparando a transcondutância de um transistor bipolar e a de um MOSFET em função da corrente de polarização. No eixo horizontal está a corrente, de zero vírgula um a cem miliampères; no eixo vertical, a transcondutância, de um a dez mil miliampères por volt. A reta vermelha do bipolar tem inclinação um, correspondendo a transcondutância igual à corrente de coletor dividida pela tensão térmica de vinte e seis milivolts, e vai de cerca de quatro miliampères por volt em zero vírgula um miliampère até quase quatro mil miliampères por volt em cem miliampères. A reta azul do MOSFET tem inclinação um meio, correspondendo à raiz quadrada de duas vezes o parâmetro k vezes a corrente, e vai de cerca de dois vírgula dois miliampères por volt em zero vírgula um miliampère até setenta miliampères por volt em cem miliampères. As duas retas quase se tocam do lado esquerdo do gráfico e se afastam muito para a direita. Três setas verticais cinzentas de dupla ponta ligam uma reta à outra e marcam a razão entre elas em três correntes: três vezes em zero vírgula três miliampère, nove vírgula quatro vezes em três miliampères e trinta vezes em trinta miliampères. Uma caixa abaixo registra que o bipolar ganha em ganho para qualquer corrente e que a diferença cresce com a raiz da corrente, que essa é a razão de estágios de entrada de baixo ruído e alto ganho continuarem sendo bipolares, e que o MOSFET compensa com impedância de entrada praticamente infinita e com a possibilidade de aumentar k aumentando a área do dispositivo.
+
+\begin{tikzpicture}
+\begin{loglogaxis}[
+  width=13cm, height=8cm,
+  xlabel={$I$ de polarização (mA)}, ylabel={$g_m$ (mA/V)},
+  xmin=0.1, xmax=100, ymin=1, ymax=10000,
+  font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  legend pos=north west, legend cell align=left,
+]
+  \addplot[destaque, domain=0.1:100, samples=40] {x/0.026};
+  \addlegendentry{bipolar: $g_m = I_C/V_T$}
+  \addplot[curva, domain=0.1:100, samples=40] {sqrt(2*25*x)};
+  \addlegendentry{MOSFET: $g_m = \sqrt{2kI_D}$, $k=25$ mA/V$^2$}
+
+  \draw[manualgray, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:0.3,3.873) -- (axis cs:0.3,11.54);
+  \node[manualgray, anchor=west, font=\tiny] at (axis cs:0.33,6.68) {$\times\,3{,}0$};
+
+  \draw[manualgray, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:3,12.25) -- (axis cs:3,115.4);
+  \node[manualgray, anchor=west, font=\tiny] at (axis cs:3.3,37.6) {$\times\,9{,}4$};
+
+  \draw[manualgray, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:30,38.73) -- (axis cs:30,1154);
+  \node[manualgray, anchor=east, font=\tiny] at (axis cs:29,211) {$\times\,30$};
+\end{loglogaxis}
+
+\node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=6pt, text width=12.8cm] at (0,-1.1)
+     {\textbf{O bipolar ganha em ganho, sempre — e a vantagem cresce com $\sqrt{I}$.} É por
+      isso que estágios de entrada de alto ganho e baixo ruído continuam sendo bipolares
+      décadas depois de o MOSFET dominar tudo o mais. O MOSFET compensa com impedância de
+      entrada praticamente infinita e com um recurso que o bipolar não tem: $k$ é
+      \emph{projetável} — mais área de silício, mais $g_m$ na mesma corrente.};
+
+\end{tikzpicture}
+```
+
+$g_m$ contra corrente, nos dois dispositivos. A inclinação 1 do bipolar contra a inclinação
+1/2 do MOSFET, em escala logarítmica.
+:::
+
+Um exemplo com números fecha o ponto. Um 2N7000 ($k = 25$ mA/V²) polarizado com
+$I_D = 10$ mA:
+
+$$ V_{OV} = \sqrt{\frac{2 I_D}{k}} = \sqrt{\frac{20}{25}} = 0{,}894 \text{ V}
+   \quad\Longrightarrow\quad V_{GS} = 2{,}89 \text{ V} $$
+
+$$ g_m = \sqrt{2 k I_D} = \sqrt{2 \times 0{,}025 \times 0{,}010} = 22{,}4 \text{ mA/V} $$
+
+Um BC548 no mesmo 10 mA: $g_m = 10/26 = 385$ mA/V. **Dezessete vezes mais.**
+
+Num emissor comum com $R_C = 1$ kΩ, isso é a diferença entre um ganho de 385 e um ganho de 22.
+É o preço da porta isolada, e ele é cobrado à vista.
+
+::: {.callout-tip}
+## A tensão de sobrecarga é o botão de ajuste
+
+Reescrevendo $g_m = 2I_D/V_{OV}$: para uma **corrente fixa**, quanto **menor** $V_{OV}$, maior
+$g_m$. Polarizar o MOSFET perto do limiar maximiza o ganho.
+
+O preço é excursão de sinal (um $V_{OV}$ de 100 mV não deixa espaço para nada) e sensibilidade
+à dispersão de $V_{th}$ (que varia 2:1, lembre). Em projeto de circuito integrado analógico,
+escolher $V_{OV}$ — tipicamente entre 100 e 300 mV — é *a* decisão de partida de cada estágio.
+:::
+
+## A resistência de saída e o modelo de pequenos sinais {#sec-060-modelo}
+
+A inclinação residual das curvas na saturação dá, exatamente como no @sec-cap-058:
+
+$$ r_o = \frac{1}{\lambda I_D} = \frac{V_A}{I_D} $$
+
+com $\lambda$ tipicamente entre 0,01 e 0,1 V⁻¹ nos discretos, o que dá $V_A$ entre 10 e 100 V.
+Com $\lambda = 0{,}02$ V⁻¹ e $I_D = 10$ mA, $r_o = 5$ kΩ.
+
+::: {#fig-060-modelo}
+
+```{.tikz}
+%%| filename: 060-modelo
+%%| alt: Comparação lado a lado dos modelos de pequenos sinais do transistor bipolar e do MOSFET. À esquerda, o modelo híbrido-pi do bipolar: entre base e emissor há uma resistência r-pi; entre coletor e emissor há uma fonte de corrente controlada valendo a transcondutância vezes a tensão base-emissor de sinal, com uma resistência r-o em paralelo. À direita, o modelo do MOSFET: entre porta e fonte não há elemento nenhum, apenas um circuito aberto marcado com o texto nada, porque não há corrente de porta; entre dreno e fonte há uma fonte de corrente controlada valendo a transcondutância vezes a tensão porta-fonte de sinal, com uma resistência r-o em paralelo. Abaixo de cada modelo, um quadro lista as fórmulas dos parâmetros. Para o bipolar: transcondutância igual à corrente de coletor dividida pela tensão térmica; r-pi igual a beta dividido pela transcondutância; r-o igual à tensão de Early dividida pela corrente de coletor. Para o MOSFET: transcondutância igual à raiz de duas vezes k vezes a corrente de dreno, também igual a k vezes a tensão de sobrecarga e a duas vezes a corrente de dreno dividida pela tensão de sobrecarga; resistência de entrada infinita; r-o igual a um sobre lambda vezes a corrente de dreno. Uma caixa final registra que a topologia dos dois modelos é idêntica exceto pela ausência de r-pi no MOSFET, e que por isso todas as fórmulas de ganho e de impedância do Volume 9 se traduzem para o MOSFET fazendo r-pi tender ao infinito e beta tender ao infinito.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= BJT =================
+  \begin{scope}
+    \node[anchor=south, font=\small\bfseries] at (2.5,2.2) {bipolar};
+    \coordinate (b) at (0,1.2);
+    \coordinate (e) at (0,-1.6);
+    \draw (b) -- ++(-0.8,0) node[anchor=east, font=\scriptsize] {B};
+    \draw (b) to[R, l={$r_\pi$}] (e);
+    \draw (e) -- ++(-0.8,0) node[anchor=east, font=\scriptsize] {E};
+    \draw (e) -- (4.4,-1.6);
+    \draw (2.6,-1.6) to[I, l_={$g_m v_{be}$}, invert] (2.6,1.2);
+    \draw (4.4,-1.6) to[R, l_={$r_o$}] (4.4,1.2);
+    \draw (2.6,1.2) -- (5.2,1.2) node[anchor=west, font=\scriptsize] {C};
+    \node[ponto] at (2.6,-1.6) {};
+    \node[ponto] at (4.4,-1.6) {};
+    \node[ponto] at (4.4,1.2) {};
+  \end{scope}
+
+  % ================= MOSFET =================
+  \begin{scope}[shift={(8.4,0)}]
+    \node[anchor=south, font=\small\bfseries] at (2.5,2.2) {MOSFET};
+    \coordinate (g) at (0,1.2);
+    \coordinate (s) at (0,-1.6);
+    \draw (g) -- ++(-0.8,0) node[anchor=east, font=\scriptsize] {G};
+    \draw[manualgray, dashed] (g) -- (s);
+    \node[manualred, anchor=west, font=\tiny, align=left] at (0.15,-0.2)
+         {\textbf{nada}\\aqui};
+    \draw (s) -- ++(-0.8,0) node[anchor=east, font=\scriptsize] {S};
+    \draw (s) -- (4.4,-1.6);
+    \draw (2.6,-1.6) to[I, l_={$g_m v_{gs}$}, invert] (2.6,1.2);
+    \draw (4.4,-1.6) to[R, l_={$r_o$}] (4.4,1.2);
+    \draw (2.6,1.2) -- (5.2,1.2) node[anchor=west, font=\scriptsize] {D};
+    \node[ponto] at (2.6,-1.6) {};
+    \node[ponto] at (4.4,-1.6) {};
+    \node[ponto] at (4.4,1.2) {};
+    \node[ponto] at (0,1.2) {};
+    \node[ponto] at (0,-1.6) {};
+  \end{scope}
+
+  % ================= fórmulas =================
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.6cm] at (-0.8,-2.4)
+       {$g_m = \dfrac{I_C}{V_T}$ \quad (linear em $I_C$)\\[6pt]
+        $r_\pi = \dfrac{\beta}{g_m}$ \quad \textbf{finita}\\[6pt]
+        $r_o = \dfrac{V_A}{I_C}$};
+
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=6.6cm] at (7.6,-2.4)
+       {$g_m = \sqrt{2kI_D} = kV_{OV} = \dfrac{2I_D}{V_{OV}}$\\[6pt]
+        $r_{in} = \infty$ \quad (em CC)\\[6pt]
+        $r_o = \dfrac{1}{\lambda I_D} = \dfrac{V_A}{I_D}$};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=14.0cm] at (6.6,-5.4)
+       {\textbf{A topologia é a mesma; falta só o $r_\pi$.} Toda fórmula de ganho e de
+        impedância do Volume 9 se traduz para o MOSFET fazendo
+        $r_\pi \to \infty$ e $\beta \to \infty$. O ganho do emissor comum,
+        $A_v = -g_m(r_o \parallel R_C)$, vale letra por letra para a fonte comum. A
+        impedância de entrada, que no bipolar era $r_\pi + (\beta+1)R_E$, vira infinita.};
+
+\end{tikzpicture}
+```
+
+Os dois modelos, lado a lado. A única diferença estrutural é a ausência de $r_\pi$ — e ela
+simplifica tudo o que vem depois.
+:::
+
+O **ganho intrínseco** do dispositivo — o teto absoluto de ganho de tensão de um estágio, com
+carga infinita — mostra a diferença de outro ângulo:
+
+$$ A_{v,\text{máx}} = g_m r_o $$
+
+- Bipolar: $g_m r_o = \dfrac{I_C}{V_T}\cdot\dfrac{V_A}{I_C} = \dfrac{V_A}{V_T}
+  = \dfrac{100}{0{,}026} \approx 3\,800$ — e note que **não depende da corrente**.
+- MOSFET: $g_m r_o = \dfrac{2 I_D}{V_{OV}}\cdot\dfrac{V_A}{I_D} = \dfrac{2 V_A}{V_{OV}}
+  = \dfrac{2 \times 50}{0{,}894} \approx 112$.
+
+Uma ordem e meia de grandeza de diferença. O MOSFET compensa isso empilhando estágios — o que
+é barato num circuito integrado, onde transistores custam área e não dinheiro.
+
+::: {.callout-note}
+## O efeito de corpo, e por que você pode ignorá-lo
+
+Se o substrato não estiver no mesmo potencial da fonte, $V_{th}$ **aumenta**, e o modelo ganha
+uma segunda fonte de corrente $g_{mb}v_{bs}$, com $g_{mb} \approx 0{,}1$ a $0{,}3\,g_m$.
+
+Em **componente discreto isso nunca acontece**, porque o substrato vem soldado à fonte de
+fábrica (@sec-cap-059). O efeito de corpo só importa em circuito integrado, onde vários
+MOSFETs dividem o mesmo poço — e lá ele é uma dor de cabeça real, especialmente em fontes
+empilhadas. Neste manual, ignorado.
+:::
+
+## O MOSFET como resistor controlado por tensão {#sec-060-resistorvariavel}
+
+A região ôhmica tem um uso que não é chaveamento: um resistor cujo valor um sinal de controle
+ajusta.
+
+Perto da origem, e para $|V_{DS}|$ pequeno, o canal conduz nos **dois sentidos** — não há junção
+retificadora no caminho. Isso faz do MOSFET uma **chave analógica** capaz de passar sinal de
+qualquer polaridade, coisa que um bipolar não faz bem.
+
+É o que existe dentro do CD4066 e do 74HC4051: portas de transmissão. Duas limitações:
+
+**A resistência não é constante.** $R_{DS(\text{on})} = 1/[k(V_{GS}-V_{th})]$, e se a chave
+está passando um sinal, a **fonte** do MOSFET é o próprio sinal — logo $V_{GS}$ varia com ele,
+e a resistência também. O resultado é distorção.
+
+**O termo $V_{DS}^2/2$ distorce.** Mesmo com $V_{GS}$ fixo, a curva não é reta, e a curvatura é
+quadrática: gera segundo harmônico.
+
+A solução dos dois problemas é a mesma e é elegante: pôr um MOSFET de canal $p$ **em paralelo**
+com o de canal $n$, acionados por sinais complementares. Quando o sinal sobe, o canal $n$
+piora e o canal $p$ melhora; os dois termos quadráticos têm sinais opostos e se cancelam em
+boa parte. Essa estrutura é a **porta de transmissão** CMOS, e ela vai reaparecer no capítulo
+092 como um bloco lógico.
+
+## 🧪 Laboratório {#sec-060-lab}
+
+O objetivo é levantar as curvas do @sec-060-curvas ponto a ponto e extrair, do seu próprio
+transistor, os três parâmetros que o capítulo usou: $V_{th}$, $k$ e $\lambda$.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | MOSFET **2N7000** | o mesmo da Parte 3 do @sec-cap-059, se possível |
+| 1 | MOSFET **IRLZ44N** | Parte 5, comparação com potência |
+| 1 | Resistor 10 Ω / 1 W | sensor de corrente de dreno |
+| 1 | Resistor 100 Ω | limitação na Parte 4 |
+| 1 | Resistor 1 kΩ | Parte 5 |
+| 2 | Potenciômetro 10 kΩ multivoltas | ajuste fino de $V_{GS}$; o comum de uma volta serve com paciência |
+| 1 | Capacitor 100 nF | desacoplamento da porta |
+| 2 | Multímetro | um em $V_{GS}$, outro no resistor de 10 Ω |
+| 1 | Fonte ajustável 0 a 15 V | de preferência com limite de corrente |
+| — | Papel milimetrado ou planilha | a curva é o produto do laboratório |
+
+**Precaução:** toque num metal aterrado antes de manusear os MOSFETs, e mantenha o capacitor
+de 100 nF da porta ao terra durante todo o experimento — ele estabiliza o ajuste e evita
+oscilação.
+
+### Montagem base
+
+Fonte ajustável ($V_{DD}$) → resistor de 10 Ω → dreno. Fonte no terra. O potenciômetro de
+10 kΩ como divisor entre +5 V e o terra, cursor na porta.
+
+- $I_D$ = tensão sobre o resistor de 10 Ω, dividida por 10. (100 mV = 10 mA.)
+- $V_{DS}$ = tensão de dreno para fonte, medida **direto nos terminais do MOSFET**, não na
+  fonte de alimentação. Os 10 Ω derrubam parte da tensão, e essa parte não é do MOSFET.
+
+### Parte 1 — Uma curva de saída completa
+
+1. Ajuste $V_{GS} = 3{,}0$ V com o potenciômetro e **não mexa mais nele**.
+2. Varra $V_{DD}$ de 0 a 8 V, anotando $V_{DS}$ e $I_D$. Use passos finos (0,1 V) até
+   $V_{DS} = 1{,}5$ V, e passos de 1 V depois.
+3. Trace o gráfico.
+
+Você vai reconhecer a @fig-060-saidas: a subida íngreme, o joelho, o patamar quase horizontal.
+Marque no gráfico onde está o joelho e compare com $V_{OV} = 3{,}0 - V_{th}$, usando o
+$V_{th}$ medido no laboratório do @sec-cap-059.
+
+4. Repita para $V_{GS} = 2{,}6$ V e $V_{GS} = 3{,}4$ V. Três curvas na mesma folha.
+
+Confira o espaçamento: as curvas **não** ficam igualmente espaçadas para passos iguais de
+$V_{GS}$. É a lei quadrática visível a olho nu.
+
+### Parte 2 — $R_{DS(\text{on})}$ contra $V_{GS}$
+
+Agora só a região ôhmica, com $V_{DS}$ pequeno.
+
+1. Ajuste $V_{DD}$ para que $V_{DS}$ fique em torno de 100 mV.
+2. Para $V_{GS}$ = 3, 4, 5, 6, 8 e 10 V, anote $V_{DS}$ e $I_D$, reajustando $V_{DD}$ a cada
+   ponto para manter $V_{DS} \approx 100$ mV.
+3. Calcule $R_{DS(\text{on})} = V_{DS}/I_D$ em cada ponto.
+
+| $V_{GS}$ (V) | $V_{DS}$ (mV) | $I_D$ (mA) | $R_{DS(\text{on})}$ (Ω) | $1/(V_{GS}-V_{th})$ |
+|---|---|---|---|---|
+| 3 | | | | |
+| 4 | | | | |
+| 5 | | | | |
+| 6 | | | | |
+| 8 | | | | |
+| 10 | | | | |
+
+: A resistência de condução em seis tensões de porta, e o teste da fórmula.
+{#tbl-060-lab1}
+
+4. Trace $R_{DS(\text{on})}$ contra $1/(V_{GS} - V_{th})$. **Deve dar uma reta pela origem**, e
+   a inclinação dela é $1/k$.
+
+Compare o $k$ obtido aqui com o obtido na Parte 3. Dois caminhos independentes para o mesmo
+parâmetro.
+
+### Parte 3 — O truque da raiz
+
+Na região de **saturação**, com $V_{DD}$ ajustado para manter $V_{DS} \approx 5$ V:
+
+1. Para $V_{GS}$ de 2,0 a 3,6 V em passos de 0,1 V, anote $I_D$.
+2. Calcule $\sqrt{I_D}$ e trace contra $V_{GS}$.
+3. Ajuste uma reta ao **trecho central** — ignore os primeiros pontos (sublimiar) e os
+   últimos, se houver curvatura.
+4. A interseção com o eixo horizontal é o seu $V_{th}$; a inclinação ao quadrado, vezes dois,
+   é o seu $k$.
+
+Compare o $V_{th}$ obtido por extrapolação com o medido pelo método rápido do @sec-cap-059
+(porta ligada ao dreno). Eles diferem — o método rápido mede $V_{GS}$ numa corrente que não é
+zero, e portanto **superestima** $V_{th}$ em algumas centenas de milivolts. Anote a diferença;
+ela explica por que fabricantes especificam a corrente de teste junto do $V_{th}$.
+
+### Parte 4 — $\lambda$, e o efeito Early do MOSFET
+
+1. Volte a $V_{GS} = 3{,}0$ V.
+2. Meça $I_D$ em $V_{DS} = 3$ V e em $V_{DS} = 8$ V, com cuidado (a diferença é pequena, uns
+   poucos por cento — use a escala mais fina do multímetro).
+3. Calcule:
+
+$$ r_o = \frac{\Delta V_{DS}}{\Delta I_D}, \qquad
+   \lambda = \frac{1}{r_o I_D}, \qquad V_A = \frac{1}{\lambda} $$
+
+Espere $V_A$ entre 10 e 100 V. É a mesma medida que a Parte 3 do laboratório do @sec-cap-058
+fez no bipolar, e vale comparar os dois números do seu próprio material.
+
+### Parte 5 — O MOSFET de potência é diferente
+
+1. Troque o 2N7000 pelo IRLZ44N. Resistor de dreno: 1 kΩ, para limitar a corrente.
+2. Meça $V_{th}$ pelo método rápido (porta no dreno).
+3. Agora troque o resistor de dreno por 10 Ω e ajuste $V_{GS}$ para obter $I_D = 100$ mA. Anote
+   $V_{GS}$.
+4. Calcule $g_m$ variando $V_{GS}$ em ±50 mV e medindo $\Delta I_D$.
+5. Compare com a previsão quadrática $g_m = \sqrt{2kI_D}$, usando o $k = 13$ A/V² calculado
+   na seção @sec-060-rdson a partir do $R_{DS(\text{on})}$ de catálogo.
+
+O modelo vai errar — provavelmente para mais. **Esse erro é o resultado do experimento**, não
+uma falha dele: é a demonstração de que a lei quadrática descreve o formato e não os números
+de um dispositivo de potência.
+
+::: {.callout-warning}
+## O IRLZ44N esquenta
+
+Com 100 mA e vários volts sobre ele, o MOSFET dissipa alguns watts na região de saturação —
+que é o pior lugar térmico para uma chave de potência estar. Faça as medidas rápido, toque a
+aba (com o dorso do dedo) para conferir a temperatura, e desligue entre uma leitura e outra.
+Se tiver um dissipador, use.
+:::
+
+**Variante simulada (plano B).** No ngspice ou no LTspice, `.dc VDS 0 8 0.02 VGS 2.4 3.4 0.2`
+levanta a família inteira da Parte 1 num comando, e o Volume 7 já ensinou a ler o resultado.
+Para a Parte 3, `.dc VGS 1.8 3.6 0.02` com a expressão `sqrt(i(vd))` reproduz a
+@fig-060-raiz. E há algo que a bancada não oferece: `.op` seguido de `show m1` imprime
+`gm`, `gds` e `vth` calculados pelo simulador, permitindo conferir cada extração. Compare o
+modelo de nível 1 (quadrático puro) com o modelo do fabricante para o IRLZ44N — a diferença
+entre os dois é exatamente o assunto do quadro sobre o limite da lei quadrática.
+
+## 🔥 Onde Queima {#sec-060-queima}
+
+**Dizer "saturação" querendo dizer "chave ligada".** No MOSFET, chave ligada é região
+**ôhmica**. Saturação é o análogo da região ativa do bipolar. A troca de palavras leva a
+dimensionar o dissipador com a conta errada, por uma ordem de grandeza.
+
+**Usar $R_{DS(\text{on})}$ sem olhar em que $V_{GS}$ ele foi especificado.** Não existe o
+$R_{DS(\text{on})}$ do componente. Existe o de 10 V, o de 5 V e o de 4,5 V, e eles diferem por
+fatores de quatro ou mais.
+
+**Esquecer que $R_{DS(\text{on})}$ sobe com a temperatura.** Tipicamente dobra entre 25 °C e
+125 °C. Um dimensionamento térmico feito com o valor de 25 °C subestima a dissipação pela
+metade, e a conta térmica realimenta a si mesma. Sempre calcule com o valor quente.
+
+**Aplicar a lei quadrática a MOSFET de potência em corrente alta.** Erra por um fator dois ou
+três. Para potência, a curva da folha de dados é a fonte de verdade.
+
+**Confundir $k$ com $\beta$.** Alguns textos e simuladores chamam $k$ de $\beta$ (o `KP` do
+SPICE, dividido pelo comprimento). Não tem relação nenhuma com o $\beta$ do bipolar, e as
+unidades são diferentes: A/V² contra adimensional.
+
+**Medir $V_{DS}$ nos terminais da fonte de alimentação.** Com um resistor sensor de 10 Ω e
+100 mA, você está lendo 1 V que não é do MOSFET. Meça nos terminais do dispositivo.
+
+**Deixar o MOSFET na região de saturação sem querer.** Uma chave que passa devagar pela região
+de saturação dissipa $V_{DS} \times I_D$, que pode ser dezenas de watts, contra os
+milésimos disso na região ôhmica. É toda a diferença entre um MOSFET frio e um MOSFET aberto,
+e é o assunto do @sec-cap-061.
+
+**Extrair $V_{th}$ com o método rápido e usá-lo como se fosse o do catálogo.** O método da
+porta no dreno mede $V_{GS}$ numa corrente de teste, e superestima. Se o número vai ser usado
+em conta, extraia pelo truque da raiz — e mesmo assim, lembre da regra da desigualdade.
+
+**Esperar que a chave analógica de MOSFET tenha resistência constante.** Ela varia com o
+sinal, porque o sinal muda $V_{GS}$. Em áudio isso é distorção audível; a porta de transmissão
+CMOS existe para reduzi-la.
+
+**Ignorar $r_o$ ao projetar um amplificador de fonte comum com resistor de dreno grande.** Com
+$r_o = 5$ kΩ, um $R_D$ de 10 kΩ não dá o ganho que a conta ingênua promete — e o ganho
+intrínseco de 112 é um teto que nenhuma escolha de $R_D$ ultrapassa.
+
+## O que fica deste capítulo {#sec-060-resumo}
+
+O MOSFET tem **três regiões**, e a palavra "saturação" significa o **oposto** do que significa
+no bipolar:
+
+| $V_{GS}$ | $V_{DS}$ | Região | Comportamento |
+|---|---|---|---|
+| $< V_{th}$ | qualquer | **corte** | $I_D \approx 0$ |
+| $> V_{th}$ | $< V_{OV}$ | **ôhmica** (tríodo) | resistor $R_{DS(\text{on})}$ — *chave ligada* |
+| $> V_{th}$ | $\ge V_{OV}$ | **saturação** | fonte de corrente — *amplificador* |
+
+: As três regiões do MOSFET de canal $n$. {#tbl-060-regioes}
+
+**A tensão de sobrecarga** $V_{OV} = V_{GS} - V_{th}$ é a grandeza que organiza tudo: ela é a
+fronteira entre as regiões, ela define $R_{DS(\text{on})}$ e ela define $g_m$.
+
+**As equações:**
+
+$$ I_D^{\text{(ôhmica)}} = k\left[V_{OV}V_{DS} - \frac{V_{DS}^{2}}{2}\right], \qquad
+   I_D^{\text{(saturação)}} = \frac{k}{2}V_{OV}^{2}\left(1+\lambda V_{DS}\right) $$
+
+com $k = \mu_n C_{ox}(W/L)$, que não aparece na folha de dados e se extrai do
+$R_{DS(\text{on})}$.
+
+**Os três parâmetros de pequenos sinais:**
+
+$$ g_m = \sqrt{2kI_D} = kV_{OV} = \frac{2I_D}{V_{OV}}, \qquad
+   r_{in} = \infty, \qquad r_o = \frac{1}{\lambda I_D} $$
+
+**A diferença que define o dispositivo:** $g_m$ cresce com $\sqrt{I_D}$ no MOSFET e com $I_C$
+no bipolar. Em 10 mA, um bipolar tem dezessete vezes mais transcondutância que um 2N7000. O
+ganho intrínseco $g_m r_o$ é de 3 800 no bipolar contra 112 no MOSFET. **Ganho é o preço da
+porta isolada.**
+
+**O modelo de pequenos sinais é o do @sec-cap-058 sem o $r_\pi$.** Toda fórmula do Volume 9 se
+traduz fazendo $r_\pi \to \infty$ e $\beta \to \infty$.
+
+**A lei quadrática tem limite honesto:** vale para canal longo e corrente moderada. Em MOSFET
+de potência com dezenas de ampères, a característica se aproxima de uma reta e a parábola erra
+por um fator dois ou três. Para dimensionar potência, use a curva do fabricante.
+
+**Extração prática:** $\sqrt{I_D}$ contra $V_{GS}$ é uma reta — a interseção dá $V_{th}$, a
+inclinação ao quadrado vezes dois dá $k$.
+
+## Para o próximo capítulo {#sec-060-fecho}
+
+Este capítulo montou o mapa. O @sec-cap-061 usa uma parte dele com muito cuidado: a **região
+ôhmica**, que é onde uma chave ligada tem de estar, e a **travessia** entre corte e ôhmica, que
+é onde ela dissipa.
+
+A conta é simples de enunciar e cheia de armadilha na prática. Um MOSFET ligado dissipa
+$I_D^2 R_{DS(\text{on})}$ — para o IRLZ44N com 10 A, $10^2 \times 0{,}022 = 2{,}2$ W, e a
+correção térmica dobra isso. Um MOSFET desligado dissipa nada. Mas durante a transição ele
+passa pela região de saturação, com tensão **e** corrente altas ao mesmo tempo, e a potência
+instantânea ali chega a centenas de watts.
+
+Se a transição for rápida, isso não importa: centenas de watts durante 100 ns, cem mil vezes
+por segundo, são alguns watts de média. Se a transição for lenta, a perda de comutação domina
+tudo e o MOSFET abre.
+
+E o que torna a transição lenta é justamente a porta capacitiva do @sec-cap-059 — agravada por
+um efeito que o @sec-cap-056 já apresentou no bipolar e que aqui é ainda mais brutal: o
+**efeito Miller**, que faz a capacitância porta-dreno parecer muito maior do que é durante
+exatamente o pedaço da transição em que ela mais atrapalha. É o patamar que se vê em todo
+osciloscópio ligado à porta de um MOSFET chaveando, e o próximo capítulo explica de onde ele
+vem.
