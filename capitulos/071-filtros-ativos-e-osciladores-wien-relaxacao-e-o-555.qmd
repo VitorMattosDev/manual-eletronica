@@ -1,3 +1,887 @@
 # Filtros ativos e osciladores: Wien, relaxação e o 555 {#sec-cap-071}
 
-*(em elaboração)*
+Todos os circuitos do Volume 11 até aqui **processam** um sinal que vem de fora. Este capítulo
+fecha o volume com duas famílias que fazem outra coisa.
+
+A primeira retoma os filtros do Volume 6 e refaz o trabalho **sem indutores**. Os filtros LC do
+@sec-cap-036 funcionam, e o indutor é o componente mais caro, mais volumoso, mais impreciso e
+mais suscetível a acoplamento magnético do estojo. Em frequências de áudio ele chega a ser
+inviável: um filtro de 100 Hz pediria henries. Com um amp-op e dois capacitores, a mesma resposta
+sai de componentes que existem em qualquer gaveta.
+
+A segunda família **gera** sinal em vez de processá-lo. E o mecanismo é o do @sec-cap-070 levado
+ao limite: se um gatilho de Schmitt tem dois estados estáveis e comuta quando o sinal externo
+manda, basta ligar a saída de volta à entrada através de um $RC$ para que ele comute **sozinho**,
+para sempre, sem entrada nenhuma.
+
+O capítulo termina com o **555** — o mesmo princípio num encapsulamento de oito pinos, e o
+circuito integrado mais vendido da história — e com o **oscilador de Wien**, que gera senoide em
+vez de onda quadrada e cuja estabilização de amplitude é o problema mais sutil do volume.
+
+## Filtros ativos {#sec-071-filtros}
+
+::: {#fig-071-sallenkey}
+
+```{.tikz}
+%%| filename: 071-sallenkey
+%%| alt: Figura em duas partes sobre o filtro ativo de Sallen-Key. À esquerda, o esquemático do passa-baixas de segunda ordem: o sinal de entrada atravessa um resistor R até um nó intermediário, e desse nó outro resistor R até a entrada não inversora do amp-op; da entrada não inversora um capacitor C vai ao terra; e da saída do amp-op um segundo capacitor C volta ao nó intermediário, que é o caminho de realimentação positiva controlada que dá ao filtro o seu fator de qualidade. O amp-op é ligado como não inversor, com um resistor Ra do terminal inversor ao terra e um resistor Rb da saída ao terminal inversor, de modo que o ganho de faixa passante vale um mais Rb sobre Ra. À direita, três caixas. A primeira dá as fórmulas da versão de componentes iguais: a frequência natural vale um dividido por duas vezes pi vezes R vezes C, e o fator de qualidade vale um dividido por três menos o ganho — de modo que é o ganho, e não os resistores da rede, que ajusta o fator de qualidade. A segunda caixa alerta para a consequência mais importante dessa fórmula: quando o ganho chega a três, o fator de qualidade vai ao infinito e o filtro deixa de ser filtro e vira oscilador; um ganho de dois vírgula nove já dá fator de qualidade dez, com dez decibéis de pico na resposta, o que quase nunca é o pretendido. A terceira caixa traz o projeto de um filtro anti-serrilhamento Butterworth de mil hertz: com R de dez quilohms e C de quinze nanofarads a frequência natural fica em mil e sessenta e um hertz; o fator de qualidade Butterworth de zero vírgula setecentos e sete pede ganho um vírgula quinhentos e oitenta e seis, o que com Ra de dez quilohms pediria Rb de cinco vírgula oitenta e seis quilohms, valor que não existe em E24; adotando cinco vírgula seis quilohms o ganho vira um vírgula cinquenta e seis e o fator de qualidade vira zero vírgula seiscentos e noventa e quatro, diferença de dois por cento que não é perceptível na resposta.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- esquematico (+ em cima, - embaixo) ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw (0.1,2.6) to[R, l=$R$] (1.9,2.6);
+    \node[ponto] at (1.9,2.6) {};
+    \node[anchor=east, font=\scriptsize] at (0.05,2.6) {$v_{in}$};
+
+    \draw (1.9,2.6) to[R, l=$R$] (3.7,2.6);
+    \node[ponto] at (3.7,2.6) {};
+
+    \draw (3.7,2.6) to[C, l_=$C$] (3.7,1.1);
+    \node[ground] at (3.7,1.1) {};
+
+    % amp op
+    \draw[thick] (4.6,1.4) -- (4.6,3.2) -- (6.3,2.3) -- cycle;
+    \node[anchor=west, font=\small] at (4.7,2.75) {$+$};
+    \node[anchor=west, font=\small] at (4.7,1.85) {$-$};
+    \draw (3.7,2.6) -- (3.7,2.75) -- (4.6,2.75);
+
+    \draw (6.3,2.3) -- (8.2,2.3);
+    \node[ponto] at (7.2,2.3) {};
+    \node[anchor=west, font=\scriptsize] at (8.25,2.3) {$v_{out}$};
+
+    % realimentacao positiva (o C de cima)
+    \draw (7.2,2.3) -- (7.2,4.0);
+    \draw (7.2,4.0) to[C, l=$C$] (1.9,4.0);
+    \draw (1.9,4.0) -- (1.9,2.6);
+
+    % rede de ganho
+    \node[ponto] at (7.7,2.3) {};
+    \draw (7.7,2.3) -- (7.7,0.2);
+    \draw (7.7,0.2) to[R, l_=$R_b$] (4.2,0.2);
+    \node[ponto] at (4.2,0.2) {};
+    \draw (4.2,0.2) -- (4.2,1.85) -- (4.6,1.85);
+    \draw (4.2,0.2) -- (4.2,-0.6);
+    \draw (4.2,-0.6) to[R, l_=$R_a$] (4.2,-1.9);
+    \node[ground] at (4.2,-1.9) {};
+  \end{scope}
+
+  % ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.6cm] at (9.2,4.0)
+       {\textbf{Versão de componentes iguais}
+        \[ f_0 = \frac{1}{2\pi RC} \qquad K = 1 + \frac{R_b}{R_a} \]
+        \[ \boxed{\ Q = \frac{1}{3 - K}\ } \]
+        \textbf{É o \emph{ganho} que ajusta o $Q$}, não os resistores da rede --- e as duas
+        decisões ficam independentes.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.6cm] at (9.2,0.4)
+       {\textbf{Com $K = 3$, o filtro vira oscilador.} $Q \to \infty$.
+        \\[3pt]
+        E muito antes disso já incomoda: $K = 2{,}9$ dá $Q = 10$, ou \textbf{10 dB de pico}
+        na resposta --- quase nunca o que se queria.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.6cm] at (0,-3.0)
+       {\textbf{Projeto: anti-serrilhamento Butterworth de 1 kHz.}
+        \ $R = 10$ k$\Omega$, $C = 15$ nF (E12) $\Rightarrow f_0 = 1061$ Hz.
+        \\[3pt]
+        Butterworth pede $Q = 0{,}707$, logo $K = 3 - 1/0{,}707 = 1{,}586$. Com
+        $R_a = 10$ k$\Omega$, seria $R_b = 5{,}86$ k$\Omega$ --- \textbf{não existe em E24}.
+        \\[3pt]
+        Adotando $R_b = 5{,}6$ k$\Omega$: \ $K = 1{,}56$ \ e \ $Q = 1/(3-1{,}56) =
+        \mathbf{0{,}694}$ --- 2 \% abaixo do alvo, diferença invisível na resposta.};
+
+\end{tikzpicture}
+```
+
+O filtro de Sallen-Key passa-baixas de segunda ordem. O capacitor de cima é uma realimentação
+**positiva** dosada: é ela que cria o fator de qualidade, e é por isso que o mesmo circuito
+oscila quando o ganho passa de 3.
+:::
+
+O filtro ativo resolve quatro problemas do filtro LC de uma vez:
+
+1. **Não usa indutor.** Em áudio, o indutor equivalente teria henries e um núcleo de ferro.
+2. **A saída é de baixa impedância.** Estágios podem ser cascateados sem que um carregue o
+   outro — problema que o @sec-cap-036 teve de contornar.
+3. **Pode ter ganho.** Filtragem e amplificação no mesmo estágio.
+4. **A frequência e o $Q$ são ajustados separadamente**, o que num LC passivo não acontece.
+
+O preço: alimentação, banda limitada pelo GBW do amp-op (@sec-cap-069), e ruído do amplificador
+somado ao dos resistores.
+
+::: {#fig-071-resposta}
+
+```{.tikz}
+%%| filename: 071-resposta
+%%| alt: Diagrama de Bode em escala logarítmica de frequência normalizada, de zero vírgula um a dez vezes a frequência natural, com o ganho em decibéis de menos quarenta e cinco a mais quinze. Cinco curvas mostram a resposta de filtros passa-baixas. Uma curva cinza tracejada é o filtro de primeira ordem, que desce vinte decibéis por década e está três decibéis abaixo em uma vez a frequência natural. As outras quatro são filtros de segunda ordem com fatores de qualidade diferentes, todas descendo quarenta decibéis por década bem acima da frequência natural, mas comportando-se de modo muito diferente perto dela. Com fator de qualidade zero vírgula cinco, a resposta é a mais suave e já está seis decibéis abaixo na frequência natural, sendo o caso chamado criticamente amortecido. Com zero vírgula setecentos e sete, o caso Butterworth, a resposta é a mais plana possível na faixa passante e está exatamente três decibéis abaixo na frequência natural. Com fator um, aparece um pequeno pico de cerca de meio decibel antes da queda. Com fator dois, o pico é de aproximadamente seis decibéis, bem visível. Uma anotação registra que todas as quatro têm a mesma inclinação assintótica de quarenta decibéis por década, e que a escolha do fator de qualidade é uma decisão sobre o que acontece perto da frequência de corte, não sobre a atenuação distante. Uma segunda anotação lembra a correspondência com o domínio do tempo: fator de qualidade alto significa sobrelevação e toque na resposta ao degrau, exatamente como a margem de fase do capítulo sobre realimentação.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=12.0cm, height=7.2cm,
+    xmode=log, xmin=0.1, xmax=10,
+    ymin=-45, ymax=15,
+    xlabel={$f/f_0$}, ylabel={ganho (dB)},
+    xtick={0.1,0.2,0.5,1,2,5,10},
+    xticklabels={$0{,}1$,$0{,}2$,$0{,}5$,$1$,$2$,$5$,$10$},
+    ytick={-40,-30,-20,-10,0,10},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+    samples=200, domain=0.1:10,
+]
+
+  % primeira ordem
+  \addplot[manualgray, thick, dashed] {-10*log10(1 + x^2)};
+  \node[anchor=west, font=\tiny, manualgray] at (axis cs:3.2,-11) {1ª ordem};
+
+  % segunda ordem: |H| = 1/sqrt((1-u^2)^2 + (u/Q)^2)
+  \addplot[manualgreen, thick] {-10*log10((1-x^2)^2 + (x/0.5)^2)};
+  \addplot[curva]              {-10*log10((1-x^2)^2 + (x/0.707)^2)};
+  \addplot[manualyellow, thick]{-10*log10((1-x^2)^2 + (x/1)^2)};
+  \addplot[destaque, thick]    {-10*log10((1-x^2)^2 + (x/2)^2)};
+
+  \node[anchor=west, font=\tiny, manualgreen]  at (axis cs:0.105,-8) {$Q = 0{,}5$};
+  \node[anchor=west, font=\tiny, manualblue]   at (axis cs:0.105,-3) {$Q = 0{,}707$ (Butterworth)};
+  \node[anchor=west, font=\tiny, manualyellow] at (axis cs:1.35,2.5)  {$Q = 1$};
+  \node[anchor=west, font=\tiny, manualred]    at (axis cs:1.15,7.5)  {$Q = 2$};
+
+  \draw[auxiliar] (axis cs:1,-45) -- (axis cs:1,15);
+
+\end{axis}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=12.4cm] at (-1.2,-1.2)
+       {\textbf{As quatro curvas de segunda ordem têm a \emph{mesma} inclinação distante}
+        --- 40 dB/década. O fator de qualidade decide o que acontece \textbf{perto} de $f_0$,
+        não longe dela.
+        \\[3pt]
+        E a correspondência com o tempo é a do capítulo sobre realimentação: \textbf{$Q$ alto
+        é sobrelevação e toque} na resposta ao degrau. $Q = 0{,}5$ não sobrepassa nada;
+        $Q = 2$ sobrepassa bastante.};
+
+\end{tikzpicture}
+```
+
+A resposta de segunda ordem para quatro fatores de qualidade. Butterworth é a escolha padrão
+para anti-serrilhamento porque é a mais plana possível na faixa passante — mas não é a única
+escolha razoável.
+:::
+
+::: {.callout-note}
+## O que muda no passa-altas
+
+Trocar **resistores por capacitores e capacitores por resistores** na rede do Sallen-Key
+converte o passa-baixas em passa-altas, com as mesmas fórmulas de $f_0$ e de $Q$.
+
+Passa-faixa e rejeita-faixa saem da mesma família com pequenas variações, e a topologia
+alternativa de **realimentação múltipla** (MFB, do inglês *multiple feedback*) é preferida
+quando o $Q$ é alto, porque o Sallen-Key fica muito sensível à tolerância dos componentes acima
+de $Q \approx 5$.
+
+A regra prática: **Sallen-Key para $Q$ baixo, MFB para $Q$ alto**, e nunca um único estágio para
+ordem maior que dois — cascateiam-se seções de segunda ordem, cada uma com seu par
+$f_0$, $Q$ tabelado.
+:::
+
+## O oscilador de relaxação {#sec-071-relaxacao}
+
+::: {#fig-071-relaxacao}
+
+```{.tikz}
+%%| filename: 071-relaxacao
+%%| alt: Figura em duas partes sobre o oscilador de relaxação com amp-op. À esquerda, o esquemático: é exatamente o gatilho de Schmitt inversor do capítulo anterior, com R1 da entrada não inversora ao terra e R2 da saída à entrada não inversora, mas agora a entrada inversora, em vez de receber sinal externo, é ligada a um capacitor C que vai ao terra e a um resistor R que vem da própria saída. Não há entrada nenhuma. À direita, as formas de onda: a saída é uma onda quadrada que alterna entre mais e menos a tensão de saturação, e a tensão sobre o capacitor é uma sucessão de trechos exponenciais que sobem em direção à saturação positiva até tocar o limiar superior, momento em que a saída comuta e o capacitor passa a descer em direção à saturação negativa até tocar o limiar inferior. As duas linhas de limiar aparecem tracejadas. Uma caixa apresenta a dedução: durante meio período o capacitor vai do limiar inferior ao superior carregando-se em direção à tensão de saturação, e aplicando a equação de carga do capacitor obtém-se meio período igual a R vezes C vezes o logaritmo natural da razão entre um mais beta e um menos beta, onde beta é a fração da realimentação positiva; o período completo é o dobro disso. Um destaque registra o resultado mais útil: o período não depende da tensão de saturação, porque ela aparece tanto no alvo da exponencial quanto nos limiares e se cancela — de modo que a frequência é imune à variação da alimentação. Um exemplo numérico com R1 e R2 iguais dá beta igual a um meio e período igual a dois vírgula dois vezes R vezes C, o que com dez quilohms e cem nanofarads resulta em quatrocentos e cinquenta e cinco hertz.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- esquematico ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw[thick] (3.0,0.6) -- (3.0,2.4) -- (4.7,1.5) -- cycle;
+    \node[anchor=west, font=\small] at (3.1,1.95) {$-$};
+    \node[anchor=west, font=\small] at (3.1,1.05) {$+$};
+
+    % rede RC na entrada -
+    \draw (1.0,1.95) -- (3.0,1.95);
+    \node[ponto] at (1.0,1.95) {};
+    \draw (1.0,1.95) to[C, l_=$C$] (1.0,0.5);
+    \node[ground] at (1.0,0.5) {};
+    \draw (1.0,1.95) -- (1.0,3.6);
+    \draw (1.0,3.6) to[R, l=$R$] (5.2,3.6);
+    \draw (5.2,3.6) -- (5.2,1.5);
+
+    % rede de histerese na entrada +
+    \draw (2.4,1.05) -- (3.0,1.05);
+    \node[ponto] at (2.4,1.05) {};
+    \draw (2.4,1.05) to[R, l_=$R_1$] (2.4,-0.4);
+    \node[ground] at (2.4,-0.4) {};
+
+    \draw (4.7,1.5) -- (6.6,1.5);
+    \node[ponto] at (5.2,1.5) {};
+    \node[anchor=west, font=\scriptsize] at (6.65,1.5) {$v_{out}$};
+
+    \node[ponto] at (5.9,1.5) {};
+    \draw (5.9,1.5) -- (5.9,-1.3);
+    \draw (5.9,-1.3) to[R, l_=$R_2$] (1.8,-1.3);
+    \draw (1.8,-1.3) -- (1.8,1.05) -- (2.4,1.05);
+  \end{scope}
+
+  % ---------------- ondas ----------------
+  \begin{scope}[shift={(8.0,0)}]
+    \draw[eixo] (0,1.5) -- (7.2,1.5);
+    \draw[eixo] (0,-0.6) -- (0,3.6);
+
+    \draw[auxiliar, manualgray] (0,2.3) -- (7.0,2.3);
+    \draw[auxiliar, manualgray] (0,0.7) -- (7.0,0.7);
+    \node[anchor=west, font=\tiny, manualgray] at (7.05,2.3) {$+\beta V_{sat}$};
+    \node[anchor=west, font=\tiny, manualgray] at (7.05,0.7) {$-\beta V_{sat}$};
+
+    % saida quadrada
+    \draw[destaque, thick] (0,3.3) -- (1.8,3.3) -- (1.8,-0.3) -- (3.6,-0.3) -- (3.6,3.3)
+      -- (5.4,3.3) -- (5.4,-0.3) -- (7.0,-0.3);
+    \node[anchor=west, font=\tiny, manualred] at (7.05,3.3) {$v_{out}$};
+    \node[anchor=west, font=\tiny, manualred] at (7.05,-0.3) {$-V_{sat}$};
+
+    % tensao no capacitor
+    \draw[curva] plot[domain=0:1.8, samples=40]
+         (\x, {2.3 - 1.6*exp(-(\x)/1.55) + 1.6*exp(-1.8/1.55)*0});
+    \draw[curva] plot[domain=0:1.8, samples=40]
+         ({\x+1.8}, {0.7 + 1.6*exp(-(\x)/1.55)});
+    \draw[curva] plot[domain=0:1.8, samples=40]
+         ({\x+3.6}, {2.3 - 1.6*exp(-(\x)/1.55)});
+    \draw[curva] plot[domain=0:1.8, samples=40]
+         ({\x+5.4}, {0.7 + 1.6*exp(-(\x)/1.55)});
+    \node[anchor=west, font=\tiny, manualblue] at (7.05,1.5) {$v_C$};
+
+    \draw[{Latex[length=1.6mm]}-{Latex[length=1.6mm]}, manualgreen] (1.8,-0.75) -- (3.6,-0.75);
+    \node[anchor=north, font=\tiny, manualgreen] at (2.7,-0.8) {$T/2$};
+  \end{scope}
+
+  % ---------------- caixas ----------------
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (-0.4,-2.4)
+       {Com $\beta = \dfrac{R_1}{R_1+R_2}$, o capacitor vai de $-\beta V_{sat}$ a
+        $+\beta V_{sat}$ carregando-se em direção a $+V_{sat}$:
+        \[ \frac{T}{2} = RC\,\ln\!\left(\frac{1+\beta}{1-\beta}\right) \]
+        \[ \boxed{\ T = 2RC\,\ln\!\left(\frac{1+\beta}{1-\beta}\right)\ } \]};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (8.0,-2.4)
+       {\textbf{O período não depende de $V_{sat}$.} Ela aparece no alvo da exponencial
+        \emph{e} nos limiares, e se cancela --- a frequência é \textbf{imune à variação da
+        alimentação}.
+        \\[4pt]
+        Com $R_1 = R_2$: \ $\beta = 1/2$, \ $T = 2{,}20\,RC$.
+        \\[2pt]
+        $R = 10$ k$\Omega$, $C = 100$ nF $\Rightarrow$ \textbf{455 Hz}.};
+
+\end{tikzpicture}
+```
+
+O oscilador de relaxação é o gatilho de Schmitt do @sec-cap-070 com a saída realimentada à
+entrada de sinal através de um $RC$. Nenhuma entrada, e mesmo assim ele nunca para.
+:::
+
+O mecanismo, em quatro passos que se repetem:
+
+1. A saída está em $+V_{sat}$; o limiar de $v_+$ está em $+\beta V_{sat}$.
+2. O capacitor carrega através de $R$ **em direção a $+V_{sat}$**, subindo exponencialmente.
+3. Ao tocar $+\beta V_{sat}$, o comparador comuta: a saída vai a $-V_{sat}$ e o limiar desce
+   para $-\beta V_{sat}$.
+4. O capacitor, agora carregando em direção a $-V_{sat}$, desce até tocar o novo limiar — e
+   tudo recomeça.
+
+A equação de carga do @sec-cap-025 dá o meio período:
+
+$$ \boxed{\ T = 2RC\,\ln\!\left(\frac{1+\beta}{1-\beta}\right) \qquad \beta = \frac{R_1}{R_1+R_2}\ } $$
+
+::: {.callout-tip}
+## Por que a frequência não depende da alimentação
+
+$V_{sat}$ aparece duas vezes: como **alvo** da exponencial e como **escala dos limiares**. As
+duas ocorrências se cancelam na razão dentro do logaritmo.
+
+O resultado é um oscilador cuja frequência depende só de $R$, $C$ e da razão $R_1/R_2$ — todos
+componentes passivos e precisos. É a mesma lógica do @sec-cap-064: **fazer o resultado depender
+de resistores em vez de parâmetros de dispositivo**.
+
+A amplitude, essa sim, depende de $V_{sat}$ e portanto da alimentação. Quando a amplitude
+importa, a saída passa por um limitador ou por um regulador.
+:::
+
+## O 555 {#sec-071-555}
+
+::: {#fig-071-555}
+
+```{.tikz}
+%%| filename: 071-555
+%%| alt: Figura em duas partes sobre o temporizador 555. À esquerda, o diagrama de blocos interno: três resistores de cinco quilohms em série entre a alimentação e o terra criam dois pontos de referência, um em dois terços da alimentação e outro em um terço; o comparador superior compara o pino de limiar com os dois terços e, quando o limiar excede esse valor, aciona a entrada de reinicialização de um báscula RS; o comparador inferior compara o pino de disparo com o um terço e, quando o disparo cai abaixo desse valor, aciona a entrada de ajuste da mesma báscula; a saída da báscula vai a um estágio de saída, que é o pino três, e também à base de um transistor de descarga cujo coletor é o pino sete e cujo emissor vai ao terra. O pino cinco dá acesso direto ao nó de dois terços da alimentação, permitindo deslocar os dois limiares ao mesmo tempo, e é ele que transforma o 555 em modulador. À direita, a ligação astável: um resistor RA da alimentação ao pino sete, um resistor RB do pino sete aos pinos seis e dois ligados entre si, e um capacitor desses pinos ao terra. O capacitor carrega através de RA mais RB de um terço a dois terços da alimentação, e descarrega através de RB apenas, de dois terços a um terço, porque o transistor de descarga põe o pino sete no terra. Daí saem as três fórmulas: o tempo alto vale zero vírgula seiscentos e noventa e três vezes a soma de RA e RB vezes C; o tempo baixo vale zero vírgula seiscentos e noventa e três vezes RB vezes C; e a frequência vale um vírgula quarenta e quatro dividido pelo produto da soma de RA com o dobro de RB pela capacitância. Uma caixa registra que o ciclo de trabalho é sempre maior que cinquenta por cento nessa ligação, porque o caminho de carga inclui RA e o de descarga não, e que a correção clássica é um diodo em paralelo com RB para que a carga passe só por RA. Uma segunda caixa traz o projeto de mil hertz com C de cem nanofarads, em que a soma de RA com o dobro de RB deveria valer catorze vírgula quatro quilohms, e com RA de um quilohm e RB de seis vírgula oito quilohms E24 obtém-se novecentos e oitenta e seis hertz com ciclo de trabalho de cinquenta e três vírgula quatro por cento.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= interior =================
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\small, anchor=south] at (4.6,5.7) {\textbf{dentro do 555}};
+
+    \draw[manualred] (0.4,5.4) -- (9.4,5.4);
+    \node[anchor=south, font=\tiny, manualred] at (0.8,5.45) {$V_{CC}$};
+
+    % divisor 5k-5k-5k
+    \draw (1.2,5.4) to[R, l_=$5$ k] (1.2,4.0);
+    \node[ponto] at (1.2,4.0) {};
+    \draw (1.2,4.0) to[R, l_=$5$ k] (1.2,2.6);
+    \node[ponto] at (1.2,2.6) {};
+    \draw (1.2,2.6) to[R, l_=$5$ k] (1.2,1.2);
+    \node[ground] at (1.2,1.2) {};
+    \node[anchor=south, font=\tiny, manualgreen] at (2.9,4.08) {$\tfrac{2}{3}V_{CC}$};
+    \node[anchor=south, font=\tiny, manualgreen] at (2.9,2.68) {$\tfrac{1}{3}V_{CC}$};
+
+    % pino 5
+    \draw (1.2,4.0) -- (0.4,4.0);
+    \node[anchor=east, font=\tiny] at (0.35,4.0) {5};
+
+    % comparador superior
+    \draw[thick] (3.6,3.0) -- (3.6,4.3) -- (5.0,3.65) -- cycle;
+    \node[anchor=west, font=\tiny] at (3.7,4.0) {$-$};
+    \node[anchor=west, font=\tiny] at (3.7,3.3) {$+$};
+    \draw (1.2,4.0) -- (3.6,4.0);
+    \draw (2.2,3.3) -- (3.6,3.3);
+    \node[anchor=east, font=\tiny] at (2.15,3.3) {6};
+    \node[anchor=north, font=\tiny] at (2.9,3.25) {limiar};
+
+    % comparador inferior
+    \draw[thick] (3.6,1.6) -- (3.6,2.9) -- (5.0,2.25) -- cycle;
+    \node[anchor=west, font=\tiny] at (3.7,2.6) {$+$};
+    \node[anchor=west, font=\tiny] at (3.7,1.9) {$-$};
+    \draw (1.2,2.6) -- (3.6,2.6);
+    \draw (2.2,1.9) -- (3.6,1.9);
+    \node[anchor=east, font=\tiny] at (2.15,1.9) {2};
+    \node[anchor=north, font=\tiny] at (2.9,1.85) {disparo};
+
+    % flip-flop
+    \draw[thick, fill=black!4] (5.6,1.9) rectangle (7.1,4.0);
+    \node[font=\tiny, align=center] at (6.35,2.95) {báscula\\RS};
+    \node[anchor=west, font=\tiny] at (5.65,3.65) {R};
+    \node[anchor=west, font=\tiny] at (5.65,2.25) {S};
+    \draw (5.0,3.65) -- (5.6,3.65);
+    \draw (5.0,2.25) -- (5.6,2.25);
+
+    % saida
+    \draw (7.1,3.4) -- (7.7,3.4);
+    \draw[thick, fill=black!4] (7.7,3.0) rectangle (8.6,3.8);
+    \node[font=\tiny] at (8.15,3.4) {saída};
+    \draw (8.6,3.4) -- (9.2,3.4);
+    \node[anchor=west, font=\tiny] at (9.25,3.4) {3};
+
+    % transistor de descarga
+    \node[npn] (qd) at (8.15,1.5) {};
+    \draw (7.1,2.4) -- (7.5,2.4) -- (7.5,1.5) -- (qd.base);
+    \draw (qd.emitter) -- (8.15,0.6);
+    \node[ground] at (8.15,0.6) {};
+    \draw (qd.collector) -- (8.15,2.5);
+    \node[anchor=west, font=\tiny, align=left] at (8.3,2.4) {7\\{\tiny descarga}};
+  \end{scope}
+
+  % ================= astavel =================
+  \begin{scope}[shift={(11.4,0.4)}]
+    \node[font=\small, anchor=south] at (2.0,4.8) {\textbf{ligação astável}};
+
+    \draw[manualred] (0.4,4.4) -- (4.2,4.4);
+    \node[anchor=south, font=\tiny, manualred] at (0.8,4.45) {$V_{CC}$};
+
+    \draw[thick, fill=black!4] (1.6,1.2) rectangle (3.4,3.6);
+    \node[font=\tiny] at (2.5,2.4) {555};
+
+    \draw (1.0,4.4) to[R, l_=$R_A$] (1.0,3.2);
+    \draw (1.0,3.2) -- (1.6,3.2);
+    \node[anchor=west, font=\tiny] at (1.65,3.2) {7};
+    \node[ponto] at (1.0,3.2) {};
+
+    \draw (1.0,3.2) to[R, l_=$R_B$] (1.0,1.9);
+    \node[ponto] at (1.0,1.9) {};
+    \draw (1.0,1.9) -- (1.6,1.9);
+    \node[anchor=west, font=\tiny] at (1.65,1.9) {6, 2};
+
+    \draw (1.0,1.9) to[C, l_=$C$] (1.0,0.5);
+    \node[ground] at (1.0,0.5) {};
+
+    \draw (3.4,2.9) -- (4.0,2.9);
+    \node[anchor=west, font=\tiny] at (4.05,2.9) {3};
+    \draw (3.4,1.6) -- (3.7,1.6);
+    \draw (3.7,1.6) to[C, l=$10$ n] (3.7,0.5);
+    \node[ground] at (3.7,0.5) {};
+    \node[anchor=west, font=\tiny] at (3.45,1.75) {5};
+  \end{scope}
+
+  % ================= caixas =================
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.0cm] at (-0.4,-0.9)
+       {Carga por $R_A + R_B$, descarga só por $R_B$:
+        \[ t_H = 0{,}693\,(R_A+R_B)\,C \]
+        \[ t_L = 0{,}693\,R_B\,C \]
+        \[ f = \frac{1{,}44}{(R_A + 2R_B)\,C} \]};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.0cm] at (5.2,-0.9)
+       {\textbf{O ciclo de trabalho é sempre $> 50$ \%} nesta ligação, porque o caminho de
+        carga inclui $R_A$ e o de descarga não.
+        \\[3pt]
+        Correção clássica: um \textbf{diodo em paralelo com $R_B$}, para que a carga passe
+        só por $R_A$.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.0cm] at (10.8,-0.9)
+       {\textbf{Projeto de 1 kHz.} Com $C = 100$ nF:
+        \[ R_A + 2R_B = \frac{1{,}44}{10^3 \times 10^{-7}} = 14{,}4\ \text{k}\Omega \]
+        $R_A = 1$ k, $R_B = 6{,}8$ k (E24) $\Rightarrow$ $14{,}6$ k$\Omega$:
+        \\[2pt]
+        \textbf{986 Hz}, ciclo de \textbf{53,4 \%}.};
+
+\end{tikzpicture}
+```
+
+O 555 por dentro e a ligação astável. Os dois comparadores em 1/3 e 2/3 da alimentação são um
+gatilho de Schmitt com limiares fixos, e a báscula RS que eles comandam é a memória de um bit
+que a @fig-070-transferencia antecipou.
+:::
+
+O 555 apareceu em 1972 e continua sendo fabricado às centenas de milhões por ano. A razão é que
+ele resolve com oito pinos um problema que aparece em toda parte: **produzir um intervalo de
+tempo ou uma onda quadrada com precisão de alguns por cento**.
+
+O interior é exatamente o que este volume construiu. Dois comparadores (@sec-cap-070), com
+limiares fixos em $\frac{1}{3}V_{CC}$ e $\frac{2}{3}V_{CC}$ por um divisor de três resistores
+iguais — daí o nome. Uma báscula RS guardando qual foi o último limiar cruzado. Um transistor de
+descarga em coletor aberto. E um estágio de saída capaz de 200 mA, o que é muito para um CI de
+sinal.
+
+**Astável** (oscilando sozinho): $R_A$ do trilho ao pino 7, $R_B$ do pino 7 aos pinos 6 e 2
+unidos, e $C$ desses pinos ao terra.
+
+$$ t_H = 0{,}693(R_A+R_B)C \qquad t_L = 0{,}693\,R_B\,C \qquad f = \frac{1{,}44}{(R_A+2R_B)C} $$
+
+**Monoestável** (um pulso por disparo): $R$ do trilho ao pino 7 unido ao 6, $C$ desses ao terra,
+e o disparo no pino 2.
+
+$$ T = 1{,}1\,R\,C $$
+
+::: {.callout-warning}
+## O 555 bipolar é um poluidor de alimentação
+
+No instante da comutação, o estágio de saída do 555 clássico conduz **pelos dois lados ao mesmo
+tempo** durante algumas dezenas de nanossegundos — o problema de tempo morto do @sec-cap-062,
+que este CI de 1972 não trata. O resultado é um pico de corrente que pode passar de 200 mA.
+
+As consequências:
+
+- **Desacoplamento obrigatório e generoso:** 100 nF cerâmico colado nos pinos 1 e 8, e um
+  eletrolítico de 10 a 100 µF perto dele. Sem isso, o pico modula a própria alimentação, os
+  limiares tremem, e o 555 dispara errado — ou pior, o pico corrompe outros circuitos da placa.
+- **Nunca compartilhe o trilho de um 555 bipolar com circuitos analógicos sensíveis** sem
+  filtragem.
+
+As versões CMOS (**TLC555**, **LMC555**, **ICM7555**) não têm esse comportamento, consomem
+microampères em vez de miliampères, funcionam a partir de 2 V e são compatíveis pino a pino. Em
+projeto novo, use a versão CMOS — a única razão para o bipolar é a corrente de saída de 200 mA.
+:::
+
+::: {.callout-note}
+## O pino 5 é a entrada esquecida
+
+O pino 5 (CONTROL) dá acesso direto ao nó de $\frac{2}{3}V_{CC}$. Aplicar uma tensão ali
+**desloca os dois limiares ao mesmo tempo**, e num astável isso muda a frequência: o 555 vira um
+oscilador controlado por tensão.
+
+É assim que se faz modulação por largura de pulso com um 555 — o assunto do Volume 13 — e é
+também como se fazem as sirenes e efeitos sonoros de brinquedo.
+
+Quando o pino 5 **não** é usado, ele deve levar um capacitor de 10 nF ao terra. Ele é um nó de
+alta impedância dentro do CI, e sem o capacitor ele capta ruído e faz os limiares tremerem.
+:::
+
+## O oscilador de Wien {#sec-071-wien}
+
+::: {#fig-071-wien}
+
+```{.tikz}
+%%| filename: 071-wien
+%%| alt: Figura em duas partes sobre o oscilador de ponte de Wien. À esquerda, o esquemático: um amp-op ligado como não inversor, com Rg do terminal inversor ao terra e Rf da saída ao terminal inversor; a realimentação positiva vai da saída para o terminal não inversor através de um ramo série formado por um resistor R e um capacitor C, e do terminal não inversor ao terra há um ramo paralelo formado por outro resistor R e outro capacitor C. Em paralelo com uma parte de Rf há dois diodos em antiparalelo, que são o limitador de amplitude. À direita, duas caixas de análise e uma de projeto. A primeira caixa mostra que a rede de Wien tem módulo máximo de um terço exatamente na frequência em que R vezes C vezes ômega vale um, e que nessa frequência a fase é zero; como a realimentação positiva exige fase total nula e ganho de laço unitário para oscilar, e a rede já dá fase zero, o amplificador precisa fornecer ganho exatamente três. A segunda caixa trata do problema central: com ganho maior que três a oscilação cresce até ceifar contra os trilhos e a senoide vira quase uma onda quadrada; com ganho menor que três ela decai até morrer; e como nenhum par de resistores comerciais dá exatamente três, é obrigatório um mecanismo que ajuste o ganho automaticamente. Três mecanismos são listados: dois diodos em antiparalelo sobre parte de Rf, que é a solução mais simples e dá distorção da ordem de um por cento; uma lâmpada incandescente miniatura no lugar de Rg, cuja resistência sobe com a corrente, que é a solução original do primeiro produto da Hewlett-Packard em 1939 e dá distorção muito menor; e um JFET operando na região ôhmica como resistor controlado por tensão, com um detector de pico realimentando a porta, que é a solução moderna de baixa distorção. A terceira caixa traz o projeto de mil hertz: com C de dez nanofarads, R deveria valer quinze vírgula nove quilohms, e adotando dezesseis quilohms E24 a frequência fica em novecentos e noventa e cinco hertz; a rede de ganho usa Rg de dez quilohms e Rf de vinte e dois quilohms, o que dá ganho três vírgula dois em amplitude pequena, garantindo o arranque, com os diodos reduzindo o ganho efetivo para três quando a amplitude cresce.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- esquematico (+ em cima, - embaixo) ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw[thick] (3.6,1.0) -- (3.6,2.8) -- (5.3,1.9) -- cycle;
+    \node[anchor=west, font=\small] at (3.7,2.35) {$+$};
+    \node[anchor=west, font=\small] at (3.7,1.45) {$-$};
+
+    \draw (5.3,1.9) -- (8.2,1.9);
+    \node[ponto] at (6.2,1.9) {};
+    \node[ponto] at (7.4,1.9) {};
+    \node[anchor=west, font=\scriptsize] at (8.25,1.9) {$v_{out}$};
+
+    % ramo serie R-C (realimentacao positiva)
+    \draw (6.2,1.9) -- (6.2,3.7);
+    \draw (6.2,3.7) to[R, l=$R$] (4.4,3.7);
+    \draw (4.4,3.7) to[C, l=$C$] (2.6,3.7);
+    \draw (2.6,3.7) -- (2.6,2.35) -- (3.6,2.35);
+    \node[ponto] at (2.6,2.35) {};
+
+    % ramo paralelo R || C
+    \draw (2.6,2.35) -- (1.8,2.35);
+    \draw (1.8,2.35) to[R, l_=$R$] (1.8,1.0);
+    \node[ground] at (1.8,1.0) {};
+    \draw (1.8,2.35) -- (1.0,2.35);
+    \node[ponto] at (1.8,2.35) {};
+    \draw (1.0,2.35) to[C, l_=$C$] (1.0,1.0);
+    \node[ground] at (1.0,1.0) {};
+
+    % rede de ganho
+    \draw (3.0,1.45) -- (3.6,1.45);
+    \draw (3.0,1.45) -- (3.0,0.6);
+    \node[ponto] at (3.0,0.6) {};
+    \draw (3.0,0.6) to[R, l_=$R_g$] (3.0,-1.6);
+    \node[ground] at (3.0,-1.6) {};
+
+    \draw (3.0,0.6) to[R, l=$R_{f1}$ $10$ k] (5.2,0.6);
+    \draw (5.2,0.6) to[R, l=$R_{f2}$ $12$ k] (7.4,0.6);
+    \draw (7.4,0.6) -- (7.4,1.9);
+
+    % diodos em antiparalelo, so sobre R_{f2}
+    \node[ponto] at (5.2,0.6) {};
+    \node[ponto] at (7.4,0.6) {};
+    \draw (5.2,0.6) -- (5.2,-1.4);
+    \draw (7.4,0.6) -- (7.4,-1.4);
+    \draw (5.2,-0.5) to[D] (7.4,-0.5);
+    \draw (7.4,-1.4) to[D] (5.2,-1.4);
+    \node[anchor=north, font=\tiny, manualred, align=center] at (6.3,-1.7)
+         {limitador de amplitude};
+  \end{scope}
+
+  % ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.8cm] at (9.2,4.2)
+       {A rede de Wien tem
+        \[ \beta(j\omega) = \frac{1}{3 + j\!\left(\omega RC - \dfrac{1}{\omega RC}\right)} \]
+        Em $\omega_0 = 1/RC$ o termo imaginário some:
+        \[ |\beta| = \frac{1}{3}, \qquad \angle\beta = 0^\circ \]
+        Barkhausen exige $A\beta = 1$ com fase nula, logo o amplificador precisa de ganho
+        \textbf{exatamente 3}.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.8cm] at (9.2,-0.4)
+       {\textbf{E ``exatamente 3'' não existe em resistor comercial.}
+        \\[3pt]
+        $A > 3$: a oscilação cresce até \textbf{ceifar} --- e a senoide vira quase uma onda
+        quadrada. \ $A < 3$: ela \textbf{morre}.
+        \\[3pt]
+        \textbf{Três mecanismos de controle automático:}
+        \\[2pt]
+        $\bullet$ dois diodos em antiparalelo sobre \emph{parte} de $R_f$ --- simples, $\approx 1$ \%
+        de distorção;
+        \\[2pt]
+        $\bullet$ lâmpada incandescente no lugar de $R_g$ --- foi o \textbf{primeiro produto
+        da Hewlett-Packard}, em 1939; distorção muito menor;
+        \\[2pt]
+        $\bullet$ JFET na região ôhmica como resistor controlado, com detector de pico --- a
+        solução moderna de baixa distorção.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (0,-2.6)
+       {\textbf{Projeto de 1 kHz.} \ $C = 10$ nF $\Rightarrow R = 15{,}9$ k$\Omega$;
+        adotando \textbf{16 k$\Omega$} (E24), $f_0 = 995$ Hz.
+        \\[3pt]
+        $R_g = 10$ k$\Omega$, $R_{f1}+R_{f2} = 22$ k$\Omega$ $\Rightarrow A = 3{,}2$ em amplitude
+        pequena --- garante o arranque. Os diodos derrubam o ganho efetivo para 3 quando a
+        amplitude cresce.};
+
+\end{tikzpicture}
+```
+
+O oscilador de Wien. A rede de realimentação entrega exatamente $1/3$ com fase zero na
+frequência de oscilação, e a dificuldade inteira do circuito está em o amplificador ter ganho
+**exatamente** 3 — nem 3,1, nem 2,9.
+:::
+
+O critério de Barkhausen do @sec-cap-064 dizia, como modo de falha, que um circuito oscila
+quando o ganho de malha tem módulo 1 e fase de $360^\circ$ (ou $0^\circ$, o que é o mesmo). Aqui
+ele é a **especificação**.
+
+A rede de Wien — um $RC$ série alimentando um $RC$ paralelo — tem uma propriedade notável: em
+$\omega_0 = 1/RC$, ela não desloca a fase e atenua exatamente por 3. Como a realimentação chega
+ao terminal **não inversor** (fase 0 do amplificador), basta que o amplificador tenha ganho 3
+para que $A\beta = 1$ com fase nula.
+
+E aí está o problema. Ganho 3 exige $R_f/R_g = 2$ **exatamente**, e resistores de 1 % não fazem
+isso: com $R_f/R_g$ entre 1,96 e 2,04, o ganho fica entre 2,96 e 3,04. Com 3,04 a oscilação
+cresce até ceifar contra os trilhos; com 2,96 ela decai e morre em poucos ciclos.
+
+A saída é fazer o ganho **depender da amplitude**: alto quando pequena (para arrancar) e caindo
+para exatamente 3 quando a amplitude atinge o valor desejado. É controle automático de ganho, e
+a @fig-071-wien lista os três mecanismos usuais.
+
+::: {.callout-note}
+## A lâmpada de Bill Hewlett
+
+O primeiro produto da Hewlett-Packard, o gerador de áudio **HP200A** de 1939, era um oscilador
+de Wien cujo $R_g$ era uma **lâmpada incandescente miniatura**. O filamento tem coeficiente de
+temperatura positivo: se a amplitude cresce, a corrente aquece o filamento, a resistência sobe,
+o ganho cai — e o circuito se estabiliza sozinho.
+
+O mecanismo é lento (a constante térmica do filamento é de dezenas de milissegundos, muito
+maior que o período do sinal), e é justamente por isso que ele **não distorce**: a resistência é
+constante dentro de um ciclo. Um limitador por diodos age dentro do ciclo, e distorce.
+
+A Walt Disney comprou oito HP200B para a mixagem de *Fantasia*. A empresa que a lâmpada
+financiou fabrica osciloscópios até hoje.
+:::
+
+## 🧪 Laboratório {#sec-071-lab}
+
+O objetivo é montar um filtro ativo, medir a relação entre ganho e $Q$, ver o filtro **virar
+oscilador**, e construir os três geradores do capítulo.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | **TL072** | filtro e osciladores |
+| 1 | **NE555** ou **TLC555** | Parte 4 |
+| — | Resistores: 3× 10 kΩ, 5,6 kΩ, 16 kΩ, 22 kΩ, 1 kΩ, 6,8 kΩ, 100 kΩ | |
+| 1 | Trimpot 10 kΩ multivoltas | Partes 2 e 5 — essencial |
+| — | Capacitores: 2× 15 nF, 2× 10 nF poliéster, 100 nF poliéster, 10 nF, 2× 100 nF cerâmico, 10 µF eletrolítico | |
+| 2 | Diodos **1N4148** | Parte 5 |
+| 1 | Fonte simétrica $\pm 12$ V e 5 V | |
+| 1 | Gerador de funções | |
+| 1 | Osciloscópio de 2 canais | |
+| 1 | Multímetro | |
+
+### Parte 1 — Filtro de Sallen-Key
+
+1. Monte o passa-baixas da @fig-071-sallenkey com $R = 10$ kΩ, $C = 15$ nF, $R_a = 10$ kΩ e
+   $R_b = 5{,}6$ kΩ.
+2. Varra a frequência de 100 Hz a 20 kHz, anotando a amplitude de saída.
+3. Confirme $f_0 \approx 1$ kHz (queda de 3 dB) e a inclinação de **40 dB por década** bem acima
+   dela — meça em 5 kHz e em 10 kHz e confirme a diferença de 12 dB.
+
+Compare com um passa-baixas RC simples (@sec-cap-033) da mesma frequência: a diferença entre
+20 e 40 dB por década é a razão de existir o filtro de segunda ordem.
+
+### Parte 2 — O ganho ajusta o $Q$, e depois oscila
+
+1. Substitua $R_b$ pelo **trimpot de 10 kΩ** em série com um resistor de 1 kΩ (para que o ganho
+   nunca chegue a zero).
+2. Aplique 1 kHz e ajuste o trimpot enquanto observa a amplitude de saída.
+
+Conforme o ganho sobe, o pico em $f_0$ cresce — é a família de curvas da @fig-071-resposta sendo
+percorrida ao vivo.
+
+3. Continue subindo o ganho **devagar** até $K \to 3$.
+
+O circuito começa a **oscilar**, e a saída vira uma senoide de 1 kHz sem sinal de entrada. Meça
+a resistência do trimpot nesse ponto e confirme que $R_b/R_a \approx 2$.
+
+4. Suba um pouco mais: a senoide **ceifa** contra os trilhos.
+
+Este é o experimento conceitualmente mais importante do capítulo: **filtro e oscilador são o
+mesmo circuito com valores diferentes**, e a fronteira é $Q = \infty$.
+
+5. Volte o trimpot até a oscilação parar, e ajuste para $K = 1{,}586$ (Butterworth). Refaça a
+   varredura da Parte 1 e compare.
+
+### Parte 3 — Oscilador de relaxação
+
+1. Monte o circuito da @fig-071-relaxacao com $R_1 = R_2 = 10$ kΩ, $R = 10$ kΩ e $C = 100$ nF.
+2. Observe os dois sinais: a saída quadrada e a tensão sobre o capacitor.
+
+A tensão sobre $C$ deve mostrar claramente os **trechos exponenciais** entre os dois limiares —
+não é um triângulo, e a curvatura é visível.
+
+3. Meça a frequência e compare com $f = 1/(2{,}20\,RC) = 455$ Hz.
+4. Meça os limiares no capacitor e confirme $\pm \beta V_{sat} = \pm V_{sat}/2$.
+5. **A demonstração da independência da alimentação:** baixe a fonte de $\pm 12$ V para
+   $\pm 8$ V e meça a frequência de novo.
+
+A amplitude cai visivelmente; **a frequência não muda**. É o quadro da @fig-071-relaxacao
+verificado.
+
+6. Troque $R_2$ por 100 kΩ ($\beta = 1/11$) e recalcule antes de medir:
+   $T = 2RC\ln(1{,}2) = 0{,}365\,RC$, ou 2,7 kHz.
+
+### Parte 4 — O 555
+
+1. Monte o astável da @fig-071-555 com $R_A = 1$ kΩ, $R_B = 6{,}8$ kΩ, $C = 100$ nF, 10 nF no
+   pino 5, e alimentação de 5 V. **Ponha o desacoplamento**: 100 nF cerâmico e 10 µF
+   eletrolítico entre os pinos 8 e 1.
+2. Meça a frequência e o ciclo de trabalho. Esperado: 986 Hz e 53,4 %.
+3. Observe o pino 6 (a tensão sobre o capacitor): as exponenciais entre $\frac{1}{3}$ e
+   $\frac{2}{3}$ da alimentação, com a subida mais lenta que a descida.
+4. **Sem o desacoplamento:** retire os dois capacitores de alimentação e observe o trilho de 5 V
+   com o osciloscópio em acoplamento CA. Os picos de comutação são visíveis, e o jitter da onda
+   quadrada aumenta.
+5. **O pino 5 como entrada:** ligue um trimpot entre os 5 V e o terra e leve o cursor ao pino 5
+   através de 10 kΩ (removendo o capacitor de 10 nF). Varie e observe a frequência mudar.
+6. **Ciclo de 50 %:** ponha um 1N4148 em paralelo com $R_B$, com o catodo no lado dos pinos 6 e
+   2. A carga passa a ser só por $R_A$; ajuste $R_A \approx R_B$ e meça o ciclo.
+
+### Parte 5 — Oscilador de Wien
+
+1. Monte o circuito da @fig-071-wien com $R = 16$ kΩ, $C = 10$ nF, $R_g = 10$ kΩ e, no lugar de
+   $R_f$, o **trimpot de 10 kΩ em série com 16 kΩ**. **Sem** os diodos por enquanto.
+2. Ajuste o trimpot devagar, partindo do menor valor, até a oscilação começar.
+
+Você vai encontrar uma faixa estreitíssima: abaixo dela nada acontece, acima dela a senoide
+ceifa. Encontrar um ponto em que a amplitude fique estável e a onda limpa é praticamente
+impossível — e essa dificuldade **é** o conteúdo do experimento.
+
+3. Meça a frequência de oscilação. Esperado: 995 Hz.
+4. **Agora ponha os dois 1N4148 em antiparalelo** sobre a parte de $R_f$ correspondente ao
+   trimpot, e ajuste o ganho de malha pequena para cerca de 3,2.
+
+A oscilação arranca sozinha, estabiliza numa amplitude definida e **fica lá**. Meça a amplitude
+e observe a forma de onda: há distorção visível perto dos picos, onde os diodos conduzem.
+
+5. Compare a onda do Wien com a do oscilador de relaxação da Parte 3, no mesmo osciloscópio. Um
+   gera senoide com controle de amplitude difícil; o outro gera quadrada com frequência
+   robusta. **São ferramentas para trabalhos diferentes.**
+
+**Variante simulada (plano B).** No LTspice, a Parte 2 é a mais instrutiva: `.step param Rb list
+4.7k 5.6k 8.2k 15k 19.9k 20.1k` com `.ac` mostra a família da @fig-071-resposta e, nos dois
+últimos valores, o simulador acusa o polo cruzando para o semiplano direito. Um `.tran` com
+$R_b = 20{,}1$ kΩ mostra a oscilação crescendo até ceifar. Para o Wien, `.tran 50m` com e sem os
+diodos mostra a diferença entre "cresce até ceifar" e "estabiliza", e uma `.four 1k V(out)`
+mede a distorção harmônica dos dois casos — número que a bancada só dá com analisador de
+espectro.
+
+## 🔥 Onde Queima {#sec-071-queima}
+
+**Projetar um Sallen-Key com $Q$ alto.** Acima de $Q \approx 5$ o circuito fica muito sensível à
+tolerância dos componentes, e o $Q$ realizado pode ser o dobro do projetado. Use realimentação
+múltipla.
+
+**Esquecer que $K = 3$ é um oscilador.** Num Sallen-Key de componentes iguais, um erro de ganho
+que aproxime $K$ de 3 produz um pico enorme em $f_0$ — e a montagem "filtra" tudo menos a
+frequência que interessa.
+
+**Usar capacitor cerâmico de classe 2 no filtro.** X7R e Y5V mudam de capacitância com a tensão
+e com a temperatura, e a frequência de corte passa a depender do sinal. Poliéster, polipropileno
+ou C0G.
+
+**Cascatear duas seções idênticas achando que dobra a ordem corretamente.** Duas seções
+Butterworth de segunda ordem em cascata **não** dão um Butterworth de quarta ordem — dão uma
+resposta mais mole na banda passante. Cada seção de um filtro de ordem alta tem seu par
+$f_0$, $Q$ próprio, tabelado.
+
+**Ignorar o GBW do amp-op no filtro.** Um Sallen-Key de 100 kHz com um TL072 de 3 MHz tem só
+trinta vezes de folga, e o $Q$ realizado desvia do projetado. A regra prática:
+$\text{GBW} \ge 100\,Q\,f_0$.
+
+**Montar um 555 bipolar sem desacoplamento generoso.** O pico de comutação chega a 200 mA. 100 nF
+cerâmico **e** um eletrolítico perto do CI, ou o circuito dispara errado e contamina a placa.
+
+**Deixar o pino 5 do 555 solto.** É um nó de alta impedância; sem os 10 nF ao terra ele capta
+ruído e faz os limiares tremerem.
+
+**Esperar ciclo de 50 % de um astável 555 simples.** A carga passa por $R_A+R_B$ e a descarga só
+por $R_B$: o ciclo é sempre maior que 50 %. Diodo em paralelo com $R_B$, ou uma das topologias
+alternativas.
+
+**Montar um oscilador de Wien sem controle automático de ganho.** Ganho exatamente 3 não existe
+em resistor comercial, e a diferença entre 2,99 e 3,01 é a diferença entre "não oscila" e
+"ceifa". Diodos, lâmpada ou JFET — mas alguma coisa.
+
+**Achar que o limitador por diodos é gratuito.** Ele age **dentro** do ciclo e portanto distorce:
+cerca de 1 % de distorção harmônica. Para gerador de áudio de referência, é a lâmpada ou o JFET.
+
+**Usar o oscilador de relaxação onde a forma de onda importa.** Ele gera quadrada, e a tensão no
+capacitor é exponencial, não triangular. Para triangular de verdade, use um integrador
+(@sec-cap-068) realimentando um gatilho de Schmitt — a topologia clássica de gerador de funções.
+
+## O que fica deste capítulo {#sec-071-resumo}
+
+**Filtro ativo de Sallen-Key**, versão de componentes iguais:
+
+$$ f_0 = \frac{1}{2\pi RC} \qquad K = 1 + \frac{R_b}{R_a} \qquad \boxed{\ Q = \frac{1}{3-K}\ } $$
+
+**É o ganho que ajusta o $Q$**, e $K = 3$ é a fronteira entre filtro e oscilador. Sallen-Key
+para $Q$ baixo; realimentação múltipla para $Q$ alto; seções de segunda ordem em cascata, cada
+uma com seu par $f_0$, $Q$ tabelado, para ordens maiores.
+
+**Oscilador de relaxação** — gatilho de Schmitt com $RC$ da saída à entrada:
+
+$$ T = 2RC\,\ln\!\left(\frac{1+\beta}{1-\beta}\right), \qquad \beta = \frac{R_1}{R_1+R_2} $$
+
+e a frequência **não depende da alimentação**, porque $V_{sat}$ se cancela.
+
+**555:** dois comparadores em $\frac{1}{3}$ e $\frac{2}{3}V_{CC}$, uma báscula RS e um transistor
+de descarga.
+
+$$ \text{astável:}\quad f = \frac{1{,}44}{(R_A+2R_B)C} \qquad\qquad \text{monoestável:}\quad T = 1{,}1RC $$
+
+Ciclo sempre acima de 50 % sem diodo; desacoplamento generoso obrigatório na versão bipolar;
+10 nF no pino 5; e a versão CMOS é melhor em quase tudo.
+
+**Oscilador de Wien:** a rede $RC$ série–paralelo dá $|\beta| = 1/3$ com fase zero em
+$f_0 = 1/(2\pi RC)$, e o amplificador precisa de ganho **exatamente 3** — o que exige controle
+automático de ganho por diodos, lâmpada ou JFET.
+
+**A ideia unificadora do capítulo:** filtro de $Q$ alto, oscilador senoidal e oscilador de
+relaxação são o **mesmo mecanismo** — realimentação positiva dosada — em três doses diferentes.
+Pouca, e é um filtro com pico. Exata, e é um oscilador senoidal. Muita, e é uma onda quadrada.
+
+## O Volume 11, e o que vem depois {#sec-071-fecho}
+
+Sete capítulos atrás, o amplificador operacional era uma promessa que o @sec-cap-064 tinha
+acabado de formular: se o ganho de um circuito realimentado é decidido por dois resistores
+sempre que $T$ for grande, por que não fabricar um bloco pronto com ganho absurdamente alto?
+
+O caminho até aqui foi:
+
+**O dispositivo e as regras** (065): amplificador diferencial de ganho enorme, inutilizável
+sozinho, e duas regras de ouro que valem **sob três condições** — realimentação negativa
+presente, saída não saturada, ganho de malha disponível. Fora delas, as regras não são
+imprecisas: são falsas.
+
+**As duas topologias** (066): $1 + R_2/R_1$ e $-R_2/R_1$, com a escolha entre elas decidida por
+impedância de entrada e tensão de modo comum, nunca pelo sinal de menos. E o **ganho de ruído**,
+que é o que realmente governa a banda.
+
+**Somar e subtrair** (067): o terra virtual como nó de soma com pesos independentes; o subtrator
+com suas duas falhas quantificadas; e o amplificador de instrumentação, que corrige as duas e é
+o bloco com que se mede um sensor de ponte.
+
+**Integrar e derivar** (068): as duas operações que dão memória ao circuito, as duas correções
+obrigatórias, e a regra geométrica da estabilidade — 20 dB/década de fechamento é estável,
+40 dB/década oscila. Mais as fontes de corrente e o laço de 4 a 20 mA.
+
+**O dispositivo real** (069): cada imperfeição com endereço físico dentro do encapsulamento; o
+orçamento de erro dominado por $V_{OS}$; e as **duas** limitações de frequência, que são coisas
+diferentes e precisam de duas verificações.
+
+**A saturação como recurso** (070): o comparador, a trepidação, a realimentação positiva criando
+dois limiares, e a primeira memória de um bit deste manual.
+
+**E o fechamento** (071): filtros sem indutor, e três maneiras de fazer um circuito gerar sinal
+em vez de processá-lo.
+
+Duas coisas ficam para o resto do manual.
+
+A primeira é o **bloco**. O amp-op não sai mais de cena: o regulador de tensão do capítulo 074 é
+um amp-op comparando uma referência com uma amostra da saída; o controlador da fonte chaveada do
+075 é um amp-op comandando um comparador de PWM; o condicionamento de sinal do 079 é o
+@sec-cap-067 aplicado; e o conversor A/D de aproximações sucessivas do 080 é um comparador com
+uma máquina de estados em volta. **A partir daqui, "amp-op" é vocabulário, não assunto.**
+
+A segunda é a **ponte digital** que o @sec-cap-070 abriu. Um comparador com histerese é um
+circuito analógico que produz uma saída de dois estados e que **lembra** por onde passou. É a
+definição operacional de um bit, montada com dois resistores. A Fase 5 inteira — porta lógica,
+latch, flip-flop, contador, máquina de estados — é essa mesma ideia levada a sério, com
+transistores no lugar dos resistores e com um vocabulário próprio.
+
+Antes disso, porém, todos esses circuitos precisam de alimentação, e alimentação é um assunto
+com engenharia própria. O **Volume 12** começa no capítulo 072, com transformadores e
+acoplamento magnético, e segue pela fonte linear completa, pelos reguladores integrados com sua
+dissipação térmica, pelas fontes chaveadas buck e boost, pelas baterias e circuitos de carga, e
+termina no aterramento e no desacoplamento — o assunto que este volume invocou seis vezes como
+regra de bancada e que finalmente ganha explicação própria.

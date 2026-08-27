@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 70/104 |
-| **Contíguos até** | **070** — sem nenhum buraco no meio do livro |
+| **Progresso** | 71/104 |
+| **Contíguos até** | **071** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 071** | Filtros ativos e osciladores: Wien, relaxação e o 555 |
+| **Próximo capítulo: 072** | Transformadores e acoplamento magnético |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -44,7 +44,7 @@ potência de saída (063); realimentação negativa como assunto próprio — $A
 ganho de malha $T$, produto ganho-banda constante, as quatro topologias, margem de fase e de
 ganho, compensação por polo dominante e a relação entre margem de fase e sobrelevação (064).
 
-**Volume 11 em andamento** (capítulos 065 a 071, amplificadores operacionais): o dispositivo,
+**Volume 11 completo** (capítulos 065 a 071, amplificadores operacionais): o dispositivo,
 os cinco terminais e o encapsulamento DIP-8, o modelo ideal confrontado com TL072 e LM358, as
 duas regras de ouro derivadas de $A_f = A/(1+A\beta)$ com $T \to \infty$ e — o ponto em que o
 capítulo insiste — as **três condições** sob as quais elas valem (há realimentação negativa, a
@@ -76,7 +76,16 @@ para o digital, a trepidação de um limiar único diante de sinal lento ou ruid
 Schmitt nas duas topologias com os limiares deduzidos a partir dos níveis **reais** de saída, a
 histerese como memória de um bit (o mesmo mecanismo do latch SR da Fase 5), comparadores
 dedicados com saída em coletor aberto, *wired-AND* e atraso dependente do excesso, e o projeto
-completo de um termostato com NTC e LM393 (070).
+completo de um termostato com NTC e LM393 (070); e o fechamento, com o filtro de Sallen-Key em
+que **o ganho ajusta o $Q$** ($Q = 1/(3-K)$, e $K=3$ é a fronteira entre filtro e oscilador), o
+oscilador de relaxação cujo período $T = 2RC\ln[(1+\beta)/(1-\beta)]$ independe da alimentação,
+o 555 por dentro (dois comparadores, báscula RS, transistor de descarga) com astável e
+monoestável, e o oscilador de Wien com a exigência de ganho **exatamente 3** e os três
+mecanismos de controle automático de amplitude (071).
+
+O próximo bloco é o **Volume 12** (capítulos 072 a 077), sobre fontes e gestão de energia. O
+capítulo 071 já monta a ponte: o desacoplamento, invocado seis vezes como regra de bancada ao
+longo do Volume 11, ganha explicação própria no capítulo 077.
 
 Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -94,10 +103,9 @@ a sessão seguinte reancorando na fronteira do **volume** em vez do próximo cap
 pendente — está na lição 11 do `LICOES-MANUAIS.md`, e a trava contra a repetição é o
 verificador acima, rodado na abertura de cada sessão.
 
-**Pendência separada, de outra natureza:** os capítulos 033 e 035 usam `@sec-` para
-apontar a 065, 069 e 070 — conteúdo do Volume 11, ainda não escrito. Isso viola a regra
-de referência cruzada do `CLAUDE.md` e deveria ser menção textual. O verificador lista as
-cinco ocorrências como aviso.
+**Pendência encerrada:** os capítulos 033 e 035 apontavam com `@sec-` para a 065, 069 e 070,
+que eram conteúdo futuro. Com o Volume 11 escrito, as cinco referências passaram a resolver
+para conteúdo real e o verificador não as lista mais.
 
 
 ## Fase 1 — Fundamentos Elétricos
@@ -221,7 +229,7 @@ cinco ocorrências como aviso.
 - [x] 068 — Integrador, derivador e fontes de corrente — `capitulos/068-integrador-derivador-e-fontes-de-corrente.qmd`
 - [x] 069 — O amp-op real: offset, slew rate, produto ganho-banda e saturação — `capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.qmd`
 - [x] 070 — Comparadores, histerese e o gatilho de Schmitt — `capitulos/070-comparadores-histerese-e-o-gatilho-de-schmitt.qmd`
-- [ ] 071 — Filtros ativos e osciladores: Wien, relaxação e o 555 — `capitulos/071-filtros-ativos-e-osciladores-wien-relaxacao-e-o-555.qmd`
+- [x] 071 — Filtros ativos e osciladores: Wien, relaxação e o 555 — `capitulos/071-filtros-ativos-e-osciladores-wien-relaxacao-e-o-555.qmd`
 
 
 ## Fase 4 — Energia, Interface e Construção
