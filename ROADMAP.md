@@ -34,8 +34,9 @@ funcionamento do JFET e do MOSFET, modo depleção e modo enriquecimento, diodo 
 leitura dos símbolos, a porta como capacitor e a dispersão de $V_{th}$ (059); região ôhmica e
 região de saturação, a armadilha de vocabulário em relação ao bipolar, $R_{DS(on)}$, lei
 quadrática e seu limite honesto em potência, extração por $\sqrt{I_D}$, $g_m \propto \sqrt{I_D}$
-e o modelo de pequenos sinais sem $r_\pi$ (060); as tres perdas de uma chave, cadeia termica,
-conversao Ciss/Coss/Crss, patamar de Miller, carga de porta e o compromisso RDS(on) x QG (061).
+e o modelo de pequenos sinais sem $r_\pi$ (060); as três perdas de uma chave, cadeia térmica,
+conversão entre $C_{iss}$/$C_{oss}$/$C_{rss}$, patamar de Miller, carga de porta e o
+compromisso $R_{DS(on)} \times Q_G$ (061).
 
 Convenções que o Volume 10 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
