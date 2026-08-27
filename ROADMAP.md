@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 66/104 |
-| **Contíguos até** | **066** — sem nenhum buraco no meio do livro |
+| **Progresso** | 67/104 |
+| **Contíguos até** | **067** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 067** | Somador, subtrator e amplificador de instrumentação |
+| **Próximo capítulo: 068** | Integrador, derivador e fontes de corrente |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -56,7 +56,13 @@ $A_v = 1 + R_2/R_1$ e $A_v = -R_2/R_1$, a escolha entre elas decidida por imped�
 torna a topologia de baixa distorção), **ganho de ruído** $A_R = 1/\beta$ igual nas duas e
 responsável pela banda, compensação de corrente de polarização só para entrada bipolar, projeto
 completo com tolerância nos dois extremos e amplificador de alimentação simples com ganho
-unitário em CC e acoplamentos escalonados (066).
+unitário em CC e acoplamentos escalonados (066); o somador inversor com pesos independentes e
+o ganho de ruído contando o paralelo de todas as entradas, deslocamento de nível para conversor
+A/D, o subtrator com suas duas falhas quantificadas ($Z_{in}$ baixa e desigual; CMRR
+$\approx (1+R_2/R_1)/4t$, só 34 dB com 1 %), e o amplificador de instrumentação de três amp-ops
+corrigindo as duas — primeiro estágio com ganho $1+2R/R_G$ para a diferença e ganho 1 para o
+modo comum —, com a cadeia completa da ponte de Wheatstone, o papel do terminal REF e o caminho
+de retorno da corrente de polarização (067).
 
 Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -197,7 +203,7 @@ cinco ocorrências como aviso.
 
 - [x] 065 — O amp-op ideal e as regras de ouro — `capitulos/065-o-amp-op-ideal-e-as-regras-de-ouro.qmd`
 - [x] 066 — Amplificador inversor e não inversor — `capitulos/066-amplificador-inversor-e-nao-inversor.qmd`
-- [ ] 067 — Somador, subtrator e amplificador de instrumentação — `capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.qmd`
+- [x] 067 — Somador, subtrator e amplificador de instrumentação — `capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.qmd`
 - [ ] 068 — Integrador, derivador e fontes de corrente — `capitulos/068-integrador-derivador-e-fontes-de-corrente.qmd`
 - [ ] 069 — O amp-op real: offset, slew rate, produto ganho-banda e saturação — `capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.qmd`
 - [ ] 070 — Comparadores, histerese e o gatilho de Schmitt — `capitulos/070-comparadores-histerese-e-o-gatilho-de-schmitt.qmd`
