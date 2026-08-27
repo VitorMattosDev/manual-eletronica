@@ -1,3 +1,835 @@
 # O amp-op real: offset, slew rate, produto ganho-banda e saturação {#sec-cap-069}
 
-*(em elaboração)*
+O @sec-cap-065 apresentou o amp-op como uma caixa preta com propriedades declaradas, e os três
+capítulos seguintes projetaram com ela. A conta chegou três vezes no @sec-cap-068: a tensão de
+desequilíbrio faz o integrador fugir, a corrente de polarização desqualifica o LM358 para
+integrar, e o produto ganho-banda finito faz o derivador oscilar.
+
+Não é coincidência. Circuitos com capacitor na malha **amplificam seletivamente as
+imperfeições**, e por isso são os primeiros a denunciar que o modelo ideal é uma aproximação.
+
+Este capítulo abre a caixa. Não para projetar um amp-op — isso é assunto de outra disciplina —,
+mas para que cada número da folha de dados deixe de ser uma sigla e passe a ter uma origem
+física, uma consequência mensurável e uma regra de decisão. Ao final, escolher um amp-op deixa
+de ser adivinhação.
+
+## O que há dentro {#sec-069-dentro}
+
+::: {#fig-069-dentro}
+
+```{.tikz}
+%%| filename: 069-dentro
+%%| alt: Esquemático simplificado do interior de um amplificador operacional, com as três seções identificadas e as imperfeições ancoradas em suas origens físicas. Da esquerda para a direita. Primeira seção, o par diferencial de entrada: dois transistores NPN com os emissores unidos, alimentados por uma fonte de corrente de cauda que desce até o trilho negativo, e com os coletores ligados a um bloco identificado como espelho de corrente, que serve de carga ativa e se conecta ao trilho positivo; as bases dos dois transistores são as entradas não inversora e inversora do amp-op. Segunda seção, o estágio de ganho: um único transistor cuja base recebe a saída do par diferencial, com uma fonte de corrente como carga no coletor, e um capacitor de compensação de cerca de trinta picofarads ligado entre o coletor e a base desse transistor. Terceira seção, o estágio de saída, desenhado como um bloco rotulado estágio de saída classe AB, que aciona o pino de saída. Quatro anotações ancoram as imperfeições. Sobre o par diferencial: a tensão de desequilíbrio nasce aqui, do descasamento entre os dois transistores, que nenhuma fabricação elimina; e a corrente de polarização é simplesmente a corrente de base desses dois transistores, o que explica por que amp-ops de entrada JFET ou CMOS têm corrente de entrada de picoampères. Sobre o capacitor de compensação: ele é quem define tanto o produto ganho-banda quanto a taxa de subida; a taxa de subida vale a corrente de cauda dividida pela capacitância de compensação, porque quando a entrada é grande toda a corrente de cauda vai para um lado só e é tudo o que existe para carregar o capacitor. Sobre o estágio de saída: dele vêm a excursão limitada, a corrente máxima de saída e a distorção de cruzamento. Uma quinta anotação relaciona as duas limitações de frequência: a taxa de subida dividida por duas vezes pi vezes o produto ganho-banda é igual à corrente de cauda dividida pela transcondutância do par de entrada, e é por isso que um par JFET, cuja transcondutância é muito menor para a mesma corrente, tem taxa de subida uma ordem de grandeza maior que a de um par bipolar.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- trilhos ----------------
+  \draw[manualgray] (0.2,5.0) -- (12.6,5.0);
+  \node[anchor=south, font=\tiny, manualgray] at (0.7,5.05) {$+V_{CC}$};
+  \draw[manualgray] (0.2,-1.8) -- (12.6,-1.8);
+  \node[anchor=north, font=\tiny, manualgray] at (0.7,-1.85) {$-V_{EE}$};
+
+  % ---------------- espelho ----------------
+  \draw[thick, fill=black!4] (1.4,3.6) rectangle (4.6,4.4);
+  \node[font=\tiny, align=center] at (3.0,4.0) {espelho de corrente\\{\tiny(carga ativa)}};
+  \draw (3.0,4.4) -- (3.0,5.0);
+
+  % ---------------- par diferencial ----------------
+  \node[npn] (q1) at (2.0,2.6) {};
+  \node[npn, xscale=-1] (q2) at (4.0,2.6) {};
+
+  \draw (q1.collector) -- (2.0,3.6);
+  \draw (q2.collector) -- (4.0,3.6);
+  \node[ponto] at (4.0,3.6) {};
+
+  \draw (q1.base) -- (0.9,2.6);
+  \node[anchor=east, font=\scriptsize] at (0.85,2.6) {$v_+$};
+  \draw (q2.base) -- (5.1,2.6);
+  \node[anchor=west, font=\scriptsize] at (5.15,2.6) {$v_-$};
+
+  \draw (q1.emitter) -- (2.0,1.7) -- (4.0,1.7) -- (q2.emitter);
+  \node[ponto] at (3.0,1.7) {};
+  \draw (3.0,1.7) -- (3.0,1.2);
+  \draw[thick] (3.0,1.2) circle (0.3);
+  \draw[-{Latex[length=1.6mm]}] (3.0,1.35) -- (3.0,1.05);
+  \draw (3.0,0.9) -- (3.0,-1.8);
+  \node[anchor=west, font=\tiny] at (3.35,1.2) {$I_{cauda}$};
+
+  % ---------------- estagio de ganho ----------------
+  \node[npn] (q3) at (7.4,1.4) {};
+  \draw (4.0,3.6) -- (6.0,3.6) -- (6.0,1.4) -- (q3.base);
+  \draw (q3.emitter) -- (7.4,-1.8);
+  \draw (q3.collector) -- (7.4,3.2);
+  \draw[thick] (7.4,3.5) circle (0.3);
+  \draw[-{Latex[length=1.6mm]}] (7.4,3.65) -- (7.4,3.35);
+  \draw (7.4,3.8) -- (7.4,5.0);
+  \node[anchor=west, font=\tiny, align=left] at (7.75,3.5) {carga\\ativa};
+
+  \node[ponto] at (7.4,2.6) {};
+  \draw (7.4,2.6) -- (6.9,2.6);
+  \draw (6.9,2.6) to[C, l=$C_c$] (6.9,1.4);
+  \node[ponto] at (6.0,1.4) {};
+  \draw (6.9,1.4) -- (6.0,1.4);
+
+  % ---------------- estagio de saida ----------------
+  \draw[thick, fill=black!4] (9.0,1.9) rectangle (11.4,3.3);
+  \node[font=\tiny, align=center] at (10.2,2.6) {estágio de saída\\classe AB};
+  \draw (7.4,2.6) -- (9.0,2.6);
+  \draw (11.4,2.6) -- (12.4,2.6);
+  \node[anchor=west, font=\scriptsize] at (12.45,2.6) {$v_{out}$};
+  \draw (10.2,3.3) -- (10.2,5.0);
+  \draw (10.2,1.9) -- (10.2,-1.8);
+
+  % ---------------- anotacoes ----------------
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\tiny, inner sep=6pt, text width=5.0cm] at (-0.4,-2.3)
+       {\textbf{$V_{OS}$ nasce aqui.} É o descasamento entre Q1 e Q2 --- nenhuma fabricação
+        o elimina.
+        \\[3pt]
+        \textbf{$I_B$ é a corrente de base} desses dois transistores. Par JFET ou CMOS
+        $\Rightarrow$ picoampères.};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\tiny, inner sep=6pt, text width=5.0cm] at (5.2,-2.3)
+       {\textbf{$C_c$ define \emph{as duas} limitações de frequência.}
+        \[ \text{GBW} = \frac{g_m}{2\pi C_c} \qquad SR = \frac{I_{cauda}}{C_c} \]
+        Com entrada grande, \textbf{toda} a corrente de cauda vai para um lado --- e é tudo
+        o que existe para carregar $C_c$.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\tiny, inner sep=6pt, text width=5.0cm] at (10.8,-2.3)
+       {\textbf{Do estágio de saída} vêm a excursão limitada, a corrente máxima e a
+        distorção de cruzamento do capítulo sobre classes.};
+
+  \node[draw=manualyellow, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=16.0cm] at (-0.4,-6.2)
+       {\textbf{Por que amp-op JFET tem taxa de subida muito maior.} Dividindo as duas
+        expressões, \ $\dfrac{SR}{2\pi\,\text{GBW}} = \dfrac{I_{cauda}}{g_m}$.
+        \ Num par \textbf{bipolar}, $g_m = I_C/V_T$ e essa razão vale $2V_T \approx 52$ mV.
+        Num par \textbf{JFET}, $g_m \propto \sqrt{I_D}$ é muito menor para a mesma corrente,
+        e a razão fica dez a vinte vezes maior. \textbf{741: 1 MHz e 0,5 V/µs. TL072: 3 MHz
+        e 13 V/µs} --- três vezes a banda e \emph{vinte e seis} vezes a taxa de subida.};
+
+\end{tikzpicture}
+```
+
+O interior simplificado de um amp-op compensado. Cada imperfeição da folha de dados tem um
+endereço físico neste desenho, e duas delas — o produto ganho-banda e a taxa de subida — moram
+no mesmo capacitor.
+:::
+
+Três seções, e cada uma responde por um grupo de imperfeições.
+
+**O par diferencial de entrada** decide os erros de corrente contínua. $V_{OS}$ é o
+descasamento entre Q1 e Q2 — as áreas de emissor, as dopagens e as tensões de limiar nunca são
+exatamente iguais. $I_B$ é literalmente a corrente de base desses dois transistores, o que
+explica por que um par JFET ou CMOS tem corrente de entrada de picoampères: **porta isolada não
+puxa corrente**, exatamente como no @sec-cap-059.
+
+**O capacitor de compensação** decide as duas limitações de frequência. É o capacitor de polo
+dominante do @sec-cap-064, posto ali pelo fabricante para garantir estabilidade em ganho
+unitário — e o mesmo componente que impõe a taxa de subida.
+
+**O estágio de saída** decide a excursão, a corrente máxima e a distorção de cruzamento. É um
+push-pull classe AB do @sec-cap-063, e o LM358 é notório justamente porque o dele é mal
+polarizado.
+
+## Os erros de corrente contínua {#sec-069-cc}
+
+::: {#fig-069-orcamento}
+
+```{.tikz}
+%%| filename: 069-orcamento
+%%| alt: Orçamento de erro em corrente contínua de um amplificador não inversor de ganho cem, construído com TL072, alimentado por uma fonte de dez quilohms, operando de zero a cinquenta graus Celsius, com fundo de escala de dez volts na saída. Um gráfico de barras horizontais mostra a contribuição de cada fonte de erro, medida na saída, em escala logarítmica de um microvolt a dez volts. A maior barra, de longe, é a tensão de desequilíbrio no pior caso da folha de dados: dez milivolts multiplicados pelo ganho cem dão um volt, ou dez por cento do fundo de escala. A segunda barra é a deriva térmica: dezoito microvolts por grau multiplicados por vinte e cinco graus de excursão e por cem dão quarenta e cinco milivolts. A terceira é o erro de rejeição de modo comum: com oitenta e seis decibéis e um volt de modo comum, cinquenta microvolts referidos à entrada viram cinco milivolts na saída. A quarta é o erro de rejeição de fonte: com oitenta e seis decibéis e cem milivolts de ondulação da alimentação, cinco microvolts na entrada viram meio milivolt na saída. A menor barra, quase invisível, é a corrente de polarização: trinta picoampères vezes dez quilohms dão trezentos nanovolts na entrada, ou trinta microvolts na saída. Três caixas de texto acompanham. A primeira observa que a tensão de desequilíbrio domina todas as outras somadas por mais de uma ordem de grandeza, e que portanto qualquer esforço de precisão em corrente contínua começa e quase termina nela. A segunda dá as três saídas possíveis: calibrar em um ponto, o que elimina a tensão de desequilíbrio mas não a deriva; escolher um amp-op de desequilíbrio baixo; ou usar um amplificador com estabilização por chaveamento, cuja tensão de desequilíbrio residual é de microvolts porque o circuito se auto-mede continuamente. A terceira alerta que o valor típico da folha de dados não é garantido e que orçamento de erro se faz com o valor máximo, sob pena de um em cada dez circuitos montados ficar fora de especificação.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+\begin{axis}[
+    width=11.0cm, height=6.0cm,
+    xmode=log, xmin=1e-5, xmax=3,
+    xlabel={contribuição na saída (V)},
+    ytick={1,2,3,4,5},
+    yticklabels={$I_B \times R_S$, PSRR, CMRR, deriva de $V_{OS}$, $V_{OS}$ (máx.)},
+    ymin=0.3, ymax=5.7,
+    xtick={1e-5,1e-4,1e-3,1e-2,1e-1,1},
+    xticklabels={$10\ \mu$V,$100\ \mu$V,$1$ mV,$10$ mV,$100$ mV,$1$ V},
+    xbar, bar width=9pt,
+    grid=both, grid style={gray!20},
+    label style={font=\scriptsize}, tick label style={font=\tiny},
+    axis line style={gray},
+    nodes near coords, nodes near coords style={font=\tiny, anchor=west},
+    point meta=explicit symbolic,
+]
+  \addplot[fill=manualblue!30, draw=manualblue] coordinates {
+    (3e-5,1) [$30\ \mu$V]
+    (5e-4,2) [$0{,}5$ mV]
+    (5e-3,3) [$5$ mV]
+    (4.5e-2,4) [$45$ mV]
+  };
+  \addplot[fill=manualred!35, draw=manualred] coordinates {
+    (1,5) [\textbf{$1$ V}]
+  };
+\end{axis}
+
+  \node[anchor=north west, font=\scriptsize, align=left] at (-2.4,7.4)
+       {\textbf{Não inversor de ganho 100, TL072, $R_S = 10$ k$\Omega$, 0 a 50 °C, fundo de
+        escala de 10 V}};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.2cm] at (-2.4,-0.9)
+       {\textbf{$V_{OS}$ domina} --- 1 V, ou \textbf{10 \% do fundo de escala}. Sozinha, ela vale mais que todas as outras somadas
+        multiplicadas por vinte.
+        \\[3pt]
+        Precisão em CC \textbf{começa e quase termina} nela.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.2cm] at (3.2,-0.9)
+       {\textbf{Três saídas:}
+        \\[2pt]
+        1. \textbf{calibrar} num ponto --- mata $V_{OS}$, \emph{não} mata a deriva;
+        \\[2pt]
+        2. escolher CI de $V_{OS}$ baixo (OPA192: 25 µV máx.);
+        \\[2pt]
+        3. \textbf{amp-op com estabilização por chaveamento} (LTC1050, MAX4238): $V_{OS}$ de
+        microvolts, porque o circuito se automede.};
+
+  \node[draw=manualyellow, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.2cm] at (8.8,-0.9)
+       {\textbf{Orçamento se faz com o valor \emph{máximo}.} O ``típico'' não é garantido.
+        \\[3pt]
+        TL072: 3 mV típ., \textbf{10 mV máx}. Usar o típico é aceitar que um em cada dez
+        circuitos saia fora.};
+
+\end{tikzpicture}
+```
+
+O orçamento de erro em corrente contínua de um estágio comum, com números de folha de dados. A
+escala é logarítmica porque, em escala linear, só uma barra seria visível.
+:::
+
+Quatro parâmetros descrevem o comportamento em corrente contínua, e um deles domina.
+
+**Tensão de desequilíbrio ($V_{OS}$).** A tensão contínua que seria preciso aplicar entre as
+entradas para que a saída fosse exatamente zero. Aparece na saída multiplicada pelo **ganho de
+ruído** do @sec-cap-066 — não pelo ganho de sinal:
+
+$$ V_{erro,out} = V_{OS} \times A_R = V_{OS}\left(1 + \frac{R_2}{R_1}\right) $$
+
+**Deriva de $V_{OS}$ com a temperatura.** Especificada em µV/°C. Um TL072 tem 18 µV/°C típicos;
+sobre 25 °C de excursão, são 450 µV referidos à entrada. **A calibração não corrige a deriva**,
+porque ela acontece depois da calibração.
+
+**Correntes de polarização e de desvio ($I_B$, $I_{OS}$).** Já apareceram no @sec-cap-066 e no
+@sec-cap-067. O erro é $I_B \times R_{fonte}$ quando as duas entradas veem resistências
+diferentes, e $I_{OS} \times R_{fonte}$ quando estão casadas.
+
+::: {.callout-warning}
+## A corrente de entrada de um amp-op JFET dobra a cada 10 °C
+
+Os 30 pA de um TL072 valem a 25 °C. A corrente de fuga de uma junção reversa dobra
+aproximadamente a cada 10 °C de aumento, e a folha de dados do TL072 especifica **20 nA a
+70 °C** — mais de seiscentas vezes o valor de bancada.
+
+Num circuito de impedância alta que funciona perfeitamente na mesa e falha dentro de um gabinete
+fechado, essa é a primeira suspeita. Amp-ops CMOS não têm esse comportamento na mesma escala,
+porque a corrente de entrada deles é dominada pela proteção de porta e não por uma junção.
+:::
+
+**Rejeição de modo comum e de fonte (CMRR, PSRR).** As duas são especificadas em decibéis e as
+duas se traduzem em erro **referido à entrada**:
+
+$$ V_{erro,in} = \frac{\Delta V_{cm}}{10^{\text{CMRR}/20}} \qquad\qquad V_{erro,in} = \frac{\Delta V_{alim}}{10^{\text{PSRR}/20}} $$
+
+Com 86 dB (fator $2\times10^4$) e 1 V de variação de modo comum, o erro é de 50 µV referidos à
+entrada. Note a consequência da CMRR finita num **não inversor**: como o modo comum acompanha o
+sinal, esse erro varia com o sinal, e portanto aparece como **distorção**, não como
+deslocamento. É mais um argumento a favor do inversor em aplicações de baixa distorção, como o
+@sec-cap-066 antecipou.
+
+::: {.callout-important}
+## PSRR cai com a frequência, e é por isso que o desacoplamento importa
+
+Os 86 dB de PSRR de um TL072 valem em corrente contínua. Em 100 kHz, o mesmo CI tem cerca de
+30 dB — um fator 30, não 20 000.
+
+Ou seja: **a alimentação de um amp-op em alta frequência entra quase direto no sinal**. É a
+razão física do capacitor de 100 nF colado nos pinos de alimentação que o @sec-cap-065 exigiu
+sem explicar. Ele não está lá por superstição; está lá porque o CI deixa de rejeitar ruído de
+alimentação exatamente na faixa em que o ruído de alimentação é maior.
+:::
+
+## As duas limitações de frequência, e elas são diferentes {#sec-069-slew}
+
+::: {#fig-069-slew}
+
+```{.tikz}
+%%| filename: 069-slew
+%%| alt: Figura em três painéis sobre a taxa de subida. No painel da esquerda, um sinal de entrada em onda quadrada e a saída correspondente: em vez de acompanhar o degrau, a saída sobe em rampa de inclinação constante, e essa inclinação é a taxa de subida, medida em volts por microssegundo. Uma anotação indica que a inclinação é a mesma independentemente de quão grande seja o degrau, porque ela é imposta pela corrente disponível para carregar o capacitor de compensação. No painel do meio, o mesmo circuito com entrada senoidal, em duas amplitudes. Com amplitude pequena, a saída é uma senoide limpa. Com amplitude grande, na mesma frequência, a saída vira um triângulo, porque a senoide pediria uma inclinação maior do que a taxa de subida permite; a distorção aparece de repente ao aumentar a amplitude, e não gradualmente. No painel da direita, o critério que separa as duas limitações. A inclinação máxima de uma senoide de amplitude V pico e frequência f vale duas vezes pi vezes f vezes V pico, e ela ocorre na passagem por zero; igualando isso à taxa de subida obtém-se a largura de banda de plena potência, que é a taxa de subida dividida por duas vezes pi vezes a amplitude de pico. Dois exemplos numéricos: um TL072 com treze volts por microssegundo e dez volts de pico chega a duzentos e sete quilohertz; um setecentos e quarenta e um com meio volt por microssegundo e a mesma amplitude chega a apenas oito quilohertz, apesar de o produto ganho-banda dele ser de um megahertz. Uma caixa final ensina o diagnóstico de bancada: reduza a amplitude do sinal pela metade; se a frequência em que a saída começa a cair dobrar, o limite é a taxa de subida; se ela não se mover, o limite é o produto ganho-banda.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- degrau ----------------
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\scriptsize, anchor=south] at (2.2,2.6) {\textbf{resposta ao degrau}};
+    \draw[eixo] (0,0) -- (4.6,0);
+    \draw[eixo] (0,-0.4) -- (0,2.3);
+
+    \draw[destaque, thick] (0,0.4) -- (1.0,0.4) -- (1.0,1.9) -- (3.4,1.9) -- (3.4,0.4)
+                        -- (4.4,0.4);
+    \node[anchor=west, font=\tiny, manualred] at (4.45,1.9) {$v_{in}$};
+
+    \draw[curva] (0,0.4) -- (1.0,0.4) -- (2.1,1.9) -- (3.4,1.9) -- (4.4,0.4);
+    \node[anchor=west, font=\tiny, manualblue] at (4.45,0.9) {$v_{out}$};
+
+    \draw[{Latex[length=1.6mm]}-{Latex[length=1.6mm]}, manualgreen]
+         (1.15,0.55) -- (1.95,1.75);
+    \node[anchor=north west, font=\tiny, manualgreen, align=left] at (1.6,1.1)
+         {$SR$};
+
+    \node[anchor=north, align=center, font=\tiny, text width=4.6cm] at (2.2,-0.6)
+         {a inclinação é a \textbf{mesma} para qualquer degrau};
+  \end{scope}
+
+  % ---------------- senoides ----------------
+  \begin{scope}[shift={(5.8,0)}]
+    \node[font=\scriptsize, anchor=south] at (2.2,2.6) {\textbf{mesma frequência, duas amplitudes}};
+    \draw[eixo] (0,1.5) -- (4.6,1.5);
+    \draw[eixo] (0,-0.4) -- (0,2.3);
+
+    \draw[manualgreen, thick] plot[domain=0:4.3, samples=90]
+         (\x, {1.5+0.42*sin(deg(2*pi*\x/2.15))});
+    \node[anchor=west, font=\tiny, manualgreen] at (4.35,1.5) {pequena};
+
+    \draw[eixo] (0,-1.9) -- (4.6,-1.9);
+    \draw[curva] (0,-1.9) -- (0.54,-0.9) -- (1.61,-2.9) -- (2.69,-0.9) -- (3.76,-2.9)
+                 -- (4.3,-1.9);
+    \node[anchor=west, font=\tiny, manualblue] at (4.35,-1.9) {grande};
+
+    \node[anchor=north, align=center, font=\tiny, text width=4.9cm] at (2.2,-3.1)
+         {a senoide vira \textbf{triângulo}: a distorção aparece \emph{de repente} ao subir
+          a amplitude};
+  \end{scope}
+
+  % ---------------- criterio ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.0cm] at (11.2,2.7)
+       {A inclinação máxima de uma senoide (na passagem por zero) vale
+        \[ \left|\frac{dv}{dt}\right|_{\max} = 2\pi f V_p \]
+        Igualando a $SR$:
+        \[ \boxed{\ f_{PP} = \frac{SR}{2\pi V_p}\ } \]
+        \textbf{TL072}, 13 V/µs, $V_p = 10$ V: \ \textbf{207 kHz}
+        \\[2pt]
+        \textbf{741}, 0,5 V/µs, $V_p = 10$ V: \ \textbf{8 kHz}
+        \\[2pt]
+        {\tiny(e o GBW do 741 é 1 MHz --- não é ele que limita)}};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.0cm] at (11.2,-2.6)
+       {\textbf{Como distinguir na bancada.}
+        \\[3pt]
+        Reduza a amplitude \textbf{pela metade} e refaça a varredura:
+        \\[3pt]
+        $\bullet$ a frequência de queda \textbf{dobrou} $\Rightarrow$ o limite é a
+        \textbf{taxa de subida};
+        \\[2pt]
+        $\bullet$ ela \textbf{não se moveu} $\Rightarrow$ o limite é o \textbf{produto
+        ganho-banda}.};
+
+\end{tikzpicture}
+```
+
+A taxa de subida é uma limitação de **sinal grande**, e é independente do produto ganho-banda,
+que é uma limitação de sinal pequeno. Confundir as duas é o erro de bancada mais comum deste
+volume.
+:::
+
+O @sec-cap-065 estabeleceu o produto ganho-banda: um circuito de ganho fechado $A_R$ tem banda
+$\text{GBW}/A_R$. Essa é uma afirmação sobre **sinais pequenos**, e ela pressupõe que o amp-op
+esteja operando linearmente.
+
+A **taxa de subida** (*slew rate*) é outra coisa. Quando o sinal diferencial de entrada é grande
+o suficiente, o par diferencial da @fig-069-dentro fica completamente desequilibrado: **toda** a
+corrente de cauda passa por um lado só. Essa corrente é tudo o que existe para carregar o
+capacitor de compensação, e o resultado é uma inclinação máxima fixa:
+
+$$ SR = \frac{I_{cauda}}{C_c} $$
+
+Nesse regime o amp-op **não está mais realimentado** — a saída não pode acompanhar a entrada, as
+regras de ouro não valem, e as duas entradas ficam com volts de diferença. É o item 2 da faixa
+de condições da @fig-065-regras, mas causado pela velocidade em vez da amplitude.
+
+### Largura de banda de plena potência
+
+A consequência prática está no quadro azul da @fig-069-slew. A inclinação máxima de uma senoide
+de amplitude $V_p$ e frequência $f$ ocorre na passagem por zero e vale $2\pi f V_p$. Igualando à
+taxa de subida:
+
+$$ \boxed{\ f_{PP} = \frac{SR}{2\pi V_p}\ } $$
+
+| CI | GBW | $SR$ | $f_{PP}$ com $V_p = 10$ V | $f_{PP}$ com $V_p = 1$ V |
+|---|---|---|---|---|
+| µA741 | 1 MHz | 0,5 V/µs | 8,0 kHz | 80 kHz |
+| LM358 | 1 MHz | 0,3 V/µs | 4,8 kHz | 48 kHz |
+| TL072 | 3 MHz | 13 V/µs | 207 kHz | 2,1 MHz |
+| NE5532 | 10 MHz | 9 V/µs | 143 kHz | 1,4 MHz |
+| LM7171 | 200 MHz | 4100 V/µs | 65 MHz | 650 MHz |
+
+: A largura de banda de plena potência não é o produto ganho-banda. Um 741 tem 1 MHz de GBW e
+não consegue produzir uma senoide de 10 V acima de 8 kHz. {#tbl-069-fpbw}
+
+A segunda linha da @tbl-069-fpbw explica um resultado que confunde muita gente pela primeira
+vez: um LM358 tem banda de sobra para áudio segundo o GBW, e **não serve** para áudio de
+amplitude grande, porque a taxa de subida o limita a 4,8 kHz em plena excursão.
+
+::: {#fig-069-fpbw}
+
+```{.tikz}
+%%| filename: 069-fpbw
+%%| alt: Gráfico em escala logarítmica nos dois eixos mostrando a amplitude máxima de saída sem distorção em função da frequência, para três amplificadores operacionais. O eixo horizontal vai de cem hertz a cem megahertz e o vertical de zero vírgula um volt a cem volts de pico. Cada CI é representado por uma curva que consiste em um patamar horizontal, na amplitude máxima que a alimentação permite, seguido de uma reta descendente de inclinação menos um, que é o limite imposto pela taxa de subida, já que a amplitude máxima vale a taxa de subida dividida por duas vezes pi vezes a frequência. A curva do setecentos e quarenta e um tem patamar em treze volts até oito quilohertz e depois desce. A do TL072 tem o mesmo patamar de treze volts, mas só começa a descer em duzentos e sete quilohertz, vinte e seis vezes mais tarde. A do LM7171 tem patamar em treze volts até sessenta e cinco megahertz. A região abaixo e à esquerda de cada curva é a região utilizável daquele CI. Um ponto marcado mostra um exemplo de projeto: um sinal de dez volts de pico em cinquenta quilohertz cai acima da curva do setecentos e quarenta e um, ou seja, fora da região utilizável dele, e abaixo da curva do TL072, portanto dentro da região utilizável deste. Uma anotação registra que a inclinação de menos um em escala log-log é a assinatura da limitação por taxa de subida, e que ela é diferente da limitação por produto ganho-banda, que aparece como uma queda de ganho e não como uma limitação de amplitude.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=12.4cm, height=7.4cm,
+    xmode=log, ymode=log,
+    xmin=100, xmax=1e8, ymin=0.1, ymax=100,
+    xlabel={frequência (Hz)}, ylabel={amplitude máxima de saída (V de pico)},
+    xtick={100,1000,10000,100000,1000000,10000000,100000000},
+    xticklabels={100,1 k,10 k,100 k,1 M,10 M,100 M},
+    ytick={0.1,1,10,100},
+    yticklabels={$0{,}1$,$1$,$10$,$100$},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+
+  % 741: SR = 0,5 V/us -> Vp = 0.5e6/(2 pi f)
+  \addplot[destaque, thick] coordinates {(100,13) (7958,13) (1e6,0.0796)};
+  \node[anchor=south east, font=\scriptsize, manualred] at (axis cs:6000,14) {741};
+
+  % TL072: SR = 13 V/us
+  \addplot[curva] coordinates {(100,13) (206900,13) (2.6e7,0.0796)};
+  \node[anchor=south east, font=\scriptsize, manualblue] at (axis cs:150000,14) {TL072};
+
+  % LM7171: SR = 4100 V/us
+  \addplot[manualgreen, thick] coordinates {(100,13) (6.5e7,13) (1e8,8.4)};
+  \node[anchor=south east, font=\scriptsize, manualgreen] at (axis cs:5e7,14) {LM7171};
+
+  % ponto de projeto
+  \node[ponto, fill=manualyellow] at (axis cs:50000,10) {};
+  \draw[thin, manualyellow] (axis cs:50000,10) -- (axis cs:1.2e4,2.2);
+  \node[anchor=north east, font=\tiny, manualyellow, align=right] at (axis cs:1.3e4,2.2)
+       {10 V de pico\\em 50 kHz};
+
+  \node[anchor=north west, font=\tiny, manualgray, align=left] at (axis cs:150,0.9)
+       {inclinação $-1$ em log-log\\= limitação por $SR$};
+
+\end{axis}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=11.4cm] at (-1.2,-1.2)
+       {A região \textbf{abaixo} de cada curva é o que aquele CI consegue entregar. O ponto
+        de projeto marcado --- 10 V de pico em 50 kHz --- está \textbf{acima} da curva do 741
+        (impossível: ele triangulariza) e \textbf{abaixo} da do TL072 (viável, com folga de
+        quatro vezes).
+        \\[3pt]
+        Este gráfico é sobre \textbf{amplitude}; o do produto ganho-banda é sobre
+        \textbf{ganho}. Um circuito pode ser reprovado por qualquer um dos dois, e as duas
+        verificações são independentes.};
+
+\end{tikzpicture}
+```
+
+A amplitude máxima de saída em função da frequência. É o gráfico que decide se um amp-op serve
+para um sinal grande e rápido, e ele não aparece no lugar da curva de ganho — aparece **além**
+dela.
+:::
+
+## Saturação, e a recuperação dela {#sec-069-saturacao}
+
+Quando a saída bate no trilho, três coisas acontecem, e só a primeira é óbvia.
+
+**A forma de onda ceifa.** Previsível, visível na tela, e o projetista normalmente já sabe.
+
+**A malha de realimentação se abre.** Com a saída presa, ela não pode mais "fazer o que for
+preciso", e as duas entradas passam a ter uma diferença real. Todas as tensões calculadas com as
+regras de ouro deixam de valer, incluindo em nós que nada têm a ver com a saída.
+
+**A recuperação demora.** Um amp-op tirado da saturação leva um tempo — o **tempo de recuperação
+de sobrecarga** — para voltar a operar linearmente, porque transistores internos entraram em
+saturação profunda e precisam esvaziar as bases. Num amp-op comum esse tempo é de alguns
+microssegundos, muito maior do que a resposta linear sugeriria.
+
+A consequência aparece em circuitos que saturam por projeto. Um detector de pico, um retificador
+de precisão do Volume 12 ou um comparador improvisado com amp-op passam boa parte do tempo
+saturados, e o tempo de recuperação vira **o** parâmetro dominante de velocidade. É a razão de o
+@sec-cap-070 usar comparadores dedicados em vez de amp-ops: comparadores não têm capacitor de
+compensação, não saturam internamente da mesma forma e recuperam em nanossegundos.
+
+## Ruído {#sec-069-ruido}
+
+::: {#fig-069-ruido}
+
+```{.tikz}
+%%| filename: 069-ruido
+%%| alt: Gráfico em escala logarítmica nos dois eixos da densidade espectral de ruído de tensão, em nanovolts por raiz de hertz, em função da frequência, de zero vírgula um hertz a cem quilohertz. Três curvas de amplificadores operacionais aparecem, cada uma com o mesmo formato: uma região inclinada em baixas frequências, chamada ruído de um sobre f ou ruído rosa, seguida de um patamar horizontal chamado ruído branco; o ponto onde a inclinada encontra o patamar é a frequência de canto do ruído rosa. O LM358 tem patamar em quarenta nanovolts por raiz de hertz e canto por volta de mil hertz. O TL072 tem patamar em dezoito nanovolts por raiz de hertz e canto por volta de duzentos hertz. O OP27 tem patamar em três nanovolts por raiz de hertz e canto por volta de três hertz. Uma linha horizontal tracejada em cinza marca o ruído térmico de um resistor de dez quilohms, que vale doze vírgula nove nanovolts por raiz de hertz e não depende da frequência. Uma anotação destaca que essa linha cruza o patamar do TL072, ou seja, que com fonte de dez quilohms o ruído do resistor e o do amplificador são comparáveis, e que acima de vinte quilohms de impedância de fonte é o resistor que domina — de modo que trocar o TL072 por um amp-op de ruído mais baixo não melhora nada. Duas caixas acompanham. A primeira dá as fórmulas: o ruído térmico de um resistor vale zero vírgula treze vezes a raiz de R em nanovolts por raiz de hertz à temperatura ambiente; o ruído total é a densidade multiplicada pela raiz da largura de banda de ruído, que para um filtro de um polo vale um vírgula cinquenta e sete vezes a frequência de corte; e o valor de pico a pico observável no osciloscópio é cerca de seis vírgula seis vezes o valor eficaz. A segunda caixa faz o exemplo numérico de um estágio TL072 de ganho cem com trinta quilohertz de banda, que resulta em três vírgula nove microvolts eficazes referidos à entrada, trezentos e noventa microvolts na saída, ou dois vírgula seis milivolts de pico a pico.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=11.6cm, height=7.0cm,
+    xmode=log, ymode=log,
+    xmin=0.1, xmax=1e5, ymin=1, ymax=1000,
+    xlabel={frequência (Hz)},
+    ylabel={densidade de ruído (nV/$\sqrt{\text{Hz}}$)},
+    xtick={0.1,1,10,100,1000,10000,100000},
+    xticklabels={$0{,}1$,1,10,100,1 k,10 k,100 k},
+    ytick={1,10,100,1000},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+
+  % LM358: canto 1 kHz, patamar 40
+  \addplot[destaque, thick] coordinates {(0.1,4000) (1000,40) (1e5,40)};
+  \node[anchor=south west, font=\scriptsize, manualred] at (axis cs:8000,42) {LM358};
+
+  % TL072: canto 200 Hz, patamar 18
+  \addplot[curva] coordinates {(0.1,720) (200,18) (1e5,18)};
+  \node[anchor=south west, font=\scriptsize, manualblue] at (axis cs:8000,19) {TL072};
+
+  % OP27: canto 3 Hz, patamar 3
+  \addplot[manualgreen, thick] coordinates {(0.1,90) (3,3) (1e5,3)};
+  \node[anchor=south west, font=\scriptsize, manualgreen] at (axis cs:8000,3.2) {OP27};
+
+  % ruido termico de 10k
+  \addplot[manualgray, thick, dashed] coordinates {(0.1,12.9) (1e5,12.9)};
+  \node[anchor=north west, font=\tiny, manualgray] at (axis cs:1.5,11.6)
+       {ruído térmico de $10$ k$\Omega$: $12{,}9$ nV/$\sqrt{\text{Hz}}$};
+
+  \node[anchor=south, font=\tiny, manualgray] at (axis cs:30,300) {ruído $1/f$ (rosa)};
+  \node[anchor=south, font=\tiny, manualgray] at (axis cs:1.2e4,110) {ruído branco};
+
+\end{axis}
+
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (-1.4,-1.1)
+       {\textbf{Ruído térmico de um resistor} (300 K):
+        \[ e_R \approx 0{,}13\sqrt{R}\ \ \text{nV}/\sqrt{\text{Hz}} \]
+        \textbf{Ruído total} numa banda:
+        \[ V_n = e_n\sqrt{B_n}, \quad B_n = 1{,}57\,f_c \]
+        \textbf{Pico a pico na tela:} $\approx 6{,}6 \times$ o eficaz.};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (4.2,-1.1)
+       {\textbf{Exemplo.} TL072, ganho 100, banda de 30 kHz:
+        \[ V_n = 18\ \text{nV}\sqrt{47\,000} = 3{,}9\ \mu\text{V} \]
+        na entrada; \textbf{390 µV} na saída, ou \textbf{2,6 mV} de pico a pico na tela.
+        \\[3pt]
+        Com fundo de escala de 10 V, é 0,026 \% --- irrelevante. Com fundo de escala de
+        10 mV, é fatal.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (9.8,-1.1)
+       {\textbf{Acima de $\approx 20$ k$\Omega$ de impedância de fonte, o resistor domina.}
+        \\[3pt]
+        Trocar o TL072 por um OP27 nessa situação \textbf{não melhora nada} --- e piora, se
+        a corrente de ruído do bipolar entrar na conta.};
+
+\end{tikzpicture}
+```
+
+A densidade de ruído de três amp-ops, e a linha que decide se vale a pena trocar de componente.
+Abaixo da linha cinza, o amplificador domina; acima dela, o resistor.
+:::
+
+O ruído de um amp-op é especificado como **densidade espectral**, em nV/$\sqrt{\text{Hz}}$ para
+tensão e pA/$\sqrt{\text{Hz}}$ para corrente. A raiz aparece porque potências de ruído somam-se,
+e potência é proporcional ao quadrado da tensão.
+
+A curva tem duas regiões, visíveis na @fig-069-ruido:
+
+- **Ruído branco**, o patamar: densidade constante, dominante acima da frequência de canto.
+- **Ruído $1/f$** ou **rosa**: densidade crescendo para frequências baixas, dominante abaixo do
+  canto. É o que limita medições contínuas de longo prazo — e é a razão de amp-ops com
+  estabilização por chaveamento serem imbatíveis em CC: eles deslocam o sinal para uma
+  frequência alta, medem lá onde só existe ruído branco, e trazem de volta.
+
+Para calcular o ruído total, multiplica-se a densidade pela raiz da **largura de banda de
+ruído**, que para um filtro de um polo vale $1{,}57 f_c$ (o filtro não corta abruptamente, e
+essa é a correção).
+
+::: {.callout-note}
+## O ruído da fonte quase sempre importa mais que o do amp-op
+
+Um resistor de $R$ ohms gera ruído térmico (@sec-cap-042) de
+
+$$ e_R = \sqrt{4kTR} \approx 0{,}13\sqrt{R}\ \ \text{nV}/\sqrt{\text{Hz}} \quad (300\ \text{K}) $$
+
+10 kΩ dão 12,9 nV/$\sqrt{\text{Hz}}$ — comparáveis aos 18 nV/$\sqrt{\text{Hz}}$ de um TL072.
+100 kΩ dão 40 nV/$\sqrt{\text{Hz}}$, que dominam qualquer amp-op comum.
+
+A regra: **compare a impedância da fonte com $R_{eq} = e_n^2/4kT$** antes de trocar de
+componente. Para o TL072, $R_{eq} \approx 20$ kΩ. Acima disso, o gargalo são os resistores, e o
+projeto melhora baixando impedâncias — não comprando um CI mais caro.
+:::
+
+## Como ler a folha de dados {#sec-069-folha}
+
+Três hábitos evitam a maior parte dos erros.
+
+**Distinga "típico" de "máximo".** O típico é uma mediana de produção sem garantia nenhuma. O
+máximo é garantido por ensaio. Um orçamento de erro feito com valores típicos descreve o
+circuito médio, não o circuito que você vai montar — e a diferença é grande: o TL072 tem 3 mV
+típicos e **10 mV máximos** de $V_{OS}$.
+
+**Leia as condições de ensaio.** "CMRR = 86 dB" vale para uma faixa de modo comum específica,
+uma alimentação específica e uma temperatura específica. "$I_B = 30$ pA" vale a 25 °C.
+"$SR = 13$ V/µs" costuma ser medido em ganho unitário, e cai em ganhos maiores.
+
+**Escolha pelo parâmetro que domina a sua aplicação**, não pelo conjunto:
+
+| Aplicação | Parâmetro dominante | Escolha típica |
+|---|---|---|
+| Medida de CC de precisão | $V_{OS}$ e deriva | estabilizado por chaveamento |
+| Sensor de impedância alta | $I_B$ | entrada JFET ou CMOS |
+| Áudio de amplitude grande | $SR$ e ruído | NE5532, OPA1612 |
+| Sinal pequeno em fonte de baixa impedância | $e_n$ | OP27, LT1028 |
+| Alimentação de 3,3 V | faixa de modo comum e excursão | CMOS trilho a trilho |
+| Sinal rápido de amplitude grande | $SR$ | amp-op de realimentação de corrente |
+| Custo, uso geral | nenhum em particular | TL072, LM358 |
+
+: Em cada linha, os outros parâmetros também existem — mas é o da coluna do meio que reprova o
+projeto. {#tbl-069-escolha}
+
+## 🧪 Laboratório {#sec-069-lab}
+
+O objetivo é medir, com instrumento de bancada comum, quatro parâmetros que a folha de dados
+declara: $V_{OS}$, a taxa de subida, a largura de banda de plena potência e o ruído.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | **TL072** | |
+| 1 | **LM358** | comparação da Parte 2 |
+| 1 | **µA741** | opcional, mas é o contraste mais dramático |
+| — | Resistores 1 %: 100 Ω, 2× 100 kΩ, 10 kΩ, 1 MΩ | |
+| — | Resistores 5 %: 1 kΩ, 10 kΩ, 100 kΩ | |
+| — | Capacitores: 100 nF poliéster, 2× 100 nF cerâmico | desacoplamento |
+| 1 | Fonte simétrica $\pm 12$ V | |
+| 1 | Gerador de funções (quadrada e senoide) | |
+| 1 | Osciloscópio de 2 canais | |
+| 1 | Multímetro com faixa de mV | |
+
+### Parte 1 — Medir $V_{OS}$ com um amplificador de $\times 1000$
+
+Medir milivolts diretamente é impreciso. A solução é amplificar o próprio $V_{OS}$.
+
+1. Monte um **não inversor de ganho 1001**: $R_1 = 100\ \Omega$, $R_2 = 100$ kΩ.
+2. **Aterre a entrada** (o terminal $+$ direto ao terra).
+3. Meça a tensão contínua na saída com o multímetro.
+
+$$ V_{OS} = \frac{V_{out}}{1001} $$
+
+Uma leitura de 3,0 V corresponde a $V_{OS} = 3{,}0$ mV. Anote o sinal — ele é aleatório.
+
+4. Repita com o LM358 e com o 741, se tiver. Compare com os valores típicos e máximos das
+   folhas de dados.
+
+5. **A deriva:** aproxime o dedo do encapsulamento (sem tocar) por dez segundos e observe a
+   saída mudar. Com 18 µV/°C e ganho 1001, cada grau vale 18 mV na saída — perfeitamente
+   visível. Um sopro de ar frio faz a saída voltar.
+
+Este passo dá uma noção física útil: **o CI mede a sua mão**.
+
+### Parte 2 — Corrente de polarização
+
+1. Com o mesmo circuito de ganho 1001, insira **1 MΩ** entre o terra e a entrada $+$.
+2. Meça a saída de novo.
+
+A variação em relação à Parte 1, dividida por 1001 e por 1 MΩ, é a corrente de polarização da
+entrada $+$:
+
+$$ I_B = \frac{\Delta V_{out}}{1001 \times 1\ \text{M}\Omega} $$
+
+Com o TL072 a variação deve ser quase imperceptível (30 pA × 1 MΩ = 30 µV × 1001 = 30 mV). Com o
+LM358, ela é enorme: 45 nA × 1 MΩ = 45 mV × 1001 = **45 V**, isto é, **a saída satura**. É a
+demonstração mais direta possível da diferença entre entrada JFET e entrada bipolar.
+
+3. Reduza para 100 kΩ e refaça com o LM358: 4,5 mV × 1001 = 4,5 V, agora mensurável.
+
+### Parte 3 — Taxa de subida
+
+1. Monte um **seguidor de tensão** com o TL072.
+2. Aplique uma **onda quadrada** de 10 kHz com amplitude de $\pm 5$ V.
+3. Meça a inclinação da borda de subida no osciloscópio: $\Delta V/\Delta t$.
+
+Com 13 V/µs, uma transição de 10 V leva 0,77 µs. Ajuste a base de tempo para 200 ns/div.
+
+4. **Suba a amplitude para $\pm 10$ V e meça de novo.** A inclinação é a **mesma** — a transição
+   apenas demora mais. É a assinatura da taxa de subida.
+5. Meça a borda de **descida** também. Em muitos amp-ops elas são diferentes, porque as
+   correntes disponíveis nos dois sentidos não são iguais.
+6. Repita com o LM358 (0,3 V/µs — a transição de 10 V leva 33 µs) e com o 741.
+
+| CI | $SR$ subida | $SR$ descida | folha de dados |
+|---|---|---|---|
+| TL072 | | | 13 V/µs |
+| LM358 | | | 0,3 V/µs |
+| µA741 | | | 0,5 V/µs |
+
+: A taxa de subida medida, nos dois sentidos. {#tbl-069-lab1}
+
+### Parte 4 — Distinguir taxa de subida de produto ganho-banda
+
+Esta é a parte conceitualmente mais importante do laboratório.
+
+1. Com o seguidor de TL072, aplique uma **senoide** de $\pm 10$ V (perto do máximo) em 10 kHz.
+2. Suba a frequência até a senoide ficar visivelmente triangular e a amplitude começar a cair.
+   Anote a frequência. Esperado: em torno de 200 kHz.
+3. **Reduza a amplitude para $\pm 1$ V** e refaça a varredura.
+
+A frequência de queda deve subir por um fator próximo de **dez** — para cerca de 2 MHz. Esse
+deslocamento prova que o limite era a **taxa de subida**.
+
+4. Agora monte um **não inversor de ganho 100** e aplique $\pm 0{,}1$ V de entrada (saída de
+   $\pm 10$ V). Varra e ache a queda. Esperado: 30 kHz, o GBW dividido por 100.
+5. Reduza a entrada para $\pm 0{,}01$ V (saída de $\pm 1$ V) e varra de novo.
+
+A frequência de queda **não muda**. Esse é o limite por produto ganho-banda: ele não depende da
+amplitude.
+
+| Circuito | Amplitude de saída | $f$ de queda | O limite é... |
+|---|---|---|---|
+| Seguidor | $\pm 10$ V | | |
+| Seguidor | $\pm 1$ V | | |
+| Ganho 100 | $\pm 10$ V | | |
+| Ganho 100 | $\pm 1$ V | | |
+
+: As duas limitações, separadas experimentalmente. Nas duas primeiras linhas a frequência muda
+com a amplitude; nas duas últimas, não. {#tbl-069-lab2}
+
+### Parte 5 — Ruído
+
+1. Monte um **não inversor de ganho 1001** ($R_1 = 100\ \Omega$, $R_2 = 100$ kΩ) com a entrada
+   $+$ aterrada **diretamente** (impedância de fonte zero).
+2. Olhe a saída no osciloscópio em **acoplamento CA**, 1 mV/div ou o mais sensível disponível, e
+   base de tempo de 1 ms/div.
+
+Você deve ver uma faixa de ruído. Meça a largura dela de pico a pico — descontando o ruído
+próprio do osciloscópio, que você mede curto-circuitando a ponta.
+
+3. Estime a densidade a partir da leitura, usando $V_{pp} \approx 6{,}6\,V_{rms}$ e a banda do
+   circuito ($\text{GBW}/1001 = 3$ kHz, logo $B_{ruído} = 4{,}7$ kHz):
+
+$$ e_n = \frac{V_{pp}/6{,}6}{1001 \times \sqrt{4700}} $$
+
+4. **A demonstração da nota sobre impedância de fonte:** insira 100 kΩ entre a entrada $+$ e o
+   terra e observe o ruído **crescer visivelmente**. O resistor está gerando
+   40 nV/$\sqrt{\text{Hz}}$, mais que o dobro dos 18 do CI.
+5. Troque por 1 kΩ: o ruído volta praticamente ao valor da entrada aterrada.
+
+**Variante simulada (plano B).** No LTspice, `.noise V(out) Vin dec 20 0.1 100k` produz a
+@fig-069-ruido diretamente, com a curva de $1/f$ e o patamar separados, e o comando
+`.step` sobre o resistor de fonte mostra a transição em que o resistor passa a dominar. A
+Parte 4 fica igualmente clara com `.tran` e `.step param Amp list 0.1 1 10`, e o modelo
+`UniversalOpamp2` aceita `slew` e `GBW` como parâmetros independentes — o que permite
+desligar um e ver o outro isoladamente, coisa que a bancada não oferece.
+
+## 🔥 Onde Queima {#sec-069-queima}
+
+**Fazer orçamento de erro com valores típicos.** O típico não é garantido. Um circuito
+projetado com 3 mV de $V_{OS}$ e montado com uma peça de 9 mV está fora de especificação, e a
+peça está dentro da folha de dados.
+
+**Esquecer que $V_{OS}$ é multiplicado pelo ganho de ruído.** Num inversor de ganho $-1$, o
+ganho de ruído é 2, e $V_{OS}$ aparece dobrado. Num somador de oito canais, multiplicado por 9.
+
+**Calibrar e achar que resolveu.** A calibração zera $V_{OS}$ na temperatura em que foi feita.
+A deriva continua, e sobre 50 °C ela pode valer mais que o $V_{OS}$ original.
+
+**Usar amp-op JFET em ambiente quente e confiar nos picoampères.** A corrente de entrada de um
+TL072 é 30 pA a 25 °C e 20 nA a 70 °C — um fator de seiscentos. Dentro de um gabinete fechado,
+o circuito de impedância alta que funcionava na bancada deixa de funcionar.
+
+**Confundir produto ganho-banda com largura de banda de plena potência.** Um LM358 tem 1 MHz de
+GBW e não produz uma senoide de 10 V acima de 4,8 kHz. As duas verificações são independentes e
+as duas precisam ser feitas.
+
+**Especificar taxa de subida pelo sinal senoidal e esquecer a onda quadrada.** Sinais com
+transições rápidas — PWM, pulsos, degraus de comando — exigem taxa de subida muito maior do que
+a senoide de mesma frequência.
+
+**Ignorar o tempo de recuperação de sobrecarga.** Circuitos que saturam por projeto (detector de
+pico, retificador de precisão, comparador improvisado) são governados por esse tempo, que é
+muito maior que a resposta linear sugere.
+
+**Omitir o desacoplamento e culpar o CI pelo ruído.** A PSRR cai de 86 dB em CC para cerca de
+30 dB em 100 kHz. Sem os 100 nF nos pinos de alimentação, o ruído da fonte entra quase direto.
+
+**Trocar por um amp-op de baixo ruído sem olhar a impedância da fonte.** Acima de
+$e_n^2/4kT$ — cerca de 20 kΩ para um TL072 —, o ruído é dos resistores. Um OP27 nessa situação
+não melhora nada e piora se a corrente de ruído bipolar dele passar pela impedância alta.
+
+**Comparar densidade de ruído sem comparar a banda.** 18 nV/$\sqrt{\text{Hz}}$ numa banda de
+1 MHz dão dezoito vezes mais ruído total que na mesma densidade com banda de 3 kHz. **Limitar a
+banda ao necessário é a medida antirruído mais barata que existe.**
+
+**Esperar que a taxa de subida seja simétrica.** Muitos amp-ops sobem mais rápido do que descem,
+ou o contrário. Em aplicações de pulso, meça as duas.
+
+## O que fica deste capítulo {#sec-069-resumo}
+
+**Cada imperfeição tem um endereço físico:** $V_{OS}$ e $I_B$ vêm do par diferencial de entrada;
+GBW e taxa de subida vêm do mesmo capacitor de compensação; excursão, corrente máxima e
+distorção de cruzamento vêm do estágio de saída.
+
+**Erros de corrente contínua**, em ordem de importância prática:
+
+$$ V_{erro,out} = A_R\left[V_{OS} + \text{TC}_{V_{OS}}\Delta T + I_B \Delta R + \frac{\Delta V_{cm}}{\text{CMRR}} + \frac{\Delta V_{alim}}{\text{PSRR}}\right] $$
+
+Na esmagadora maioria dos casos **$V_{OS}$ domina** — e o remédio é calibrar, escolher um CI
+melhor ou usar estabilização por chaveamento.
+
+**As duas limitações de frequência são independentes:**
+
+| | Produto ganho-banda | Taxa de subida |
+|---|---|---|
+| Regime | sinal pequeno | sinal grande |
+| Origem | $g_m/(2\pi C_c)$ | $I_{cauda}/C_c$ |
+| Limita | o **ganho** | a **amplitude** |
+| Depende da amplitude? | não | sim |
+| Teste de bancada | varrer com amplitude fixa | varrer com duas amplitudes |
+
+: Duas limitações, dois testes, duas verificações de projeto. {#tbl-069-doislimites}
+
+**Largura de banda de plena potência:**
+
+$$ f_{PP} = \frac{SR}{2\pi V_p} $$
+
+**Saturação** abre a malha, invalida as regras de ouro em todos os nós e cobra um tempo de
+recuperação de sobrecarga muito maior que a resposta linear.
+
+**Ruído** é densidade espectral: patamar branco acima da frequência de canto, $1/f$ abaixo dela.
+O total é $e_n\sqrt{1{,}57 f_c}$, e o observável na tela é $\approx 6{,}6$ vezes o eficaz.
+**Compare sempre com o ruído térmico da fonte**, $0{,}13\sqrt{R}$ nV/$\sqrt{\text{Hz}}$: acima
+de $\approx 20$ kΩ, é o resistor que manda.
+
+**Folha de dados:** típico $\ne$ máximo; leia as condições de ensaio; escolha pelo parâmetro que
+domina a aplicação.
+
+## Para o próximo capítulo {#sec-069-fecho}
+
+Este capítulo tratou a saturação como um defeito — o regime em que as regras de ouro deixam de
+valer e o projetista perde o controle do circuito.
+
+O próximo inverte o sinal. Se a realimentação negativa for **removida**, o amp-op passa a viver
+saturado num dos dois extremos, e a transição entre eles carrega uma informação binária: a
+entrada é maior ou menor que a referência? É o **comparador**, e ele é a primeira ponte deste
+manual entre o mundo analógico e o mundo digital.
+
+O @sec-cap-070 mostra por que um comparador ingênuo produz uma saída trêmula quando o sinal
+cruza a referência devagar ou com ruído; como a **realimentação positiva** — a mesma que o
+@sec-cap-064 tratou como falha — resolve isso de propósito, criando duas referências em vez de
+uma; como projetar a histerese de um **gatilho de Schmitt** com valores comerciais; e por que
+comparadores dedicados, com saída de coletor aberto e sem capacitor de compensação, existem
+como categoria separada dos amplificadores operacionais.

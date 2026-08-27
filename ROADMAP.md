@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 68/104 |
-| **Contíguos até** | **068** — sem nenhum buraco no meio do livro |
+| **Progresso** | 69/104 |
+| **Contíguos até** | **069** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 069** | O amp-op real: offset, slew rate, produto ganho-banda e saturação |
+| **Próximo capítulo: 070** | Comparadores, histerese e o gatilho de Schmitt |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -66,7 +66,12 @@ de retorno da corrente de polarização (067); integrador e derivador com as dua
 obrigatórias ($R_f$ em paralelo com $C$; $R_s$ em série com $C$) e a **regra geométrica da
 estabilidade** — taxa de fechamento de 20 dB/déc entre $A_{OL}$ e o ganho de ruído é estável,
 40 dB/déc oscila —, mais as três topologias de fonte de corrente controlada por tensão, a
-tensão de conformidade e o projeto do laço de 4 a 20 mA com a série E96 (068).
+tensão de conformidade e o projeto do laço de 4 a 20 mA com a série E96 (068); o interior do
+amp-op dando endereço físico a cada imperfeição, o orçamento de erro em CC dominado por
+$V_{OS}$, as **duas** limitações de frequência como coisas independentes — GBW de sinal pequeno
+e taxa de subida $SR = I_{cauda}/C_c$ de sinal grande, com $f_{PP} = SR/2\pi V_p$ e o teste de
+bancada que as separa —, recuperação de sobrecarga, ruído como densidade espectral com canto
+$1/f$ e a comparação obrigatória com o ruído térmico da fonte (069).
 
 Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -209,7 +214,7 @@ cinco ocorrências como aviso.
 - [x] 066 — Amplificador inversor e não inversor — `capitulos/066-amplificador-inversor-e-nao-inversor.qmd`
 - [x] 067 — Somador, subtrator e amplificador de instrumentação — `capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.qmd`
 - [x] 068 — Integrador, derivador e fontes de corrente — `capitulos/068-integrador-derivador-e-fontes-de-corrente.qmd`
-- [ ] 069 — O amp-op real: offset, slew rate, produto ganho-banda e saturação — `capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.qmd`
+- [x] 069 — O amp-op real: offset, slew rate, produto ganho-banda e saturação — `capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.qmd`
 - [ ] 070 — Comparadores, histerese e o gatilho de Schmitt — `capitulos/070-comparadores-histerese-e-o-gatilho-de-schmitt.qmd`
 - [ ] 071 — Filtros ativos e osciladores: Wien, relaxação e o 555 — `capitulos/071-filtros-ativos-e-osciladores-wien-relaxacao-e-o-555.qmd`
 
