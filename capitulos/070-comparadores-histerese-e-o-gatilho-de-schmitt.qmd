@@ -1,3 +1,793 @@
 # Comparadores, histerese e o gatilho de Schmitt {#sec-cap-070}
 
-*(em elaboração)*
+O @sec-cap-069 tratou a saturação como defeito: o regime em que a malha se abre, as regras de
+ouro deixam de valer e o projetista perde o controle do circuito.
+
+Este capítulo inverte o sinal. Se a realimentação negativa for **removida**, o amp-op passa a
+viver saturado num dos dois extremos, e a transição entre eles carrega exatamente um bit de
+informação: a entrada é maior ou menor que a referência?
+
+É o **comparador**, e ele é a primeira ponte deste manual entre o mundo analógico e o mundo
+digital. Tudo o que vem da Fase 5 — porta lógica, flip-flop, máquina de estados — começa com
+alguma coisa decidindo de que lado de um limiar um sinal contínuo está.
+
+O capítulo tem três partes. A primeira mostra por que um comparador ingênuo **não funciona** com
+sinal lento ou ruidoso. A segunda apresenta a correção: **realimentação positiva** — a mesma que
+o @sec-cap-064 tratou como modo de falha, agora usada de propósito — e o **gatilho de Schmitt**
+que sai dela. A terceira trata dos comparadores dedicados, que existem como categoria separada
+dos amp-ops por razões concretas.
+
+## O comparador ingênuo, e por que ele treme {#sec-070-ingenuo}
+
+::: {#fig-070-chatter}
+
+```{.tikz}
+%%| filename: 070-chatter
+%%| alt: Figura em duas partes comparando um comparador sem histerese com um gatilho de Schmitt, ambos recebendo o mesmo sinal de entrada lento e ruidoso. Na parte de cima, o comparador simples: uma linha horizontal tracejada marca o limiar único, e o sinal de entrada, uma rampa lenta com ruído sobreposto, cruza esse limiar várias vezes seguidas porque o ruído o faz oscilar em torno dele. A saída resultante, desenhada abaixo, é uma sucessão de pulsos estreitos e irregulares em vez de uma única transição limpa; uma anotação em vermelho identifica isso como trepidação, e observa que num circuito de comando isso significa o relé batendo várias vezes, e num circuito digital significa vários pulsos de relógio onde deveria haver um. Na parte de baixo, o mesmo sinal aplicado a um gatilho de Schmitt: agora existem dois limiares, um superior e um inferior, separados pela faixa de histerese, desenhada como uma banda sombreada. A saída só sobe quando o sinal ultrapassa o limiar superior e só desce quando ele cai abaixo do limiar inferior; como a amplitude do ruído é menor que a largura da faixa, cada travessia produz exatamente uma transição. Uma anotação em verde registra a condição de projeto: a largura da histerese tem de ser maior que a amplitude de pico a pico do ruído, com folga.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= sem histerese =================
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\small, anchor=west] at (0,3.5) {\textbf{sem histerese --- um limiar}};
+
+    \draw[eixo] (0,0) -- (10.4,0);
+    \draw[eixo] (0,-0.3) -- (0,2.9);
+
+    \draw[auxiliar, manualgray] (0,1.5) -- (10.2,1.5);
+    \node[anchor=west, font=\tiny, manualgray] at (10.25,1.5) {$V_{ref}$};
+
+    % rampa com ruido
+    \draw[destaque, thick] (0,0.35) -- (1.0,0.5) -- (1.6,0.42) -- (2.4,0.72) -- (3.0,0.62)
+      -- (3.6,0.95) -- (4.2,0.85) -- (4.6,1.12) -- (5.0,1.02) -- (5.3,1.35) -- (5.6,1.22)
+      -- (5.85,1.58) -- (6.05,1.42) -- (6.3,1.62) -- (6.5,1.44) -- (6.75,1.66)
+      -- (6.95,1.48) -- (7.2,1.72) -- (7.5,1.62) -- (8.0,1.95) -- (8.8,2.1)
+      -- (9.6,2.45) -- (10.2,2.4);
+
+    % saida
+    \draw[eixo] (0,-2.2) -- (10.4,-2.2);
+    \draw[curva] (0,-2.2) -- (5.85,-2.2) -- (5.85,-1.2) -- (6.05,-1.2) -- (6.05,-2.2)
+      -- (6.3,-2.2) -- (6.3,-1.2) -- (6.5,-1.2) -- (6.5,-2.2) -- (6.75,-2.2)
+      -- (6.75,-1.2) -- (6.95,-1.2) -- (6.95,-2.2) -- (7.2,-2.2) -- (7.2,-1.2)
+      -- (10.2,-1.2);
+    \node[anchor=west, font=\tiny, manualblue] at (10.25,-1.7) {saída};
+
+    \draw[manualred, thick, rounded corners=2pt] (5.7,-2.4) rectangle (7.35,-1.0);
+    \node[anchor=north, font=\tiny, manualred, align=center] at (6.5,-2.5)
+         {\textbf{trepidação}};
+  \end{scope}
+
+  % ================= com histerese =================
+  \begin{scope}[shift={(0,-7.4)}]
+    \node[font=\small, anchor=west] at (0,3.5) {\textbf{com histerese --- dois limiares}};
+
+    \draw[eixo] (0,0) -- (10.4,0);
+    \draw[eixo] (0,-0.3) -- (0,2.9);
+
+    \fill[manualgreen, opacity=0.16] (0,1.15) rectangle (10.2,1.85);
+    \draw[auxiliar, manualgreen] (0,1.85) -- (10.2,1.85);
+    \draw[auxiliar, manualgreen] (0,1.15) -- (10.2,1.15);
+    \node[anchor=west, font=\tiny, manualgreen] at (10.25,1.9) {$V_{TH}$};
+    \node[anchor=west, font=\tiny, manualgreen] at (10.25,1.1) {$V_{TL}$};
+
+    \draw[destaque, thick] (0,0.35) -- (1.0,0.5) -- (1.6,0.42) -- (2.4,0.72) -- (3.0,0.62)
+      -- (3.6,0.95) -- (4.2,0.85) -- (4.6,1.12) -- (5.0,1.02) -- (5.3,1.35) -- (5.6,1.22)
+      -- (5.85,1.58) -- (6.05,1.42) -- (6.3,1.62) -- (6.5,1.44) -- (6.75,1.66)
+      -- (6.95,1.48) -- (7.2,1.72) -- (7.5,1.62) -- (8.0,1.95) -- (8.8,2.1)
+      -- (9.6,2.45) -- (10.2,2.4);
+
+    \draw[eixo] (0,-2.2) -- (10.4,-2.2);
+    \draw[curva] (0,-2.2) -- (8.0,-2.2) -- (8.0,-1.2) -- (10.2,-1.2);
+    \node[anchor=west, font=\tiny, manualblue] at (10.25,-1.7) {saída};
+
+    \node[ponto, fill=manualgreen] at (8.0,1.85) {};
+    \draw[auxiliar, manualgreen] (8.0,1.85) -- (8.0,-1.2);
+
+    \node[anchor=north, font=\tiny, manualgreen, align=center] at (8.0,-2.5)
+         {\textbf{uma} transição};
+  \end{scope}
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.2cm] at (0,-11.4)
+       {\textbf{A condição de projeto.} A largura da histerese, $V_{TH} - V_{TL}$, tem de ser
+        \textbf{maior que a amplitude de pico a pico do ruído} sobre o sinal --- com folga,
+        tipicamente o dobro ou o triplo.
+        \\[3pt]
+        Sem isso, a saída trepida: num circuito de comando, o relé bate várias vezes e os
+        contatos se queimam; num circuito digital, o que deveria ser um pulso de relógio vira
+        vários, e o contador conta errado.};
+
+\end{tikzpicture}
+```
+
+O mesmo sinal, dois circuitos. A trepidação não é um defeito do componente — é o
+comportamento correto de um comparador de limiar único diante de um sinal que cruza o limiar
+mais de uma vez.
+:::
+
+Sem realimentação, o amp-op obedece à equação do @sec-cap-065 sem restrição:
+
+$$ v_{out} = A_{OL}(v_+ - v_-) $$
+
+Com $A_{OL} = 2\times10^5$ e trilhos de $\pm 13$ V, qualquer diferença acima de 68 µV joga a
+saída contra um extremo. A saída é, para todos os efeitos práticos, **binária**:
+
+$$ v_{out} = \begin{cases} +V_{sat} & \text{se } v_+ > v_- \\ -V_{sat} & \text{se } v_+ < v_- \end{cases} $$
+
+Isso funciona perfeitamente com um sinal rápido e limpo. E falha com qualquer outra coisa,
+porque **o mundo real tem ruído**. Um sinal que se aproxima do limiar devagar passa um tempo
+longo dentro da faixa em que o ruído decide o resultado, e a saída acompanha cada oscilação do
+ruído.
+
+A causa é estrutural: o comparador tem **um limiar**, e um sinal ruidoso o cruza **muitas
+vezes**. A correção tem de mudar a estrutura, não o componente.
+
+## Realimentação positiva, de propósito {#sec-070-schmitt}
+
+::: {#fig-070-schmitt}
+
+```{.tikz}
+%%| filename: 070-schmitt
+%%| alt: Figura comparando as duas topologias de gatilho de Schmitt com alimentação simétrica. À esquerda, o gatilho inversor: o sinal de entrada vai direto à entrada inversora do amp-op; a entrada não inversora recebe um divisor formado por R1 ligado ao terra e R2 ligado à saída, ou seja, a realimentação chega ao terminal mais, e é positiva. A dedução ao lado: como a saída está sempre num dos dois extremos, a tensão na entrada não inversora vale a tensão de saída multiplicada por R1 dividido pela soma de R1 e R2, e portanto os dois limiares são mais e menos essa quantidade, com a tensão de saturação no lugar da tensão de saída. Com R1 de dez quilohms, R2 de cem quilohms e saturação de treze volts, os limiares ficam em mais e menos um vírgula dezoito volt, com histerese de dois vírgula trinta e seis volts. Uma vantagem registrada é que a impedância de entrada é a do próprio amp-op, altíssima. À direita, o gatilho não inversor: a entrada inversora vai ao terra, o sinal de entrada chega à entrada não inversora através de R1, e R2 liga a saída à mesma entrada não inversora. A dedução: a comutação ocorre quando a tensão na entrada não inversora, que é a média ponderada entre o sinal de entrada e a saída, passa por zero; isolando, os limiares são mais e menos a tensão de saturação multiplicada por R1 dividido por R2. Com os mesmos valores, os limiares ficam em mais e menos um vírgula trinta volt. A desvantagem registrada é que a impedância de entrada é R1 e a fonte precisa fornecer corrente. Uma caixa comum às duas explica o mecanismo: quando a saída comuta, ela empurra a entrada não inversora na mesma direção da comutação, o que reforça a mudança em vez de corrigi-la; o resultado é uma transição regenerativa e quase instantânea, muito mais rápida que a resposta do amp-op, e é essa mesma regeneração que cria os dois limiares.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= inversor =================
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\small, anchor=south] at (2.2,3.0) {\textbf{gatilho inversor}};
+
+    \draw[thick] (2.4,-0.9) -- (2.4,0.9) -- (4.1,0) -- cycle;
+    \node[anchor=west, font=\small] at (2.5,0.45) {$-$};
+    \node[anchor=west, font=\small] at (2.5,-0.45) {$+$};
+
+    \draw (0.6,0.45) -- (2.4,0.45);
+    \node[anchor=east, font=\scriptsize] at (0.55,0.45) {$v_{in}$};
+
+    \draw (1.5,-0.45) -- (2.4,-0.45);
+    \node[ponto] at (1.5,-0.45) {};
+    \draw (1.5,-0.45) -- (1.5,-1.2);
+    \draw (1.5,-1.2) to[R, l_=$R_1$] (1.5,-2.4);
+    \node[ground] at (1.5,-2.4) {};
+
+    \draw (4.1,0) -- (5.6,0);
+    \node[ponto] at (5.0,0) {};
+    \node[anchor=west, font=\scriptsize] at (5.65,0) {$v_{out}$};
+
+    \draw (5.0,0) -- (5.0,2.0);
+    \draw (5.0,2.0) to[R, l=$R_2$] (1.5,2.0);
+    \draw (1.5,2.0) -- (1.5,-0.45);
+  \end{scope}
+
+  % ================= nao inversor =================
+  \begin{scope}[shift={(8.6,0)}]
+    \node[font=\small, anchor=south] at (2.2,3.0) {\textbf{gatilho não inversor}};
+
+    \draw[thick] (2.4,-0.9) -- (2.4,0.9) -- (4.1,0) -- cycle;
+    \node[anchor=west, font=\small] at (2.5,0.45) {$+$};
+    \node[anchor=west, font=\small] at (2.5,-0.45) {$-$};
+
+    \draw (1.9,-0.45) -- (2.4,-0.45);
+    \draw (1.9,-0.45) -- (1.9,-1.2);
+    \node[ground] at (1.9,-1.2) {};
+
+    \draw (-0.3,0.45) to[R, l_=$R_1$] (1.5,0.45);
+    \draw (1.5,0.45) -- (2.4,0.45);
+    \node[ponto] at (1.5,0.45) {};
+    \node[anchor=east, font=\scriptsize] at (-0.35,0.45) {$v_{in}$};
+
+    \draw (4.1,0) -- (5.6,0);
+    \node[ponto] at (5.0,0) {};
+    \node[anchor=west, font=\scriptsize] at (5.65,0) {$v_{out}$};
+
+    \draw (5.0,0) -- (5.0,2.0);
+    \draw (5.0,2.0) to[R, l=$R_2$] (1.5,2.0);
+    \draw (1.5,2.0) -- (1.5,0.45);
+  \end{scope}
+
+  % ================= caixas =================
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (-0.6,-3.2)
+       {A saída está \textbf{sempre} num dos dois extremos, logo
+        \[ v_+ = v_{out}\,\frac{R_1}{R_1+R_2} \]
+        e a comutação ocorre quando $v_{in}$ cruza esse valor:
+        \[ \boxed{\ V_{TH,TL} = \pm V_{sat}\,\frac{R_1}{R_1+R_2}\ } \]
+        Com $R_1 = 10$ k, $R_2 = 100$ k, $V_{sat} = 13$ V: \ $\pm 1{,}18$ V, histerese de
+        $2{,}36$ V.
+        \\[3pt]
+        \textbf{$Z_{in}$ altíssima} --- a entrada é a do próprio amp-op.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (8.0,-3.2)
+       {A comutação ocorre quando $v_+ = 0$:
+        \[ \frac{v_{in}R_2 + v_{out}R_1}{R_1+R_2} = 0 \]
+        \[ \boxed{\ V_{TH,TL} = \pm V_{sat}\,\frac{R_1}{R_2}\ } \]
+        Com os mesmos valores: \ $\pm 1{,}30$ V.
+        \\[3pt]
+        \textbf{$Z_{in} = R_1$} --- a fonte precisa fornecer corrente, e a impedância dela
+        entra na conta dos limiares.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.4cm] at (-0.6,-8.6)
+       {\textbf{Por que a realimentação positiva resolve.} Quando a saída começa a comutar,
+        ela empurra a entrada $+$ \emph{na mesma direção} --- reforçando a mudança em vez de
+        corrigi-la.
+        \\[3pt]
+        O resultado é uma transição \textbf{regenerativa}: assim que começa, ela se completa
+        sozinha, muito mais depressa que a resposta natural do amp-op. E é essa mesma
+        regeneração que \textbf{move o limiar} depois da comutação --- criando os dois valores
+        em vez de um.};
+
+\end{tikzpicture}
+```
+
+As duas topologias de gatilho de Schmitt. A realimentação chega ao terminal $+$ nas duas — é o
+que o @sec-cap-065 mandou verificar com o dedo antes de aplicar as regras de ouro, e aqui a
+verificação dá "positiva" de propósito.
+:::
+
+O nome vem de Otto Schmitt, que em 1934 descreveu o circuito enquanto estudava a propagação de
+impulsos no nervo da lula. A ideia é a mesma até hoje: **o limiar depende do estado atual da
+saída**.
+
+Quando a saída está alta, o limiar está alto — é preciso subir bastante para comutar. Assim que
+comuta, o limiar **desce**, e agora é preciso descer bastante para comutar de volta. O sinal
+ruidoso que oscilava em torno de um limiar único encontra, depois da primeira transição, um
+limiar longe dali.
+
+::: {#fig-070-transferencia}
+
+```{.tikz}
+%%| filename: 070-transferencia
+%%| alt: Curva de transferência de um gatilho de Schmitt inversor, com a tensão de entrada no eixo horizontal, de menos três a mais três volts, e a tensão de saída no eixo vertical, de menos quinze a mais quinze volts. A curva não é uma linha, e sim um laço retangular percorrido em sentido definido. Partindo da esquerda, com entrada bem negativa, a saída está em mais treze volts; à medida que a entrada aumenta, a saída permanece em mais treze até a entrada atingir mais um vírgula dezoito volt, o limiar superior, onde a saída despenca verticalmente para menos treze volts. Continuando para a direita, a saída permanece em menos treze. Voltando agora, com a entrada diminuindo, a saída permanece em menos treze mesmo ao passar de novo por mais um vírgula dezoito, e só volta a mais treze quando a entrada cai abaixo de menos um vírgula dezoito volt, o limiar inferior. Setas sobre os segmentos horizontais indicam o sentido do percurso, e o laço é fechado no sentido anti-horário. Uma banda sombreada entre os dois limiares é identificada como a faixa de histerese, e uma anotação registra que dentro dessa faixa a saída depende da história e não apenas da entrada — o circuito tem memória de um bit. Uma segunda anotação faz a ponte com a lógica digital: essa é a mesma característica de transferência de uma porta lógica com entrada de Schmitt, que existe justamente para receber sinais lentos ou sujos sem produzir múltiplas transições.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=11.0cm, height=6.6cm,
+    xmin=-3, xmax=3, ymin=-16, ymax=16,
+    xlabel={$v_{in}$ (V)}, ylabel={$v_{out}$ (V)},
+    xtick={-3,-2,-1.18,0,1.18,2,3},
+    xticklabels={$-3$,$-2$,$V_{TL}$,$0$,$V_{TH}$,$2$,$3$},
+    ytick={-13,0,13},
+    yticklabels={$-V_{sat}$,$0$,$+V_{sat}$},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+
+  \addplot[fill=manualgreen, opacity=0.13, draw=none] coordinates
+    {(-1.18,-16) (1.18,-16) (1.18,16) (-1.18,16)};
+
+  % ramo superior: entrada subindo, saida alta
+  \addplot[curva] coordinates {(-3,13) (1.18,13)};
+  \addplot[curva] coordinates {(1.18,13) (1.18,-13)};
+  \addplot[curva] coordinates {(1.18,-13) (3,-13)};
+
+  % ramo inferior: entrada descendo
+  \addplot[destaque, thick] coordinates {(3,-13) (-1.18,-13)};
+  \addplot[destaque, thick] coordinates {(-1.18,-13) (-1.18,13)};
+  \addplot[destaque, thick] coordinates {(-1.18,13) (-3,13)};
+
+  % setas de sentido
+  \draw[-{Latex[length=2.2mm]}, manualblue, very thick] (axis cs:-1.0,13) -- (axis cs:-0.3,13);
+  \draw[-{Latex[length=2.2mm]}, manualblue, very thick] (axis cs:1.8,-13) -- (axis cs:2.5,-13);
+  \draw[-{Latex[length=2.2mm]}, manualred, very thick] (axis cs:0.3,-13) -- (axis cs:-0.4,-13);
+  \draw[-{Latex[length=2.2mm]}, manualred, very thick] (axis cs:-2.0,13) -- (axis cs:-2.7,13);
+
+  \node[anchor=south, font=\scriptsize, manualgreen] at (axis cs:0,14.2) {histerese};
+
+\end{axis}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (-1.4,-1.1)
+       {\textbf{Dentro da faixa verde, a saída não depende só da entrada} --- depende de
+        \emph{por onde se chegou}.
+        \\[4pt]
+        O circuito tem \textbf{memória de um bit}, e é o primeiro deste manual a ter.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (4.4,-1.1)
+       {Esta é exatamente a característica de uma \textbf{porta lógica com entrada de
+        Schmitt} (74HC14, CD40106), que existe para receber sinais lentos ou sujos sem
+        produzir várias transições.
+        \\[3pt]
+        O Volume 15 volta a ela.};
+
+\end{tikzpicture}
+```
+
+A característica de transferência de um gatilho de Schmitt. O laço é percorrido num sentido
+só, e a área dentro dele é a região em que o circuito **lembra** por onde passou.
+:::
+
+::: {.callout-note}
+## O primeiro circuito com memória deste manual
+
+Vale registrar o que a @fig-070-transferencia mostra: dentro da faixa de histerese, saber a
+entrada **não** é suficiente para saber a saída. É preciso saber a história.
+
+Essa é a definição de memória, e ela apareceu aqui pela primeira vez, num circuito de dois
+resistores e um amp-op. O mecanismo — realimentação positiva criando dois estados estáveis — é
+literalmente o mesmo do **latch SR** do capítulo 096, que é a célula elementar de toda memória
+digital. A diferença é que lá a realimentação é feita entre portas lógicas em vez de
+resistores.
+:::
+
+## Comparadores dedicados {#sec-070-dedicado}
+
+::: {#fig-070-dedicado}
+
+```{.tikz}
+%%| filename: 070-dedicado
+%%| alt: Figura em três partes sobre comparadores dedicados. À esquerda, a saída em coletor aberto: dentro do encapsulamento há apenas um transistor NPN cujo emissor vai ao terra e cujo coletor é o pino de saída, sem nada puxando para cima; fora do CI, um resistor de pull-up liga o pino de saída à tensão de alimentação da lógica. Duas anotações explicam as consequências: primeiro, sem o resistor de pull-up a saída nunca sobe e o circuito parece morto, sendo esse o erro de montagem mais comum com LM393 e LM339; segundo, como o pull-up pode ir a uma tensão diferente da alimentação do comparador, a saída faz translação de nível de graça, por exemplo comparando sinais alimentados em doze volts e entregando níveis de três vírgula três volts a um microcontrolador. Ao centro, o compromisso do resistor de pull-up: um valor pequeno dá uma borda de subida rápida mas consome mais corrente quando a saída está baixa, e um valor grande economiza corrente mas torna a borda de subida lenta, porque ela é uma carga RC contra a capacitância parasita do nó; um exemplo numérico mostra dez quilohms com vinte picofarads dando constante de tempo de duzentos nanossegundos. À direita, o comparador de janela: dois comparadores, um verificando se o sinal está abaixo do limite superior e outro verificando se está acima do limite inferior, com as duas saídas de coletor aberto ligadas ao mesmo nó e a um único resistor de pull-up; como qualquer uma das saídas que esteja baixa puxa o nó para baixo, a ligação realiza um E lógico sem nenhuma porta, e a saída só fica alta quando o sinal está dentro da janela. Uma caixa final compara comparador e amp-op: o comparador não tem capacitor de compensação, por isso é rápido e recupera em nanossegundos, mas por isso mesmo não pode ser usado como amplificador realimentado, porque oscilaria; e o amp-op usado como comparador funciona, mas é lento na recuperação de sobrecarga e frequentemente tem diodos de proteção entre as entradas que conduzem quando a diferença passa de uma queda de junção.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= coletor aberto =================
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\small, anchor=south] at (2.4,3.6) {\textbf{saída em coletor aberto}};
+
+    \draw[thick, dashed, manualgray] (0.2,-0.5) rectangle (4.3,3.1);
+    \node[anchor=north west, font=\tiny, manualgray] at (0.3,3.05) {dentro do CI};
+
+    \draw[thick] (0.6,0.9) -- (0.6,2.7) -- (2.3,1.8) -- cycle;
+    \node[anchor=west, font=\small] at (0.7,2.25) {$+$};
+    \node[anchor=west, font=\small] at (0.7,1.35) {$-$};
+
+    \node[npn] (qo) at (3.5,1.1) {};
+    \draw (2.3,1.8) -- (2.9,1.8) -- (2.9,1.1) -- (qo.base);
+    \draw (qo.emitter) -- (3.5,0.1);
+    \node[ground] at (3.5,0.1) {};
+    \draw (qo.collector) -- (3.5,2.4);
+    \draw (3.5,2.4) -- (5.6,2.4);
+    \node[ponto] at (4.9,2.4) {};
+    \node[anchor=west, font=\tiny] at (5.65,2.4) {saída};
+
+    \draw (4.9,2.4) to[R, l=$R_{pu}$] (4.9,3.9);
+    \node[anchor=south, font=\tiny, manualred] at (4.9,3.95) {$+V_{\text{lógica}}$};
+  \end{scope}
+
+  % ================= janela =================
+  \begin{scope}[shift={(9.8,0)}]
+    \node[font=\small, anchor=south] at (2.4,3.4) {\textbf{comparador de janela}};
+
+    \draw[thick] (0.8,1.9) -- (0.8,3.1) -- (2.3,2.5) -- cycle;
+    \node[anchor=west, font=\tiny] at (0.9,2.85) {$+$};
+    \node[anchor=west, font=\tiny] at (0.9,2.15) {$-$};
+    \draw (-0.6,2.85) -- (0.8,2.85);
+    \node[anchor=east, font=\tiny] at (-0.65,2.85) {$v_{in}$};
+    \draw (-0.6,2.15) -- (0.8,2.15);
+    \node[anchor=east, font=\tiny] at (-0.65,2.15) {$V_{sup}$};
+
+    \draw[thick] (0.8,0.1) -- (0.8,1.3) -- (2.3,0.7) -- cycle;
+    \node[anchor=west, font=\tiny] at (0.9,1.05) {$+$};
+    \node[anchor=west, font=\tiny] at (0.9,0.35) {$-$};
+    \draw (-0.6,1.05) -- (0.8,1.05);
+    \node[anchor=east, font=\tiny] at (-0.65,1.05) {$V_{inf}$};
+    \draw (-0.6,0.35) -- (0.8,0.35);
+    \node[anchor=east, font=\tiny] at (-0.65,0.35) {$v_{in}$};
+
+    \draw (2.3,2.5) -- (3.4,2.5) -- (3.4,0.7) -- (2.3,0.7);
+    \node[ponto] at (3.4,1.6) {};
+    \draw (3.4,1.6) -- (4.4,1.6);
+    \node[anchor=west, font=\tiny, align=left] at (4.45,1.6) {dentro\\da janela};
+    \draw (3.4,2.5) to[R, l_=$R_{pu}$] (3.4,3.8);
+    \node[anchor=south, font=\tiny, manualred] at (3.4,3.85) {$+V$};
+  \end{scope}
+
+  % ================= caixas =================
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.0cm] at (-0.6,-1.0)
+       {\textbf{Sem o resistor de pull-up, a saída nunca sobe} --- e o circuito parece
+        morto. É o erro de montagem mais comum com LM393 e LM339.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.0cm] at (5.0,-1.0)
+       {\textbf{Translação de nível de graça.} O pull-up pode ir a uma tensão diferente da
+        alimentação do comparador: entradas em 12 V, saída em 3,3 V para o
+        microcontrolador.};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.0cm] at (10.6,-1.0)
+       {\textbf{O compromisso do pull-up.} Pequeno: borda rápida, mais corrente. Grande:
+        econômico, borda lenta --- é um $RC$ contra a capacitância do nó.
+        \\[2pt]
+        $10$ k$\Omega \times 20$ pF $= 200$ ns.};
+
+  \node[draw=manualyellow, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=15.6cm] at (-0.6,-4.4)
+       {\textbf{As duas saídas de coletor aberto ligadas ao mesmo pull-up fazem um E lógico
+        sem nenhuma porta} --- qualquer uma que esteja baixa puxa o nó para baixo. É a
+        ligação \emph{wired-AND}, e o comparador de janela sai dela de graça.
+        \\[4pt]
+        \textbf{Comparador $\ne$ amp-op.} O comparador \textbf{não tem capacitor de
+        compensação}: é rápido (ns em vez de µs) e recupera de sobrecarga depressa --- e
+        justamente por isso \textbf{não pode ser usado como amplificador realimentado}, porque
+        oscilaria. Na direção contrária, um amp-op \emph{funciona} como comparador, mas é
+        lento na recuperação e muitos têm \textbf{diodos de proteção entre as entradas}, que
+        conduzem quando a diferença passa de uma queda de junção.};
+
+\end{tikzpicture}
+```
+
+O comparador dedicado, a saída em coletor aberto e o comparador de janela que sai de graça da
+ligação *wired-AND*. As duas primeiras caixas explicam metade dos circuitos com LM393 que "não
+funcionam".
+:::
+
+Comparadores existem como categoria separada porque a otimização é diferente. Um amp-op é
+projetado para ser **estável em malha fechada**, e paga por isso com o capacitor de compensação
+do @sec-cap-069. Um comparador nunca opera em malha fechada negativa, não precisa de compensação,
+e sem ela é uma a duas ordens de grandeza mais rápido.
+
+| | Amp-op como comparador | Comparador dedicado |
+|---|---|---|
+| Atraso de propagação | 1 a 20 µs | 10 ns a 1,3 µs |
+| Recuperação de sobrecarga | lenta (µs) | rápida (ns) |
+| Saída | totem-pole, até os trilhos | coletor aberto ou totem-pole |
+| Diferencial de entrada máximo | frequentemente $\pm 0{,}7$ V | igual à alimentação |
+| Serve como amplificador? | sim | **não** — oscila |
+| Exemplos | TL072, LM358 | LM393, LM339, LM311, TL3116 |
+
+: Por que os dois existem. A penúltima linha é a mais importante: não são intercambiáveis nos
+dois sentidos. {#tbl-070-comparadores}
+
+::: {.callout-warning}
+## O atraso de propagação depende do excesso
+
+Um comparador não tem um único atraso. A folha de dados do LM393 especifica 1,3 µs com **5 mV**
+de excesso (*overdrive*) e 0,3 µs com 100 mV — um fator de quatro.
+
+A razão é a mesma do @sec-cap-069: quanto maior a diferença de entrada, mais corrente disponível
+para carregar as capacitâncias internas. Num comparador com sinal cruzando devagar, o excesso
+perto do limiar é pequeno, o atraso é o pior possível, e a histerese ajuda também aqui — ela
+força um excesso mínimo no instante da comutação.
+:::
+
+## Projeto: termostato com histerese {#sec-070-termostato}
+
+::: {#fig-070-termostato}
+
+```{.tikz}
+%%| filename: 070-termostato
+%%| alt: Esquemático completo de um termostato com histerese alimentado por uma única fonte de cinco volts. À esquerda, o sensor: um termistor NTC de dez quilohms ligado entre os cinco volts e um nó, e um resistor fixo de dez quilohms desse nó ao terra; como a resistência do NTC cai quando a temperatura sobe, a tensão do nó sobe com a temperatura, valendo dois vírgula cinco volts a vinte e cinco graus. Esse nó vai diretamente à entrada inversora de um comparador LM393, o que preserva a impedância do divisor porque a entrada não puxa corrente apreciável. À direita da entrada inversora está a rede que define os dois limiares na entrada não inversora: um resistor de vinte quilohms dos cinco volts até a entrada não inversora, outro de vinte quilohms dessa entrada ao terra, e um terceiro de duzentos e vinte quilohms ligando a saída de volta à mesma entrada não inversora — é este último que cria a realimentação positiva. A saída do comparador é de coletor aberto e tem um resistor de pull-up de dez quilohms para os cinco volts, acionando um transistor que comanda o relé do aquecedor. Três caixas de cálculo acompanham. A primeira mostra o cálculo dos limiares por superposição: com a saída alta em cinco volts, a entrada não inversora fica em dois vírgula seiscentos e oito volts; com a saída baixa em zero vírgula dois volt, ela fica em dois vírgula quatrocentos volts; a janela de histerese vale portanto duzentos e oito milivolts. A segunda converte isso em temperatura usando a curva do NTC com beta de três mil novecentos e cinquenta: dois vírgula seiscentos e oito volts correspondem a aproximadamente vinte e sete graus e dois vírgula quatrocentos volts a aproximadamente vinte e três vírgula dois graus, o que dá uma histerese de três vírgula oito graus em vez dos quatro graus pretendidos, diferença que vem do arredondamento dos resistores para valores E24 e que é aceitável. A terceira caixa alerta que a assimetria da janela em torno de dois vírgula cinco volts vem de a saída baixa do LM393 valer zero vírgula dois volt e não zero, e que com um comparador de saída trilho a trilho a janela ficaria simétrica.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- trilho ----------------
+  \draw[manualred] (0.2,5.4) -- (11.6,5.4);
+  \node[anchor=south, font=\tiny, manualred] at (0.7,5.45) {$+5$ V};
+
+  % ---------------- sensor ----------------
+  \draw (1.0,5.4) to[R, l_=NTC $10$ k] (1.0,3.6);
+  \node[ponto] at (1.0,2.0) {};
+  \draw (1.0,3.6) -- (1.0,2.0);
+  \draw (1.0,2.0) to[R, l_=$10$ k] (1.0,0.4);
+  \node[ground] at (1.0,0.4) {};
+  \node[anchor=south east, font=\tiny, manualgreen] at (0.85,2.15) {$2{,}5$ V a $25$ °C};
+
+  \draw (1.0,2.0) -- (4.2,2.0) -- (4.2,2.85) -- (4.8,2.85);
+
+  % ---------------- comparador (+ em cima, - embaixo) ----------------
+  \draw[thick] (4.8,2.3) -- (4.8,4.5) -- (7.0,3.4) -- cycle;
+  \node[font=\tiny] at (5.5,3.4) {LM393};
+  \node[anchor=west, font=\small] at (4.9,3.95) {$+$};
+  \node[anchor=west, font=\small] at (4.9,2.85) {$-$};
+
+  % ---------------- rede de limiares ----------------
+  \draw (3.4,5.4) to[R, l_=$20$ k] (3.4,3.95);
+  \node[ponto] at (3.4,3.95) {};
+  \draw (3.4,3.95) -- (4.8,3.95);
+  \draw (3.4,3.95) -- (2.6,3.95);
+  \draw (2.6,3.95) to[R, l_=$20$ k] (2.6,2.7);
+  \node[ground] at (2.6,2.7) {};
+
+  % ---------------- realimentacao positiva ----------------
+  \node[ponto] at (4.2,3.95) {};
+  \draw (4.2,3.95) -- (4.2,4.8);
+  \draw (4.2,4.8) to[R, l=$R_f$ $220$ k] (7.6,4.8);
+  \draw (7.6,4.8) -- (7.6,3.4);
+  \node[ponto] at (7.6,3.4) {};
+
+  % ---------------- saida ----------------
+  \draw (7.0,3.4) -- (9.0,3.4);
+  \node[ponto] at (8.5,3.4) {};
+  \draw (8.5,3.4) to[R, l=$10$ k] (8.5,5.4);
+
+  \node[npn] (qr) at (10.2,2.6) {};
+  \draw (9.0,3.4) -- (9.6,3.4) -- (9.6,2.6) -- (qr.base);
+  \draw (qr.emitter) -- (10.2,1.6);
+  \node[ground] at (10.2,1.6) {};
+  \draw (qr.collector) -- (10.2,3.8);
+  \draw (10.2,3.8) to[R, l={\mbox{relé}}] (10.2,5.4);
+  \node[anchor=west, font=\tiny, align=left] at (10.9,2.6) {aciona o\\aquecedor};
+
+
+
+\end{tikzpicture}
+```
+
+O termostato completo: sensor, comparador, histerese e acionamento. O resistor de 220 kΩ da
+saída de volta à entrada $+$ é o circuito inteiro deste capítulo em um componente.
+:::
+
+O enunciado: manter uma estufa em torno de 25 °C, com um termistor NTC de 10 kΩ ($B = 3950$),
+alimentação simples de 5 V, e histerese de aproximadamente 4 °C para que o relé não bata.
+
+**Passo 1 — o sensor.** NTC entre os 5 V e o nó, resistor fixo de 10 kΩ do nó ao terra. A 25 °C
+o NTC vale 10 kΩ e o nó fica em 2,50 V. Quando a temperatura **sobe**, a resistência do NTC
+**cai** e a tensão do nó **sobe**.
+
+**Passo 2 — a topologia.** O divisor tem impedância de saída de 5 kΩ, e o gatilho **não
+inversor** teria $Z_{in} = R_1$ carregando isso. Portanto: **gatilho inversor**, com o sinal na
+entrada $-$, que não puxa corrente apreciável.
+
+**Passo 3 — a rede de limiares.** Na entrada $+$: 20 kΩ para os 5 V, 20 kΩ para o terra
+(centrando em 2,5 V) e $R_f$ da saída. Por superposição:
+
+$$ v_+ = \frac{\dfrac{5}{R_a} + \dfrac{v_{out}}{R_f}}{\dfrac{1}{R_a} + \dfrac{1}{R_b} + \dfrac{1}{R_f}} $$
+
+Com $R_a = R_b = 20$ kΩ e $R_f = 220$ kΩ:
+
+| Estado da saída | $v_{out}$ | Limiar $v_+$ |
+|---|---|---|
+| Alta (com pull-up de 10 kΩ) | 5,0 V | **2,608 V** |
+| Baixa (saturada) | 0,2 V | **2,400 V** |
+
+: Os dois limiares do termostato, calculados por superposição. A janela vale 208 mV.
+{#tbl-070-limiares}
+
+**Passo 4 — converter para temperatura.** A relação do NTC (@sec-cap-010) dá
+
+$$ R_{NTC}(T) = R_{25}\exp\left[B\left(\frac{1}{T} - \frac{1}{298{,}15}\right)\right] $$
+
+com $T$ em kelvin. Resolvendo para as duas tensões:
+
+| Limiar | $R_{NTC}$ correspondente | Temperatura |
+|---|---|---|
+| 2,608 V | 9,17 kΩ | **27,0 °C** |
+| 2,400 V | 10,83 kΩ | **23,2 °C** |
+
+: A janela de 208 mV vale 3,8 °C de histerese. {#tbl-070-temperaturas}
+
+**Passo 5 — o arredondamento, e o efeito dele.** A histerese pretendida era 4,0 °C; com 20 kΩ,
+20 kΩ e 220 kΩ — todos E24 — obtém-se **3,8 °C**. A diferença é de 5 %, irrelevante para um
+termostato de estufa. Se fosse preciso chegar mais perto, $R_f = 200$ kΩ (também E24) daria uma
+janela de 229 mV, ou 4,2 °C.
+
+**Passo 6 — o pull-up e a saída.** 10 kΩ para os 5 V. Com a saída baixa, ela drena 0,5 mA,
+muito abaixo dos 16 mA que o LM393 aguenta. O transistor de acionamento e o diodo de retorno do
+relé são o assunto do @sec-cap-054.
+
+::: {.callout-important}
+## A janela não está centrada em 2,5 V, e o motivo é a saída baixa
+
+Os limiares saíram em 2,608 V e 2,400 V — centro em 2,504 V, não em 2,500 V. A assimetria vem
+de a saída baixa do LM393 valer **0,2 V** e não zero: os dois estados não são simétricos em
+relação ao ponto médio.
+
+Com um comparador de saída trilho a trilho (TLV3201, MAX9060), a saída baixa fica em alguns
+milivolts e a janela sai praticamente simétrica. Em circuitos de precisão, esse detalhe importa;
+num termostato, 4 mV valem 0,07 °C e ninguém percebe.
+
+O ponto geral é: **os limiares de um gatilho de Schmitt dependem dos níveis reais de saída**, e
+o nível baixo real de um coletor aberto não é zero.
+:::
+
+## 🧪 Laboratório {#sec-070-lab}
+
+O objetivo é ver a trepidação, eliminá-la, medir os limiares e montar o termostato completo.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | **TL072** | Partes 1 a 3 |
+| 1 | **LM393** ou **LM339** | Partes 4 e 5 |
+| 1 | **NTC 10 kΩ** ($B \approx 3950$) | Parte 5; um de sonda de impressora 3D serve |
+| 1 | Transistor **BC548** | Parte 5 |
+| — | Resistores: 3× 10 kΩ, 2× 20 kΩ, 100 kΩ, 220 kΩ, 1 kΩ, 4,7 kΩ | |
+| — | Capacitores: 2× 100 nF cerâmico, 100 nF poliéster | |
+| 1 | Trimpot 10 kΩ | referência ajustável |
+| 1 | Fonte simétrica $\pm 12$ V e fonte de 5 V | |
+| 1 | Gerador de funções (senoide e **triangular lenta**) | a triangular lenta é essencial |
+| 1 | Osciloscópio de 2 canais | |
+| 1 | Multímetro | |
+| 1 | LED e resistor de 1 kΩ | indicação visual |
+
+### Parte 1 — A trepidação, ao vivo
+
+1. Monte o **comparador simples**: TL072 com $v_{in}$ na entrada $-$ e a entrada $+$ aterrada.
+   Sem nenhuma realimentação.
+2. Aplique uma onda **triangular** de amplitude $\pm 2$ V e frequência **baixa** — 10 Hz ou
+   menos.
+3. Observe entrada e saída nos dois canais. A saída deve ser uma onda quadrada limpa.
+4. **Agora acrescente ruído.** Duas maneiras:
+   - se o seu gerador tiver saída de ruído, some-a ao triangular com um somador do
+     @sec-cap-067;
+   - se não tiver, basta **tocar com o dedo** o nó de entrada, ou aproximar um fio solto ligado
+     à rede. O acoplamento capacitivo de 60 Hz é ruído suficiente.
+5. Olhe as transições da saída com a base de tempo expandida.
+
+Você deve ver exatamente a @fig-070-chatter: várias transições onde deveria haver uma.
+
+### Parte 2 — Gatilho de Schmitt inversor
+
+1. Acrescente $R_1 = 10$ kΩ da entrada $+$ ao terra e $R_2 = 100$ kΩ da saída à entrada $+$.
+2. Repita o experimento da Parte 1 com o mesmo ruído.
+
+A trepidação some.
+
+3. **Meça os limiares.** Com o triangular lento, use o osciloscópio no modo de duas ondas e
+   leia a tensão de entrada exatamente no instante de cada transição.
+
+$$ V_{TH,TL} = \pm V_{sat}\frac{R_1}{R_1+R_2} $$
+
+Meça também $V_{sat}$ (a amplitude real da saída) e compare o previsto com o medido.
+
+| | Previsto | Medido |
+|---|---|---|
+| $V_{sat}$ | — | |
+| $V_{TH}$ | | |
+| $V_{TL}$ | | |
+| Histerese | | |
+
+: Os limiares do gatilho, previstos e medidos. {#tbl-070-lab1}
+
+4. Troque $R_2$ por 1 MΩ e repita. A histerese cai por dez, e a trepidação **volta** se o ruído
+   for grande o bastante. É a condição de projeto da @fig-070-chatter, verificada nos dois
+   sentidos.
+
+### Parte 3 — A curva de transferência, no osciloscópio
+
+1. Ponha o osciloscópio em modo **XY**: canal 1 (entrada) no eixo horizontal, canal 2 (saída) no
+   vertical.
+2. Aplique o triangular lento, agora **sem** ruído, e ajuste as escalas.
+
+A tela mostra o laço da @fig-070-transferencia, desenhado ao vivo. É uma das demonstrações mais
+bonitas do volume.
+
+3. Varie $R_2$ e veja a largura do laço mudar.
+4. Ligue $R_1$ a uma tensão contínua ajustável (o trimpot entre $+12$ V e $-12$ V) em vez do
+   terra, e veja o laço **deslizar** horizontalmente sem mudar de largura. Isso separa as duas
+   decisões de projeto: **onde** fica a janela e **quão larga** ela é.
+
+### Parte 4 — Comparador dedicado e coletor aberto
+
+1. Monte o mesmo gatilho de Schmitt com o **LM393**, alimentado com 5 V simples e com a entrada
+   $-$ recebendo o sinal e a entrada $+$ com a rede de limiares.
+2. **Não ponha o pull-up ainda.** Ligue a alimentação e observe a saída.
+
+Ela fica presa perto de zero, ou solta e imprevisível. O circuito parece morto.
+
+3. Acrescente o pull-up de 10 kΩ para os 5 V. Agora funciona.
+4. **Meça a borda de subida** com o osciloscópio e compare com a de descida. A subida é lenta
+   (RC do pull-up com a capacitância do nó); a descida é rápida (o transistor puxa).
+5. Troque o pull-up por 1 kΩ e depois por 100 kΩ, medindo a borda de subida em cada caso.
+
+| $R_{pu}$ | Tempo de subida | Corrente com saída baixa |
+|---|---|---|
+| 1 kΩ | | 5 mA |
+| 10 kΩ | | 0,5 mA |
+| 100 kΩ | | 50 µA |
+
+: O compromisso do pull-up, medido. {#tbl-070-lab2}
+
+6. **A translação de nível:** ligue o pull-up a 3,3 V em vez de 5 V, mantendo o comparador
+   alimentado com 5 V. A saída passa a entregar níveis de 3,3 V. Nenhum componente a mais.
+
+### Parte 5 — O termostato
+
+1. Monte o circuito da @fig-070-termostato com o NTC, os resistores de 20 kΩ, 20 kΩ e 220 kΩ, e
+   o pull-up de 10 kΩ.
+2. Substitua o relé por um **LED com resistor de 1 kΩ** no coletor do BC548 — mais seguro e
+   igualmente visível.
+3. Meça as tensões contínuas: o nó do NTC deve estar perto de 2,5 V à temperatura ambiente, e a
+   entrada $+$ deve estar em 2,608 V ou 2,400 V conforme o estado.
+4. **Aqueça o NTC** com os dedos e observe a comutação. Anote a tensão do nó do NTC no instante
+   em que o LED apaga.
+5. **Deixe esfriar** e anote a tensão no instante em que o LED acende.
+
+A diferença entre as duas deve ser próxima dos 208 mV calculados.
+
+6. **A demonstração final:** curto-circuite $R_f$ (os 220 kΩ), eliminando a histerese, e aqueça
+   o NTC devagar segurando-o entre os dedos. Perto do ponto de comutação, o LED **pisca** —
+   trepidação causada pelo ruído térmico e pelo tremor da própria mão. Refaça com $R_f$ no lugar
+   e a comutação é única.
+
+**Variante simulada (plano B).** No LTspice, a Parte 3 fica direta: `.tran` com fonte `PULSE`
+triangular e um gráfico de `V(out)` contra `V(in)` produz o laço de histerese. Para a Parte 1,
+some uma fonte de ruído (`bv V=white(time*1e5)*0.05`) ao sinal e compare com e sem $R_2$ —
+o simulador permite variar a amplitude do ruído continuamente e achar exatamente onde a
+trepidação começa, o que na bancada é difícil de controlar. E `.step param Rf list 100k 220k 1meg`
+mostra as três larguras de janela sobrepostas.
+
+## 🔥 Onde Queima {#sec-070-queima}
+
+**Usar comparador sem histerese com sinal lento.** Sinal de sensor, sinal de rede, qualquer coisa
+que atravesse o limiar devagar vai trepidar. A histerese não é refinamento; é requisito.
+
+**Dimensionar a histerese menor que o ruído.** A janela tem de ser maior que a amplitude de pico
+a pico do ruído, com folga de duas a três vezes. Meça o ruído antes de escolher os resistores.
+
+**Esquecer o resistor de pull-up num comparador de coletor aberto.** A saída nunca sobe, e o
+circuito parece morto. É o primeiro item a conferir num LM393 ou LM339 que não funciona.
+
+**Usar um comparador dedicado como amplificador.** Sem capacitor de compensação, ele oscila em
+malha fechada negativa. Comparador comuta; amp-op amplifica.
+
+**Usar um amp-op como comparador rápido.** Funciona, mas a recuperação de sobrecarga é de
+microssegundos, e muitos amp-ops têm diodos de proteção entre as entradas que conduzem acima de
+uma queda de junção — o que carrega a fonte de sinal e distorce a medida.
+
+**Calcular os limiares com a saída ideal.** Um coletor aberto satura em 0,2 V, não em 0. Um
+amp-op comum satura em $V_{CC} - 1{,}5$ V, não em $V_{CC}$. Os limiares seguem os níveis
+**reais**.
+
+**Carregar a fonte com um gatilho não inversor.** $Z_{in} = R_1$, e a impedância da fonte entra
+em série, deslocando os dois limiares. Fonte de impedância alta pede gatilho **inversor**.
+
+**Esquecer o desacoplamento.** Um comparador comutando injeta um pico de corrente na alimentação
+a cada transição. Sem os 100 nF, esse pico modula a própria referência e o circuito oscila em
+alta frequência durante a transição.
+
+**Ligar a rede de histerese ao nó errado.** Realimentação ao terminal $-$ é negativa e transforma
+o comparador num amplificador linear — que oscila, por falta de compensação. Ao terminal $+$ é
+positiva. Confira com o dedo.
+
+**Ignorar o atraso de propagação com excesso pequeno.** O LM393 leva 1,3 µs com 5 mV de excesso
+e 0,3 µs com 100 mV. Em circuito de tempo crítico, o número da primeira linha da folha de dados
+não é o que se aplica.
+
+**Deixar a entrada de um comparador não usado flutuando.** Como no amp-op do @sec-cap-065, o
+canal ocioso oscila e contamina o outro pela alimentação. Amarre as entradas em tensões
+diferentes e definidas.
+
+## O que fica deste capítulo {#sec-070-resumo}
+
+**Comparador** é um amp-op sem realimentação negativa: a saída vai a um dos dois extremos
+conforme o sinal de $v_+ - v_-$. É a ponte entre o analógico e o digital.
+
+**Um limiar único trepida** diante de sinal lento ou ruidoso, porque o ruído faz o sinal cruzar
+o limiar várias vezes. A correção é estrutural, não de componente.
+
+**Realimentação positiva cria dois limiares.** A saída empurra o terminal $+$ na direção da
+comutação, reforçando-a — transição regenerativa e limiar deslocado.
+
+$$ \text{inversor:}\quad V_{TH,TL} = \pm V_{sat}\frac{R_1}{R_1+R_2} \qquad\qquad \text{não inversor:}\quad V_{TH,TL} = \pm V_{sat}\frac{R_1}{R_2} $$
+
+**A escolha entre eles é por impedância de entrada:** o inversor tem $Z_{in}$ altíssima; o não
+inversor tem $Z_{in} = R_1$ e carrega a fonte.
+
+**Condição de projeto:** largura da histerese maior que o ruído de pico a pico, com folga de
+duas a três vezes.
+
+**Dentro da faixa de histerese o circuito tem memória de um bit** — é o mesmo mecanismo do latch
+SR que a Fase 5 vai usar como célula elementar de memória.
+
+**Comparadores dedicados** não têm capacitor de compensação: são rápidos, recuperam depressa de
+sobrecarga e **não podem ser usados como amplificadores**. Muitos têm saída em **coletor
+aberto**, que exige pull-up, permite translação de nível de graça e faz *wired-AND* quando duas
+saídas compartilham o mesmo resistor.
+
+**Os limiares dependem dos níveis reais de saída**, não dos ideais — a saída baixa de um coletor
+aberto vale 0,2 V, e a janela sai ligeiramente assimétrica.
+
+**O atraso de propagação depende do excesso**: quanto mais perto do limiar, mais lento.
+
+## Para o próximo capítulo {#sec-070-fecho}
+
+O gatilho de Schmitt tem dois estados estáveis e comuta entre eles quando o sinal externo manda.
+Falta pouco para que ele comute **sozinho**.
+
+Basta ligar a saída de volta à entrada de sinal através de um $RC$. A saída alta carrega o
+capacitor até o limiar superior, o circuito comuta, a saída baixa descarrega o capacitor até o
+limiar inferior, e o ciclo recomeça — para sempre, sem sinal de entrada nenhum. É o **oscilador
+de relaxação**, e ele é o assunto que fecha o Volume 11.
+
+O @sec-cap-071 monta três famílias de circuitos que geram sinal em vez de processá-lo. O
+oscilador de relaxação com amp-op e o **555**, que é o mesmo princípio num encapsulamento de
+oito pinos e é o circuito integrado mais vendido da história. O **oscilador de Wien**, que gera
+senoide em vez de onda quadrada e cuja estabilização de amplitude é um problema mais sutil do
+que parece — ele precisa de ganho **exatamente** 3, e nem um pouco mais. E os **filtros ativos**
+de segunda ordem, que fecham o Volume 11 retomando os filtros passivos do Volume 6 sem as
+limitações que os indutores impunham.

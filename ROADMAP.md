@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 69/104 |
-| **Contíguos até** | **069** — sem nenhum buraco no meio do livro |
+| **Progresso** | 70/104 |
+| **Contíguos até** | **070** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 070** | Comparadores, histerese e o gatilho de Schmitt |
+| **Próximo capítulo: 071** | Filtros ativos e osciladores: Wien, relaxação e o 555 |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -71,7 +71,12 @@ amp-op dando endereço físico a cada imperfeição, o orçamento de erro em CC 
 $V_{OS}$, as **duas** limitações de frequência como coisas independentes — GBW de sinal pequeno
 e taxa de subida $SR = I_{cauda}/C_c$ de sinal grande, com $f_{PP} = SR/2\pi V_p$ e o teste de
 bancada que as separa —, recuperação de sobrecarga, ruído como densidade espectral com canto
-$1/f$ e a comparação obrigatória com o ruído térmico da fonte (069).
+$1/f$ e a comparação obrigatória com o ruído térmico da fonte (069); o comparador como ponte
+para o digital, a trepidação de um limiar único diante de sinal lento ou ruidoso, o gatilho de
+Schmitt nas duas topologias com os limiares deduzidos a partir dos níveis **reais** de saída, a
+histerese como memória de um bit (o mesmo mecanismo do latch SR da Fase 5), comparadores
+dedicados com saída em coletor aberto, *wired-AND* e atraso dependente do excesso, e o projeto
+completo de um termostato com NTC e LM393 (070).
 
 Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -215,7 +220,7 @@ cinco ocorrências como aviso.
 - [x] 067 — Somador, subtrator e amplificador de instrumentação — `capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.qmd`
 - [x] 068 — Integrador, derivador e fontes de corrente — `capitulos/068-integrador-derivador-e-fontes-de-corrente.qmd`
 - [x] 069 — O amp-op real: offset, slew rate, produto ganho-banda e saturação — `capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.qmd`
-- [ ] 070 — Comparadores, histerese e o gatilho de Schmitt — `capitulos/070-comparadores-histerese-e-o-gatilho-de-schmitt.qmd`
+- [x] 070 — Comparadores, histerese e o gatilho de Schmitt — `capitulos/070-comparadores-histerese-e-o-gatilho-de-schmitt.qmd`
 - [ ] 071 — Filtros ativos e osciladores: Wien, relaxação e o 555 — `capitulos/071-filtros-ativos-e-osciladores-wien-relaxacao-e-o-555.qmd`
 
 
