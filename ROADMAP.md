@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 67/104 |
-| **Contíguos até** | **067** — sem nenhum buraco no meio do livro |
+| **Progresso** | 68/104 |
+| **Contíguos até** | **068** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 068** | Integrador, derivador e fontes de corrente |
+| **Próximo capítulo: 069** | O amp-op real: offset, slew rate, produto ganho-banda e saturação |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -62,7 +62,11 @@ A/D, o subtrator com suas duas falhas quantificadas ($Z_{in}$ baixa e desigual; 
 $\approx (1+R_2/R_1)/4t$, só 34 dB com 1 %), e o amplificador de instrumentação de três amp-ops
 corrigindo as duas — primeiro estágio com ganho $1+2R/R_G$ para a diferença e ganho 1 para o
 modo comum —, com a cadeia completa da ponte de Wheatstone, o papel do terminal REF e o caminho
-de retorno da corrente de polarização (067).
+de retorno da corrente de polarização (067); integrador e derivador com as duas correções
+obrigatórias ($R_f$ em paralelo com $C$; $R_s$ em série com $C$) e a **regra geométrica da
+estabilidade** — taxa de fechamento de 20 dB/déc entre $A_{OL}$ e o ganho de ruído é estável,
+40 dB/déc oscila —, mais as três topologias de fonte de corrente controlada por tensão, a
+tensão de conformidade e o projeto do laço de 4 a 20 mA com a série E96 (068).
 
 Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -204,7 +208,7 @@ cinco ocorrências como aviso.
 - [x] 065 — O amp-op ideal e as regras de ouro — `capitulos/065-o-amp-op-ideal-e-as-regras-de-ouro.qmd`
 - [x] 066 — Amplificador inversor e não inversor — `capitulos/066-amplificador-inversor-e-nao-inversor.qmd`
 - [x] 067 — Somador, subtrator e amplificador de instrumentação — `capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.qmd`
-- [ ] 068 — Integrador, derivador e fontes de corrente — `capitulos/068-integrador-derivador-e-fontes-de-corrente.qmd`
+- [x] 068 — Integrador, derivador e fontes de corrente — `capitulos/068-integrador-derivador-e-fontes-de-corrente.qmd`
 - [ ] 069 — O amp-op real: offset, slew rate, produto ganho-banda e saturação — `capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.qmd`
 - [ ] 070 — Comparadores, histerese e o gatilho de Schmitt — `capitulos/070-comparadores-histerese-e-o-gatilho-de-schmitt.qmd`
 - [ ] 071 — Filtros ativos e osciladores: Wien, relaxação e o 555 — `capitulos/071-filtros-ativos-e-osciladores-wien-relaxacao-e-o-555.qmd`

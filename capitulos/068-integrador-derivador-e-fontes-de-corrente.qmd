@@ -1,3 +1,891 @@
 # Integrador, derivador e fontes de corrente {#sec-cap-068}
 
-*(em elaboração)*
+Todos os circuitos dos capítulos 065 a 067 têm redes de realimentação feitas **só de
+resistores**, e por isso a saída depende apenas do valor instantâneo da entrada. São circuitos
+sem memória: desligue e religue, e a saída volta ao mesmo lugar.
+
+Trocar o resistor de realimentação por um **capacitor** muda isso qualitativamente. A corrente
+que chega ao terra virtual passa a carregar o capacitor, e a saída passa a depender de tudo o
+que a entrada fez desde que o circuito foi ligado. É o **integrador**. Trocando em vez disso o
+resistor de **entrada** por um capacitor, obtém-se o **derivador**.
+
+São as duas operações que faltavam para completar o repertório do computador analógico, e são
+também os dois circuitos mais traiçoeiros do Volume 11. **O integrador ideal satura sozinho em
+poucos segundos. O derivador ideal oscila.** As duas correções cabem em um resistor cada, e
+entender por que elas são necessárias é mais útil do que decorá-las.
+
+A terceira parte do capítulo troca a pergunta: em vez de controlar a tensão de saída, controlar
+a **corrente** que atravessa uma carga, independentemente de quanto a carga vale. É o bloco por
+trás do laço de 4 a 20 mA, do acionamento de LED de brilho constante e de qualquer excitação de
+sensor que precise ser imune à resistência dos fios.
+
+## O integrador {#sec-068-integrador}
+
+::: {#fig-068-integrador}
+
+```{.tikz}
+%%| filename: 068-integrador
+%%| alt: Figura em três partes sobre o integrador com amp-op. À esquerda, o esquemático do integrador ideal: o sinal de entrada chega por um resistor R até a entrada inversora, a entrada não inversora está aterrada, e um capacitor C liga a entrada inversora à saída. Uma seta azul mostra a corrente da entrada dividida por R entrando no nó, e a anotação registra que essa corrente não tem para onde ir senão carregar o capacitor. Ao lado, a dedução: a corrente de entrada vale a tensão de entrada dividida por R; a corrente que carrega um capacitor é a capacitância multiplicada pela derivada da tensão sobre ele; como o nó está em zero volt, a tensão sobre o capacitor é menos a tensão de saída; igualando, a derivada da saída vale menos a entrada dividida por R vezes C, e integrando, a saída é menos um sobre R vezes C multiplicado pela integral da entrada, mais a condição inicial. Ao centro, as formas de onda: uma onda quadrada de entrada de mais e menos um volt em mil hertz, e a saída em triângulo, com inclinação constante em cada metade do período, subindo quando a entrada é negativa e descendo quando é positiva; a amplitude do triângulo é de zero vírgula cinco volt de pico a pico para R vezes C igual a um milissegundo. À direita, o problema e a correção. O problema: o ganho em corrente contínua é infinito, de modo que a tensão de desequilíbrio de três milivolts do amp-op é integrada sem limite e a saída sobe a três volts por segundo, batendo no trilho de treze volts em pouco mais de quatro segundos, sem que se tenha aplicado sinal nenhum. A correção: um resistor R de realimentação de um megaohm em paralelo com o capacitor, que limita o ganho em corrente contínua a cem, com um polo em um vírgula seis hertz; acima dessa frequência o circuito continua integrando, e abaixo dela ele vira um simples amplificador inversor que não pode fugir. Uma nota final recomenda que a razão entre o resistor de realimentação e o resistor de entrada fique entre dez e cem.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- ideal ----------------
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\small, anchor=south] at (2.0,2.9) {\textbf{integrador ideal}};
+
+    \draw[thick] (2.6,-0.9) -- (2.6,0.9) -- (4.3,0) -- cycle;
+    \node[anchor=west, font=\small] at (2.7,0.45) {$-$};
+    \node[anchor=west, font=\small] at (2.7,-0.45) {$+$};
+
+    \draw (0.1,0.45) to[R, l=$R$] (1.9,0.45);
+    \draw (1.9,0.45) -- (2.6,0.45);
+    \node[ponto] at (1.9,0.45) {};
+    \node[anchor=east, font=\scriptsize] at (0.05,0.45) {$v_{in}$};
+    \draw[-{Latex[length=1.6mm]}, manualblue] (1.2,0.78) -- (1.8,0.78);
+    \node[anchor=south, font=\tiny, manualblue] at (1.5,0.8) {$v_{in}/R$};
+
+    \draw (1.9,-0.45) -- (2.6,-0.45);
+    \draw (1.9,-0.45) -- (1.9,-1.1);
+    \node[ground] at (1.9,-1.1) {};
+
+    \draw (4.3,0) -- (5.8,0);
+    \node[ponto] at (5.2,0) {};
+    \node[anchor=west, font=\scriptsize] at (5.85,0) {$v_{out}$};
+
+    \draw (5.2,0) -- (5.2,2.0);
+    \draw (5.2,2.0) to[C, l=$C$] (1.9,2.0);
+    \draw (1.9,2.0) -- (1.9,0.45);
+  \end{scope}
+
+  % ---------------- ondas ----------------
+  \begin{scope}[shift={(7.6,0)}]
+    \draw[eixo] (0,0) -- (4.6,0);
+    \draw[eixo] (0,-1.5) -- (0,2.4);
+    \node[anchor=west, font=\tiny] at (4.5,-0.25) {$t$};
+
+    % quadrada
+    \draw[destaque, thick] (0,1.9) -- (1.0,1.9) -- (1.0,1.1) -- (2.0,1.1) -- (2.0,1.9)
+                        -- (3.0,1.9) -- (3.0,1.1) -- (4.0,1.1) -- (4.0,1.9) -- (4.3,1.9);
+    \node[anchor=west, font=\tiny, manualred] at (4.35,1.5) {$v_{in}$};
+
+    % triangular
+    \draw[curva] (0,-0.35) -- (1.0,-0.95) -- (2.0,-0.35) -- (3.0,-0.95) -- (4.0,-0.35)
+                 -- (4.3,-0.53);
+    \node[anchor=west, font=\tiny, manualblue] at (4.35,-0.65) {$v_{out}$};
+
+    \node[anchor=north, align=center, font=\tiny, text width=4.6cm] at (2.2,-1.7)
+         {quadrada de $\pm 1$ V em 1 kHz, $RC = 1$ ms\\
+          $\Rightarrow$ triângulo de $0{,}5$ V de pico a pico};
+  \end{scope}
+
+  % ---------------- caixas ----------------
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.4cm] at (-0.4,-2.4)
+       {$i = \dfrac{v_{in}}{R}$ \quad e \quad $i = C\dfrac{d}{dt}(0 - v_{out})$
+        \\[5pt]
+        \[ \frac{dv_{out}}{dt} = -\frac{v_{in}}{RC} \]
+        \[ \boxed{\ v_{out}(t) = -\frac{1}{RC}\int_0^t v_{in}\,dt' + v_{out}(0)\ } \]
+        Ganho unitário em $f = \dfrac{1}{2\pi RC}$, fase de $-90^\circ$, queda de
+        $20$ dB/década.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=4.4cm] at (6.6,-2.4)
+       {\textbf{O problema: ganho infinito em CC.}
+        \\[3pt]
+        $V_{OS} = 3$ mV é integrado sem limite:
+        \[ \frac{dv_{out}}{dt} = \frac{3\ \text{mV}}{1\ \text{ms}} = 3\ \frac{\text{V}}{\text{s}} \]
+        A saída bate em 13 V em \textbf{4,3 s} --- \emph{sem sinal nenhum aplicado}.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=4.4cm] at (11.4,-2.4)
+       {\textbf{A correção: $R_f$ em paralelo com $C$.}
+        \\[3pt]
+        $R_f = 1$ M$\Omega$ com $R = 10$ k$\Omega$:
+        \\[2pt]
+        ganho em CC $= 100$, polo em
+        $\dfrac{1}{2\pi R_f C} = 1{,}6$ Hz.
+        \\[3pt]
+        Acima disso, integra. Abaixo, é um inversor comum --- e não pode fugir.
+        \\[3pt]
+        Alvo: $R_f/R$ entre \textbf{10 e 100}.};
+
+\end{tikzpicture}
+```
+
+O integrador, a onda que ele produz e a razão pela qual a versão ideal não sobrevive a cinco
+segundos de bancada. O resistor de correção custa alguns centavos e resolve o problema inteiro.
+:::
+
+A dedução é imediata a partir do terra virtual e da relação constitutiva do capacitor
+(@sec-cap-021):
+
+$$ \boxed{\ v_{out}(t) = -\frac{1}{RC}\int_0^t v_{in}(t')\,dt' + v_{out}(0)\ } $$
+
+No domínio da frequência, com $Z_C = 1/(j\omega C)$, a mesma coisa em uma linha:
+
+$$ A(j\omega) = -\frac{Z_C}{R} = -\frac{1}{j\omega RC} \qquad\Longrightarrow\qquad |A| = \frac{1}{2\pi f RC} $$
+
+Ganho caindo 20 dB por década, fase constante de $-90^\circ$, e ganho unitário exatamente em
+$f = 1/(2\pi RC)$.
+
+### Por que o integrador ideal não funciona
+
+Em corrente contínua, $Z_C \to \infty$ e o ganho do circuito também. Isso não é uma
+idealização inofensiva: é uma **instrução para o amp-op amplificar por infinito qualquer erro
+contínuo que exista na entrada**.
+
+E sempre existe. A tensão de desequilíbrio $V_{OS}$ do @sec-cap-069 vale alguns milivolts, e o
+integrador a trata como um sinal legítimo:
+
+$$ \frac{dv_{out}}{dt} = \frac{V_{OS}}{RC} = \frac{3\ \text{mV}}{1\ \text{ms}} = 3\ \frac{\text{V}}{\text{s}} $$
+
+Com trilhos de $\pm 13$ V, a saída chega ao limite em 4,3 segundos com a entrada aterrada. E há
+uma segunda fonte, que num amp-op bipolar é pior: a corrente de polarização carrega o capacitor
+diretamente,
+
+$$ \frac{dv_{out}}{dt} = \frac{I_B}{C} $$
+
+o que dá 0,3 mV/s com os 30 pA de um TL072 — desprezível — e **0,45 V/s** com os 45 nA de um
+LM358. Integrador é aplicação de entrada JFET ou CMOS.
+
+### A correção, e o que ela custa
+
+Um resistor $R_f$ em paralelo com o capacitor limita o ganho em corrente contínua a $R_f/R$ e
+põe um polo em $f_p = 1/(2\pi R_f C)$. Acima de $f_p$ o capacitor domina e o circuito integra;
+abaixo, o resistor domina e o circuito é um inversor comum, que não tem para onde fugir.
+
+O preço é que o circuito **deixa de integrar** abaixo de $f_p$. A regra prática:
+
+$$ f_p \le \frac{f_{min}}{10} $$
+
+onde $f_{min}$ é a menor frequência que precisa ser integrada corretamente. Com $R = 10$ kΩ,
+$C = 100$ nF e $R_f = 1$ MΩ, $f_p = 1{,}6$ Hz — bom para qualquer sinal acima de 16 Hz, e capaz
+de aguentar 300 mV de erro contínuo na saída ($V_{OS} \times R_f/R = 3\ \text{mV} \times 100$).
+
+Note o compromisso: **$R_f$ grande integra em frequências mais baixas e amplifica mais o
+$V_{OS}$**. Não há escolha que faça as duas coisas, e é por isso que integradores de precisão de
+longo prazo usam amp-ops com $V_{OS}$ de microvolts ou um circuito de reinicialização.
+
+::: {.callout-note}
+## Reinicialização, e o integrador de longo prazo
+
+Quando o integrador precisa funcionar por minutos — um gerador de rampa, um conversor A/D de
+dupla rampa do Volume 13 — a solução não é $R_f$, e sim uma **chave em paralelo com o
+capacitor** que o descarrega antes de cada ciclo.
+
+Na bancada, um botão. Em circuito, uma chave analógica (4066, DG419) ou um MOSFET de sinal
+comandado por lógica. O integrador passa a ter dois estados — integra e reinicia —, e o erro
+acumulado nunca passa da duração de um ciclo.
+
+Frequentemente se usam **os dois**: $R_f$ para segurança em caso de falha da lógica, com
+$R_f/R$ alto o bastante para não atrapalhar dentro do ciclo.
+:::
+
+## O derivador {#sec-068-derivador}
+
+::: {#fig-068-derivador}
+
+```{.tikz}
+%%| filename: 068-derivador
+%%| alt: Figura em três partes sobre o derivador com amp-op. À esquerda, o esquemático do derivador ideal: o sinal de entrada chega por um capacitor C até a entrada inversora, a entrada não inversora está aterrada, e um resistor R liga a entrada inversora à saída. A dedução ao lado: a corrente através do capacitor é a capacitância multiplicada pela derivada da tensão de entrada; essa corrente atravessa R inteira; logo a saída vale menos R vezes C multiplicado pela derivada da entrada. O ganho cresce vinte decibéis por década e a fase é mais noventa graus. Ao centro, as formas de onda: uma onda triangular de entrada e uma onda quadrada de saída, com o degrau ocorrendo exatamente nos vértices do triângulo, onde a inclinação muda de sinal. Uma anotação mostra que uma inclinação de dois volts por milissegundo com R vezes C igual a um milissegundo produz dois volts de saída. À direita, o problema e a correção. O problema tem duas faces: primeiro, o ganho crescente amplifica o ruído de alta frequência mais do que o sinal, de modo que um sinal limpo na entrada vira uma saída visivelmente suja; segundo, e pior, o ganho de ruído sobe vinte decibéis por década enquanto o ganho de malha aberta do amp-op cai vinte decibéis por década, e os dois se cruzam com uma taxa de fechamento de quarenta decibéis por década, o que corresponde a cento e oitenta graus de atraso e margem de fase nula — o circuito oscila. A correção: um resistor em série com o capacitor de entrada, que limita o ganho de alta frequência à razão entre o resistor de realimentação e ele, e opcionalmente um capacitor pequeno em paralelo com o resistor de realimentação. Com um quilohm em série e dez quilohms de realimentação, o ganho de ruído estaciona em onze acima de um vírgula seis quilohertz, a taxa de fechamento cai para vinte decibéis por década e o circuito fica estável.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- ideal ----------------
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\small, anchor=south] at (2.0,2.9) {\textbf{derivador ideal}};
+
+    \draw[thick] (2.6,-0.9) -- (2.6,0.9) -- (4.3,0) -- cycle;
+    \node[anchor=west, font=\small] at (2.7,0.45) {$-$};
+    \node[anchor=west, font=\small] at (2.7,-0.45) {$+$};
+
+    \draw (0.1,0.45) to[C, l=$C$] (1.9,0.45);
+    \draw (1.9,0.45) -- (2.6,0.45);
+    \node[ponto] at (1.9,0.45) {};
+    \node[anchor=east, font=\scriptsize] at (0.05,0.45) {$v_{in}$};
+
+    \draw (1.9,-0.45) -- (2.6,-0.45);
+    \draw (1.9,-0.45) -- (1.9,-1.1);
+    \node[ground] at (1.9,-1.1) {};
+
+    \draw (4.3,0) -- (5.8,0);
+    \node[ponto] at (5.2,0) {};
+    \node[anchor=west, font=\scriptsize] at (5.85,0) {$v_{out}$};
+
+    \draw (5.2,0) -- (5.2,2.0);
+    \draw (5.2,2.0) to[R, l=$R$] (1.9,2.0);
+    \draw (1.9,2.0) -- (1.9,0.45);
+  \end{scope}
+
+  % ---------------- ondas ----------------
+  \begin{scope}[shift={(7.6,0)}]
+    \draw[eixo] (0,0) -- (4.6,0);
+    \draw[eixo] (0,-1.5) -- (0,2.4);
+    \node[anchor=west, font=\tiny] at (4.5,-0.25) {$t$};
+
+    % triangular entrada
+    \draw[destaque, thick] (0,1.1) -- (1.0,1.9) -- (2.0,1.1) -- (3.0,1.9) -- (4.0,1.1)
+                        -- (4.3,1.34);
+    \node[anchor=west, font=\tiny, manualred] at (4.35,1.5) {$v_{in}$};
+
+    % quadrada saida
+    \draw[curva] (0,-0.95) -- (1.0,-0.95) -- (1.0,-0.35) -- (2.0,-0.35) -- (2.0,-0.95)
+                 -- (3.0,-0.95) -- (3.0,-0.35) -- (4.0,-0.35) -- (4.0,-0.95) -- (4.3,-0.95);
+    \node[anchor=west, font=\tiny, manualblue] at (4.35,-0.65) {$v_{out}$};
+
+    \node[anchor=north, align=center, font=\tiny, text width=4.6cm] at (2.2,-1.7)
+         {o degrau da saída cai exatamente\\no vértice do triângulo};
+  \end{scope}
+
+  % ---------------- caixas ----------------
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.4cm] at (-0.4,-2.4)
+       {$i = C\dfrac{dv_{in}}{dt}$, \ e essa corrente atravessa $R$ inteira:
+        \[ \boxed{\ v_{out} = -RC\,\frac{dv_{in}}{dt}\ } \]
+        \[ A(j\omega) = -\frac{R}{Z_C} = -j\omega RC \]
+        Ganho \textbf{subindo} 20 dB/década, fase de $+90^\circ$. Rampa de 2 V/ms com
+        $RC = 1$ ms $\Rightarrow$ 2 V de saída.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=4.4cm] at (6.6,-2.4)
+       {\textbf{Dois problemas, um deles fatal.}
+        \\[3pt]
+        \textbf{1.} Ganho crescente amplifica o \emph{ruído} mais que o sinal. Entrada
+        limpa, saída suja.
+        \\[3pt]
+        \textbf{2.} O ganho de ruído sobe 20 dB/déc enquanto $A_{OL}$ cai 20 dB/déc:
+        \textbf{taxa de fechamento de 40 dB/déc}, $180^\circ$ de atraso, margem de fase
+        zero. \textbf{Oscila.}};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=4.4cm] at (11.4,-2.4)
+       {\textbf{A correção: $R_s$ em série com $C$.}
+        \\[3pt]
+        $R_s = 1$ k$\Omega$ com $R = 10$ k$\Omega$: o ganho de ruído \textbf{estaciona} em
+        $1 + R/R_s = 11$ acima de
+        $\dfrac{1}{2\pi R_s C} = 1{,}6$ kHz.
+        \\[3pt]
+        Fechamento de 20 dB/déc $\Rightarrow$ estável.
+        \\[3pt]
+        Opcional: $C_f$ em paralelo com $R$, na mesma frequência.};
+
+\end{tikzpicture}
+```
+
+O derivador, e por que a versão ideal é um oscilador com sotaque. A correção é o mesmo tipo de
+raciocínio do @sec-cap-064: mudar a forma do ganho de malha para que o cruzamento aconteça com
+inclinação suave.
+:::
+
+O derivador é o integrador de cabeça para baixo:
+
+$$ \boxed{\ v_{out} = -RC\,\frac{dv_{in}}{dt}\ } \qquad\qquad A(j\omega) = -j\omega RC $$
+
+Ganho **subindo** 20 dB por década. E é exatamente isso que o torna instável.
+
+::: {#fig-068-estabilidade}
+
+```{.tikz}
+%%| filename: 068-estabilidade
+%%| alt: Diagrama de Bode que explica geometricamente por que o derivador ideal oscila e por que a correção funciona. O eixo horizontal é logarítmico em frequência, de dez hertz a dez megahertz, e o vertical em decibéis, de menos vinte a cento e vinte. Uma curva azul grossa mostra o ganho de malha aberta do amp-op, caindo vinte decibéis por década desde os cem hertz até cruzar zero decibel em três megahertz. Uma reta vermelha mostra o ganho de ruído do derivador ideal, subindo vinte decibéis por década e passando por zero decibel em cento e cinquenta e nove hertz. As duas se cruzam por volta de vinte e dois quilohertz, e no cruzamento a diferença de inclinações é de quarenta decibéis por década — indicado com destaque como taxa de fechamento de quarenta decibéis por década, equivalente a cento e oitenta graus de atraso na malha e margem de fase nula, o que significa oscilação. Uma segunda reta, verde, mostra o ganho de ruído do derivador corrigido: ela sobe junto com a vermelha até um vírgula seis quilohertz e depois fica horizontal em vinte vírgula oito decibéis, cruzando a curva de malha aberta em duzentos e setenta e três quilohertz com uma diferença de inclinações de apenas vinte decibéis por década, o que corresponde a noventa graus de atraso e margem de fase confortável. Uma caixa explica a regra geral: a estabilidade de qualquer circuito com amp-op depende da taxa de fechamento entre a curva de ganho de malha aberta e a curva de ganho de ruído; vinte decibéis por década é estável, quarenta decibéis por década é oscilação, e é por isso que a correção do derivador não é um detalhe opcional.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=13.0cm, height=7.8cm,
+    xmode=log, xmin=10, xmax=1e7,
+    ymin=-20, ymax=120,
+    xlabel={frequência (Hz)}, ylabel={ganho (dB)},
+    xtick={10,100,1000,10000,100000,1000000,10000000},
+    xticklabels={10,100,1 k,10 k,100 k,1 M,10 M},
+    ytick={0,20,40,60,80,100},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+
+  \addplot[curva] coordinates {(10,106) (3e6,0) (1e7,-10.5)};
+  \node[anchor=west, font=\scriptsize, manualblue] at (axis cs:12,96) {$A_{OL}$};
+
+  % ganho de ruido do derivador ideal: 0 dB em 159 Hz, +20 dB/dec
+  \addplot[destaque, thick] coordinates {(15.9,-20) (159,0) (1e6,76)};
+  \node[anchor=north west, font=\scriptsize, manualred, align=left] at (axis cs:200,-2)
+       {ganho de ruído \textbf{ideal}\\$+20$ dB/déc};
+
+  % ganho de ruido corrigido
+  \addplot[manualgreen, very thick] coordinates {(15.9,-20) (159,0) (1590,20.8) (1e7,20.8)};
+  \node[anchor=south, font=\scriptsize, manualgreen] at (axis cs:6e3,21.6)
+       {corrigido: estaciona em $1+R/R_s = 11$};
+
+  % cruzamentos
+  \node[ponto, fill=manualred] at (axis cs:21800,42.8) {};
+  \draw[thin, manualred] (axis cs:21800,42.8) -- (axis cs:17000,51);
+  \node[anchor=south east, font=\tiny, manualred] at (axis cs:17500,51) {22 kHz};
+
+  \node[ponto, fill=manualgreen] at (axis cs:273000,20.8) {};
+  \draw[thin, manualgreen] (axis cs:273000,20.8) -- (axis cs:2.6e5,14);
+  \node[anchor=north east, font=\tiny, manualgreen] at (axis cs:2.7e5,14) {273 kHz};
+
+\end{axis}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=12.0cm] at (-1.2,-1.2)
+       {\textbf{A regra geométrica da estabilidade.} Onde a curva de $A_{OL}$ encontra a
+        curva de ganho de ruído, a \emph{diferença} entre as inclinações decide tudo:
+        \\[3pt]
+        \textbf{20 dB/década} $\Rightarrow$ $90^\circ$ de atraso na malha $\Rightarrow$
+        estável. \qquad
+        \textbf{40 dB/década} $\Rightarrow$ $180^\circ$ $\Rightarrow$ \textbf{oscila}.
+        \\[3pt]
+        O derivador \textbf{ideal} cruza em 22 kHz com 40 dB/déc --- \textbf{oscila}. Com
+        $R_s$, o cruzamento vai para 273 kHz com 20 dB/déc --- \textbf{estável}.
+        \\[3pt]
+        É o critério do capítulo sobre realimentação, lido diretamente no gráfico --- e vale
+        para \emph{qualquer} circuito com amp-op, não só para o derivador.};
+
+\end{tikzpicture}
+```
+
+Por que o derivador ideal oscila, em uma figura. A taxa de fechamento entre as duas curvas é o
+mesmo critério de margem de fase do @sec-cap-064, lido geometricamente.
+:::
+
+A geometria da @fig-068-estabilidade merece ser guardada, porque ela vale muito além do
+derivador. Sempre que o ganho de ruído de um circuito **sobe** enquanto $A_{OL}$ **desce**, as
+duas inclinações se somam no cruzamento, o atraso de fase do laço chega a 180° e o circuito
+oscila. Foi o que o @sec-cap-064 chamou de margem de fase nula, agora visível no papel.
+
+A correção padrão do derivador é um resistor $R_s$ em série com o capacitor de entrada. Ele faz
+o ganho de ruído **estacionar** em $1 + R/R_s$ acima de $f = 1/(2\pi R_s C)$, e a partir daí a
+curva verde é horizontal — o cruzamento com $A_{OL}$ passa a ter 20 dB/década de diferença.
+
+O projeto tem duas restrições:
+
+1. **$f_{corte} = 1/(2\pi R_s C)$ acima da maior frequência que precisa ser derivada.** Acima
+   dela o circuito deixa de derivar e vira um inversor de ganho $R/R_s$.
+2. **$R/R_s$ pequeno o bastante para que o cruzamento com $A_{OL}$ aconteça na região de
+   20 dB/década.** Na prática, $R/R_s$ entre 5 e 20.
+
+Com $R = 10$ kΩ, $C = 100$ nF e $R_s = 1$ kΩ: corte em 1,6 kHz, ganho de alta frequência 11,
+cruzamento em 273 kHz, margem de fase confortável.
+
+::: {.callout-warning}
+## Derivador é o último recurso
+
+Antes de montar um derivador, vale perguntar se o problema realmente pede um. Derivar amplifica
+ruído por definição — não é um defeito de implementação, é a operação.
+
+Se o objetivo é **detectar bordas**, um comparador com histerese (@sec-cap-070) faz isso sem
+amplificar ruído. Se é **medir velocidade a partir de posição**, quase sempre é melhor medir
+velocidade diretamente. Se é **compensar um polo** numa malha de controle, a rede de avanço
+passiva com um resistor em paralelo faz o mesmo com muito menos ruído.
+
+O derivador tem usos legítimos — detecção de pico, realce de transientes, o termo D de um
+controlador PID —, e em todos eles a limitação de banda não é opcional.
+:::
+
+## Fontes de corrente controladas por tensão {#sec-068-fontes}
+
+::: {#fig-068-fontes}
+
+```{.tikz}
+%%| filename: 068-fontes
+%%| alt: Figura comparando três maneiras de fazer uma fonte de corrente controlada por tensão com amp-op. À esquerda, a versão de carga flutuante: um amplificador inversor comum em que a carga ocupa o lugar do resistor de realimentação; como toda a corrente que entra por R tem de atravessar a carga, a corrente vale a tensão de entrada dividida por R, independentemente de quanto a carga vale. A limitação é que nenhum dos dois terminais da carga pode ser aterrado. No centro, a versão prática com transistor: o sinal de controle entra na entrada não inversora, a saída do amp-op aciona a porta de um MOSFET de canal N, a fonte do MOSFET vai ao terra através de um resistor de amostragem, e o nó entre a fonte e o resistor volta à entrada inversora; a carga fica entre o trilho positivo e o dreno. Pela regra dois, a tensão sobre o resistor de amostragem é igual à tensão de controle, portanto a corrente vale a tensão de controle dividida pelo resistor de amostragem, e o amp-op ajusta a porta do MOSFET para manter isso verdadeiro. À direita, a fonte de Howland, que usa quatro resistores casados e permite que a carga fique ligada ao terra de verdade; a corrente vale a tensão diferencial de entrada dividida pelo resistor de amostragem, mas a impedância de saída depende criticamente do casamento dos quatro resistores, exatamente como no subtrator, e um descasamento de um por cento já reduz muito a idealidade da fonte. Três caixas resumem: a primeira dá a equação e a limitação de cada topologia; a segunda define tensão de conformidade como a faixa de tensão que a fonte consegue impor sobre a carga antes de o amp-op ou o transistor saturarem; a terceira alerta que na versão com MOSFET a carga não está ligada ao terra, e sim ao trilho positivo, e que para carga aterrada de verdade é preciso um MOSFET de canal P do lado alto ou a fonte de Howland.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- carga flutuante ----------------
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\small, anchor=south] at (2.2,3.0) {\textbf{carga flutuante}};
+
+    \draw[thick] (2.6,-0.9) -- (2.6,0.9) -- (4.3,0) -- cycle;
+    \node[anchor=west, font=\small] at (2.7,0.45) {$-$};
+    \node[anchor=west, font=\small] at (2.7,-0.45) {$+$};
+
+    \draw (0.1,0.45) to[R, l=$R$] (1.9,0.45);
+    \draw (1.9,0.45) -- (2.6,0.45);
+    \node[ponto] at (1.9,0.45) {};
+    \node[anchor=east, font=\scriptsize] at (0.05,0.45) {$v_{in}$};
+
+    \draw (1.9,-0.45) -- (2.6,-0.45);
+    \draw (1.9,-0.45) -- (1.9,-1.1);
+    \node[ground] at (1.9,-1.1) {};
+
+    \draw (4.3,0) -- (5.2,0);
+    \draw (5.2,0) -- (5.2,2.2);
+    \draw (5.2,2.2) to[R, l={\mbox{carga}}] (1.9,2.2);
+    \draw (1.9,2.2) -- (1.9,0.45);
+    \draw[-{Latex[length=1.6mm]}, manualblue] (3.9,2.5) -- (3.1,2.5);
+    \node[anchor=south, font=\tiny, manualblue] at (3.5,2.53) {$I_L$};
+  \end{scope}
+
+  % ---------------- MOSFET ----------------
+  \begin{scope}[shift={(6.6,0)}]
+    \node[font=\small, anchor=south] at (2.4,3.0) {\textbf{com MOSFET}};
+
+    \draw (2.9,2.9) -- (2.9,2.6);
+    \node[anchor=south, font=\tiny, manualred] at (2.9,2.95) {$+V$};
+    \draw (2.9,2.6) to[R, l={\mbox{carga}}] (2.9,1.4);
+
+    \draw[thick] (0.5,-0.4) -- (0.5,1.4) -- (2.2,0.5) -- cycle;
+    \node[anchor=west, font=\small] at (0.6,0.05) {$-$};
+    \node[anchor=west, font=\small] at (0.6,0.95) {$+$};
+
+    \draw (-0.3,0.95) -- (0.5,0.95);
+    \node[anchor=east, font=\scriptsize] at (-0.35,0.95) {$v_{c}$};
+
+    \node[nmos] (m) at (2.9,0.7) {};
+    \draw (2.2,0.5) -- (2.45,0.5) -- (2.45,0.7) -- (m.gate);
+    \draw (m.drain) -- (2.9,1.4);
+    \draw (m.source) -- (2.9,-0.3);
+    \node[ponto] at (2.9,-0.3) {};
+    \draw (2.9,-0.3) to[R, l=$R_S$] (2.9,-1.5);
+    \node[ground] at (2.9,-1.5) {};
+
+    \draw (2.9,-0.3) -- (0.1,-0.3) -- (0.1,0.05) -- (0.5,0.05);
+  \end{scope}
+
+  % ---------------- Howland ----------------
+  \begin{scope}[shift={(11.8,0)}]
+    \node[font=\small, anchor=south] at (2.2,3.0) {\textbf{Howland}};
+
+    \draw[thick] (2.4,-0.4) -- (2.4,1.4) -- (4.1,0.5) -- cycle;
+    \node[anchor=west, font=\small] at (2.5,0.95) {$-$};
+    \node[anchor=west, font=\small] at (2.5,0.05) {$+$};
+
+    \draw (0.1,0.95) to[R, l=$R$] (1.7,0.95);
+    \draw (1.7,0.95) -- (2.4,0.95);
+    \node[ponto] at (1.7,0.95) {};
+    \node[anchor=east, font=\tiny] at (0.05,0.95) {$v_1$};
+
+    \draw (0.1,0.05) to[R, l_=$R$] (1.7,0.05);
+    \draw (1.7,0.05) -- (2.4,0.05);
+    \node[ponto] at (1.7,0.05) {};
+    \node[anchor=east, font=\tiny] at (0.05,0.05) {$v_2$};
+
+    \draw (1.7,0.95) -- (1.7,2.2);
+    \draw (1.7,2.2) to[R, l=$R$] (4.4,2.2);
+    \draw (4.4,2.2) -- (4.4,0.5);
+    \node[ponto] at (4.4,0.5) {};
+    \draw (4.1,0.5) -- (5.0,0.5);
+
+    \draw (1.7,0.05) -- (1.7,-0.6);
+    \draw (1.7,-0.6) to[R, l_=$R_S$] (3.6,-0.6);
+    \draw (3.6,-0.6) -- (5.0,-0.6) -- (5.0,0.5);
+    \node[ponto] at (5.0,0.5) {};
+
+    \draw (3.6,-0.6) -- (3.6,-1.4);
+    \node[ponto] at (3.6,-0.6) {};
+    \draw (3.6,-1.4) to[R, l_={\mbox{carga}}] (3.6,-2.6);
+    \node[ground] at (3.6,-2.6) {};
+  \end{scope}
+
+  % ---------------- caixas ----------------
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.2cm] at (-0.4,-3.2)
+       {\[ I_L = \frac{v_{in}}{R} \]
+        Simples e exata. \textbf{Limitação:} nenhum terminal da carga pode ser aterrado ---
+        ela flutua dentro da malha.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.2cm] at (5.4,-3.2)
+       {\[ I_L = \frac{v_c}{R_S} \]
+        Regra 2: a tensão sobre $R_S$ \emph{tem} de valer $v_c$, e o amp-op mexe na porta
+        até que valha.
+        \\[3pt]
+        \textbf{Atenção:} a carga está ligada ao \textbf{trilho}, não ao terra.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=5.2cm] at (11.2,-3.2)
+       {\[ I_L = \frac{v_2 - v_1}{R_S} \]
+        Carga ligada ao \textbf{terra de verdade}. Em troca, a impedância de saída depende
+        do casamento dos quatro resistores --- 1 \% já degrada muito, como no subtrator.};
+
+  \node[draw=manualyellow, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=16.8cm] at (-0.4,-6.0)
+       {\textbf{Tensão de conformidade.} Nenhuma fonte de corrente é ideal: existe uma faixa
+        de tensão dentro da qual ela consegue impor a corrente, e fora dela ela desiste.
+        Na versão com MOSFET, a conformidade é $+V$ menos a queda em $R_S$ menos o $V_{DS}$
+        mínimo do transistor --- e quando a carga é grande demais, o MOSFET entra na região
+        ôhmica e a corrente cai. \textbf{Sempre verifique a conformidade no pior caso de
+        carga.}};
+
+\end{tikzpicture}
+```
+
+Três maneiras de transformar uma tensão de controle numa corrente. A do meio é a que se usa em
+instrumentação, e a caixa de baixo é a especificação que decide se ela vai funcionar.
+:::
+
+O princípio comum às três topologias é o mesmo das regras de ouro: **a realimentação força uma
+tensão conhecida sobre um resistor conhecido, e uma corrente conhecida é a consequência.**
+
+Na versão com MOSFET — a mais usada — a regra 2 diz que a tensão no nó de amostragem tem de
+igualar $v_c$. Como esse nó é o topo de $R_S$, a corrente através de $R_S$ vale $v_c/R_S$
+**por construção**, e o amp-op ajusta a porta do transistor até que isso seja verdade. Se a
+carga mudar de 100 Ω para 500 Ω, a saída do amp-op sobe para compensar e a corrente **não
+muda**.
+
+A corrente de porta do MOSFET é nula, então a corrente de dreno e a de fonte são a mesma, e o
+erro dessa topologia é essencialmente o erro de $R_S$ mais o $V_{OS}$ do amp-op dividido por
+$R_S$.
+
+::: {.callout-note}
+## Por que MOSFET e não bipolar
+
+Com um transistor bipolar no lugar do MOSFET, a corrente de base **não** atravessa $R_S$, e a
+corrente na carga é $I_C = I_E - I_B = I_E(1 - 1/(\beta+1))$. Com $\beta = 100$, é um erro de
+1 % que varia com a temperatura e de peça para peça — exatamente o tipo de dependência de
+parâmetro de dispositivo que a realimentação existe para eliminar.
+
+O MOSFET não tem corrente de porta, e o erro desaparece. Um Darlington reduz o erro para
+0,01 %, mas custa duas quedas de junção de conformidade.
+:::
+
+## Projeto: transmissor de 4 a 20 mA {#sec-068-420}
+
+::: {#fig-068-420}
+
+```{.tikz}
+%%| filename: 068-420
+%%| alt: Esquemático e cálculo de um transmissor industrial de quatro a vinte miliampères. O circuito é a fonte de corrente com MOSFET: uma tensão de controle de um a cinco volts entra na entrada não inversora do amp-op, a saída aciona a porta de um MOSFET de canal N, a fonte do MOSFET vai ao terra por um resistor de amostragem de duzentos e quarenta e nove ohms com tolerância de um por cento, e esse nó realimenta a entrada inversora. A carga, representada como a resistência do laço somada à entrada do receptor, fica entre o trilho de vinte e quatro volts e o dreno do MOSFET. Quatro caixas de cálculo acompanham. A primeira mostra a escolha do resistor de amostragem: para que um volt vire quatro miliampères é preciso duzentos e cinquenta ohms, valor que não existe na série E24, mas existe na série E96 de resistores de um por cento como duzentos e quarenta e nove ohms; com ele, um volt dá quatro vírgula zero dois miliampères e cinco volts dão vinte vírgula zero oito miliampères, um erro de meio por cento no fundo de escala, absorvível na calibração. A segunda caixa calcula a tensão de conformidade: dos vinte e quatro volts do trilho, cinco são consumidos pelo resistor de amostragem no fundo de escala e cerca de um volt pelo MOSFET, sobrando dezoito volts para o laço, o que a vinte miliampères permite novecentos ohms de resistência total de laço — suficiente para centenas de metros de cabo mais a resistência de entrada de um receptor típico de duzentos e cinquenta ohms. A terceira caixa trata da dissipação: o resistor de amostragem dissipa cem miliwatts no fundo de escala, o que pede um resistor de um quarto de watt; e o MOSFET dissipa o pior caso quando a corrente é máxima e a carga é mínima, cerca de trezentos e oitenta miliwatts, valor que um encapsulamento TO-92 já não aguenta com folga. A quarta caixa explica por que o padrão começa em quatro miliampères e não em zero: uma corrente de zero significaria fio rompido indistinguível de leitura de fundo de escala inferior, ao passo que com o zero em quatro miliampères qualquer leitura abaixo disso é diagnóstico de falha, e a corrente de repouso ainda alimenta a eletrônica do transmissor.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- circuito ----------------
+  \draw (4.4,3.4) -- (4.4,3.0);
+  \node[anchor=south, font=\scriptsize, manualred] at (4.4,3.45) {$+24$ V};
+  \draw (4.4,3.0) to[R] (4.4,1.6);
+  \node[anchor=east, font=\tiny, align=right] at (4.25,2.3) {carga\\do laço};
+
+  \draw[thick] (1.0,-0.4) -- (1.0,1.4) -- (2.7,0.5) -- cycle;
+  \node[anchor=west, font=\small] at (1.1,0.05) {$-$};
+  \node[anchor=west, font=\small] at (1.1,0.95) {$+$};
+
+  \draw (-0.7,0.95) -- (1.0,0.95);
+  \node[anchor=east, font=\scriptsize, align=right] at (-0.75,0.95) {$v_c$\\{\tiny$1$ a $5$ V}};
+
+  \node[nmos] (m) at (4.4,0.9) {};
+  \draw (2.7,0.5) -- (3.1,0.5) -- (3.1,0.9) -- (m.gate);
+  \draw (m.drain) -- (4.4,1.6);
+  \draw (m.source) -- (4.4,-0.1);
+  \node[ponto] at (4.4,-0.1) {};
+  \draw (4.4,-0.1) to[R, l=$R_S$ $249\ \Omega$ $1$ \%] (4.4,-1.5);
+  \node[ground] at (4.4,-1.5) {};
+
+  \draw (4.4,-0.1) -- (0.5,-0.1) -- (0.5,0.05) -- (1.0,0.05);
+
+  \node[anchor=west, font=\tiny, manualblue] at (4.55,2.3) {$I = 4$ a $20$ mA};
+
+  % ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=4.2cm] at (6.4,3.4)
+       {\textbf{O resistor de amostragem.}
+        \[ R_S = \frac{1\ \text{V}}{4\ \text{mA}} = 250\ \Omega \]
+        Não existe em E24. Existe em \textbf{E96} (a série dos 1 \%): $249\ \Omega$.
+        \\[3pt]
+        $1$ V $\to 4{,}02$ mA \quad $5$ V $\to 20{,}08$ mA
+        \\[2pt]
+        Erro de $0{,}4$ \% no fundo de escala, absorvível na calibração.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=4.2cm] at (11.0,3.4)
+       {\textbf{Conformidade.}
+        \\[3pt]
+        $24 - 5\ (R_S) - 1\ (V_{DS}) = 18$ V para o laço.
+        \[ R_{\text{laço},\max} = \frac{18\ \text{V}}{20\ \text{mA}} = 900\ \Omega \]
+        Cabe o receptor de $250\ \Omega$ e centenas de metros de cabo.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=4.2cm] at (6.4,-1.2)
+       {\textbf{Dissipação.}
+        \\[3pt]
+        $R_S$: \ $(20\ \text{mA})^2 \times 249 = 100$ mW $\Rightarrow$ resistor de
+        $1/4$ W.
+        \\[3pt]
+        MOSFET, pior caso (corrente máxima, carga mínima):
+        $(24 - 5) \times 20\ \text{mA} = 380$ mW.
+        \\[2pt]
+        \textbf{TO-92 não aguenta com folga.} Use TO-220 ou limite a faixa de carga.};
+
+  \node[draw=manualyellow, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=4.2cm] at (11.0,-1.2)
+       {\textbf{Por que 4 mA e não 0?}
+        \\[3pt]
+        Corrente zero seria \emph{indistinguível} de fio rompido.
+        \\[3pt]
+        Com o zero em 4 mA, qualquer leitura abaixo disso é \textbf{diagnóstico de falha} ---
+        e os 4 mA de repouso ainda alimentam a eletrônica do transmissor.};
+
+\end{tikzpicture}
+```
+
+O laço de 4 a 20 mA: uma fonte de corrente com MOSFET, um resistor de precisão e quatro
+verificações. É o padrão de instrumentação industrial há sessenta anos, e a razão de ele
+começar em 4 mA é a caixa amarela.
+:::
+
+O laço de corrente resolve um problema que a transmissão em tensão não resolve: **a resistência
+do cabo não altera a medida**. Uma fonte de corrente entrega os mesmos 12,5 mA por 10 metros de
+cabo ou por 500, e o receptor — um resistor de 250 Ω na outra ponta — converte de volta para
+1 a 5 V.
+
+O projeto inteiro cabe em cinco verificações, e a @fig-068-420 traz quatro delas:
+
+1. **O resistor de amostragem.** $R_S = 249\ \Omega$, 1 %. Note que 250 Ω não existe em E24
+   mas 249 Ω existe em **E96**, que é a série dos resistores de 1 % — e é comercial exatamente
+   como um 10 kΩ de 5 %.
+2. **A conformidade.** 18 V disponíveis para o laço, 900 Ω de resistência total no fundo de
+   escala.
+3. **A dissipação**, nos dois componentes, no pior caso de cada um.
+4. **A razão do zero deslocado**, que é de diagnóstico e não de eletrônica.
+5. **A faixa de modo comum do amp-op na entrada inversora.** Ela vê a tensão sobre $R_S$, que
+   vai de 1 a 5 V — dentro da faixa de qualquer amp-op alimentado com 24 V, mas seria um
+   problema se $R_S$ estivesse do lado alto.
+
+::: {.callout-note}
+## E96 é tão comercial quanto E24
+
+A regra de valor comercial deste manual não significa "E12 ou E24 e nada mais". Significa
+**valor que existe para comprar**. Resistores de 1 % são fabricados na série E96 (96 valores por
+década, passo de 2,3 %), e valores como 249 Ω, 1,02 kΩ ou 4,99 kΩ são tão comuns quanto 10 kΩ.
+
+O que não existe é 3,7 kΩ ou 137 nF — valores que não pertencem a série nenhuma. E capacitores
+continuam em E6 ou E12: não existe capacitor de 4,99 nF.
+
+Sempre que o projeto pedir precisão, verifique se a razão desejada é alcançável em E96 antes de
+partir para dois resistores em série.
+:::
+
+## 🧪 Laboratório {#sec-068-lab}
+
+O objetivo é ver os dois modos de falha característicos deste capítulo — o integrador fugindo e
+o derivador oscilando — antes de aplicar as correções.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | **TL072** (duplo, DIP-8) | entrada JFET, essencial para o integrador |
+| 1 | **LM358** | Parte 2, a comparação de corrente de polarização |
+| 1 | **MOSFET 2N7000** ou **BS170** | Parte 5 |
+| — | Resistores: 2× 10 kΩ, 1 kΩ, 1 MΩ, 100 kΩ, 249 Ω (1 %) ou 240 Ω, 100 Ω, 470 Ω, 1,5 kΩ | |
+| — | Capacitores: 2× 100 nF poliéster, 10 nF, 2× 100 nF cerâmico (desacoplamento) | |
+| 1 | Chave de pressão ou jumper | reinicialização do integrador |
+| 1 | Fonte simétrica $\pm 12$ V | |
+| 1 | Gerador de funções (quadrada e triangular) | |
+| 1 | Osciloscópio de 2 canais | |
+| 1 | Multímetro | |
+
+::: {.callout-warning}
+Use capacitores de **poliéster ou polipropileno** no integrador e no derivador, nunca cerâmicos
+de alta constante dielétrica (X7R, Y5V) e nunca eletrolíticos. Os cerâmicos de classe 2 mudam
+de capacitância com a tensão aplicada — um X7R de 100 nF pode virar 60 nF com 5 V em cima —, e o
+resultado é um integrador cuja constante de tempo depende do sinal. É um erro difícil de
+diagnosticar porque tudo parece certo no esquemático.
+:::
+
+### Parte 1 — O integrador ideal foge
+
+1. Monte o integrador com $R = 10$ kΩ e $C = 100$ nF, **sem** $R_f$.
+2. Aterre a entrada, ligue a alimentação e observe a saída no osciloscópio com base de tempo
+   lenta (1 s/div) ou simplesmente no multímetro.
+3. Cronometre até a saída bater no trilho.
+
+Você deve medir entre 2 e 15 segundos, dependendo do $V_{OS}$ da sua peça. Curto-circuite o
+capacitor com um jumper para descarregá-lo e observe o processo recomeçar.
+
+4. Calcule o $V_{OS}$ da sua peça a partir do tempo medido:
+
+$$ V_{OS} = \frac{RC \times 13\ \text{V}}{t_{saturação}} $$
+
+Este é, por sinal, um dos melhores métodos de bancada para medir $V_{OS}$ — o integrador
+amplifica um erro de milivolts até algo que se mede com um cronômetro.
+
+### Parte 2 — A corrente de polarização, de novo
+
+1. Repita a Parte 1 com um **LM358** no lugar do TL072.
+
+O tempo de saturação deve cair bastante, porque agora somam-se duas causas: o $V_{OS}$ e os
+45 nA de corrente de polarização carregando o capacitor diretamente
+($dv/dt = I_B/C = 0{,}45$ V/s).
+
+2. Volte ao TL072 e troque $C$ por 10 nF. O tempo cai por dez, porque $RC$ caiu por dez.
+
+### Parte 3 — Integrar de verdade
+
+1. Acrescente $R_f = 1$ MΩ em paralelo com $C$.
+2. Aterre a entrada e confirme que a saída **para** em alguns centenas de milivolts em vez de
+   fugir. Meça o valor: deve ser $V_{OS} \times 100$, coerente com a Parte 1.
+3. Aplique uma onda quadrada de $\pm 1$ V em 1 kHz e observe a saída.
+
+Triângulo de 0,5 V de pico a pico, com as pontas exatamente nas transições da entrada.
+
+4. Baixe a frequência para 100 Hz, depois 10 Hz, depois 2 Hz.
+
+Em 10 Hz o triângulo ainda é reconhecível; em 2 Hz ele fica visivelmente **arredondado**, porque
+a frequência se aproximou do polo de 1,6 Hz e o circuito deixou de integrar. Este é o preço da
+correção, medido.
+
+5. Aplique uma **senoide** de 1 kHz e verifique os dois resultados analíticos: a saída é uma
+   senoide (a integral de uma senoide é uma senoide), atrasada de 90°, com amplitude
+   $1/(2\pi f RC) = 0{,}16$ vezes a de entrada.
+
+### Parte 4 — O derivador oscila
+
+::: {.callout-warning}
+Este experimento faz o circuito oscilar de propósito, em algumas dezenas de quilohertz. É
+seguro, mas não deixe rodando por muito tempo e confira se o CI está aquecendo.
+:::
+
+1. Monte o derivador com $C = 100$ nF na entrada e $R = 10$ kΩ na realimentação, **sem** $R_s$.
+2. Aplique uma onda triangular de 1 kHz, 1 V de pico.
+3. Observe a saída.
+
+Você deve ver uma onda quadrada **com toque violento nas bordas** ou uma oscilação franca
+sobreposta ao sinal inteiro. Meça a frequência da oscilação e compare com os 22 kHz previstos na
+@fig-068-estabilidade — a sua vai depender do GBW da sua peça e da capacitância do protoboard.
+
+4. Aplique uma **senoide** limpa e olhe a saída com acoplamento CA e ganho vertical alto. A
+   saída é visivelmente mais suja que a entrada, mesmo quando não oscila.
+
+### Parte 5 — Derivar de verdade, e a fonte de corrente
+
+1. Acrescente $R_s = 1$ kΩ em série com o capacitor de entrada.
+
+A oscilação para. Meça o ganho em 1 kHz (esperado: $2\pi f RC = 6{,}3$) e em 10 kHz (esperado:
+$R/R_s = 10$, porque acima de 1,6 kHz o circuito deixa de derivar).
+
+2. Acrescente $C_f = 10$ nF em paralelo com $R$ e refaça a medida em 10 kHz. O ganho cai — e a
+   saída fica mais limpa ainda.
+
+**A fonte de corrente:**
+
+3. Monte a fonte com MOSFET: $v_c$ na entrada $+$, 2N7000 com a porta na saída do amp-op, fonte
+   ao terra por $R_S = 240\ \Omega$, e o nó da fonte de volta à entrada $-$. Carga entre $+12$ V
+   e o dreno.
+4. Com $v_c = 1$ V e carga de **100 Ω**, meça a corrente. Esperado: $1/240 = 4{,}2$ mA.
+5. Troque a carga por **470 Ω** e depois por **1,5 kΩ**, medindo a corrente em cada uma.
+
+| Carga | Corrente medida | $V_{DS}$ do MOSFET |
+|---|---|---|
+| 100 Ω | | |
+| 470 Ω | | |
+| 1,5 kΩ | | |
+
+: A corrente deve ser a mesma nas três primeiras linhas — até a conformidade acabar.
+{#tbl-068-lab1}
+
+6. **Ache a conformidade:** aumente a carga até a corrente começar a cair. Com $v_c = 1$ V,
+   $R_S = 240\ \Omega$ e 12 V de trilho, sobram $12 - 1 - 0{,}5 \approx 10{,}5$ V, e a corrente
+   deve cair acima de $10{,}5/4{,}2\ \text{mA} = 2{,}5$ kΩ. Confirme.
+
+**Variante simulada (plano B).** No LTspice, a Parte 4 fica muito mais clara do que na bancada:
+uma análise `.ac` do **ganho de malha** do derivador (abrindo a malha e injetando o sinal, como
+no capítulo sobre realimentação) reproduz a @fig-068-estabilidade com as duas curvas e permite
+ler a margem de fase diretamente, com `.step param Rs list 0 100 1k` mostrando o efeito da
+correção. Para o integrador, um `.tran 20` com a entrada aterrada e `.param Vos=3m` como fonte
+em série com a entrada não inversora mostra a fuga da Parte 1 sem esperar de olho no
+cronômetro, e `.step param Rf list 1e12 10meg 1meg` mostra a correção agindo.
+
+## 🔥 Onde Queima {#sec-068-queima}
+
+**Montar o integrador ideal e esperar que ele integre.** Ganho infinito em CC significa que
+$V_{OS}$ e $I_B$ são integrados sem limite. O resistor em paralelo com o capacitor não é
+opcional; a alternativa é uma chave de reinicialização.
+
+**Usar amp-op bipolar em integrador.** 45 nA carregando 100 nF dão 0,45 V/s. Entrada JFET ou
+CMOS, sempre.
+
+**Montar o derivador ideal.** Ele oscila, e a razão é geométrica: ganho de ruído subindo
+20 dB/déc contra $A_{OL}$ descendo 20 dB/déc dá 40 dB/déc de fechamento e margem de fase zero.
+Resistor em série com o capacitor de entrada, sempre.
+
+**Escolher $R_f/R$ ou $R/R_s$ sem verificar o que se perde.** $R_f$ grande integra em
+frequências mais baixas e amplifica mais o $V_{OS}$; $R_s$ pequeno deriva até frequências mais
+altas e aproxima a instabilidade. Os dois são compromissos, não constantes.
+
+**Capacitor cerâmico de classe 2 na rede de realimentação.** X7R e Y5V mudam de capacitância
+com a tensão aplicada e com a temperatura. A constante de tempo passa a depender do sinal.
+Poliéster, polipropileno ou C0G.
+
+**Esquecer a corrente de fuga do capacitor.** Um eletrolítico de 10 µF pode ter microampères de
+fuga, o que no integrador é uma corrente de entrada mil vezes maior que a do amp-op. Nunca use
+eletrolítico em integrador.
+
+**Ignorar a tensão de conformidade da fonte de corrente.** A carga máxima é o que sobra do
+trilho depois de $R_S$ e da queda mínima do transistor. Acima disso a corrente cai e o circuito
+parece "quebrado" sem estar.
+
+**Achar que a carga da fonte com MOSFET está aterrada.** Ela está entre o **trilho** e o dreno.
+Se a carga precisar de um terminal no terra de verdade, é preciso um dispositivo de lado alto
+(P-MOSFET ou PNP com $R_S$ no topo) ou uma fonte de Howland.
+
+**Usar bipolar em fonte de corrente de precisão.** A corrente de base não passa por $R_S$, e o
+erro de $1/\beta$ — cerca de 1 % — varia com a temperatura e de peça para peça.
+
+**Dimensionar o transistor da fonte de corrente pela carga nominal.** O pior caso de dissipação
+é **corrente máxima com carga mínima**, quando quase todo o trilho cai sobre o transistor. Num
+laço de 4 a 20 mA com 24 V, são 380 mW.
+
+**Confiar num Howland com resistores de 1 %.** A impedância de saída dele depende do casamento
+exatamente como a CMRR do subtrator do @sec-cap-067. Com 1 %, a "fonte de corrente" tem alguns
+quilohms de impedância de saída, e a corrente varia visivelmente com a carga.
+
+## O que fica deste capítulo {#sec-068-resumo}
+
+**Integrador** — capacitor na realimentação:
+
+$$ v_{out} = -\frac{1}{RC}\int v_{in}\,dt \qquad |A| = \frac{1}{2\pi f RC} \qquad \text{fase } -90^\circ $$
+
+Ganho infinito em CC, e por isso $V_{OS}$ e $I_B$ o levam ao trilho em segundos. **Correção:**
+$R_f$ em paralelo com $C$, com $R_f/R$ entre 10 e 100, ou uma chave de reinicialização.
+
+**Derivador** — capacitor na entrada:
+
+$$ v_{out} = -RC\,\frac{dv_{in}}{dt} \qquad |A| = 2\pi f RC \qquad \text{fase } +90^\circ $$
+
+Ganho crescente amplifica ruído e, pior, o ganho de ruído subindo a 20 dB/déc cruza $A_{OL}$
+descendo a 20 dB/déc: **40 dB/década de fechamento, margem de fase zero, oscilação**.
+**Correção:** $R_s$ em série com $C$, com $R/R_s$ entre 5 e 20.
+
+**A regra geométrica da estabilidade** vale para qualquer circuito com amp-op: a diferença entre
+as inclinações de $A_{OL}$ e do ganho de ruído no cruzamento é o que decide. 20 dB/déc é
+estável; 40 dB/déc oscila.
+
+**Fontes de corrente** funcionam pelo mesmo mecanismo das regras de ouro: a realimentação impõe
+uma tensão conhecida sobre um resistor conhecido.
+
+| Topologia | Corrente | Limitação |
+|---|---|---|
+| Carga flutuante | $v_{in}/R$ | carga não pode ser aterrada |
+| MOSFET + $R_S$ | $v_c/R_S$ | carga ligada ao trilho, não ao terra |
+| Howland | $(v_2-v_1)/R_S$ | impedância de saída depende do casamento |
+
+: As três topologias, e o que cada uma cobra. {#tbl-068-fontes}
+
+**Tensão de conformidade** é a faixa dentro da qual a fonte consegue impor a corrente. Fora
+dela, o transistor sai da saturação e a corrente cai. Verifique sempre no pior caso de carga.
+
+**O laço de 4 a 20 mA** transmite medida imune à resistência do cabo, e o zero deslocado
+existe para que **fio rompido seja distinguível de leitura mínima**.
+
+**E96 é uma série comercial.** Resistores de 1 % existem em 249 Ω, 4,99 kΩ, 1,02 kΩ. O que não
+existe é valor fora de série nenhuma.
+
+## Para o próximo capítulo {#sec-068-fecho}
+
+Este capítulo dependeu, três vezes, de coisas que o modelo ideal do @sec-cap-065 diz não
+existirem. A tensão de desequilíbrio $V_{OS}$ é o que faz o integrador fugir. A corrente de
+polarização $I_B$ é o que torna o LM358 inadequado para integrar. E o produto ganho-banda finito
+é o que faz o derivador oscilar.
+
+Não é coincidência. Os circuitos que envolvem capacitores na malha são os que **amplificam
+seletivamente as imperfeições**, e por isso são os primeiros a denunciar que o amp-op ideal é
+uma aproximação.
+
+O @sec-cap-069 abre a caixa preta e quantifica as imperfeições uma a uma: $V_{OS}$ e a deriva
+dele com a temperatura; $I_B$ e $I_{OS}$; a taxa de subida (*slew rate*) e por que ela é
+diferente do produto ganho-banda, apesar de as duas limitarem a frequência; a saturação e a
+recuperação dela; e o ruído próprio do dispositivo. Com isso na mão, escolher um amp-op numa
+folha de dados deixa de ser adivinhação — e vários dos "mistérios" que aparecem na bancada
+ganham nome e número.
