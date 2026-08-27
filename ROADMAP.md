@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 73/104 |
-| **Contíguos até** | **073** — sem nenhum buraco no meio do livro |
+| **Progresso** | 74/104 |
+| **Contíguos até** | **074** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 074** | Reguladores integrados: série, LDO e dissipação térmica |
+| **Próximo capítulo: 075** | Fontes chaveadas: buck, boost e buck-boost |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -101,7 +101,18 @@ sob pulsos, o dimensionamento do transformador pela corrente **eficaz** ($I_{rms
 emissor dentro da malha e a referência alimentada pela **saída já regulada**, a limitação de
 corrente $I_{lim} = 0{,}6/R_{sc}$ e o alerta sobre limitação a corrente constante, e o calor
 como definição da topologia: $P = (V_{in}-V_{out})I$, pior caso térmico oposto ao de tensão, e
-46 % de rendimento na fonte inteira (073).
+46 % de rendimento na fonte inteira (073); o interior do encapsulamento de três pernas com as
+três proteções que o discreto não tem (limitação de corrente, SOA, desligamento térmico) e o
+alerta de que as duas últimas se manifestam como "defeito"; a **referência bandgap** somando
+$V_{BE}$ (coeficiente negativo) com $K V_T \ln n$ (proporcional a $T$) para dar 1,25 V plano, e
+por que 1,25 V é um número melhor que os 5,6 V do Zener; o LM317 flutuante com
+$V_{out} = 1{,}25(1+R_2/R_1) + I_{ADJ}R_2$, o porquê de $R_1 = 240\ \Omega$ (corrente mínima de
+carga resolvida pelo próprio divisor), os diodos $D_1$ e $D_2$, e o mesmo componente como fonte
+de corrente $1{,}25/R$; **série e LDO como topologias diferentes** — seguidor de emissor contra
+emissor comum — com a **janela de ESR** do capacitor de saída como componente do laço de
+controle; a queda da rejeição de ondulação com a frequência (60 dB em 120 Hz, 20 dB em 1 MHz), e
+o dimensionamento térmico como o menor de três limites, com os dois erros de arredondamento que
+o arruínam (074).
 
 O capítulo 071 já montara a ponte para o fim do volume: o desacoplamento, invocado seis vezes
 como regra de bancada ao longo do Volume 11, ganha explicação própria no capítulo 077.
@@ -258,7 +269,7 @@ para conteúdo real e o verificador não as lista mais.
 
 - [x] 072 — Transformadores e acoplamento magnético — `capitulos/072-transformadores-e-acoplamento-magnetico.qmd`
 - [x] 073 — Fontes lineares: do transformador ao regulador — `capitulos/073-fontes-lineares-do-transformador-ao-regulador.qmd`
-- [ ] 074 — Reguladores integrados: série, LDO e dissipação térmica — `capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.qmd`
+- [x] 074 — Reguladores integrados: série, LDO e dissipação térmica — `capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.qmd`
 - [ ] 075 — Fontes chaveadas: buck, boost e buck-boost — `capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.qmd`
 - [ ] 076 — Baterias, células e circuitos de carga — `capitulos/076-baterias-celulas-e-circuitos-de-carga.qmd`
 - [ ] 077 — Aterramento, malhas de terra, desacoplamento e proteção — `capitulos/077-aterramento-malhas-de-terra-desacoplamento-e.qmd`

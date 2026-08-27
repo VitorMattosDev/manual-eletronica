@@ -1,3 +1,916 @@
 # Reguladores integrados: série, LDO e dissipação térmica {#sec-cap-074}
 
-*(em elaboração)*
+O capítulo anterior montou um regulador série com peças soltas e depois usou um 7809 como se
+fosse uma caixa de três pernas que faz a coisa certa. As duas coisas eram o mesmo circuito, e é
+hora de dizer isso com todas as letras: **dentro do encapsulamento de três pernas está o
+circuito da @fig-073-serie**, mais quatro proteções que o desenho discreto não tinha, mais uma
+referência de tensão muito melhor que um Zener.
+
+Este capítulo trata dessas três coisas.
+
+A primeira é a **referência bandgap**, que resolve um problema que o @sec-cap-050 deixou aberto:
+o Zener de 5,6 V tem coeficiente de temperatura quase nulo, mas 5,6 V é um valor imposto pela
+física do silício, e ninguém quer projetar em torno de um número que não escolheu. A referência
+bandgap dá 1,25 V com deriva térmica melhor que a do Zener, funciona com 2 V de alimentação, e —
+o ponto — é construída somando duas grandezas que variam com a temperatura em sentidos opostos.
+É a ideia mais bonita do volume.
+
+A segunda é a distinção entre **regulador série** e **LDO**. Elas não são "pior" e "melhor": são
+topologias diferentes, com elementos de passagem diferentes, malhas de realimentação diferentes,
+e exigências de capacitor de saída incompatíveis entre si. Trocar um pelo outro sem trocar o
+capacitor é uma das maneiras mais confiáveis de fazer uma fonte oscilar.
+
+A terceira é o **dimensionamento térmico feito como engenharia**. O 7809 do laboratório anterior
+entrou em proteção térmica sem dissipador; a proteção térmica é uma rede de segurança, não um
+método de projeto. Escolher dissipador a partir de $R_{\theta}$, dimensionar área de cobre em
+SMD, e entender por que "1,5 A" nunca é 1,5 A são coisas que se fazem com uma planilha e três
+números do *datasheet*.
+
+## Por dentro do encapsulamento {#sec-074-dentro}
+
+::: {#fig-074-dentro}
+
+```{.tikz}
+%%| filename: 074-dentro
+%%| alt: Figura em duas partes sobre o interior e os pinos dos reguladores integrados. À esquerda, o diagrama de blocos do que existe dentro de um regulador da família setenta e oito: da entrada parte o coletor de um transistor de passagem cujo emissor vai à saída; a base desse transistor é comandada por um amplificador de erro; o amplificador de erro compara, na entrada não inversora, a tensão de uma referência bandgap de um vírgula vinte e cinco volts, e na entrada inversora, a amostra tirada de um divisor interno ligado à saída. Três blocos de proteção agem sobre a base do transistor de passagem: limitação de corrente, que atua a partir de um resistor de detecção em série; proteção de área segura de operação, que reduz o limite de corrente conforme a diferença entre entrada e saída cresce; e desligamento térmico, que corta tudo quando a junção passa de cerca de cento e setenta graus. Uma anotação registra que os três primeiros blocos, referência, amplificador de erro e transistor de passagem, são exatamente o circuito discreto do capítulo anterior, e que os três últimos são o que se paga a mais ao comprar o integrado. À direita, três diagramas de pinagem vistos de frente, com a face metálica para trás. O primeiro é o setenta e oito xx, com o pino um sendo entrada, o pino dois terra e o pino três saída. O segundo é o setenta e nove xx, o regulador negativo, com o pino um sendo terra, o pino dois entrada e o pino três saída, e uma tarja vermelha de alerta registra que a pinagem não é a mesma do positivo e que trocar as duas pinagens é o erro mais comum de quem monta fonte simétrica pela primeira vez. O terceiro é o LM trezentos e dezessete, com o pino um sendo ajuste, o pino dois saída e o pino três entrada, e uma anotação registra que neste componente a aba metálica está no potencial da saída e não do terra, o que obriga a isolar o dissipador quando há mais de um regulador na mesma placa.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \tikzset{bl/.style={draw, thick, rounded corners=2pt, align=center,
+                      font=\scriptsize, minimum height=0.85cm, fill=white}}
+
+  % ---------------- caminho principal ----------------
+  \draw (0,4.4) -- (1.2,4.4);
+  \node[ponto] at (0,4.4) {};
+  \node[anchor=east, font=\scriptsize] at (-0.1,4.4) {\textbf{IN}};
+
+  \node[bl, minimum width=1.9cm] (pass) at (2.3,4.4) {transistor\\de passagem};
+  \draw (pass.east) -- (4.0,4.4);
+  \draw (4.0,4.4) to[R, l={$R_{sc}$}] (5.8,4.4);
+  \node[ponto] at (6.6,4.4) {};
+  \draw (5.8,4.4) -- (7.6,4.4);
+  \node[ponto] at (7.6,4.4) {};
+  \node[anchor=west, font=\scriptsize] at (7.7,4.4) {\textbf{OUT}};
+
+  % divisor interno
+  \draw (6.6,4.4) -- (6.6,3.5);
+  \draw (6.6,3.5) to[R] (6.6,2.4);
+  \node[ponto] at (6.6,2.4) {};
+  \draw (6.6,2.4) to[R] (6.6,1.3);
+  \draw (6.6,1.3) -- (6.6,0.9) -- (3.9,0.9);
+  \node[anchor=west, font=\tiny, align=left] at (6.75,2.9) {divisor\\interno};
+
+  % amplificador de erro
+  \draw[thick] (3.0,2.2) -- (3.0,3.6) -- (4.4,2.9) -- cycle;
+  \node[anchor=west, font=\scriptsize] at (3.08,3.30) {$-$};
+  \node[anchor=west, font=\scriptsize] at (3.08,2.50) {$+$};
+  \node[anchor=north, font=\tiny, align=center] at (3.7,2.15) {erro};
+  \draw (6.6,2.4) -- (5.2,2.4) -- (5.2,3.28) -- (3.0,3.28);
+  \draw (4.4,2.9) -- (4.9,2.9) -- (4.9,4.4);
+  \node[ponto] at (4.9,4.4) {};
+
+  % referencia
+  \node[bl, minimum width=1.7cm] (ref) at (1.3,2.52) {bandgap\\1,25 V};
+  \draw (ref.east) -- (3.0,2.52);
+  \draw (1.3,2.09) -- (1.3,0.3);
+  \draw (0,0.3) -- (7.6,0.3);
+  \node[ponto] at (0,0.3) {};
+  \node[anchor=east, font=\scriptsize] at (-0.1,0.3) {\textbf{GND}};
+
+  % protecoes
+  \node[bl, minimum width=2.3cm, fill=manualred!8] (lim) at (2.7,6.9) {limitação de corrente};
+  \node[bl, minimum width=2.3cm, fill=manualred!8] (soa) at (5.3,6.9) {proteção de SOA};
+  \node[bl, minimum width=2.3cm, fill=manualred!8] (th)  at (7.9,6.9) {desligamento térmico};
+
+  \draw[->,>=stealth] (lim.south) -- (2.7,5.6) -- (2.3,5.6) -- (pass.north);
+  \draw[->,>=stealth] (soa.south) -- (5.3,5.9) -- (2.5,5.9) -- (2.5,5.05);
+  \draw[->,>=stealth] (th.south)  -- (7.9,6.2) -- (2.1,6.2) -- (2.1,5.05);
+  \draw[manualgray, thin] (4.0,4.4) -- (4.0,6.3) -- (4.0,6.3);
+  \draw[manualgray, thin, dashed] (4.0,5.2) -- (2.7,5.2) -- (2.7,6.35);
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=8.2cm] at (-0.6,-0.4)
+       {\textbf{Os três blocos de baixo} --- referência, amplificador de erro, transistor de
+        passagem --- \textbf{são o circuito discreto do capítulo anterior}.
+        \\[3pt]
+        \textbf{Os três blocos vermelhos são o que se paga a mais} ao comprar o integrado. Em
+        peças soltas, cada um deles seria um subcircuito com o seu próprio ajuste.};
+
+  % ---------------- pinagens ----------------
+  \begin{scope}[shift={(9.7,0)}]
+
+    \tikzset{encaps/.style={draw, thick, minimum width=2.3cm, minimum height=1.05cm,
+                           fill=manualgray!10}}
+
+    % 78xx
+    \node[encaps] (a) at (1.15,6.5) {};
+    \node[font=\scriptsize] at (1.15,6.5) {\textbf{78xx}};
+    \foreach \i/\lab in {1/IN, 2/GND, 3/OUT} {
+      \draw (\i*0.75-0.35,5.98) -- (\i*0.75-0.35,5.62);
+      \node[anchor=north, font=\tiny] at (\i*0.75-0.35,5.58) {\lab};
+    }
+    \node[anchor=west, font=\tiny, manualgray, align=left] at (2.55,6.5)
+         {visto de frente,\\aba para trás};
+
+    % 79xx
+    \node[encaps, fill=manualred!10] (b) at (1.15,4.1) {};
+    \node[font=\scriptsize] at (1.15,4.1) {\textbf{79xx}};
+    \foreach \i/\lab in {1/GND, 2/IN, 3/OUT} {
+      \draw (\i*0.75-0.35,3.58) -- (\i*0.75-0.35,3.22);
+      \node[anchor=north, font=\tiny] at (\i*0.75-0.35,3.18) {\lab};
+    }
+    \node[draw=manualred, thick, rounded corners=2pt, anchor=west, align=left,
+          font=\tiny, inner sep=4pt, text width=3.4cm] at (2.55,4.1)
+         {\textbf{A pinagem \emph{não} é a do positivo!} Trocar as duas é o erro mais comum de
+          quem monta fonte simétrica.};
+
+    % LM317
+    \node[encaps] (c) at (1.15,1.7) {};
+    \node[font=\scriptsize] at (1.15,1.7) {\textbf{LM317}};
+    \foreach \i/\lab in {1/ADJ, 2/OUT, 3/IN} {
+      \draw (\i*0.75-0.35,1.18) -- (\i*0.75-0.35,0.82);
+      \node[anchor=north, font=\tiny] at (\i*0.75-0.35,0.78) {\lab};
+    }
+    \node[anchor=west, font=\tiny, align=left, text width=3.4cm] at (2.55,1.7)
+         {A \textbf{aba está no potencial da saída}, não no terra: isole o dissipador se houver
+          mais de um regulador nele.};
+
+  \end{scope}
+
+\end{tikzpicture}
+```
+
+O que existe dentro de um 78xx, e as três pinagens que se confundem. A pinagem do 79xx é
+diferente da do 78xx, e isso já custou muitas fontes simétricas.
+:::
+
+As três proteções internas merecem uma palavra cada, porque duas delas se manifestam como
+"defeito" para quem não as conhece.
+
+**Limitação de corrente** é a do @sec-cap-073: um resistor de detecção e um transistor que rouba
+a corrente de base. Num 7805 típico, o limite fica em 1,5 A.
+
+**Proteção de área segura de operação** (SOA) é mais sutil, e é ela que faz o número da primeira
+página do *datasheet* ser quase sempre inatingível. O limite de corrente **não é fixo**: ele cai
+conforme $V_{in} - V_{out}$ cresce, porque o que destrói o transistor de passagem é a
+**potência**, não a corrente. Um 7805 entrega 1,5 A com 2 V de diferença e menos de 200 mA com
+30 V de diferença.
+
+**Desligamento térmico** corta a saída quando a junção passa de cerca de 170 °C, e a religa
+quando esfria. É o que aconteceu na Parte 6 do laboratório anterior. Ele **salva o componente** e
+**derruba a fonte** — e o sintoma, uma saída que pulsa com período de segundos, é confundido com
+oscilação de malha por praticamente todo mundo, uma vez.
+
+::: {.callout-important}
+## Os capacitores de entrada e de saída não são opcionais
+
+O regulador é um sistema realimentado com um amplificador de erro de ganho alto, e a estabilidade
+dele foi projetada supondo certas impedâncias nos terminais. Sem os capacitores, a margem de fase
+(@sec-cap-064) some e o circuito oscila, tipicamente entre 100 kHz e alguns MHz.
+
+A regra mínima, para a família 78xx:
+
+- **Entrada:** 330 nF cerâmico, **junto ao pino**, se o capacitor de filtro estiver a mais de
+  uns poucos centímetros. A indutância da trilha entre o filtro e o regulador é o que cria o
+  problema.
+- **Saída:** 100 nF cerâmico, também junto ao pino, mais um eletrolítico de 10 a 100 µF se a
+  carga tiver degraus de corrente.
+
+Para o LM317 e para os LDO, a exigência é mais estrita e o valor **não é livre** — é o assunto da
+@fig-074-ldo.
+
+O sintoma clássico de falta de desacoplamento é uma saída "com ruído" que **muda quando se
+encosta a ponta de prova**. A ponta é capacitância, e ela está estabilizando a malha enquanto
+você mede.
+:::
+
+## A referência bandgap {#sec-074-bandgap}
+
+::: {#fig-074-bandgap}
+
+```{.tikz}
+%%| filename: 074-bandgap
+%%| alt: Figura em duas partes sobre o princípio da referência bandgap. À esquerda, um gráfico de tensão contra temperatura, de menos quarenta a cento e vinte e cinco graus Celsius. Uma reta vermelha descendente representa a tensão base-emissor de um transistor, que vale cerca de zero vírgula sessenta e cinco volt a vinte e cinco graus e cai a uma taxa de aproximadamente dois milivolts por grau, chegando perto de zero vírgula quarenta e cinco volt a cento e vinte e cinco graus. Uma reta verde ascendente representa a diferença entre as tensões base-emissor de dois transistores operando em densidades de corrente diferentes, multiplicada por um fator de escala; essa diferença é proporcional à temperatura absoluta e sobe a uma taxa que foi escolhida exatamente para compensar a queda anterior, partindo de cerca de zero vírgula quarenta e cinco volt e chegando a zero vírgula sessenta e cinco volt. Uma reta azul horizontal, resultado da soma das duas, fica praticamente constante em um vírgula vinte e cinco volts ao longo de toda a faixa, com uma curvatura residual mínima. Uma anotação registra que a soma é plana porque as duas parcelas foram dimensionadas para ter coeficientes de temperatura iguais e de sinais opostos, e que a curvatura residual, de segunda ordem, é o que limita a precisão de uma referência bandgap simples. À direita, três caixas. A primeira explica o mecanismo em três linhas: a tensão base-emissor tem coeficiente negativo de cerca de menos dois milivolts por grau; a diferença entre duas tensões base-emissor de transistores com densidades de corrente na razão n vale a tensão térmica vezes o logaritmo natural de n, e portanto é proporcional à temperatura absoluta, com coeficiente positivo; somando as duas com o peso certo, o coeficiente resultante é nulo. A segunda caixa registra de onde vem o número um vírgula vinte e cinco: é aproximadamente a largura da banda proibida do silício extrapolada para o zero absoluto, expressa em volts, e daí o nome bandgap, e observa que esse valor não foi escolhido por conveniência de projeto e sim imposto pela física do material, exatamente como os cinco vírgula seis volts do Zener compensado. A terceira caixa compara a bandgap com o Zener: a bandgap funciona a partir de cerca de dois volts de alimentação contra os seis a oito volts que o Zener compensado exige, tem deriva típica de vinte a cinquenta partes por milhão por grau contra cinquenta a cem do Zener, tem ruído menor em baixa frequência e ocupa uma fração da área de silício, razões pelas quais toda referência dentro de um regulador moderno é bandgap.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=9.8cm, height=7.4cm,
+    xmin=-40, xmax=125, ymin=0.3, ymax=1.45,
+    xlabel={temperatura (°C)}, ylabel={tensão (V)},
+    xtick={-40,0,25,50,75,100,125},
+    ytick={0.4,0.6,0.8,1.0,1.2,1.4},
+    yticklabels={$0{,}4$,$0{,}6$,$0{,}8$,$1{,}0$,$1{,}2$,$1{,}4$},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+    samples=2,
+]
+
+  \addplot[destaque, line width=1.3pt, domain=-40:125] {0.700 - 0.002*x};
+  \addplot[manualgreen, line width=1.3pt, domain=-40:125] {0.470 + 0.002*x};
+  \addplot[curva, line width=1.6pt, domain=-40:125] {1.250 - 0.0000045*(x-25)*(x-25)};
+
+  \node[anchor=north west, font=\tiny, manualred, align=left] at (-37,1.08)
+       {$V_{BE}$ --- coeficiente\\\textbf{negativo}, $-2$ mV/°C};
+  \node[anchor=north west, font=\tiny, manualgreen, align=left] at (52,0.51)
+       {$K\,\Delta V_{BE}$ --- coeficiente\\\textbf{positivo}, $+2$ mV/°C};
+  \node[anchor=south, font=\tiny, manualblue] at (42,1.27)
+       {\textbf{soma: 1,25 V, praticamente plana}};
+
+\end{axis}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.1cm] at (9.2,6.6)
+       {\textbf{O mecanismo, em três linhas}
+        \\[3pt]
+        $V_{BE}$ cai $\approx 2$ mV/°C --- coeficiente \textbf{negativo}.
+        \\[3pt]
+        Dois transistores com densidades de corrente na razão $n$ diferem de
+        \ $\Delta V_{BE} = V_T \ln n$, \ e $V_T = kT/q$ é \textbf{proporcional à temperatura
+        absoluta} --- coeficiente \textbf{positivo}.
+        \\[3pt]
+        Some as duas com o peso certo: \textbf{o coeficiente resultante é zero}.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.1cm] at (9.2,2.7)
+       {\textbf{De onde vem o 1,25.} É a largura da banda proibida do silício extrapolada ao
+        zero absoluto, em volts --- daí o nome \emph{bandgap}.
+        \\[3pt]
+        Como os 5,6 V do Zener compensado, \textbf{o valor não foi escolhido}: foi imposto pelo
+        material.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.1cm] at (9.2,0.3)
+       {\textbf{Bandgap contra Zener compensado}
+        \\[3pt]
+        alimentação mínima: \ \textbf{2 V} \ contra 6 a 8 V \\
+        deriva típica: \ \textbf{20 a 50 ppm/°C} \ contra 50 a 100 \\
+        ruído em baixa frequência: \ \textbf{menor} \\
+        área de silício: \ \textbf{uma fração}
+        \\[3pt]
+        Por isso \textbf{toda} referência dentro de um regulador moderno é bandgap.};
+
+\end{tikzpicture}
+```
+
+Duas grandezas que variam com a temperatura em sentidos opostos, somadas com o peso certo. O
+resultado é 1,25 V que não se move — e 1,25 V é o número que reaparece em todo regulador
+ajustável.
+:::
+
+O truque merece ser desmontado devagar, porque ele é o exemplo mais limpo, em todo o manual, de
+**cancelamento deliberado de um defeito com outro**.
+
+A tensão base-emissor de um transistor em condução cai com a temperatura, a uns 2 mV por grau. É
+uma imperfeição conhecida desde o @sec-cap-052, e a fonte da instabilidade térmica que o
+@sec-cap-055 combateu com resistor de emissor.
+
+A diferença entre as tensões base-emissor de **dois** transistores operando em densidades de
+corrente diferentes, por outro lado, vale
+
+$$ \Delta V_{BE} = V_T \ln n, \qquad V_T = \frac{kT}{q} $$
+
+e $V_T$ é literalmente proporcional à temperatura absoluta: 25,9 mV a 300 K, 34,5 mV a 400 K.
+Coeficiente **positivo**, e — o ponto crucial — um coeficiente cujo tamanho o projetista escolhe,
+pela razão $n$ das densidades de corrente e pelo ganho $K$ com que a diferença é amplificada.
+
+Escolhendo $K$ para que $K \cdot \partial(\Delta V_{BE})/\partial T = -\partial V_{BE}/\partial T$,
+a soma tem coeficiente de temperatura **nulo**. E o valor dessa soma, para o silício, cai sempre
+perto de 1,22 a 1,25 V.
+
+::: {.callout-note}
+## Por que 1,25 V é um número melhor que 5,6 V
+
+Os dois são impostos pela física, mas o de 1,25 V é imposto num lugar muito mais conveniente.
+
+Uma referência de 5,6 V precisa de pelo menos 6 a 8 V de alimentação para funcionar, o que a
+inutiliza em qualquer circuito de 3,3 V ou 5 V — e circuito de 3,3 V é o caso comum hoje.
+
+Uma referência de 1,25 V funciona com 2 V de alimentação e cabe **abaixo** de qualquer tensão de
+saída que se queira produzir. É por isso que o LM317 ajusta de 1,25 V para cima, e é por isso que
+1,25 V aparece na equação de praticamente todo regulador ajustável, chaveado ou linear.
+
+Referências mais modernas usam 0,8 V, 0,6 V ou 0,5 V, obtidas por divisão da bandgap, justamente
+para caberem abaixo das tensões de núcleo de 1,0 V dos circuitos digitais atuais.
+:::
+
+## O LM317 ajustável {#sec-074-lm317}
+
+::: {#fig-074-lm317}
+
+```{.tikz}
+%%| filename: 074-lm317
+%%| alt: Figura sobre o regulador ajustável LM trezentos e dezessete. À esquerda, o esquemático completo de uso: a entrada não regulada chega ao pino de entrada, com um capacitor de trezentos e trinta nanofarads ao terra junto ao pino; do pino de saída vai um resistor R1 de duzentos e quarenta ohms até o pino de ajuste, e do pino de ajuste um resistor R2 de um vírgula cinco quilohm até o terra; um capacitor de dez microfarads liga o pino de ajuste ao terra para melhorar a rejeição de ondulação; e na saída há um capacitor de um microfarad. Dois diodos de proteção aparecem em vermelho: um ligado da saída para a entrada, com o catodo na entrada, que protege o componente quando a entrada é desligada com a saída ainda carregada; e outro ligado do pino de ajuste para a saída, com o catodo na saída, que protege a entrada de ajuste quando a saída é curto-circuitada e o capacitor do ajuste se descarrega através do circuito interno. À direita, quatro caixas. A primeira dá o princípio de funcionamento: o componente mantém sempre um vírgula vinte e cinco volt entre os pinos de saída e de ajuste, e faz o que for preciso para isso; a corrente por R1 é portanto fixa em um vírgula vinte e cinco dividido por R1, e a tensão de saída é essa corrente vezes a soma dos dois resistores, mais a pequena corrente do pino de ajuste vezes R2, resultando na fórmula um vírgula vinte e cinco vezes um mais R2 sobre R1, mais cinquenta microampères vezes R2. A segunda caixa faz o projeto numérico para nove volts: com R1 de duzentos e quarenta ohms, o valor exigido para R2 seria mil quatrocentos e oitenta e oito ohms, e adotando o valor comercial de um vírgula cinco quilohm a saída fica em nove vírgula zero seis volts pelo termo principal mais setenta e cinco milivolts do termo da corrente de ajuste, totalizando nove vírgula catorze volts. A terceira caixa explica por que duzentos e quarenta ohms é o valor clássico de R1: o regulador precisa de uma corrente mínima de carga de três a dez miliampères para regular, e o próprio divisor com R1 de duzentos e quarenta ohms consome cinco vírgula dois miliampères, de modo que a fonte se auto-carrega e continua regulando mesmo sem carga externa nenhuma; um R1 de dois vírgula dois quilohms consumiria apenas meio miliampère e a saída subiria descontroladamente a vazio. A quarta caixa mostra o mesmo componente usado como fonte de corrente constante: ligando um único resistor entre a saída e o ajuste, e tomando a carga a partir do ajuste, a corrente vale um vírgula vinte e cinco dividido por esse resistor, o que com sessenta e dois ohms dá vinte vírgula dois miliampères, valor adequado para acionar um LED com corrente independente da tensão de alimentação.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- esquematico ----------------
+  \node[draw, thick, rounded corners=2pt, minimum width=2.4cm, minimum height=1.5cm,
+        fill=manualgray!10] (u) at (4.2,4.4) {\textbf{LM317}};
+  \node[anchor=south west, font=\tiny] at (3.1,5.2) {IN};
+  \node[anchor=south east, font=\tiny] at (5.3,5.2) {OUT};
+  \node[anchor=north east, font=\tiny] at (4.15,3.62) {ADJ};
+
+  % entrada
+  \draw (0.4,4.4) -- (3.0,4.4);
+  \node[ponto] at (0.4,4.4) {};
+  \node[anchor=east, font=\scriptsize, align=right] at (0.3,4.4) {$V_{in}$};
+  \node[ponto] at (1.5,4.4) {};
+  \draw (1.5,4.4) to[C, l_={330 nF}] (1.5,1.2);
+
+  % saida
+  \draw (5.4,4.4) -- (11.2,4.4);
+  \node[ponto] at (11.2,4.4) {};
+  \node[anchor=west, font=\scriptsize, align=left] at (11.3,4.4) {$V_{out}$\\9,14 V};
+  \node[ponto] at (8.2,4.4) {};
+  \node[ponto] at (10.1,4.4) {};
+  \draw (10.1,4.4) to[C, l={1 µF}] (10.1,1.2);
+
+  % divisor
+  \draw (8.2,4.4) to[R, l={$R_1$}, a={240 $\Omega$}] (8.2,2.9);
+  \node[ponto] at (8.2,2.9) {};
+  \draw (8.2,2.9) to[R, l={$R_2$}, a={1,5 k$\Omega$}] (8.2,1.2);
+  \draw (4.2,3.65) -- (4.2,2.9) -- (8.2,2.9);
+  \node[ponto] at (6.4,2.9) {};
+  \draw (6.4,2.9) to[C] (6.4,1.2);
+  \node[anchor=east, font=\footnotesize] at (6.05,2.50) {10 µF};
+
+  % terra
+  \draw (0.4,1.2) -- (11.2,1.2);
+  \node[ground] at (3.0,1.2) {};
+
+  % D1: da saida para a entrada, catodo na entrada
+  \draw[manualred, thick] (1.5,6.5) -- (1.5,4.4);
+  \draw[manualred, thick] (1.5,6.5) -- (10.1,6.5);
+  \draw[manualred, thick] (10.1,6.5) -- (10.1,4.4);
+  \draw[fill=white, draw=none] (3.1,6.25) rectangle (4.7,6.75);
+  \draw[manualred, thick] (4.7,6.5) to[D] (3.1,6.5);
+  \node[manualred, anchor=south, font=\scriptsize] at (3.9,6.70) {$D_1$};
+
+  % D2: do ADJ para a saida, catodo na saida
+  \draw[manualred, thick] (6.4,2.0) -- (2.4,2.0);
+  \node[ponto] at (6.4,2.0) {};
+  \draw[manualred, thick] (2.4,2.0) -- (2.4,5.75) -- (9.2,5.75) -- (9.2,4.4);
+  \node[ponto] at (9.2,4.4) {};
+  \draw[fill=white, draw=none] (6.9,5.50) rectangle (8.5,6.00);
+  \draw[manualred, thick] (6.9,5.75) to[D] (8.5,5.75);
+  \node[manualred, anchor=north, font=\scriptsize] at (7.7,5.58) {$D_2$};
+
+  \node[manualred, anchor=west, font=\tiny, align=left, text width=3.1cm] at (11.3,6.5)
+       {$D_1$: protege se a \textbf{entrada} for desligada com a saída carregada};
+  \node[manualred, anchor=west, font=\tiny, align=left, text width=3.1cm] at (11.3,5.75)
+       {$D_2$: protege o ADJ se a \textbf{saída} for curto-circuitada};
+
+  % ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (0,0.2)
+       {\textbf{O princípio: ele mantém 1,25 V entre OUT e ADJ}, e faz o que for preciso para
+        isso.
+        \\[3pt]
+        Logo a corrente por $R_1$ é fixa em $1{,}25/R_1$, e:
+        \[ V_{out} = 1{,}25\left(1 + \frac{R_2}{R_1}\right) + I_{ADJ}\,R_2 \]
+        com $I_{ADJ} \approx 50$ µA.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (8.0,0.2)
+       {\textbf{Projeto para 9 V.} Com $R_1 = 240\ \Omega$, seria
+        $R_2 = 240 \times (9/1{,}25 - 1) = 1488\ \Omega$ --- \textbf{não existe em E24}.
+        \\[3pt]
+        Adotando $R_2 = 1{,}5$ k$\Omega$:
+        \\ \ \ $1{,}25 \times (1 + 6{,}25) = 9{,}06$ V \\
+        \ \ $+\ 50\ \mu\text{A} \times 1{,}5\ \text{k}\Omega = 0{,}075$ V \\
+        \ \ $= \mathbf{9{,}14}$ \textbf{V}.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (0,-3.4)
+       {\textbf{Por que $R_1 = 240\ \Omega$ é o valor clássico.} O LM317 precisa de
+        \textbf{3 a 10 mA de carga mínima} para regular.
+        \\[3pt]
+        O próprio divisor consome $1{,}25/240 = \mathbf{5{,}2}$ \textbf{mA}: a fonte se
+        \emph{auto-carrega} e continua regulando sem carga externa nenhuma.
+        \\[3pt]
+        Com $R_1 = 2{,}2$ k$\Omega$ seriam 0,57 mA --- e a saída \textbf{sobe sozinha} a vazio.
+        É uma falha que só aparece quando se desliga a carga.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (8.0,-3.4)
+       {\textbf{O mesmo componente como fonte de \emph{corrente}.} Um único resistor entre OUT
+        e ADJ, e a carga pendurada no ADJ:
+        \[ I = \frac{1{,}25}{R} \]
+        Com $R = 62\ \Omega$: \ $\mathbf{20{,}2}$ \textbf{mA} --- corrente de LED independente
+        da alimentação, com dois componentes.};
+
+\end{tikzpicture}
+```
+
+O LM317 e os dois diodos de proteção que quase todo esquemático de internet omite. O valor de
+240 Ω para $R_1$ não é tradição: é a corrente mínima de carga sendo resolvida pelo próprio
+divisor.
+:::
+
+O LM317 é um regulador **flutuante**: ele não tem pino de terra. O que ele faz é manter 1,25 V
+entre `OUT` e `ADJ`, e o resto do circuito decide o que isso significa. Três consequências:
+
+- **A tensão de saída não tem limite superior imposto pelo componente**, só pela tensão máxima
+  entre entrada e saída (40 V para o LM317, 60 V para o LM317HV).
+- **A regulação de linha e de carga são especificadas em porcentagem da saída**, não em
+  milivolts, porque o componente não sabe qual é a saída.
+- **A corrente mínima de carga é uma exigência real.** Sem ela, o amplificador de erro não
+  consegue baixar a saída e a tensão sobe.
+
+O capacitor de 10 µF no pino `ADJ` merece uma nota: ele **não** é desacoplamento. Ele põe o pino
+de ajuste em curto para as componentes alternadas, o que faz o ganho de ruído do regulador cair
+para 1 nas frequências acima de $1/(2\pi R_2 C)$ — e a rejeição de ondulação sobe de uns 65 dB
+para uns 80 dB. É a mesma ideia do amplificador de alimentação simples do @sec-cap-066, e é o
+motivo de $D_2$ existir: sem ele, um curto na saída descarregaria esses 10 µF através do circuito
+interno do pino `ADJ`.
+
+## Série e LDO são topologias diferentes {#sec-074-ldo}
+
+::: {#fig-074-ldo}
+
+```{.tikz}
+%%| filename: 074-ldo
+%%| alt: Figura em duas partes comparando o regulador série clássico com o regulador de baixa queda, o LDO. Na parte de cima, dois esquemáticos simplificados lado a lado. À esquerda, o regulador série: o transistor de passagem é um NPN em seguidor de emissor, com o coletor na entrada e o emissor na saída, e o amplificador de erro comanda a base; uma anotação registra que para a saída estar em cinco volts a base precisa estar em cinco vírgula sete volts e o amplificador de erro precisa poder chegar acima disso, o que produz uma queda mínima entre entrada e saída de dois a três volts. À direita, o LDO: o transistor de passagem é um PNP, ou um MOSFET de canal P, com o emissor na entrada e o coletor na saída, funcionando em emissor comum e portanto invertendo o sinal, o que exige que o amplificador de erro tenha as entradas trocadas em relação ao caso anterior; uma anotação registra que agora a queda mínima é apenas a tensão de saturação do transistor, de duzentos a quinhentos milivolts num bipolar e de dezenas de milivolts num MOSFET com corrente baixa. Na parte de baixo, um gráfico da região de estabilidade em função da resistência série equivalente do capacitor de saída, em ohms, no eixo horizontal em escala logarítmica de um milésimo a cem ohms, contra a corrente de carga no eixo vertical. Uma faixa verde central marca a janela de resistência série equivalente em que o LDO clássico é estável, aproximadamente entre zero vírgula um e dez ohms; à esquerda dessa faixa, uma região vermelha marca a instabilidade por resistência série baixa demais, que é exatamente onde caem os capacitores cerâmicos modernos; à direita, outra região vermelha marca a instabilidade por resistência série alta demais, onde cai um eletrolítico velho e seco ou um eletrolítico a menos vinte graus. Duas anotações acompanham: a primeira registra que substituir o tântalo original por um cerâmico equivalente, movimento aparentemente inofensivo, joga o circuito na região instável da esquerda e é uma das causas mais comuns de fonte que oscila depois de uma revisão de lista de materiais; a segunda registra que LDOs modernos são projetados para serem estáveis com cerâmico e que a informação está sempre na primeira página do datasheet, de modo que a única regra confiável é ler qual das duas famílias o componente é. Uma terceira caixa compara os dois tipos em quatro linhas: queda mínima, corrente de repouso, rejeição de ondulação em alta frequência e exigência de capacitor de saída.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- serie classico ----------------
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=north west, font=\scriptsize, manualblue] at (-0.3,4.9)
+         {\textbf{Regulador série clássico}};
+    \draw (0,4.0) -- (2.1,4.0);
+    \node[anchor=east, font=\tiny] at (-0.05,4.0) {IN};
+    \node[npn, anchor=B] (qa) at (1.6,3.0) {};
+    \draw (qa.C) |- (2.1,4.0);
+    \draw (qa.E) |- (2.4,2.1);
+    \draw (2.4,2.1) -- (4.3,2.1);
+    \node[ponto] at (4.3,2.1) {};
+    \node[anchor=west, font=\tiny] at (4.4,2.1) {OUT};
+    \draw[thick] (0.2,2.4) -- (0.2,3.6) -- (1.4,3.0) -- cycle;
+    \draw (1.4,3.0) -- (qa.B);
+    \node[anchor=north, font=\scriptsize, align=center, manualgray] at (2.4,1.85)
+         {seguidor de emissor};
+    \node[draw=manualblue, thick, rounded corners=2pt, anchor=north west, align=left,
+          font=\tiny, inner sep=4pt, text width=4.9cm] at (-0.3,1.35)
+         {Para 5 V na saída, a base precisa de 5,7 V --- e o amplificador de erro precisa
+          poder \emph{chegar lá}.
+          \\[2pt]
+          $\Rightarrow$ \textbf{queda mínima de 2 a 3 V}.};
+  \end{scope}
+
+  % ---------------- LDO ----------------
+  \begin{scope}[shift={(6.6,0)}]
+    \node[anchor=north west, font=\scriptsize, manualgreen] at (-0.3,4.9)
+         {\textbf{LDO --- \emph{low dropout}}};
+    \draw (0,4.0) -- (2.1,4.0);
+    \node[anchor=east, font=\tiny] at (-0.05,4.0) {IN};
+    \node[pnp, anchor=B] (qb) at (1.6,3.0) {};
+    \draw (qb.E) |- (2.1,4.0);
+    \draw (qb.C) |- (2.4,2.1);
+    \draw (2.4,2.1) -- (4.3,2.1);
+    \node[ponto] at (4.3,2.1) {};
+    \node[anchor=west, font=\tiny] at (4.4,2.1) {OUT};
+    \draw[thick] (0.2,2.4) -- (0.2,3.6) -- (1.4,3.0) -- cycle;
+    \draw (1.4,3.0) -- (qb.B);
+    \node[anchor=north, font=\scriptsize, align=center, manualgray] at (2.4,1.85)
+         {emissor comum --- \emph{inverte}};
+    \node[draw=manualgreen, thick, rounded corners=2pt, anchor=north west, align=left,
+          font=\tiny, inner sep=4pt, text width=4.9cm] at (-0.3,1.35)
+         {A queda mínima é só a \emph{saturação}: \textbf{200 a 500 mV} em bipolar, dezenas de
+          mV em MOSFET de canal P.
+          \\[2pt]
+          Em troca, o \textbf{sinal inverte}: a malha é outra.};
+  \end{scope}
+
+  % ---------------- janela de ESR ----------------
+  \begin{scope}[shift={(0,-6.3)}]
+  \begin{axis}[
+      width=10.6cm, height=6.2cm,
+      xmode=log, xmin=0.001, xmax=100, ymin=0, ymax=1.05,
+      xlabel={ESR do capacitor de saída ($\Omega$)},
+      ylabel={corrente de carga (normalizada)},
+      xtick={0.001,0.01,0.1,1,10,100},
+      xticklabels={$1$ m,$10$ m,$0{,}1$,$1$,$10$,$100$},
+      ytick=\empty,
+      label style={font=\footnotesize}, tick label style={font=\scriptsize},
+      axis line style={gray},
+  ]
+    \fill[manualred!16] (axis cs:0.001,0) rectangle (axis cs:0.1,1.05);
+    \fill[manualgreen!22] (axis cs:0.1,0) rectangle (axis cs:10,1.05);
+    \fill[manualred!16] (axis cs:10,0) rectangle (axis cs:100,1.05);
+
+    \node[font=\scriptsize, manualgreen, align=center] at (axis cs:1,0.55)
+         {\textbf{ESTÁVEL}\\janela de ESR};
+    \node[font=\tiny, manualred, align=center, rotate=90] at (axis cs:0.012,0.52)
+         {\textbf{oscila} --- ESR baixa};
+    \node[font=\tiny, manualred, align=center, rotate=90] at (axis cs:38,0.52)
+         {\textbf{oscila} --- ESR alta};
+
+    \node[font=\tiny, align=center] at (axis cs:0.005,0.90) {cerâmico\\X7R};
+    \node[font=\tiny, align=center] at (axis cs:0.9,0.90) {tântalo};
+    \node[font=\tiny, align=center] at (axis cs:4.5,0.16) {eletrolítico\\novo};
+    \node[font=\tiny, align=center] at (axis cs:30,0.90) {eletrolítico\\seco, ou a $-20$ °C};
+  \end{axis}
+  \end{scope}
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.7cm] at (9.3,-0.9)
+       {\textbf{A troca inocente que faz a fonte oscilar.} Substituir o tântalo original por um
+        cerâmico "equivalente" --- mesma capacitância, menor, mais barato --- joga o circuito na
+        região \textbf{vermelha da esquerda}.
+        \\[3pt]
+        É uma das causas mais comuns de placa que oscila depois de uma revisão de lista de
+        materiais, e ela passa por toda revisão de esquemático, porque no esquemático o
+        componente é o mesmo.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.7cm] at (9.3,-4.4)
+       {\textbf{LDOs modernos são projetados para cerâmico} --- e a informação está na
+        \emph{primeira página} do \emph{datasheet}.
+        \\[3pt]
+        A única regra confiável: \textbf{descubra de qual das duas famílias o componente é
+        antes de escolher o capacitor}, e nunca depois.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.7cm] at (9.3,-7.4)
+       {\ \hfill \textbf{série} \hfill \textbf{LDO} \hfill \
+        \\[3pt]
+        queda mínima \hfill 2 a 3 V \hfill 0,05 a 0,5 V \ \\
+        corrente de repouso \hfill 5 mA \hfill 1 µA a 5 mA \ \\
+        rejeição em 100 kHz \hfill \textbf{melhor} \hfill pior \ \\
+        capacitor de saída \hfill livre \hfill \textbf{especificado} \ };
+
+\end{tikzpicture}
+```
+
+As duas topologias, e a janela de ESR que separa uma fonte estável de uma oscilante. O capacitor
+de saída de um LDO é um **componente do laço de controle**, não um desacoplamento.
+:::
+
+Vale insistir num ponto que o desenho torna óbvio e que a prática esconde: **o LDO inverte o
+sinal**. No série clássico, o transistor de passagem é um seguidor de emissor com ganho de tensão
+1; no LDO, é um emissor comum com ganho alto. A malha de realimentação do LDO tem, portanto, um
+polo a mais e um ganho maior, e a estabilidade dela depende de um zero que vem de fora — do ESR
+do capacitor de saída.
+
+Daí a janela. Um capacitor com ESR baixa demais não fornece o zero; um com ESR alta demais o
+coloca em frequência baixa demais. Nos dois casos a margem de fase (@sec-cap-064) vai a zero e o
+regulador oscila, tipicamente entre 10 kHz e 1 MHz — o que aparece na saída como uma senoide
+limpa de amplitude assustadora.
+
+::: {.callout-warning}
+## A rejeição de ondulação cai com a frequência, e isso importa muito no capítulo 075
+
+Os 60 a 80 dB de rejeição de ondulação que este capítulo elogia são medidos em **120 Hz**. A
+malha de realimentação tem ganho finito, e o ganho cai com a frequência exatamente como no
+@sec-cap-069: a rejeição de um 7805 típico despenca para uns 30 dB em 100 kHz e para menos de
+20 dB em 1 MHz.
+
+A consequência prática é direta e contraintuitiva. **Um LDO depois de uma fonte chaveada de
+500 kHz não limpa a ondulação de comutação tão bem quanto se espera.** Ele limpa muito bem os
+120 Hz que já não existem ali, e mal os 500 kHz que existem.
+
+Para o lixo de alta frequência de uma chaveada, o que funciona é um **filtro LC** ou um filtro
+de ferrite mais capacitor cerâmico **antes** do LDO. Assunto do capítulo 077, e razão para não
+tratar "põe um LDO" como resposta universal.
+:::
+
+## Dissipação térmica como engenharia {#sec-074-termico}
+
+::: {#fig-074-termico}
+
+```{.tikz}
+%%| filename: 074-termico
+%%| alt: Gráfico da corrente máxima de saída em função da diferença entre a tensão de entrada e a tensão de saída, para quatro condições de montagem térmica, com o eixo horizontal de zero a vinte volts e o vertical de zero a um vírgula seis ampère. Todas as curvas são hipérboles, porque o produto da diferença de tensão pela corrente é a potência dissipada e cada montagem admite uma potência máxima diferente. A curva mais baixa, em cinza, é o encapsulamento TO-220 sem dissipador nenhum, que admite apenas um vírgula três watt e portanto cai muito rápido: com dez volts de diferença ele já não entrega nem cento e cinquenta miliampères. A curva seguinte, em laranja, é o SOT-223 sobre um centímetro quadrado de cobre, com um vírgula quatro watt. A curva verde é o TO-220 com um dissipador pequeno de encaixe, que admite três vírgula nove watts. A curva azul é o TO-220 sobre um dissipador de perfil, que admite oito watts. Uma linha horizontal tracejada em um vírgula cinco ampère marca o limite absoluto de corrente do componente, e uma anotação registra que esse é o número que aparece na primeira página do datasheet e que ele só é atingível na região à esquerda, onde a diferença de tensão é muito pequena. Uma segunda curva tracejada em vermelho, descendo mais rápido que as outras, marca o limite de área segura de operação imposto pelo próprio circuito interno, que reduz o limite de corrente conforme a diferença de tensão cresce, independentemente de quão bom seja o dissipador. Uma anotação registra que a região realmente utilizável é a interseção de todas essas restrições, e não a menos exigente delas. Duas caixas acompanham. A primeira dá o procedimento em quatro passos: calcule a potência no pior caso térmico, que é rede alta com carga máxima; escolha a temperatura ambiente real dentro da caixa do equipamento, que costuma ser vinte graus acima da temperatura da sala; derate o limite de junção de cento e cinquenta para cento e vinte e cinco graus; e obtenha a resistência térmica total admissível pela diferença de temperaturas dividida pela potência, subtraindo em seguida as resistências da junção à cápsula e do isolador para achar a do dissipador. A segunda caixa traz uma tabela de resistências térmicas típicas por encapsulamento e montagem, do TO-220 nu a sessenta e dois graus por watt até o TO-220 com dissipador de perfil a seis vírgula cinco graus por watt, passando pelos encapsulamentos SMD SOT-223 e DPAK com áreas de cobre diferentes, e registra que em SMD o dissipador é a placa e que dobrar a área de cobre não dobra o desempenho porque o ganho satura por volta de dez centímetros quadrados.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=11.4cm, height=7.6cm,
+    xmin=0, xmax=20, ymin=0, ymax=1.65,
+    xlabel={$V_{in} - V_{out}$ (V)}, ylabel={corrente máxima de saída (A)},
+    xtick={0,2,5,10,15,20},
+    ytick={0,0.25,0.5,0.75,1.0,1.25,1.5},
+    yticklabels={$0$,$0{,}25$,$0{,}50$,$0{,}75$,$1{,}00$,$1{,}25$,$1{,}50$},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+    samples=200,
+]
+
+  \addplot[manualgray, thick, domain=0.87:20] {1.3/x};
+  \addplot[manualyellow, thick, domain=0.94:20] {1.4/x};
+  \addplot[manualgreen, thick, domain=2.6:20] {3.9/x};
+  \addplot[curva, line width=1.3pt, domain=5.34:20] {8.0/x};
+
+  \draw[manualgray, dashed, thick] (axis cs:0,1.5) -- (axis cs:20,1.5);
+  \node[anchor=north east, font=\tiny, manualgray] at (axis cs:19.7,1.48)
+       {limite absoluto de corrente --- o número da capa do \emph{datasheet}};
+
+  \addplot[destaque, dashed, line width=1.2pt, domain=1.0:20] {1.5/(1+0.42*x)};
+  \node[anchor=south, font=\tiny, manualred] at (axis cs:10.6,0.30)
+       {limite de \textbf{SOA} interno};
+
+  \draw[manualgray, thin] (axis cs:6.5,0.200) -- (axis cs:6.5,0.178);
+  \node[anchor=north, font=\tiny, manualgray] at (axis cs:6.5,0.176)
+       {TO-220 nu (1,3 W)};
+  \node[anchor=south west, font=\tiny, manualyellow] at (axis cs:3.0,0.50)
+       {SOT-223 + 1 cm$^2$ (1,4 W)};
+  \node[anchor=south west, font=\tiny, manualgreen] at (axis cs:5.4,0.80)
+       {TO-220 + dissipador pequeno (3,9 W)};
+  \node[anchor=south west, font=\tiny, manualblue]  at (axis cs:8.4,1.00)
+       {TO-220 + perfil (8 W)};
+
+\end{axis}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (10.1,7.0)
+       {\textbf{O procedimento, em quatro passos}
+        \\[3pt]
+        \textbf{1.} $P$ no \emph{pior caso térmico} --- rede alta, carga máxima.
+        \\[2pt]
+        \textbf{2.} $T_A$ \emph{real}, dentro da caixa: costuma ser 20 °C acima da sala.
+        \\[2pt]
+        \textbf{3.} \emph{Derate} o limite de junção: use 125 °C, não os 150 °C do
+        \emph{datasheet}.
+        \\[2pt]
+        \textbf{4.} $R_{\theta,total} \le (T_J - T_A)/P$, e subtraia $R_{\theta JC}$ e
+        $R_{\theta CS}$ para achar o dissipador.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (10.1,2.2)
+       {\textbf{Resistências térmicas típicas}
+        \\[3pt]
+        TO-220 nu \dotfill 62 °C/W \\
+        TO-220 + dissipador pequeno \dotfill 21 °C/W \\
+        TO-220 + perfil de 10 cm \dotfill 10 °C/W \\
+        SOT-223, pastilha mínima \dotfill 170 °C/W \\
+        SOT-223 + 1 cm$^2$ de cobre \dotfill 90 °C/W \\
+        DPAK + 6 cm$^2$ de cobre \dotfill 45 °C/W
+        \\[3pt]
+        \textbf{Em SMD o dissipador é a placa} --- e dobrar a área \emph{não} dobra o
+        desempenho: o ganho satura perto de 10 cm$^2$.};
+
+\end{tikzpicture}
+```
+
+A corrente máxima real de um regulador é a interseção de três limites, e o número da capa do
+*datasheet* é o menos restritivo dos três. Cada curva é uma hipérbole $P = (V_{in}-V_{out})\,I$.
+:::
+
+A figura reorganiza toda a discussão térmica em torno de uma pergunta única: **quanta corrente
+este regulador pode entregar, nesta montagem, com esta diferença de tensão?** A resposta é o
+menor dos três limites:
+
+1. **O limite absoluto de corrente** — a limitação interna, 1,5 A num 7805 ou LM317.
+2. **O limite de SOA** — a proteção interna que reduz o limite conforme $V_{in} - V_{out}$
+   cresce.
+3. **O limite térmico** — a hipérbole que a montagem permite.
+
+Em quase todo projeto real, é o **terceiro** que manda. E é o único que o projetista controla.
+
+::: {.callout-tip}
+## O erro de arredondamento térmico que arruína o cálculo
+
+Duas escolhas de número, ambas tentadoras e ambas erradas, invalidam o cálculo térmico inteiro:
+
+**Usar a temperatura da sala como $T_A$.** O regulador está dentro de uma caixa, junto com o
+transformador e o capacitor, e a temperatura ali é tipicamente 15 a 25 °C acima da ambiente. Se o
+projeto foi feito com 25 °C e a caixa tem 45 °C, todo o cálculo perdeu 20 °C de margem.
+
+**Usar $T_{J,max}$ = 150 °C.** É o valor de destruição, não de operação. A vida útil de um
+semicondutor cai pela metade a cada 10 °C, e o *datasheet* especifica os parâmetros até 125 °C.
+Projete para 125 °C e ganhe a margem de volta.
+
+Os dois erros juntos transformam um cálculo que "dava 21 °C/W" num requisito real de 10 °C/W —
+a diferença entre um dissipador de clipe e um perfil de dez centímetros.
+:::
+
+## 🧪 Laboratório {#sec-074-lab}
+
+O objetivo é medir as três especificações de um regulador integrado, ver a proteção térmica e a
+proteção de SOA agirem, montar o LM317 nas duas configurações, e **provocar a oscilação** de um
+LDO trocando o capacitor de saída.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | Fonte da @fig-073-cadeia, ou fonte de bancada ajustável 0 a 25 V | |
+| 1 | **7805** em TO-220 | Partes 1 a 3 |
+| 1 | **LM317** em TO-220 | Partes 4 e 5 |
+| 1 | **AMS1117-3.3** ou **LM1117-3.3** | Parte 6 — LDO clássico |
+| 1 | **MCP1700-3302** ou similar CMOS | Parte 6 — LDO moderno, opcional |
+| 1 | Dissipador pequeno de encaixe + pasta térmica | |
+| — | Resistores: 240 Ω, 1,5 kΩ, 62 Ω, 10 Ω/5 W, 22 Ω/5 W, 47 Ω/5 W, 100 Ω | |
+| 1 | Trimpot 5 kΩ multivoltas | Parte 4 |
+| — | Capacitores: 330 nF, 100 nF, 1 µF cerâmico, 10 µF cerâmico, **10 µF tântalo**, 10 µF eletrolítico, 100 µF eletrolítico | Parte 6 — os três de 10 µF são o experimento |
+| — | Resistores 1 Ω, 4,7 Ω, 10 Ω (1 W) | Parte 6 — ESR artificial |
+| 2 | Diodos 1N4007 | Parte 5 |
+| 1 | LED vermelho | Parte 5 |
+| 1 | Osciloscópio + multímetro + termômetro infravermelho | |
+
+### Parte 1 — As três especificações do 7805
+
+1. Monte o 7805 com 330 nF na entrada e 100 nF na saída, **junto aos pinos**, alimentado por
+   10 V, com 100 Ω de carga (50 mA).
+2. **Regulação de linha:** varie a entrada de 8 V a 20 V e meça a saída em cada volt. Trace a
+   curva.
+
+Abaixo de 7,5 V a saída começa a cair — é o *dropout*, e ele é medível com precisão. Anote a
+tensão de entrada em que a saída cai 100 mV abaixo de 5 V.
+
+3. **Regulação de carga:** volte a entrada para 10 V e varie a carga de 100 Ω a 10 Ω
+   (50 mA a 500 mA). A saída deve mudar poucos milivolts.
+4. **Rejeição de ondulação:** alimente o regulador com a fonte não regulada do capítulo anterior
+   (que tem 1,9 V de ondulação em 120 Hz) e meça a ondulação de saída em acoplamento CA. A razão
+   entre as duas, em dB, é a rejeição.
+
+### Parte 2 — Provocar o *dropout* e reconhecer o sintoma
+
+1. Com 10 Ω de carga (500 mA), baixe a tensão de entrada lentamente de 10 V para 6 V, observando
+   entrada e saída no osciloscópio ao mesmo tempo.
+2. Em algum ponto a saída **passa a acompanhar a entrada**, com um deslocamento constante.
+
+Esse deslocamento é o *dropout* medido diretamente. Repita com 100 Ω e compare: o *dropout*
+**depende da corrente**, e a diferença é grande.
+
+### Parte 3 — SOA e proteção térmica, com números
+
+1. Monte o 7805 **sem dissipador**, com entrada de 20 V e 47 Ω de carga (106 mA). A dissipação é
+   $(20-5) \times 0{,}106 = 1{,}6$ W.
+2. Meça a temperatura do encapsulamento a cada 30 s. Ela sobe e estabiliza — ou não.
+3. Se o desligamento térmico atuar, a saída começa a **pulsar com período de segundos**.
+
+Este é o sintoma que se confunde com oscilação. A diferença é a escala de tempo: oscilação de
+malha é de microssegundos, proteção térmica é de segundos.
+
+4. Monte o dissipador com pasta e repita. Meça a temperatura de equilíbrio e calcule o
+   $R_{\theta}$ real da montagem: $R_{\theta} = (T_{cápsula} - T_{ambiente})/P$.
+5. **Compare com o valor do quadro da @fig-074-termico.** Provavelmente vai dar pior, e a razão
+   é sempre a mesma: aperto insuficiente, pouca pasta, ou dissipador em posição que impede a
+   convecção.
+
+### Parte 4 — O LM317 ajustável
+
+1. Monte o LM317 com $R_1 = 240$ Ω e, no lugar de $R_2$, o **trimpot de 5 kΩ**. Alimente com
+   15 V, sem carga.
+2. Varie o trimpot e meça a saída. Confirme a faixa de 1,25 V até uns 15 V menos o *dropout*.
+3. Ajuste para 9,00 V, meça $R_2$ e compare com a fórmula. A diferença que sobrar é o termo
+   $I_{ADJ} R_2$.
+4. **A carga mínima:** substitua $R_1$ de 240 Ω por 2,2 kΩ, reajustando $R_2$ para manter a
+   razão. Meça a saída **sem carga**.
+
+A saída sobe acima do ajuste — às vezes muito acima. Agora ponha 1 kΩ de carga: ela volta ao
+valor certo. É a caixa vermelha da @fig-074-lm317 acontecendo, e é uma falha que só se manifesta
+com a carga desligada.
+
+5. Volte $R_1$ para 240 Ω. Adicione o capacitor de 10 µF no pino `ADJ` e **meça a ondulação de
+   saída antes e depois**, alimentando com a fonte não regulada. A melhora deve ser de 10 a
+   15 dB.
+
+### Parte 5 — O LM317 como fonte de corrente
+
+1. Ligue um resistor de 62 Ω entre `OUT` e `ADJ`, e o LED em série do `ADJ` para o terra.
+2. Alimente com 12 V e meça a corrente. Esperado: 20,2 mA.
+3. **Varie a alimentação de 6 V a 20 V** e meça a corrente em cada ponto.
+
+A corrente praticamente não muda. Compare com o resistor limitador simples do @sec-cap-051, em
+que a corrente varia proporcionalmente à alimentação. É o mesmo experimento das fontes de
+corrente do @sec-cap-068, agora com dois componentes.
+
+### Parte 6 — Fazer um LDO oscilar (e depois parar)
+
+Este é o experimento central do capítulo.
+
+1. Monte o AMS1117-3.3 com 10 µF **de tântalo** (ou eletrolítico) na saída, 10 µF na entrada, e
+   47 Ω de carga (70 mA). Alimente com 6 V.
+2. Observe a saída no osciloscópio, em acoplamento CA e na escala mais sensível. Deve estar
+   limpa, com milivolts de ruído.
+3. **Troque o capacitor de saída por um cerâmico X7R de 10 µF.** Mesma capacitância, mesma
+   tensão, componente "equivalente".
+4. Observe de novo.
+
+Se o seu exemplar for da geração clássica, aparece uma **senoide** de dezenas ou centenas de kHz,
+com amplitude de dezenas ou centenas de milivolts. A fonte está oscilando, e nada no esquemático
+mudou.
+
+5. **Ponha um resistor de 1 Ω em série com o cerâmico.** Você acabou de fabricar ESR.
+
+A oscilação diminui muito ou some. Experimente 0,47 Ω, 1 Ω, 4,7 Ω e 10 Ω e encontre a janela —
+é a faixa verde da @fig-074-ldo, medida no seu componente.
+
+6. Se tiver o MCP1700, repita os passos 3 e 4 com ele. **Ele não oscila com cerâmico**, porque
+   foi projetado para isso.
+
+Este par de resultados é a lição inteira: o capacitor de saída de um LDO é um **componente do
+laço de controle**, e "10 µF" não é uma especificação suficiente.
+
+**Variante simulada (plano B).** O comportamento de *dropout*, a regulação de linha e a de carga
+saem bem no LTspice com os modelos de regulador da biblioteca `PowerProducts`. A janela de ESR é
+mais instrutiva ainda: monte um LDO simplificado (amp-op, PMOS, divisor), ponha `Cout` com uma
+resistência série explícita, e faça `.step param ESR list 0.001 0.01 0.1 1 10 100` com um `.tran`
+respondendo a um degrau de carga. As cinco formas de onda mostram a sobrelevação crescendo,
+estabilizando e crescendo de novo — a janela verde, desenhada pelo simulador.
+
+## 🔥 Onde Queima {#sec-074-queima}
+
+**Trocar a pinagem do 79xx pela do 78xx.** São diferentes. No 79xx o pino 1 é terra e o 2 é
+entrada; no 78xx o 1 é entrada e o 2 é terra. Montar uma fonte simétrica pela primeira vez sem
+conferir isso é quase um rito de passagem, e o componente não sobrevive a ele.
+
+**Aterrar a aba do LM317.** A aba está no potencial da **saída**. Parafusá-la direto num
+dissipador aterrado é um curto da saída para o terra. E dois LM317 no mesmo dissipador sem
+isoladores curto-circuitam as duas saídas entre si.
+
+**Montar sem os capacitores de entrada e saída.** O regulador oscila. O sintoma — ruído que muda
+quando se encosta a ponta de prova — é enganoso porque parece problema de medição.
+
+**Trocar o capacitor de saída de um LDO por um "equivalente".** Mesma capacitância, ESR diferente,
+laço de controle instável. É a falha da Parte 6, e ela passa por qualquer revisão de esquemático.
+
+**Usar $R_1$ grande no LM317 "para economizar corrente".** Abaixo de uns 3 mA de carga o
+regulador perde o controle e a saída sobe. O divisor **é** a carga mínima, e 240 Ω é esse número.
+
+**Omitir $D_1$ e $D_2$ no LM317.** $D_1$ protege quando a entrada é desligada com a saída
+carregada; $D_2$ protege o pino `ADJ` quando a saída é curto-circuitada com o capacitor de 10 µF
+lá. Custam centavos e quase todo esquemático de internet os omite.
+
+**Esperar rejeição de ondulação em alta frequência.** Os 60 dB são em 120 Hz. Em 500 kHz — a
+frequência de uma fonte chaveada — sobram 20 dB. Um LDO não é um filtro de EMI.
+
+**Confiar no número de corrente da capa do *datasheet*.** "1,5 A" é o limite absoluto interno,
+atingível só com $V_{in} - V_{out}$ muito pequeno **e** um dissipador que dê conta. Com 15 V de
+diferença, o mesmo componente não passa de algumas dezenas de miliampères.
+
+**Calcular a térmica com a temperatura da sala e com 150 °C de junção.** Os dois erros somados
+consomem uns 45 °C de margem, o que costuma ser a margem inteira.
+
+**Tratar a proteção térmica como método de projeto.** Ela existe para o componente sobreviver a
+um acidente, não para operar em regime. Um regulador que entra em proteção térmica todo dia é uma
+fonte que falha todo dia.
+
+**Alimentar um regulador pela saída.** Ligar a saída a uma tensão maior que a entrada (uma
+bateria em paralelo, um segundo caminho de alimentação) polariza diretamente a junção interna.
+É exatamente o que $D_1$ previne, e sem ele o componente morre.
+
+## O que fica deste capítulo {#sec-074-resumo}
+
+**Dentro do encapsulamento** está o circuito discreto do @sec-cap-073 — referência, amplificador
+de erro, transistor de passagem — mais três proteções: limitação de corrente, proteção de SOA, e
+desligamento térmico. As duas últimas se manifestam como "defeito" para quem não as conhece.
+
+**A referência bandgap** soma duas grandezas com coeficientes de temperatura opostos:
+
+$$ V_{BE} \ \ (\approx -2\ \text{mV/°C}) \ + \ K\,V_T \ln n \ \ (\text{proporcional a } T)
+\ = \ 1{,}25\ \text{V, plana} $$
+
+O valor de 1,25 V é a banda proibida do silício extrapolada ao zero absoluto. Ela é melhor que o
+Zener compensado em tudo o que importa: alimentação mínima de 2 V, deriva de 20 a 50 ppm/°C,
+menos ruído, menos área.
+
+**O LM317** mantém 1,25 V entre `OUT` e `ADJ`:
+
+$$ V_{out} = 1{,}25\left(1 + \frac{R_2}{R_1}\right) + I_{ADJ} R_2, \qquad I_{ADJ} \approx 50\ \mu\text{A} $$
+
+$R_1 = 240$ Ω é o valor clássico porque o divisor precisa fornecer a **corrente mínima de carga**
+de 3 a 10 mA. Com um resistor só, o mesmo componente é uma fonte de corrente de $1{,}25/R$. E
+$D_1$ e $D_2$ não são opcionais.
+
+**Série e LDO são topologias diferentes.** Seguidor de emissor contra emissor comum; 2 a 3 V de
+queda contra 0,05 a 0,5 V; capacitor de saída livre contra capacitor de saída **especificado**,
+com uma janela de ESR fora da qual o circuito oscila. LDOs modernos são estáveis com cerâmico, e
+a única regra confiável é ler de qual família o componente é.
+
+**A rejeição de ondulação cai com a frequência.** Sessenta dB em 120 Hz, vinte em 1 MHz. LDO
+depois de chaveada não substitui filtro LC.
+
+**O dimensionamento térmico** é o menor de três limites — corrente absoluta, SOA, e a hipérbole
+$P = (V_{in}-V_{out})I$ da montagem —, e é sempre o terceiro que manda. O procedimento tem quatro
+passos, e os dois erros que o arruínam são usar a temperatura da sala como $T_A$ e 150 °C como
+$T_J$ máximo.
+
+## Para o próximo capítulo {#sec-074-fecho}
+
+Três capítulos de fonte linear chegaram a um resultado que é ótimo em qualidade e ruim em
+tudo o mais: 46 % de rendimento, dois quilos de transformador, um dissipador, e uma dissipação
+que cresce exatamente na mesma medida em que a fonte é útil — quanto maior a diferença entre
+entrada e saída, mais calor.
+
+E a @fig-072-nucleo já tinha dado a pista de como sair disso. A tensão que um transformador
+sustenta é proporcional ao produto $f N A_e B$: **dobrar a frequência permite metade do núcleo**,
+e passar de 60 Hz para 100 kHz permite reduzi-lo por um fator de mais de mil.
+
+Falta o outro ingrediente, e o @sec-cap-061 já o entregou: um MOSFET operando como **chave**
+dissipa quase nada, porque em condução a tensão sobre ele é pequena e em corte a corrente é zero.
+O elemento de passagem deixa de ser um resistor variável comandado e passa a ser uma chave que
+abre e fecha depressa.
+
+Junte os dois — uma chave rápida e um indutor pequeno — e o resultado é uma fonte que converte
+tensão em vez de derrubá-la, com rendimento de 85 a 95 %.
+
+O capítulo 075 monta as três topologias fundamentais: o **buck**, que abaixa; o **boost**, que
+eleva; e o **buck-boost**, que faz as duas coisas e inverte o sinal. Com a análise no domínio do
+tempo que o @sec-cap-026 preparou, o balanço de tensão-segundo no indutor como ferramenta
+central, e o projeto completo de um conversor com ondulação, corrente de pico, escolha do
+indutor e o problema — que agora tem nome — do laço de comutação.
