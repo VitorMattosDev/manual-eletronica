@@ -3,9 +3,891 @@
 ::: {.callout-warning}
 ## Tensão perigosa
 
-Este capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve
-ser executado depois de ler integralmente o Capítulo 2. *(texto de aviso a
-escrever)*
+Este capítulo monta a fonte **inteira**, e o primeiro elo dela é a rede elétrica. **Nada aqui
+autoriza abrir, medir ou tocar o primário de um transformador energizado, nem montar qualquer
+circuito ligado diretamente à rede.**
+
+O laboratório usa um transformador comercial **fechado, com plugue de fábrica**, e trabalha
+**exclusivamente do secundário para a frente**. O primário fica intocado e afastado, e o
+osciloscópio nunca chega perto dele.
+
+Duas advertências específicas deste capítulo, que o @sec-cap-049 já anunciou e que aqui ficam
+maiores:
+
+- **O capacitor de filtro deste projeto é de 2200 µF carregado a 18 V.** Ele guarda 0,36 J e
+  mantém tensão por dezenas de segundos depois de a fonte ser desligada da tomada. **Meça antes
+  de tocar**, sempre, e monte o resistor de sangria antes de qualquer outra coisa.
+- **O surto de partida chega a vários ampères.** O fusível é parte do circuito, não um
+  acessório, e o roteiro o instala no primeiro passo.
+
+E a regra que vale desde o @sec-cap-002: se o roteiro parecer exigir a rede, o roteiro está
+errado. Pare e releia.
 :::
 
-*(em elaboração)*
+Os quatro elos desta fonte já foram estudados um a um, e em capítulos separados por dezenas de
+páginas:
+
+- **O transformador** (@sec-cap-072): isola da rede e entrega 12 V alternados.
+- **O retificador** (@sec-cap-048): a ponte de quatro diodos que converte alternada em contínua
+  pulsante.
+- **O filtro capacitivo** (@sec-cap-049): o capacitor que preenche os vales, com a fórmula
+  $V_r = I/(f_r C)$ e os pulsos de corrente que ela cobra.
+- **O regulador** (@sec-cap-050): o Zener que fixa a tensão, mal, e que o @sec-cap-065 em diante
+  ensinou a substituir por um amplificador de erro.
+
+O que falta é montar a coisa **inteira, com números que fechem**. E fechar, aqui, significa uma
+coisa muito específica: **verificar o pior caso nos dois extremos**. A fonte precisa continuar
+funcionando com a rede 10 % baixa e a carga no máximo — o caso em que a tensão de entrada do
+regulador chega perto de não bastar —, e precisa continuar **íntegra** com a rede 10 % alta e
+carga nenhuma, o caso em que todo mundo vê a tensão mais alta da vida.
+
+Nenhum dos dois extremos é o caso nominal, e é justamente por isso que fonte projetada só no
+nominal queima em campo.
+
+## A cadeia completa {#sec-073-cadeia}
+
+::: {#fig-073-cadeia}
+
+```{.tikz}
+%%| filename: 073-cadeia
+%%| alt: Diagrama em cadeia da fonte linear completa, com cinco blocos em sequência da esquerda para a direita e, acima de cada ponto de junção, um desenho da forma de onda que existe ali. O primeiro bloco é a rede elétrica, cento e vinte e sete volts eficazes em sessenta hertz, e acima dele a forma de onda é uma senoide de grande amplitude. O segundo bloco é o transformador, que isola e reduz a tensão, e acima da sua saída há uma senoide de mesma forma porém muito menor, marcada como doze vírgula setenta e dois volts eficazes, ou dezoito volts de pico. O terceiro bloco é a ponte retificadora de quatro diodos, e acima da sua saída aparecem arcos sucessivos, todos positivos, com o pico reduzido em dois volts por causa das duas quedas de diodo em série, e uma anotação registra que a frequência agora é de cento e vinte hertz, o dobro da rede. O quarto bloco é o capacitor de filtro de dois mil e duzentos microfarads, e acima da sua saída a forma de onda é quase contínua, com um dente de serra de um vírgula nove volt de amplitude entre dezesseis volts de pico e catorze vírgula um volt de vale. O quinto bloco é o regulador, e acima da sua saída a linha é reta, em nove volts, com uma anotação de que a ondulação residual é de aproximadamente dois milivolts. Abaixo de cada bloco há uma etiqueta indicando o que aquele elo resolve e o que ele cobra: o transformador isola e reduz mas tem regulação ruim, a ponte retifica mas custa duas quedas de diodo, o capacitor preenche os vales mas puxa pulsos de corrente e a ondulação nunca chega a zero, e o regulador fixa a tensão mas dissipa a diferença em calor. Uma caixa final registra que a tensão cai monotonicamente ao longo da cadeia, de dezoito volts de pico para nove volts regulados, e que essa diferença toda vira calor, o que é a característica definidora da fonte linear.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- blocos ----------------
+  \tikzset{bloco/.style={draw, thick, rounded corners=2pt, minimum height=1.15cm,
+                         align=center, font=\scriptsize, fill=white}}
+
+  \node[bloco, minimum width=1.9cm] (rede)  at (0.95,0)  {\textbf{rede}\\127 V\\60 Hz};
+  \node[bloco, minimum width=2.1cm] (trafo) at (3.75,0)  {\textbf{transformador}\\12 V, 1 A};
+  \node[bloco, minimum width=2.1cm] (ponte) at (6.65,0)  {\textbf{ponte}\\4$\times$ 1N4007};
+  \node[bloco, minimum width=2.1cm] (filtro)at (9.55,0)  {\textbf{filtro}\\2200 µF};
+  \node[bloco, minimum width=2.1cm] (reg)   at (12.45,0) {\textbf{regulador}\\7809};
+  \node[bloco, minimum width=1.5cm, fill=manualgreen!12] (carga) at (14.85,0)
+       {\textbf{carga}\\9 V\\500 mA};
+
+  \draw[thick,->,>=stealth] (rede)  -- (trafo);
+  \draw[thick,->,>=stealth] (trafo) -- (ponte);
+  \draw[thick,->,>=stealth] (ponte) -- (filtro);
+  \draw[thick,->,>=stealth] (filtro)-- (reg);
+  \draw[thick,->,>=stealth] (reg)   -- (carga);
+
+  % ---------------- formas de onda ----------------
+  % 1: senoide grande
+  \begin{scope}[shift={(2.05,2.3)}]
+    \draw[eixo] (-0.05,0) -- (1.5,0);
+    \draw[curva, samples=60, domain=0:1.4, smooth, variable=\x]
+         plot ({\x}, {0.85*sin(257*\x)});
+    \node[anchor=south, font=\tiny] at (0.7,0.95) {127 V rms};
+  \end{scope}
+
+  % 2: senoide pequena
+  \begin{scope}[shift={(4.95,2.3)}]
+    \draw[eixo] (-0.05,0) -- (1.5,0);
+    \draw[curva, samples=60, domain=0:1.4, smooth, variable=\x]
+         plot ({\x}, {0.42*sin(257*\x)});
+    \node[anchor=south, font=\tiny, align=center] at (0.7,0.52)
+         {12,72 V rms\\\textbf{18,0 V} de pico};
+  \end{scope}
+
+  % 3: arcos retificados
+  \begin{scope}[shift={(7.85,2.3)}]
+    \draw[eixo] (-0.05,0) -- (1.5,0);
+    \draw[curva, samples=90, domain=0:1.4, smooth, variable=\x]
+         plot ({\x}, {0.37*abs(sin(257*\x))});
+    \draw[auxiliar] (0,0.37) -- (1.45,0.37);
+    \node[anchor=south, font=\tiny, align=center] at (0.7,0.50)
+         {\textbf{16,0 V} de pico\\120 Hz};
+  \end{scope}
+
+  % 4: dente de serra
+  \begin{scope}[shift={(10.75,2.3)}]
+    \draw[eixo] (-0.05,0) -- (1.5,0);
+    \draw[curva] (0.00,0.72) -- (0.35,0.55) -- (0.42,0.72) -- (0.77,0.55)
+                 -- (0.84,0.72) -- (1.19,0.55) -- (1.26,0.72) -- (1.42,0.64);
+    \draw[auxiliar] (0,0.72) -- (1.45,0.72);
+    \draw[auxiliar] (0,0.55) -- (1.45,0.55);
+    \node[anchor=south, font=\tiny, align=center] at (0.7,0.80)
+         {16,0 V $\to$ 14,1 V\\ondulação \textbf{1,9 V}};
+  \end{scope}
+
+  % 5: reta
+  \begin{scope}[shift={(13.4,2.3)}]
+    \draw[eixo] (-0.05,0) -- (1.5,0);
+    \draw[manualgreen, very thick] (0,0.62) -- (1.42,0.62);
+    \node[anchor=south, font=\tiny, align=center] at (0.7,0.70)
+         {\textbf{9,000 V}\\$\approx 2$ mV de ondulação};
+  \end{scope}
+
+  % ---------------- o que cada elo cobra ----------------
+  \node[anchor=north, font=\tiny, align=center, manualgray, text width=2.1cm] at (3.75,-0.75)
+       {isola e reduz\\\emph{regulação ruim}};
+  \node[anchor=north, font=\tiny, align=center, manualgray, text width=2.1cm] at (6.65,-0.75)
+       {retifica\\\emph{custa 2 V}};
+  \node[anchor=north, font=\tiny, align=center, manualgray, text width=2.2cm] at (9.55,-0.75)
+       {preenche os vales\\\emph{pulsos de corrente}};
+  \node[anchor=north, font=\tiny, align=center, manualgray, text width=2.2cm] at (12.45,-0.75)
+       {fixa a tensão\\\emph{dissipa a diferença}};
+
+  % ---------------- caixa ----------------
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.4cm] at (0,-2.1)
+       {\textbf{A tensão só cai ao longo da cadeia}, de 18,0 V de pico no secundário a 9,000 V
+        na carga --- e \textbf{cada volt perdido vira calor}. Com 500 mA, os 6,1 V de diferença
+        média no regulador são \textbf{3,0 W} dissipados para entregar 4,5 W.
+        \\[3pt]
+        Isso não é um defeito de projeto: é a \emph{definição} de fonte linear. O elemento de
+        passagem é um resistor variável comandado, e resistor variável comandado dissipa. O
+        capítulo 075 resolve trocando o resistor por uma \textbf{chave}.};
+
+\end{tikzpicture}
+```
+
+A fonte linear inteira, com a forma de onda em cada ponto de junção. Ler a figura da esquerda
+para a direita é ler o capítulo.
+:::
+
+Vale fixar de saída o vocabulário das três especificações que se cobram de uma fonte, porque o
+projeto todo é um exercício de satisfazê-las simultaneamente:
+
+- **Regulação de linha** — quanto a saída muda quando a **rede** muda. Especificada em mV por
+  volt de entrada, ou em porcentagem.
+- **Regulação de carga** — quanto a saída muda quando a **corrente** muda, de zero ao máximo.
+- **Ondulação e ruído** — o que sobra de alternada na saída, em mV pico a pico.
+
+O @sec-cap-050 mediu as três num regulador Zener e o resultado foi ruim nas três. Um 7809 dá
+regulação de linha de 4 mV por volt, regulação de carga de 20 mV entre 5 mA e 1 A, e rejeição de
+ondulação de 60 dB. É a diferença entre um divisor e um sistema realimentado — a mesma diferença
+que o @sec-cap-064 formalizou.
+
+## O projeto, de trás para frente {#sec-073-projeto}
+
+::: {#fig-073-projeto}
+
+```{.tikz}
+%%| filename: 073-projeto
+%%| alt: Diagrama do procedimento de projeto de uma fonte linear em oito passos, apresentado como uma coluna de caixas numeradas que se lê de cima para baixo, com uma seta grande à esquerda indicando que o raciocínio corre da carga para a rede, ou seja, de trás para frente em relação ao fluxo de energia. O passo um parte da especificação: nove volts e quinhentos miliampères. O passo dois soma a tensão de dropout do regulador, dois vírgula cinco volts com margem, e conclui que a tensão instantânea mínima na entrada do regulador não pode nunca cair abaixo de onze vírgula cinco volts. O passo três aplica a rede baixa, dez por cento abaixo do nominal, que é o caso mais desfavorável, e calcula o pico disponível na entrada do capacitor: onze vírgula quarenta e cinco volts eficazes no secundário dão dezesseis vírgula dezenove volts de pico, menos duas quedas de diodo de um volt cada resultam em catorze vírgula dezenove volts. O passo quatro subtrai e obtém o orçamento de ondulação: catorze vírgula dezenove menos onze vírgula cinco resulta em dois vírgula sessenta e nove volts disponíveis para a ondulação. O passo cinco aplica a fórmula do capacitor, corrente dividida pelo produto da frequência de ondulação pela ondulação admitida, obtendo mil quinhentos e quarenta e nove microfarads, e adota o valor comercial imediatamente acima, dois mil e duzentos microfarads. O passo seis recalcula com o valor comercial adotado: a ondulação real cai para um vírgula oitenta e nove volt e o vale sobe para doze vírgula trinta volts, sobrando oitocentos milivolts de margem sobre o mínimo exigido, e uma marca de verificação registra que o projeto passa. O passo sete verifica o outro extremo, com a rede alta e sem carga nenhuma: o secundário sobe para catorze vírgula setenta e oito volts eficazes, o pico é vinte vírgula noventa e um volts, e descontando as duas quedas de diodo em corrente quase nula sobram dezenove vírgula sete volts sobre o capacitor, o que exige capacitor de trinta e cinco volts e não de vinte e cinco. O passo oito dimensiona o transformador pela corrente eficaz, não pela média: com fator de crista típico de filtro capacitivo, a corrente eficaz no secundário é cerca de uma vírgula oito vez a corrente contínua, ou novecentos miliampères, o que exige um transformador de um ampère e não de quinhentos miliampères. Uma caixa final destaca a moral do procedimento, que é começar pela carga e caminhar para trás, porque cada elo impõe uma restrição ao anterior e nenhuma dessas restrições aparece se o projeto for feito no sentido do fluxo de energia.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \tikzset{passo/.style={draw, thick, rounded corners=3pt, anchor=north west,
+                         align=left, font=\scriptsize, inner sep=6pt, text width=12.6cm}}
+
+  \node[passo, draw=manualgreen] (p1) at (1.5,0)
+       {\textbf{1. A especificação.} \ $V_{out} = 9$ V, \ $I_{out} = 500$ mA.};
+
+  \node[passo, draw=manualblue] (p2) at (1.5,-0.95)
+       {\textbf{2. Some o \emph{dropout}.} O 7809 precisa de 2 V de folga; adote \textbf{2,5 V}.
+        \\ $\Rightarrow$ a tensão \emph{instantânea} na entrada do regulador
+        \textbf{nunca} pode cair abaixo de $9 + 2{,}5 = \mathbf{11{,}5}$ \textbf{V}.};
+
+  \node[passo, draw=manualblue] (p3) at (1.5,-2.35)
+       {\textbf{3. Vá ao extremo ruim: rede 10 \% baixa, carga máxima.}
+        \\ $V_{sec} = 12{,}72 \times 0{,}9 = 11{,}45$ V rms
+        $\Rightarrow$ pico $= 16{,}19$ V $\Rightarrow$ menos $2 \times 1{,}0$ V de diodo
+        $= \mathbf{14{,}19}$ \textbf{V}.};
+
+  \node[passo, draw=manualblue] (p4) at (1.5,-3.75)
+       {\textbf{4. O orçamento de ondulação é a diferença.}
+        \ $14{,}19 - 11{,}5 = \mathbf{2{,}69}$ \textbf{V} de ondulação admissível.};
+
+  \node[passo, draw=manualblue] (p5) at (1.5,-4.72)
+       {\textbf{5. A fórmula do capacitor.}
+        \ $C = \dfrac{I}{f_r V_r} = \dfrac{0{,}5}{120 \times 2{,}69} = 1549$ µF
+        $\Rightarrow$ comercial: \textbf{2200 µF}.};
+
+  \node[passo, draw=manualgreen] (p6) at (1.5,-6.05)
+       {\textbf{6. Recalcule com o valor adotado.}
+        \ $V_r = \dfrac{0{,}5}{120 \times 2200\,\mu} = 1{,}89$~V
+        $\Rightarrow$ vale $= 14{,}19 - 1{,}89 = \mathbf{12{,}30}$~\textbf{V}.
+        \\ Sobra \textbf{0,80 V} sobre os 11,5 V exigidos. \ \textbf{Passa.}};
+
+  \node[passo, draw=manualred] (p7) at (1.5,-7.75)
+       {\textbf{7. Agora o \emph{outro} extremo: rede 10 \% alta, carga nenhuma.}
+        \\ $V_{sec} = 13{,}44 \times 1{,}1 = 14{,}78$ V rms $\Rightarrow$ pico $= 20{,}91$ V
+        $\Rightarrow$ menos $2 \times 0{,}6$ V (corrente $\approx 0$) $= \mathbf{19{,}7}$
+        \textbf{V} sobre o capacitor.
+        \\ $\Rightarrow$ capacitor de \textbf{35 V}, não de 25 V.};
+
+  \node[passo, draw=manualred] (p8) at (1.5,-9.55)
+       {\textbf{8. Dimensione o transformador pela corrente \emph{eficaz}.}
+        Com filtro capacitivo, $I_{rms} \approx 1{,}8\,I_{cc} = \mathbf{0{,}9}$~\textbf{A}.
+        \\ $\Rightarrow$ transformador de \textbf{1 A}, não de 500 mA.};
+
+  % seta do sentido
+  \draw[vetor, manualgray] (0.55,-0.2) -- (0.55,-10.2);
+  \node[rotate=90, anchor=south, font=\scriptsize, manualgray, align=center] at (0.35,-5.2)
+       {o raciocínio corre \textbf{da carga para a rede}};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.7cm] at (0.4,-11.0)
+       {\textbf{Por que de trás para frente.} Cada elo impõe uma restrição ao \emph{anterior}, e
+        nenhuma dessas restrições aparece quando se projeta no sentido do fluxo de energia.
+        \\[3pt]
+        Quem começa escolhendo o transformador termina descobrindo, no fim, que a tensão não dá
+        no vale --- e aí não há capacitor que resolva, porque o problema está três elos atrás.};
+
+\end{tikzpicture}
+```
+
+Oito passos, sempre nesta ordem. Os passos 7 e 8 são os que separam um projeto que funciona na
+bancada de um que sobrevive em campo.
+:::
+
+Três pontos do procedimento merecem ser destacados, porque são os que se erra.
+
+**A queda dos diodos não é 0,7 V.** Numa ponte com filtro capacitivo, a corrente circula em
+pulsos estreitos de vários ampères (@sec-cap-049), e nesse nível de corrente a queda direta de
+um 1N4007 fica perto de **1,0 V**. Usar 0,7 V otimiza o projeto por 0,6 V que não existem — e o
+projeto acima tem apenas 0,80 V de margem no vale.
+
+**A ondulação é medida no vale, não na média.** O regulador não integra: se a tensão instantânea
+cair abaixo de $V_{out} + V_{dropout}$ por um instante, ele desiste **nesse instante**, e a
+saída acompanha a entrada. O sintoma é uma ondulação de 120 Hz aparecendo na saída regulada, e
+o culpado quase sempre é um capacitor de filtro pequeno demais.
+
+**A regulação do transformador entra duas vezes, com valores diferentes.** No passo 3 usa-se a
+tensão do secundário **em carga** (12,72 V); no passo 7, a tensão **a vazio** (13,44 V). São dois
+números do mesmo componente, e trocá-los inverte o sinal do erro.
+
+::: {.callout-tip}
+## A conta rápida do fator de crista
+
+A corrente que o secundário entrega não é a corrente contínua da carga. Ela vem em pulsos que
+duram uns 2 a 3 ms de cada meio ciclo de 8,33 ms, e o valor eficaz de um trem de pulsos é muito
+maior que a média.
+
+A regra prática, boa o bastante para escolher transformador:
+
+$$ I_{rms,sec} \approx 1{,}8\ I_{cc} \qquad\qquad \text{VA} \ge 1{,}8\ V_{sec}\, I_{cc} $$
+
+Para os nossos 500 mA a partir de 12,72 V: $I_{rms} = 0{,}9$ A e VA $\ge 11{,}4$. Daí o
+transformador de **12 V, 1 A**.
+
+Quem dimensiona pela corrente média compra um transformador de 500 mA, e ele funciona — quente,
+com a regulação pior do que a etiqueta promete, e com a fonte entregando menos tensão do que o
+projeto previa. O sintoma é indistinguível de "o capacitor está pequeno".
+:::
+
+## Os dois piores casos, no osciloscópio {#sec-073-piorcaso}
+
+::: {#fig-073-piorcaso}
+
+```{.tikz}
+%%| filename: 073-piorcaso
+%%| alt: Gráfico da tensão sobre o capacitor de filtro em função do tempo, em milissegundos, mostrando três situações sobrepostas ao longo de dois ciclos de rede. O eixo vertical vai de dez a vinte e um volts e o eixo horizontal de zero a trinta e três milissegundos. A curva azul é o caso nominal com carga máxima: ela oscila em dente de serra entre dezesseis volts de pico e catorze vírgula um volt de vale, com a subida rápida durante a condução dos diodos e a descarga quase retilínea durante o resto do ciclo. A curva vermelha é o pior caso de tensão baixa, com a rede dez por cento abaixo do nominal e a carga no máximo: ela oscila entre catorze vírgula dezenove e doze vírgula trinta volts, portanto muito mais perto do limite. A curva verde, quase reta no alto do gráfico, é o pior caso de tensão alta, com a rede dez por cento acima e nenhuma carga: fica praticamente constante em dezenove vírgula sete volts, porque sem carga o capacitor não se descarrega. Uma linha horizontal tracejada e grossa marca o limiar de onze vírgula cinco volts, que é a soma da tensão de saída de nove volts com a tensão de dropout de dois vírgula cinco volts, e uma anotação registra que qualquer vale que toque essa linha faz o regulador desistir naquele instante e a ondulação de cento e vinte hertz atravessar para a saída. Uma seta vertical entre o vale da curva vermelha e a linha do limiar marca a margem de projeto de oitocentos milivolts. Duas caixas acompanham: a primeira registra que o pior caso de baixa é rede baixa com carga máxima, que ele decide o valor do capacitor e a tensão do secundário, e que a verificação se faz no vale e não na média; a segunda registra que o pior caso de alta é rede alta sem carga, que ele decide a tensão de trabalho do capacitor e a tensão máxima de entrada do regulador, e que é o caso que ninguém mede porque o instinto é sempre testar a fonte com carga.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=13.4cm, height=7.6cm,
+    xmin=0, xmax=33, ymin=10, ymax=21.4,
+    xlabel={tempo (ms)}, ylabel={tensão sobre o capacitor (V)},
+    xtick={0,8.33,16.67,25,33.33},
+    xticklabels={$0$,$8{,}3$,$16{,}7$,$25{,}0$,$33{,}3$},
+    ytick={10,12,14,16,18,20},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+
+  % nominal, carga maxima: 16,0 -> 14,1
+  \addplot[curva, line width=1.2pt] coordinates {
+    (0,16.0) (6.6,14.1) (8.33,16.0) (14.93,14.1) (16.67,16.0)
+    (23.27,14.1) (25.0,16.0) (31.6,14.1) (33,15.5)};
+
+  % rede baixa, carga maxima: 14,19 -> 12,30
+  \addplot[destaque, line width=1.2pt] coordinates {
+    (0,14.19) (6.6,12.30) (8.33,14.19) (14.93,12.30) (16.67,14.19)
+    (23.27,12.30) (25.0,14.19) (31.6,12.30) (33,13.7)};
+
+  % rede alta, sem carga
+  \addplot[manualgreen, line width=1.2pt] coordinates {
+    (0,19.70) (8.33,19.66) (8.4,19.70) (16.67,19.66) (16.74,19.70)
+    (25.0,19.66) (25.07,19.70) (33,19.67)};
+
+  % limiar de dropout
+  \draw[manualgray, line width=1.4pt, dashed] (axis cs:0,11.5) -- (axis cs:33,11.5);
+  \node[anchor=south west, font=\tiny, manualgray] at (axis cs:0.4,11.6)
+       {$V_{out} + V_{dropout} = 11{,}5$ V --- \textbf{o piso}};
+
+  % margem
+  \draw[<->,>=stealth, manualred, thick] (axis cs:20.2,12.30) -- (axis cs:20.2,11.5);
+  \node[anchor=west, font=\tiny, manualred] at (axis cs:20.5,11.9) {margem \textbf{0,80 V}};
+
+  \node[anchor=south west, font=\tiny, manualgreen] at (axis cs:0.4,19.85)
+       {rede \textbf{alta}, \textbf{sem} carga --- 19,7 V, praticamente sem ondulação};
+  \node[anchor=north west, font=\tiny, manualblue] at (axis cs:0.6,17.6)
+       {nominal, carga máxima};
+  \node[anchor=north west, font=\tiny, manualred] at (axis cs:0.6,11.35)
+       {rede \textbf{baixa}, carga máxima};
+
+\end{axis}
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.5cm] at (-1.3,-1.3)
+       {\textbf{Pior caso de \emph{baixa}: rede baixa + carga máxima.}
+        \\[3pt]
+        Decide o \textbf{valor do capacitor} e a \textbf{tensão do secundário}.
+        \\[3pt]
+        Verifica-se \textbf{no vale}, nunca na média. O regulador não integra: um instante
+        abaixo do piso é um instante de saída não regulada.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.5cm] at (6.6,-1.3)
+       {\textbf{Pior caso de \emph{alta}: rede alta + \emph{sem} carga.}
+        \\[3pt]
+        Decide a \textbf{tensão de trabalho do capacitor} e a \textbf{entrada máxima do
+        regulador}.
+        \\[3pt]
+        É o caso que ninguém mede --- o instinto é sempre testar a fonte \emph{com} carga. E é
+        nele que o eletrolítico de 25 V passa os seus últimos minutos.};
+
+\end{tikzpicture}
+```
+
+Os dois extremos, sobrepostos. O projeto tem de caber entre a linha tracejada de baixo e a
+tensão de trabalho dos componentes lá em cima.
+:::
+
+::: {.callout-important}
+## O que o regulador faz quando a entrada falta
+
+Quando a tensão instantânea de entrada cai abaixo de $V_{out} + V_{dropout}$, o regulador não
+"tenta" nem "compensa depois". O elemento de passagem já está totalmente conduzindo, e a partir
+daí ele é apenas um resistor pequeno: **a saída segue a entrada**.
+
+Na prática isso aparece como um recorte na saída regulada, com a mesma forma do vale e a mesma
+frequência de 120 Hz. O sintoma é característico e vale reconhecer de vista: **ondulação de
+120 Hz numa saída regulada é quase sempre falta de tensão no vale**, não capacitor de saída
+insuficiente.
+
+E o teste que confirma em dez segundos: reduza a carga pela metade. Se a ondulação da saída
+sumir, é isso — porque menos corrente significa menos ondulação na entrada, e o vale volta a
+ficar acima do piso.
+:::
+
+## O regulador série, por dentro {#sec-073-serie}
+
+O 7809 do diagrama é um circuito integrado, e o capítulo 074 trata dele como componente. Mas
+vale montá-lo uma vez com peças soltas, porque **o que há dentro dele é o Volume 11 inteiro**.
+
+::: {#fig-073-serie}
+
+```{.tikz}
+%%| filename: 073-serie
+%%| alt: Esquemático do regulador série discreto com amplificador de erro. A tensão não regulada, vinda do capacitor de filtro, entra pelo trilho superior à esquerda e alimenta o coletor de um transistor de potência ligado como seguidor de emissor. Do emissor desse transistor a corrente passa por um resistor de detecção de um vírgula dois ohm e segue para a saída, no canto direito, marcada como nove vírgula catorze volts. A base do transistor de potência é comandada pela saída de um amplificador operacional desenhado como triângulo no centro da figura. A entrada não inversora do amplificador recebe a tensão de referência, produzida por um diodo Zener de cinco vírgula seis volts na coluna da esquerda; esse Zener é polarizado por um resistor de seiscentos e oitenta ohms cujo outro extremo vem da saída já regulada, e não da entrada bruta, detalhe destacado por uma anotação em verde acima do desenho porque alimentar a referência a partir da saída elimina a variação da rede na referência. A entrada inversora recebe a amostra da saída, tomada de um divisor de tensão vertical junto à saída, com um resistor de quatro vírgula três quilohms em cima e um de seis vírgula oito quilohms embaixo, e o ponto entre eles volta por um fio horizontal até a entrada inversora. Abaixo do esquemático principal há um desenho auxiliar destacado por uma moldura tracejada, mostrando a limitação de corrente: o resistor de detecção aparece isolado, com uma seta indicando que vem do emissor do transistor de potência e outra indicando que vai para a saída, e um segundo transistor pequeno tem a base ligada ao extremo esquerdo do resistor de detecção, o emissor ligado ao extremo direito, e o coletor saindo por cima com uma seta indicando que vai para a base do transistor de potência. Três caixas acompanham. A primeira registra que este é o amplificador não inversor com um transistor dentro da malha, dá a tensão de saída como a referência vezes um mais a razão dos resistores do divisor, mostra que para nove volts exatos o resistor superior teria de valer quatro vírgula treze quilohms, valor que não existe na série E24, e que adotando quatro vírgula três quilohms a saída fica em nove vírgula catorze volts, um vírgula seis por cento acima, com um trimpot de um quilohm em série com o resistor inferior fechando em nove volts exatos. A segunda caixa trata da limitação de corrente: o limite vale zero vírgula seis volt dividido pela resistência de detecção, o que com um vírgula dois ohm dá quinhentos miliampères, e observa que a limitação por corrente constante mantém o transistor conduzindo em curto-circuito com dissipação máxima, razão pela qual reguladores de potência usam limitação com recuo, em que o limite de corrente cai conforme a tensão de saída desaba. A terceira caixa lista as quatro proteções que faltam neste desenho mínimo e que qualquer fonte real precisa ter: um diodo da saída para a entrada, que protege o transistor quando a entrada é desligada com o capacitor de saída ainda carregado; um capacitor de desacoplamento na entrada e outro na saída, obrigatórios contra oscilação; um resistor de sangria no capacitor de filtro; e um fusível no primário.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- trilhos ----------------
+  \draw[->,>=stealth] (2.15,4.6) -- (2.75,4.6);
+  \draw (2.75,4.6) -- (5.65,4.6);
+  \node[anchor=south east, font=\scriptsize] at (3.6,4.68) {$V_{in}$ (não regulada)};
+  \draw (1.5,0) -- (11.9,0);
+  \node[ground] at (6.6,0) {};
+
+  % ---------------- transistor de passagem ----------------
+  \node[npn, anchor=B] (Q1) at (5.2,3.2) {};
+  \draw (Q1.C) |- (5.65,4.6);
+  \node[anchor=west, font=\scriptsize] at (5.95,3.6) {$Q_1$};
+  \draw (Q1.E) |- (5.9,2.2);
+
+  \draw (5.9,2.2) to[R, l=$R_{sc}$, a={1,2 $\Omega$}] (8.1,2.2);
+  \draw (8.1,2.2) -- (11.9,2.2);
+  \node[ponto] at (9.2,2.2) {};
+  \node[ponto] at (10.4,2.2) {};
+  \node[ponto] at (11.9,2.2) {};
+  \node[anchor=west, font=\scriptsize, align=left] at (12.0,2.2) {$V_{out}$\\9,14 V};
+
+  % ---------------- amp-op ----------------
+  \draw[thick] (3.45,2.4) -- (3.45,4.0) -- (5.05,3.2) -- cycle;
+  \node[anchor=west, font=\small] at (3.55,3.62) {$+$};
+  \node[anchor=west, font=\small] at (3.55,2.72) {$-$};
+  \draw (5.05,3.2) -- (Q1.B);
+
+  % ---------------- referencia ----------------
+  \draw (1.5,3.65) -- (3.45,3.65);
+  \node[ponto] at (1.5,3.65) {};
+  \draw (1.5,1.5) to[zD, l_={$V_Z$}, a^={5,6 V}] (1.5,3.65);
+  \draw (1.5,1.5) -- (1.5,0);
+  \draw (1.5,3.65) -- (1.5,5.4);
+  \draw (1.5,5.4) to[R, l=$R_Z$, a={680 $\Omega$}] (9.2,5.4);
+  \draw (9.2,5.4) -- (9.2,2.2);
+  \node[manualgreen, anchor=south, font=\tiny, align=center] at (5.4,6.05)
+       {a referência é alimentada pela \textbf{saída já regulada}, não pela entrada bruta};
+
+  % ---------------- divisor de amostra ----------------
+  \draw (10.4,2.2) to[R, l_={$R_b$}, a^={4,3 k$\Omega$}] (10.4,1.25);
+  \node[ponto] at (10.4,1.25) {};
+  \draw (10.4,1.25) to[R, l_={$R_a$}, a^={6,8 k$\Omega$}] (10.4,0);
+  \draw (10.4,1.25) -- (3.05,1.25);
+  \draw (3.05,1.25) -- (3.05,2.72) -- (3.45,2.72);
+
+  % ---------------- inset: limitacao de corrente ----------------
+  \begin{scope}[shift={(0.3,-5.6)}]
+    \draw[draw=manualgray, thick, rounded corners=3pt, dashed] (-0.55,-0.75) rectangle (5.5,4.4);
+    \node[anchor=north west, font=\scriptsize, manualgray] at (-0.45,4.32)
+         {\textbf{limitação de corrente}};
+
+    \draw (0.75,2.4) to[R, l=$R_{sc}$, a={1,2 $\Omega$}] (3.6,2.4);
+    \node[ponto] at (0.75,2.4) {};
+    \node[ponto] at (3.6,2.4) {};
+    \draw[<-,>=stealth] (0.75,2.4) -- (0.15,2.4);
+    \node[anchor=east, font=\tiny, align=right] at (0.1,2.4) {emissor\\de $Q_1$};
+    \draw[->,>=stealth] (3.6,2.4) -- (4.35,2.4);
+    \node[anchor=west, font=\tiny, align=left] at (4.4,2.4) {saída};
+
+    \node[npn, anchor=B] (q2) at (1.15,0.35) {};
+    \node[anchor=west, font=\scriptsize] at (1.75,0.3) {$Q_2$};
+    \draw (q2.B) -| (0.75,2.4);
+    \draw (q2.E) -| (3.6,2.4);
+    \draw (q2.C) |- (0.2,1.65);
+    \draw[->,>=stealth] (0.2,1.65) -- (0.2,3.35);
+    \node[anchor=south west, font=\tiny, align=left] at (0.28,3.30) {base de $Q_1$};
+  \end{scope}
+
+  % ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=8.2cm] at (6.4,-0.9)
+       {\textbf{É o amplificador não inversor, com um transistor dentro da malha.}
+        \[ V_{out} = V_Z\left(1 + \frac{R_b}{R_a}\right) \]
+        Para 9,00 V seria $R_b = 0{,}6071 \times 6{,}8 = 4{,}13$ k$\Omega$ ---
+        \textbf{não existe em E24}.
+        \\[3pt]
+        Adotando $R_b = 4{,}3$ k$\Omega$: \ $5{,}6 \times 1{,}6324 = \mathbf{9{,}14}$
+        \textbf{V}, 1,6 \% acima. Um trimpot de 1 k$\Omega$ em série com $R_a$ fecha em
+        9,00 V exatos.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=8.2cm] at (6.4,-4.0)
+       {\textbf{Limitação de corrente:} \ $I_{lim} = \dfrac{0{,}6\ \text{V}}{R_{sc}}
+        = \dfrac{0{,}6}{1{,}2} = \mathbf{500}$ \textbf{mA}.
+        \\[3pt]
+        $Q_2$ rouba a corrente de base de $Q_1$ assim que a queda em $R_{sc}$ chega a 0,6 V.
+        \\[3pt]
+        \textbf{Cuidado:} limitação a corrente \emph{constante} mantém $Q_1$ conduzindo em
+        curto com a \emph{máxima} dissipação possível. Fonte de potência usa limitação
+        \textbf{com recuo}, em que o limite cai junto com a saída.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.4cm] at (-0.4,-7.6)
+       {\textbf{O que falta neste desenho mínimo, e que nenhuma fonte real dispensa:}
+        \ (1) \textbf{diodo da saída para a entrada}, que protege $Q_1$ quando a entrada é
+        desligada com o capacitor de saída ainda carregado;
+        \ (2) \textbf{capacitor na entrada e na saída} do regulador --- obrigatórios, e a razão
+        está no capítulo 074;
+        \ (3) \textbf{resistor de sangria} no capacitor de filtro;
+        \ (4) \textbf{fusível no primário}.};
+
+\end{tikzpicture}
+```
+
+O regulador série com peças soltas. Tirando as proteções, é o não inversor do @sec-cap-066 com
+um seguidor de emissor (@sec-cap-057) dentro da malha de realimentação.
+:::
+
+Vale isolar o que cada peça faz, porque é a mesma lista que o capítulo 074 vai encontrar dentro
+do encapsulamento de três pernas:
+
+- **A referência** ($V_Z$) é o único ponto do circuito que precisa ser estável em valor
+  absoluto. Tudo o mais é comparado com ela. Note o detalhe do desenho: $R_Z$ vem da **saída
+  regulada**, não da entrada bruta. É um laço de realimentação positiva benigno que arranca no
+  ligamento e, depois disso, isola a referência inteiramente da variação da rede — o truque que
+  leva a regulação de linha de "razoável" para "excelente".
+- **O amplificador de erro** é o amp-op, e é ele que faz a saída obedecer. As regras de ouro do
+  @sec-cap-065 valem aqui: com realimentação negativa, sem saturação e com ganho de malha
+  sobrando, o amp-op faz o que for preciso na base de $Q_1$ para que a amostra da saída fique
+  igual à referência.
+- **O elemento de passagem** ($Q_1$) é quem carrega a corrente e dissipa o calor. Ligado como
+  seguidor de emissor, ele tem ganho de tensão 1 e ganho de corrente $\beta$: o amp-op comanda
+  milésimos do que a carga consome.
+- **O limitador** ($Q_2$, $R_{sc}$) é a única proteção que não pode faltar. Sem ele, um
+  curto na saída destrói $Q_1$ em milissegundos.
+
+::: {.callout-note}
+## Por que o LDO é um circuito diferente, e não um regulador melhor
+
+Neste circuito, $Q_1$ é um NPN em seguidor de emissor. Para a saída estar em 9 V, a base precisa
+estar em 9,7 V, e o amp-op precisa poder chegar lá — o que exige que a entrada esteja acima
+disso com folga. Some a queda de $R_{sc}$ e o resultado é uma tensão de *dropout* de 2 a 3 V.
+
+Trocar $Q_1$ por um **PNP** (ou um MOSFET de canal P) muda a topologia: o transistor passa a
+trabalhar em emissor comum, com o coletor na saída, e o *dropout* passa a ser apenas a tensão de
+saturação — algumas centenas de milivolts, ou dezenas em MOSFET.
+
+É o **LDO**, de *low dropout*, e ele não é um regulador série aperfeiçoado: é uma topologia
+diferente, com uma malha de realimentação diferente e — o preço — muito mais exigente quanto ao
+capacitor de saída. O capítulo 074 trata das duas famílias lado a lado.
+:::
+
+## O calor, e o limite da fonte linear {#sec-073-calor}
+
+::: {#fig-073-dissipacao}
+
+```{.tikz}
+%%| filename: 073-dissipacao
+%%| alt: Figura em duas partes sobre a dissipação do regulador linear. À esquerda, um gráfico da potência dissipada no regulador em função da tensão média na sua entrada, para três correntes de carga. O eixo horizontal vai de nove a vinte volts e o vertical de zero a seis watts. Três retas partem do ponto em que a tensão de entrada iguala os nove volts de saída, onde a dissipação seria nula, e sobem com inclinação igual à corrente: a de cem miliampères sobe devagar e chega a cerca de um watt em vinte volts, a de duzentos e cinquenta miliampères chega a dois vírgula setenta e cinco watts, e a de quinhentos miliampères, que é o caso do projeto, chega a cinco vírgula cinco watts. Três pontos marcados sobre a reta de quinhentos miliampères indicam as três condições de rede: rede baixa, com tensão média de treze vírgula vinte e cinco volts, dá dois vírgula doze watts; rede nominal, com quinze vírgula zero seis volts, dá três vírgula zero três watts; e rede alta, com dezesseis vírgula oitenta e cinco volts, dá três vírgula noventa e três watts, que é o valor usado no projeto térmico. Uma faixa sombreada em rosa marca a região acima de quatro watts como aquela em que o encapsulamento TO-220 sozinho, sem dissipador, já não sobrevive. À direita, duas caixas. A primeira faz a cadeia térmica com os números do projeto: com três vírgula noventa e três watts, temperatura ambiente de quarenta graus e limite de junção derretido para cento e vinte e cinco graus, a resistência térmica total admissível é de vinte e um vírgula seis graus por watt; como a resistência da junção à cápsula é de cinco graus por watt e a do isolador é de zero vírgula cinco, sobra dezesseis graus por watt para o dissipador, o que corresponde a um dissipador pequeno de encaixe; e registra que sem dissipador nenhum, com sessenta e dois graus por watt, a junção iria a duzentos e oitenta e quatro graus e o componente seria destruído, salvo pela proteção térmica interna que o desliga antes. A segunda caixa faz o balanço de energia da fonte inteira no caso nominal com quinhentos miliampères: a carga recebe quatro vírgula cinquenta watts, o regulador dissipa três vírgula zero três watts, a ponte retificadora dissipa um watt, o transformador perde um vírgula quinze watt, o total tirado da rede é nove vírgula sessenta e oito watts e o rendimento é de quarenta e seis por cento, com a observação de que mais da metade da energia vira calor e que esse é o motivo econômico, e não apenas técnico, de a fonte chaveada ter substituído a linear em quase tudo.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=9.6cm, height=7.4cm,
+    xmin=9, xmax=20.5, ymin=0, ymax=6.2,
+    xlabel={tensão média na entrada do regulador (V)},
+    ylabel={potência dissipada (W)},
+    xtick={10,12,14,16,18,20},
+    ytick={0,1,2,3,4,5,6},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+    samples=2,
+]
+
+  \draw[fill=manualred!12, draw=none] (axis cs:9,4) rectangle (axis cs:20.5,6.2);
+
+  \addplot[manualgray, thick, domain=9:20.5] {0.100*(x-9)};
+  \addplot[manualgreen, thick, domain=9:20.5] {0.250*(x-9)};
+  \addplot[curva, line width=1.4pt, domain=9:20.5] {0.500*(x-9)};
+
+  \node[anchor=west, font=\tiny, manualgray]  at (axis cs:18.3,0.90) {100 mA};
+  \node[anchor=west, font=\tiny, manualgreen] at (axis cs:17.8,2.10) {250 mA};
+  \node[anchor=south east, font=\tiny, manualblue] at (axis cs:14.4,4.75) {\textbf{500 mA}};
+
+  \node[ponto] at (axis cs:13.25,2.12) {};
+  \node[ponto] at (axis cs:15.06,3.03) {};
+  \node[ponto] at (axis cs:16.85,3.93) {};
+  \node[anchor=north west, font=\tiny, align=left] at (axis cs:9.3,3.85)
+       {rede baixa: \textbf{2,12 W}\\nominal: \textbf{3,03 W}\\rede alta:
+        \textbf{3,93 W} $\leftarrow$ projeto térmico};
+  \draw[auxiliar] (axis cs:12.4,3.05) -- (axis cs:13.20,2.14);
+
+  \node[anchor=north east, font=\tiny, manualred, align=right] at (axis cs:20.3,6.05)
+       {acima de 4 W, TO-220 \textbf{sem}\\dissipador não sobrevive};
+
+\end{axis}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.8cm] at (9.0,6.5)
+       {\textbf{Cadeia térmica, com os números do projeto}
+        \\[3pt]
+        $P = 3{,}93$ W, \ $T_A = 40\ ^\circ$C, \ $T_J \le 125\ ^\circ$C:
+        \[ R_{\theta,total} \le \frac{125-40}{3{,}93} = 21{,}6\ ^\circ\text{C/W} \]
+        $R_{\theta JC} = 5$ \ e \ $R_{\theta CS} = 0{,}5$ \
+        $\Rightarrow$ \ $R_{\theta SA} \le \mathbf{16\ ^\circ}$\textbf{C/W}: um dissipador
+        pequeno de encaixe resolve.
+        \\[3pt]
+        \textbf{Sem dissipador} ($62\ ^\circ$C/W): $T_J = 40 + 244 = 284\ ^\circ$C. O
+        componente só não morre porque a \emph{proteção térmica interna} o desliga antes.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.8cm] at (9.0,1.3)
+       {\textbf{Balanço de energia da fonte inteira}\\(nominal, 500 mA)
+        \\[3pt]
+        carga \dotfill 4,50 W \\
+        regulador \dotfill 3,03 W \\
+        ponte \dotfill 1,00 W \\
+        transformador \dotfill 1,15 W \\[2pt]
+        \textbf{da rede} \dotfill \textbf{9,68 W}
+        \\[3pt]
+        $\eta = \mathbf{46\ \%}$. \textbf{Mais da metade vira calor} --- e essa é a razão
+        econômica, não apenas técnica, de a fonte chaveada ter substituído a linear.};
+
+\end{tikzpicture}
+```
+
+A dissipação do regulador é $(V_{in} - V_{out})\,I$, e nada além de reduzir $V_{in}$ a diminui.
+O pior caso térmico é rede alta com carga máxima — o oposto do pior caso de tensão.
+:::
+
+A conta é de uma linha, e é implacável:
+
+$$ P_{reg} = (V_{in} - V_{out})\, I_{out} $$
+
+Três leituras dela valem a pena.
+
+**O rendimento máximo teórico é $V_{out}/V_{in}$.** Uma fonte linear de 5 V a partir de 15 V não
+passa de 33 %, faça o que fizer. E a fonte deste capítulo, de 9 V a partir de 15,06 V médios, não
+passa de 60 % no regulador — os 46 % do balanço incluem a ponte e o transformador.
+
+**O pior caso térmico é o oposto do pior caso de tensão.** Rede baixa aperta o vale; rede alta
+aperta a temperatura. Um projeto que só verifica um dos dois está metade feito.
+
+**Aumentar o capacitor melhora as duas coisas.** Menos ondulação significa vale mais alto — o
+que permite escolher um secundário de tensão **mais baixa** —, e tensão média de entrada menor
+significa menos dissipação. É o raro caso em que o componente mais caro melhora tudo, e é por
+isso que fontes lineares bem feitas têm capacitores generosos.
+
+::: {.callout-tip}
+## Quando a fonte linear ainda é a escolha certa
+
+Depois de 46 % de rendimento e um dissipador, é justo perguntar por que alguém ainda faz isto.
+Três respostas, e todas são boas:
+
+- **Ruído.** Uma fonte linear tem ondulação de milivolts e **nenhuma** componente de alta
+  frequência. Uma chaveada tem centenas de kHz de lixo que aparece em toda medida sensível.
+  Pré-amplificador de microfone, cadeia de sensor de ponte, referência de conversor A/D — vale a
+  pena pagar o calor.
+- **Simplicidade e previsibilidade.** Cinco componentes, nenhum laço de controle para
+  compensar, nenhum EMI para filtrar, nenhuma placa com plano de terra crítico.
+- **Potência baixa com $V_{in}$ próximo de $V_{out}$.** Um LDO de 3,3 V a partir de 3,6 V tem
+  91 % de rendimento e é mais simples que qualquer chaveada.
+
+O uso moderno mais comum, aliás, é **híbrido**: uma chaveada faz o trabalho pesado de 220 V para
+5 V, e um LDO limpa os últimos 300 mV para alimentar a parte analógica sensível.
+:::
+
+## 🧪 Laboratório {#sec-073-lab}
+
+O objetivo é montar a fonte da @fig-073-cadeia, medir a forma de onda em cada ponto de junção,
+verificar os dois piores casos, e **provocar** a falha de vale para reconhecê-la.
+
+::: {.callout-warning}
+## Antes de começar
+
+Três providências, nesta ordem, antes de ligar qualquer coisa na tomada:
+
+1. **Fusível.** 500 mA de ação retardada em série com o primário, no lado da rede, dentro do
+   porta-fusível. Se o seu transformador não tem, use uma extensão com fusível ou uma régua com
+   disjuntor.
+2. **Resistor de sangria.** 4,7 kΩ / 1 W permanentemente em paralelo com o capacitor de
+   2200 µF. Ele descarrega o capacitor em uns 50 segundos depois de desligar, e dissipa 85 mW
+   em serviço. **Monte-o antes do capacitor**, não depois.
+3. **Conferência.** A montagem inteira revisada, a polaridade do eletrolítico conferida duas
+   vezes, e o transformador ainda **fora** da tomada.
+
+Durante o roteiro: **desligue da tomada** antes de qualquer alteração, e **meça a tensão sobre o
+capacitor** antes de encostar nele. Não confie no resistor de sangria sem verificar.
+
+O primário e o plugue ficam intocados o tempo inteiro. Todas as medidas são do secundário para a
+frente.
+:::
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | **Transformador 12 V, 1 A, com plugue de fábrica** | fechado; o primário não é aberto |
+| 1 | Porta-fusível + **fusível 500 mA retardado** | no primário |
+| 4 | Diodos **1N4007** | ou uma ponte encapsulada de 1 A |
+| 1 | **Capacitor 2200 µF / 35 V** eletrolítico | Parte 2 em diante |
+| 1 | Capacitor 470 µF / 35 V | Parte 2 — comparação |
+| 1 | **Resistor 4,7 kΩ / 1 W** | sangria — obrigatório |
+| 1 | **7809** em TO-220 | Parte 4 |
+| 1 | Dissipador pequeno de encaixe + parafuso e pasta | Parte 6 |
+| — | Capacitores 330 nF e 100 nF cerâmicos, 10 µF | desacoplamento do regulador |
+| — | Resistores de carga: 100 Ω/5 W, 47 Ω/5 W, 22 Ω/10 W, 18 Ω/10 W | Partes 3 a 6 |
+| 1 | **TL071** ou TL072, **TIP31C**, **BC547** | Parte 7 — regulador discreto |
+| — | Resistores: 6,8 kΩ, 4,3 kΩ, 680 Ω, 1,2 Ω/1 W + trimpot 1 kΩ | Parte 7 |
+| 1 | Zener **5V6 / 400 mW** | Parte 7 |
+| 1 | Osciloscópio de 2 canais + multímetro | |
+| 1 | Termômetro infravermelho ou termopar | Parte 6 — opcional, mas revelador |
+
+### Parte 1 — Só o secundário
+
+1. Com tudo desligado, meça a resistência do secundário com o ohmímetro. Espere 1 a 2 Ω.
+2. Ligue na tomada **sem nada conectado** e meça a tensão do secundário. É o $V_{vazio}$ do
+   projeto — anote o seu número real, provavelmente entre 13 e 14,5 V.
+3. Observe a forma de onda no osciloscópio. Confira que é senoidal e meça o pico. Confirme que
+   pico $\approx \sqrt{2} \times$ o valor eficaz do multímetro.
+
+Este número é o ponto de partida de tudo o que vem depois. Se o seu for diferente do texto,
+**refaça as contas do projeto com o seu**, e é justamente esse o exercício.
+
+### Parte 2 — A ponte, e depois o capacitor
+
+1. Desligue. Monte a ponte de quatro 1N4007 e ligue 100 Ω na saída.
+2. Religue e observe. Você deve ver os arcos de 120 Hz do @sec-cap-048.
+3. Meça o pico e compare com o pico do secundário. **A diferença são as duas quedas de diodo** —
+   meça-as, não as suponha. Com 130 mA de carga, espere 1,4 a 1,8 V no total.
+4. Desligue. Monte o **resistor de sangria de 4,7 kΩ**, e só depois o capacitor de 470 µF.
+   Religue.
+5. Meça a ondulação pico a pico com o osciloscópio em **acoplamento CA**, e compare com
+   $V_r = I/(f_r C)$.
+6. Desligue, descarregue, troque para **2200 µF**. Refaça.
+
+A ondulação deve cair na razão das capacitâncias. Se não cair, o culpado costuma ser a ESR do
+eletrolítico (@sec-cap-022) — visível como um **degrau** no começo da descarga.
+
+### Parte 3 — A curva de regulação da fonte não regulada
+
+1. Com o capacitor de 2200 µF, meça a tensão média e a ondulação para 100 Ω, 47 Ω, 22 Ω e 18 Ω.
+2. Trace duas curvas: tensão média contra corrente, e ondulação contra corrente.
+
+A primeira reproduz a @fig-072-regulacao com a queda extra da ponte; a segunda deve ser uma
+**reta pela origem**, porque $V_r$ é proporcional a $I$.
+
+3. Meça também, no mesmo osciloscópio, a corrente que passa por um dos diodos, pondo 1 Ω em
+   série com ele. Você vai ver os **pulsos** do @sec-cap-049 — estreitos e com pico de vários
+   ampères.
+
+Este é o experimento que justifica o transformador de 1 A. Meça o pico do pulso, meça sua
+duração, e faça a conta do valor eficaz.
+
+### Parte 4 — O regulador entra
+
+1. Desligue e descarregue. Monte o 7809 com **330 nF cerâmico** na entrada e **100 nF** na
+   saída, os dois **junto ao encapsulamento**. Ponha 10 µF em paralelo com o de saída.
+2. Religue com 100 Ω de carga. Meça a saída: 9,0 V $\pm$ 0,2 V.
+3. Meça a ondulação da saída em acoplamento CA, com a escala mais sensível do osciloscópio.
+   Espere alguns milivolts.
+4. Compare com a ondulação da entrada: a razão é a **rejeição de ondulação**, e deve dar uns
+   60 dB. É o número mais impressionante do capítulo.
+5. **Regulação de carga:** meça a saída em 100 Ω e em 18 Ω. A diferença deve ser de dezenas de
+   milivolts. Compare com o Zener do @sec-cap-050, que dava volts.
+
+### Parte 5 — Provocar a falha de vale
+
+1. Com 18 Ω de carga (500 mA), observe simultaneamente a entrada e a saída do regulador.
+2. **Troque o capacitor de 2200 µF pelo de 470 µF.** A ondulação da entrada quadruplica, e o
+   vale afunda.
+3. Observe a saída.
+
+Se o vale passar abaixo de 11,5 V, aparece na saída uma **ondulação de 120 Hz com a forma do
+vale**. É a falha da @fig-073-piorcaso acontecendo, e reconhecê-la de vista vale mais que
+qualquer fórmula.
+
+4. Reduza a carga para 47 Ω sem mudar mais nada. A ondulação da saída **some**.
+
+É o teste de dez segundos do quadro: menos corrente, menos ondulação de entrada, vale acima do
+piso.
+
+5. Volte o capacitor de 2200 µF.
+
+### Parte 6 — O calor
+
+1. Com 18 Ω (500 mA), deixe a fonte ligada **sem dissipador** por 60 segundos, medindo a
+   temperatura do encapsulamento a cada 15 s. **Não encoste com o dedo.**
+2. Observe a saída no multímetro.
+
+Em algum ponto o 7809 entra em **proteção térmica** e a saída cai ou começa a pulsar. Isso não é
+defeito: é a proteção fazendo o trabalho dela, e é a demonstração experimental da caixa azul da
+@fig-073-dissipacao.
+
+3. Desligue, deixe esfriar, monte o dissipador com pasta térmica e parafuso, e repita.
+
+A temperatura estabiliza bem abaixo, e a saída fica firme. Meça a temperatura de equilíbrio e
+calcule o $R_{\theta}$ real da sua montagem — é o método do @sec-cap-011 aplicado.
+
+### Parte 7 — O regulador discreto
+
+1. Desligue e descarregue. Monte o circuito da @fig-073-serie com o TL071, o TIP31C (**com
+   dissipador**), o Zener de 5V6 com $R_Z = 680$ Ω, $R_a = 6{,}8$ kΩ (com o trimpot de 1 kΩ em
+   série) e $R_b = 4{,}3$ kΩ.
+2. Alimente o TL071 a partir da entrada não regulada, e ligue 100 Ω de carga. Com o trimpot no
+   zero, espere **9,14 V**; ajuste-o até ler 9,00 V.
+3. **Confirme as regras de ouro:** meça a tensão nas duas entradas do amp-op. Elas devem estar
+   iguais dentro de milivolts, e ambas em 5,6 V.
+4. **Troque a carga** de 100 Ω para 22 Ω e meça a saída de novo. A regulação de carga do seu
+   circuito discreto é comparável à do 7809 — porque o mecanismo é o mesmo.
+5. **Teste o limitador:** ponha um amperímetro em série com a saída e vá reduzindo a resistência
+   de carga. A corrente sobe até 500 mA e **para de subir**, com a tensão de saída desabando.
+6. **Curto-circuite a saída** por dois segundos, com o amperímetro no lugar. A corrente fica em
+   500 mA. Agora repare no $Q_1$: ele está dissipando $16 \times 0{,}5 = 8$ W, o máximo
+   possível. **Não deixe assim.**
+
+O passo 6 é o argumento inteiro a favor da limitação com recuo.
+
+**Variante simulada (plano B).** Sem transformador, o LTspice cobre as Partes 2, 3, 5 e 7 com uma
+fonte `SINE(0 18 60)` em série com 2 Ω (a resistência de saída do secundário). Um `.tran 200m`
+mostra o transitório de partida, e `.step param C list 470u 1000u 2200u 4700u` põe a
+@fig-073-piorcaso na tela. O modelo do 7809 não vem na biblioteca padrão; o comportamento de
+*dropout* pode ser imitado com uma fonte `B` de expressão `V=min(V(in)-2.5, 9)`, que é
+literalmente o que o quadro sobre falta de entrada descreve.
+
+## 🔥 Onde Queima {#sec-073-queima}
+
+**Dimensionar o capacitor pela ondulação média em vez do vale.** O regulador falha no
+**instante** em que a entrada cruza o piso, não na média do ciclo. Projeto no valor médio dá
+uma fonte que "quase" funciona, com 120 Hz na saída.
+
+**Usar 0,7 V de queda por diodo.** Nos pulsos de vários ampères de um filtro capacitivo, a queda
+real de um 1N4007 é de 1,0 V ou mais. Dois diodos, 0,6 V de erro — e este projeto tinha 0,80 V
+de margem.
+
+**Esquecer o pior caso de rede alta sem carga.** É o caso que produz a tensão mais alta que o
+circuito verá na vida, e é o que ninguém mede porque o instinto é testar com carga. Nele, o
+eletrolítico de 25 V do projeto "nominal" está trabalhando em 19,7 V — e o de 16 V, que alguém
+escolheu olhando os "12 V" da etiqueta, já explodiu.
+
+**Comprar o transformador pela corrente contínua.** Filtro capacitivo puxa corrente eficaz de
+1,8 vez a média. Transformador de 500 mA numa fonte de 500 mA fica quente, regula pior do que a
+etiqueta diz, e derruba a tensão de projeto.
+
+**Montar o 7809 sem os capacitores de entrada e saída.** Não são desacoplamento opcional: o
+regulador é um sistema realimentado e **oscila** sem eles, tipicamente em centenas de kHz. O
+sintoma é uma saída "com ruído" que some quando se encosta a ponta de prova — porque a ponta é
+capacitância.
+
+**Montar o regulador sem dissipador porque "na bancada aquece pouco".** Na bancada, com 100 Ω de
+carga, são 0,8 W. Em serviço, com a carga real e a rede alta, são 3,9 W e 284 °C de junção
+teórica. A proteção térmica salva o componente e **derruba a fonte** — o que aparece como uma
+falha intermitente difícil de diagnosticar.
+
+**Esquecer o diodo da saída para a entrada.** Quando a fonte é desligada, o capacitor de entrada
+descarrega antes do de saída (a carga do regulador o segura), e o regulador fica com a saída
+acima da entrada. Isso polariza diretamente a junção interna e pode destruí-lo. Um 1N4007 do
+`OUT` para o `IN`, catodo na entrada, custa centavos.
+
+**Deixar o capacitor de filtro sem resistor de sangria.** 2200 µF em 19,7 V guardam 0,43 J e
+mantêm a tensão por minutos. Não mata, e queima uma chave de fenda e assusta seriamente. Em
+tensões maiores, mata.
+
+**Trocar o eletrolítico por um de maior capacitância "porque sobra espaço".** Mais capacitância
+significa **mais surto de partida** e pulsos de carga mais estreitos e mais altos. O fusível
+começa a queimar na ligação e a ponte trabalha mais perto do $I_{FSM}$.
+
+**Confiar em limitação por corrente constante numa fonte de potência.** Em curto, o transistor
+de passagem fica com a corrente máxima **e** a tensão máxima ao mesmo tempo: é o ponto de
+dissipação máxima possível. Limitação com recuo, ou desligamento.
+
+**Inverter o eletrolítico.** Vale sempre, e aqui vale mais: 2200 µF invertidos em 19,7 V não
+falham silenciosamente.
+
+## O que fica deste capítulo {#sec-073-resumo}
+
+**A cadeia:** rede → transformador (isola e reduz) → ponte (retifica, custa 2 V) → capacitor
+(preenche os vales, cobra pulsos) → regulador (fixa a tensão, dissipa a diferença).
+
+**O procedimento de projeto corre de trás para frente**, da carga para a rede, em oito passos:
+
+1. Especificação. 2. Some o *dropout*. 3. Vá ao extremo de rede baixa com carga máxima.
+4. O orçamento de ondulação é a diferença. 5. $C = I/(f_r V_r)$. 6. Recalcule com o valor
+comercial. 7. Verifique rede alta **sem** carga. 8. Dimensione o transformador pela corrente
+**eficaz**.
+
+**Os dois piores casos são opostos e ambos obrigatórios:**
+
+| | rede baixa + carga máxima | rede alta + sem carga |
+|---|---|---|
+| aperta | o **vale** | a **tensão de trabalho** |
+| decide | $C$ e a tensão do secundário | a tensão do capacitor e a entrada máxima do regulador |
+| falha típica | 120 Hz na saída regulada | eletrolítico estufado |
+
+**O regulador série por dentro** é o Volume 11: uma referência estável, um amplificador de erro
+que é literalmente o não inversor do @sec-cap-066, um elemento de passagem em seguidor de
+emissor, e um limitador de corrente que não é opcional. A referência é alimentada pela **saída
+regulada**, não pela entrada bruta.
+
+**O calor é a definição da fonte linear:**
+
+$$ P_{reg} = (V_{in} - V_{out})\,I_{out} \qquad \eta_{max} = \frac{V_{out}}{V_{in}} $$
+
+O pior caso térmico é **rede alta com carga máxima** — oposto ao pior caso de tensão. Neste
+projeto: 3,93 W, $R_{\theta SA} \le 16$ °C/W, e 46 % de rendimento na fonte inteira.
+
+**E a fonte linear continua sendo a escolha certa** quando o que importa é ruído baixo,
+previsibilidade, ou quando $V_{in}$ está perto de $V_{out}$. O uso moderno mais comum é híbrido:
+chaveada para o trabalho pesado, LDO para limpar os últimos milivolts.
+
+## Para o próximo capítulo {#sec-073-fecho}
+
+O 7809 apareceu neste capítulo como uma caixa de três pernas que faz a coisa certa. Ele merece
+mais do que isso.
+
+O capítulo 074 abre a caixa: a família 78xx e 79xx, a diferença real entre um regulador série e
+um LDO — que não é "melhor" e sim **outra topologia**, com outra malha e outra exigência de
+capacitor —, o regulador ajustável LM317 com sua referência de 1,25 V flutuante e as duas
+fórmulas que dela decorrem, as proteções internas que já salvaram o componente na Parte 6 do
+laboratório, e o dimensionamento térmico feito como engenharia e não como palpite: escolher o
+dissipador a partir de $R_{\theta}$, verificar a área de cobre quando o encapsulamento é SMD, e
+entender por que o limite de corrente de um regulador integrado quase nunca é o número da
+primeira página do *datasheet*.

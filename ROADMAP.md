@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 72/104 |
-| **Contíguos até** | **072** — sem nenhum buraco no meio do livro |
+| **Progresso** | 73/104 |
+| **Contíguos até** | **073** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 073** | Fontes lineares: do transformador ao regulador |
+| **Próximo capítulo: 074** | Reguladores integrados: série, LDO e dissipação térmica |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -91,7 +91,17 @@ para cada um e o orçamento de perdas de um 6 VA (80 % de rendimento, meio watt 
 de Faraday na forma de projeto $V_{rms} = 4{,}44\,f\,N\,A_e\,B_{max}$, o joelho de saturação e a
 leitura ao contrário que sustenta a fonte chaveada (dobrar $f$ permite metade do núcleo);
 regulação como resistência interna em porcentagem, a armadilha do "12 V" que mede 14 V a vazio
-e 19,9 V de pico, e por que a etiqueta traz VA e não W (072).
+e 19,9 V de pico, e por que a etiqueta traz VA e não W (072); a fonte linear completa montada
+com números que fecham, o **procedimento de projeto em oito passos que corre da carga para a
+rede**, os **dois piores casos opostos e ambos obrigatórios** (rede baixa com carga máxima
+aperta o vale e decide $C$; rede alta sem carga aperta a tensão de trabalho e decide o
+capacitor de 35 V), a verificação **no vale e nunca na média**, a queda real de 1,0 V por diodo
+sob pulsos, o dimensionamento do transformador pela corrente **eficaz** ($I_{rms} \approx
+1{,}8\,I_{cc}$), o regulador série discreto que é o não inversor do 066 com um seguidor de
+emissor dentro da malha e a referência alimentada pela **saída já regulada**, a limitação de
+corrente $I_{lim} = 0{,}6/R_{sc}$ e o alerta sobre limitação a corrente constante, e o calor
+como definição da topologia: $P = (V_{in}-V_{out})I$, pior caso térmico oposto ao de tensão, e
+46 % de rendimento na fonte inteira (073).
 
 O capítulo 071 já montara a ponte para o fim do volume: o desacoplamento, invocado seis vezes
 como regra de bancada ao longo do Volume 11, ganha explicação própria no capítulo 077.
@@ -247,7 +257,7 @@ para conteúdo real e o verificador não as lista mais.
 ### Volume 12 — Fontes e Gestão de Energia
 
 - [x] 072 — Transformadores e acoplamento magnético — `capitulos/072-transformadores-e-acoplamento-magnetico.qmd`
-- [ ] 073 — Fontes lineares: do transformador ao regulador — `capitulos/073-fontes-lineares-do-transformador-ao-regulador.qmd`
+- [x] 073 — Fontes lineares: do transformador ao regulador — `capitulos/073-fontes-lineares-do-transformador-ao-regulador.qmd`
 - [ ] 074 — Reguladores integrados: série, LDO e dissipação térmica — `capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.qmd`
 - [ ] 075 — Fontes chaveadas: buck, boost e buck-boost — `capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.qmd`
 - [ ] 076 — Baterias, células e circuitos de carga — `capitulos/076-baterias-celulas-e-circuitos-de-carga.qmd`
