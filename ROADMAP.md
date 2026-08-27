@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 71/104 |
-| **Contíguos até** | **071** — sem nenhum buraco no meio do livro |
+| **Progresso** | 72/104 |
+| **Contíguos até** | **072** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 072** | Transformadores e acoplamento magnético |
+| **Próximo capítulo: 073** | Fontes lineares: do transformador ao regulador |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -83,9 +83,18 @@ o 555 por dentro (dois comparadores, báscula RS, transistor de descarga) com as
 monoestável, e o oscilador de Wien com a exigência de ganho **exatamente 3** e os três
 mecanismos de controle automático de amplitude (071).
 
-O próximo bloco é o **Volume 12** (capítulos 072 a 077), sobre fontes e gestão de energia. O
-capítulo 071 já monta a ponte: o desacoplamento, invocado seis vezes como regra de bancada ao
-longo do Volume 11, ganha explicação própria no capítulo 077.
+**Volume 12 em andamento** (capítulos 072 a 077, fontes e gestão de energia): acoplamento
+magnético, indutância mútua $M$ e coeficiente $k = M/\sqrt{L_1L_2}$, com a dispersão
+$L_d = (1-k)L$ em série e não transformada; as três relações do transformador ideal e a
+reflexão de impedância $Z_{in} = n^2 Z_L$; o modelo real de sete elementos com endereço físico
+para cada um e o orçamento de perdas de um 6 VA (80 % de rendimento, meio watt a vazio); a lei
+de Faraday na forma de projeto $V_{rms} = 4{,}44\,f\,N\,A_e\,B_{max}$, o joelho de saturação e a
+leitura ao contrário que sustenta a fonte chaveada (dobrar $f$ permite metade do núcleo);
+regulação como resistência interna em porcentagem, a armadilha do "12 V" que mede 14 V a vazio
+e 19,9 V de pico, e por que a etiqueta traz VA e não W (072).
+
+O capítulo 071 já montara a ponte para o fim do volume: o desacoplamento, invocado seis vezes
+como regra de bancada ao longo do Volume 11, ganha explicação própria no capítulo 077.
 
 Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -237,7 +246,7 @@ para conteúdo real e o verificador não as lista mais.
 
 ### Volume 12 — Fontes e Gestão de Energia
 
-- [ ] 072 — Transformadores e acoplamento magnético — `capitulos/072-transformadores-e-acoplamento-magnetico.qmd`
+- [x] 072 — Transformadores e acoplamento magnético — `capitulos/072-transformadores-e-acoplamento-magnetico.qmd`
 - [ ] 073 — Fontes lineares: do transformador ao regulador — `capitulos/073-fontes-lineares-do-transformador-ao-regulador.qmd`
 - [ ] 074 — Reguladores integrados: série, LDO e dissipação térmica — `capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.qmd`
 - [ ] 075 — Fontes chaveadas: buck, boost e buck-boost — `capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.qmd`

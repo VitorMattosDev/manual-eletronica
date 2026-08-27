@@ -3,9 +3,920 @@
 ::: {.callout-warning}
 ## Tensão perigosa
 
-Este capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve
-ser executado depois de ler integralmente o Capítulo 2. *(texto de aviso a
-escrever)*
+Este capítulo trata do componente que fica **entre a rede elétrica e o resto do circuito**, e o
+lado de cá dessa fronteira só é seguro porque o lado de lá não é. **Nada aqui autoriza abrir,
+medir ou tocar o primário de um transformador energizado.**
+
+O laboratório do fim do capítulo é executado em duas partes bem separadas:
+
+- **Parte experimental**, com gerador de funções e um toroide de ferrite enrolado à mão. Tensão
+  máxima de 10 V, e é onde estão todas as medidas que exigem sonda, série e paciência.
+- **Parte de observação**, com um transformador comercial de 127/12 V **já montado e fechado**,
+  ligado na tomada por um plugue de fábrica. Mede-se **só o secundário**. O primário nunca é
+  aberto, nunca recebe ponta de prova e nunca fica acessível.
+
+Três regras que o @sec-cap-002 estabeleceu e que este volume inteiro herda:
+
+- **A ponta de prova do osciloscópio tem a malha aterrada.** Encostá-la em qualquer ponto do
+  primário produz um curto franco através do cabo. O osciloscópio só entra do lado do
+  secundário.
+- **Capacitor de filtro guarda carga depois de desligar.** Vale desde o @sec-cap-049 e volta no
+  capítulo 073, com números maiores.
+- **Se o roteiro parecer exigir a rede, o roteiro está errado.** Pare e releia.
 :::
 
-*(em elaboração)*
+O @sec-cap-023 mostrou que corrente variável cria campo magnético variável, e que campo
+magnético variável induz tensão. O @sec-cap-024 tratou o indutor como um componente de dois
+terminais que guarda energia no campo. Faltou dizer o que acontece quando **duas** bobinas
+compartilham o mesmo campo.
+
+É o assunto deste capítulo, e a resposta tem três consequências que nenhum outro componente
+deste manual oferece juntas:
+
+1. **A tensão muda de valor** sem que se perca potência num resistor. Um divisor de tensão
+   (@sec-cap-014) transforma o excedente em calor; o transformador não.
+2. **A impedância muda de valor.** Uma carga de 8 Ω vista através de um transformador pode
+   parecer 1 kΩ, e o @sec-cap-019 dizia que casar impedância é o que decide a transferência de
+   potência.
+3. **Os dois lados ficam eletricamente separados.** Não há caminho de corrente entre primário e
+   secundário — só campo magnético atravessando. É essa separação que permite ligar um
+   osciloscópio no circuito sem morrer, e é o motivo de o capítulo estar aqui, na abertura do
+   volume sobre fontes.
+
+O que se paga por isso: o transformador só funciona em **corrente alternada**, o núcleo tem um
+limite que é físico e não elétrico, e o componente real não faz nada disso com exatidão.
+
+## O acoplamento magnético {#sec-072-acoplamento}
+
+::: {#fig-072-acoplamento}
+
+```{.tikz}
+%%| filename: 072-acoplamento
+%%| alt: Figura em duas partes sobre o acoplamento magnético entre duas bobinas. À esquerda, o desenho de um transformador: uma fonte de tensão alternada alimenta uma bobina de N1 espiras desenhada na vertical, ao lado dela duas barras verticais grossas representam o núcleo de ferro, e do outro lado do núcleo há uma segunda bobina de N2 espiras ligada a uma carga. Uma seta curva dentro do núcleo indica o fluxo magnético comum às duas bobinas, chamado fluxo mútuo. Duas setas menores saindo do topo de cada bobina para fora do núcleo indicam o fluxo disperso, aquele que enlaça uma bobina e não a outra, e uma anotação registra que é exatamente esse fluxo perdido que faz o coeficiente de acoplamento ser menor que um. Junto ao terminal superior de cada bobina há um ponto grosso, e uma anotação explica a convenção do ponto: corrente entrando pelo terminal marcado numa bobina produz tensão positiva no terminal marcado da outra, de modo que os pontos dizem a fase relativa e sem eles o esquemático não determina o sinal da saída. À direita, três caixas. A primeira define a indutância mútua como o fluxo enlaçado por uma bobina por unidade de corrente na outra, registra que a indutância mútua é a mesma nos dois sentidos e dá a tensão induzida no secundário como a indutância mútua vezes a derivada da corrente do primário. A segunda define o coeficiente de acoplamento como a indutância mútua dividida pela raiz do produto das duas indutâncias próprias, valendo entre zero e um, e lista valores típicos: acima de zero vírgula noventa e nove para um transformador de núcleo de ferro fechado, entre zero vírgula noventa e zero vírgula noventa e oito para um núcleo de ferrite com entreferro, cerca de zero vírgula cinco para duas bobinas próximas com núcleo de ar, e abaixo de zero vírgula um para o acoplamento parasita entre trilhas vizinhas de uma placa. A terceira caixa faz a ponte com o resto do manual, registrando que a indutância de dispersão vale um menos o coeficiente de acoplamento vezes a indutância própria, aparece em série com o enrolamento, não é transformada e é a principal responsável pela queda de tensão sob carga e pelos picos de comutação nas fontes chaveadas.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- transformador ----------------
+  \begin{scope}[shift={(0,0)}]
+
+    % primario
+    \draw (0,3.6) to[cute inductor, l_=$N_1$] (0,0.4);
+    \draw (0,3.6) -- (-1.6,3.6);
+    \draw (0,0.4) -- (-1.6,0.4);
+    \draw (-1.6,3.6) to[sV, l=$v_1$] (-1.6,0.4);
+    \node[ponto] at (0,3.6) {};
+
+    % nucleo
+    \draw[very thick, manualgray] (0.85,4.2) -- (0.85,-0.2);
+    \draw[very thick, manualgray] (1.15,4.2) -- (1.15,-0.2);
+
+    % secundario
+    \draw (2.0,3.6) to[cute inductor, l=$N_2$] (2.0,0.4);
+    \draw (2.0,3.6) -- (3.6,3.6);
+    \draw (2.0,0.4) -- (3.6,0.4);
+    \draw (3.6,3.6) to[R, l=$R_L$] (3.6,0.4);
+    \node[ponto] at (2.0,3.6) {};
+
+    % fluxo mutuo
+    \draw[vetor, manualblue] (1.0,1.5) -- (1.0,2.7);
+    \node[manualblue, anchor=west, font=\scriptsize] at (1.22,2.15) {$\phi_m$};
+
+    % fluxo disperso
+    \draw[->,>=stealth, manualred, thick] (0.15,3.15) to[out=60,in=150] (0.75,2.6);
+    \draw[->,>=stealth, manualred, thick] (1.85,3.15) to[out=120,in=30] (1.25,2.6);
+    \node[manualred, anchor=south, font=\tiny, align=center] at (1.0,3.5)
+         {fluxo \textbf{disperso}};
+
+    \node[anchor=north, font=\tiny, align=center, manualgray] at (1.0,-0.35) {núcleo};
+
+  \end{scope}
+
+  % ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=9.4cm] at (5.4,4.5)
+       {\textbf{Indutância mútua.} O fluxo que a bobina 1 cria e que a bobina 2 enlaça,
+        por unidade de corrente:
+        \[ M = \frac{N_2\,\phi_m}{i_1} \qquad\qquad v_2 = M\,\frac{di_1}{dt} \]
+        E $M$ é a \textbf{mesma} nos dois sentidos --- resultado nada óbvio, e verdadeiro.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=9.4cm] at (5.4,1.9)
+       {\textbf{Coeficiente de acoplamento:} \ $\displaystyle k = \frac{M}{\sqrt{L_1 L_2}}$,
+        \ com $0 \le k \le 1$.
+        \\[3pt]
+        $k > 0{,}99$ --- núcleo de ferro fechado \\
+        $k = 0{,}90$ a $0{,}98$ --- ferrite com entreferro \\
+        $k \approx 0{,}5$ --- duas bobinas próximas, núcleo de ar \\
+        $k < 0{,}1$ --- acoplamento \emph{parasita} entre trilhas vizinhas};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=9.4cm] at (5.4,-1.4)
+       {\textbf{O que sobra vira problema:} \ $L_{disp} = (1-k)\,L$.
+        \\[3pt]
+        A indutância de dispersão fica \textbf{em série} com o enrolamento e \textbf{não é
+        transformada}. É a principal responsável pela queda de tensão sob carga --- e, no
+        capítulo 075, pelos picos de comutação que destroem a chave.};
+
+  % convencao do ponto
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.0cm] at (0,-3.2)
+       {\textbf{A convenção do ponto.} Corrente \emph{entrando} pelo terminal marcado de uma
+        bobina produz tensão \emph{positiva} no terminal marcado da outra.
+        \\[3pt]
+        Os pontos não são decoração: sem eles, o esquemático \textbf{não determina} o sinal da
+        saída. Num secundário com derivação central, inverter a leitura dos pontos troca o
+        retificador de onda completa por um curto-circuito.};
+
+\end{tikzpicture}
+```
+
+Duas bobinas no mesmo núcleo. O fluxo mútuo $\phi_m$ é o que faz o transformador funcionar; o
+fluxo disperso é tudo o que uma bobina cria e a outra não enlaça, e é ele que cobra o preço.
+:::
+
+A cadeia de raciocínio é curta. A corrente do primário cria fluxo. O núcleo de ferro conduz esse
+fluxo — a permeabilidade relativa de uma chapa de ferro-silício fica entre 2 000 e 6 000, o que
+significa que o caminho pelo ferro é milhares de vezes mais "fácil" que pelo ar. O fluxo
+atravessa o secundário. E, pela lei de Faraday, um fluxo **variável** induz tensão em cada
+espira que ele atravessa.
+
+$$ v = N\,\frac{d\phi}{dt} $$
+
+Como o mesmo $\phi$ atravessa os dois enrolamentos, a única diferença entre a tensão do primário
+e a do secundário é o número de espiras. É daí que sai tudo o que vem a seguir.
+
+::: {.callout-important}
+## Só funciona em alternada
+
+A tensão induzida depende de $d\phi/dt$. Em corrente contínua, $\phi$ é constante, a derivada é
+zero e a tensão de saída é **zero**.
+
+Pior: em CC o primário é apenas um pedaço de fio esmaltado com a resistência ôhmica do
+enrolamento. Nos números deste capítulo, 130 Ω. Ligar 12 V CC no primário de um transformador de
+127 V produz 92 mA e nenhuma saída; ligar 127 V CC produz 1 A num enrolamento projetado para
+50 mA, e o cheiro característico em poucos segundos.
+:::
+
+## A relação de transformação {#sec-072-relacao}
+
+::: {#fig-072-relacao}
+
+```{.tikz}
+%%| filename: 072-relacao
+%%| alt: Figura sobre a relação de transformação e a reflexão de impedância. À esquerda, o símbolo do transformador ideal, com o primário de N1 espiras à esquerda, o núcleo no meio representado por duas barras verticais, e o secundário de N2 espiras à direita alimentando um resistor de carga. As correntes e tensões dos dois lados estão marcadas. Um rótulo indica a relação de espiras n igual a N1 dividido por N2. À direita, quatro caixas. A primeira dá as três relações do transformador ideal: a tensão do primário dividida pela do secundário é igual a n, a corrente do primário dividida pela do secundário é igual a um sobre n, e o produto tensão vezes corrente é igual dos dois lados, ou seja, a potência atravessa sem perda. Uma observação registra que o transformador troca tensão por corrente, e que o que não muda é a potência. A segunda caixa deduz a reflexão de impedância: a impedância vista do primário é a tensão do primário dividida pela corrente do primário, que substituindo pelas relações anteriores dá n ao quadrado vezes a impedância de carga. O resultado aparece destacado num quadro. A terceira caixa traz um exemplo numérico com o transformador de referência do capítulo, de mil e noventa e três espiras no primário e cento e dez no secundário, relação nove vírgula zero três: com uma carga de vinte e quatro ohms no secundário, o primário enxerga mil novecentos e cinquenta e sete ohms, quase dois quilohms, e a corrente do primário é de sessenta e cinco miliampères contra quinhentos e oitenta e seis miliampères no secundário. A quarta caixa é a aplicação clássica de casamento de impedância: um alto-falante de oito ohms visto através de um transformador de relação vinte e cinco parece cinco quilohms, que é o valor que um amplificador valvulado precisa enxergar, e uma nota registra que essa é a razão de existir o transformador de saída de áudio e que o mesmo raciocínio de máxima transferência de potência apareceu no capítulo dezenove.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- transformador ideal ----------------
+  \begin{scope}[shift={(0,0)}]
+
+    \draw (0,3.4) to[cute inductor, l_=$N_1$] (0,0.4);
+    \draw (0,3.4) -- (-1.5,3.4);
+    \draw (0,0.4) -- (-1.5,0.4);
+    \draw[->,>=stealth] (-1.5,3.4) -- (-1.5,2.9);
+    \node[anchor=east, font=\scriptsize] at (-1.6,3.1) {$i_1$};
+    \draw[<->,>=stealth, manualgray] (-1.15,3.3) -- (-1.15,0.5);
+    \node[anchor=east, font=\scriptsize, manualgray] at (-1.2,1.9) {$v_1$};
+    \node[ponto] at (0,3.4) {};
+
+    \draw[very thick, manualgray] (0.85,3.9) -- (0.85,-0.1);
+    \draw[very thick, manualgray] (1.15,3.9) -- (1.15,-0.1);
+
+    \draw (2.0,3.4) to[cute inductor, l=$N_2$] (2.0,0.4);
+    \draw (2.0,3.4) -- (3.9,3.4);
+    \draw (2.0,0.4) -- (3.9,0.4);
+    \draw[->,>=stealth] (3.0,3.4) -- (3.5,3.4);
+    \node[anchor=south, font=\scriptsize] at (3.25,3.5) {$i_2$};
+    \draw (3.9,3.4) to[R, l=$Z_L$] (3.9,0.4);
+    \draw[<->,>=stealth, manualgray] (2.7,3.3) -- (2.7,0.5);
+    \node[anchor=west, font=\scriptsize, manualgray] at (2.75,1.9) {$v_2$};
+    \node[ponto] at (2.0,3.4) {};
+
+    \node[anchor=north, font=\scriptsize, align=center] at (1.0,-0.5)
+         {$n = \dfrac{N_1}{N_2}$};
+
+  \end{scope}
+
+  % ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=9.2cm] at (5.0,4.2)
+       {\textbf{Transformador ideal --- as três relações}
+        \[ \frac{v_1}{v_2} = n \qquad \frac{i_1}{i_2} = \frac{1}{n} \qquad v_1 i_1 = v_2 i_2 \]
+        Ele \textbf{troca tensão por corrente}. O que não muda é a \emph{potência}.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=9.2cm] at (5.0,1.5)
+       {\textbf{Reflexão de impedância}
+        \[ Z_{in} = \frac{v_1}{i_1} = \frac{n\,v_2}{i_2/n}
+           = n^2\,\frac{v_2}{i_2} \]
+        \[ \boxed{\ Z_{in} = n^2 Z_L\ } \]
+        A relação de espiras eleva a tensão por $n$ e a impedância por $n^2$.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.3cm] at (0,-1.6)
+       {\textbf{O transformador deste capítulo:} $N_1 = 993$, $N_2 = 110$,
+        logo $n = 9{,}03$.
+        \\[3pt]
+        Carga de 24 $\Omega$ no secundário:
+        $Z_{in} = 9{,}03^2 \times 24 = \mathbf{1957\ \Omega}$.
+        \\[3pt]
+        $i_2 = 14{,}07/24 = 586$ mA \ e \ $i_1 = 586/9{,}03 = \mathbf{65}$ \textbf{mA}.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.8cm] at (7.5,-1.6)
+       {\textbf{Casamento de impedância.} Um alto-falante de 8 $\Omega$ visto através de
+        $n = 25$ parece $25^2 \times 8 = \mathbf{5\ k\Omega}$ --- exatamente o que a válvula
+        de saída precisa enxergar.
+        \\[3pt]
+        É a razão de existir o transformador de saída de áudio, e é a máxima transferência
+        de potência do Volume 3 posta em prática.};
+
+\end{tikzpicture}
+```
+
+O transformador ideal em três equações. A do meio é a que surpreende: elevar a tensão por $n$
+eleva a impedância por $n^2$.
+:::
+
+Vale a pena refazer a conta da reflexão de impedância devagar, porque ela é o resultado menos
+intuitivo do capítulo e o mais usado.
+
+A impedância que o primário enxerga é, por definição, $Z_{in} = v_1/i_1$. Substituindo
+$v_1 = n\,v_2$ e $i_1 = i_2/n$:
+
+$$ Z_{in} = \frac{n\,v_2}{i_2/n} = n^2\,\frac{v_2}{i_2} = n^2 Z_L $$
+
+Três consequências práticas:
+
+- **Um transformador abaixador de tensão é elevador de impedância.** O de 127/12 V, com
+  $n = 9{,}03$, apresenta ao primário uma impedância 81,5 vezes maior que a carga.
+- **Casar impedância deixa de exigir perda.** O @sec-cap-019 mostrou que a máxima
+  transferência de potência acontece com $R_{fonte} = R_{carga}$ e que forçar isso com
+  resistores joga metade da potência fora. Com transformador, o casamento é feito por relação
+  de espiras e a potência atravessa inteira.
+- **A impedância refletida é o que decide o valor do capacitor no capítulo seguinte.** A
+  resistência de saída do secundário, que o @sec-cap-020 chamaria de resistência interna da
+  fonte, é $R_2 + R_1/n^2$ — a resistência do primário aparece dividida por 81,5.
+
+::: {.callout-note}
+## O transformador não é uma fonte de tensão
+
+Ele é um **conversor de impedância**. Se o primário for alimentado por uma fonte de tensão
+rígida, o secundário se comporta como fonte de tensão; se for alimentado por uma fonte de
+corrente, o secundário se comporta como fonte de corrente.
+
+É por isso que o **transformador de corrente** do alicate amperímetro funciona: o "primário" é o
+próprio cabo sendo medido, que é uma fonte de corrente do ponto de vista do instrumento, e o
+secundário de muitas espiras entrega uma corrente $n$ vezes menor, fácil de medir.
+
+E é também por isso que **um transformador de corrente nunca pode ficar com o secundário
+aberto** com o cabo energizado: sem caminho para a corrente, a tensão sobe até romper a
+isolação. O secundário de um TC em repouso fica **curto-circuitado**, o que é exatamente o
+oposto do que a intuição de transformador de tensão sugere.
+:::
+
+## O transformador real {#sec-072-real}
+
+::: {#fig-072-modelo}
+
+```{.tikz}
+%%| filename: 072-modelo
+%%| alt: Circuito equivalente completo de um transformador real, com os valores medidos de um transformador comercial de cento e vinte e sete para doze volts e seiscentos miliampères. Da esquerda para a direita: a tensão do primário entra por um resistor de cento e trinta ohms, que é a resistência ôhmica do enrolamento primário, seguido de um indutor de cem milihenries em série, que é a indutância de dispersão do primário. Desse nó desce um ramo em paralelo com dois elementos: um resistor de trinta quilohms, que representa a perda no núcleo por histerese e correntes parasitas, e um indutor de vinte henries, que é a indutância de magnetização, ou seja, a corrente que o transformador consome mesmo sem carga nenhuma para manter o fluxo no núcleo. Depois desse ramo vem o transformador ideal de relação nove vírgula zero três, e do outro lado dele um indutor de um vírgula dois milihenry, que é a dispersão do secundário, e um resistor de dois vírgula quatro ohms, que é a resistência do enrolamento secundário, chegando finalmente aos terminais de saída. Três caixas acompanham. A primeira separa os elementos em três grupos por origem física: os dois resistores em série são perda no cobre, proporcional ao quadrado da corrente, e portanto crescem com a carga; os dois indutores em série são fluxo que escapou do núcleo, causam queda de tensão sob carga mas não dissipam; e o ramo paralelo é o núcleo, presente mesmo a vazio. A segunda caixa faz o orçamento de perdas em plena carga de quinhentos miliampères: a saída entrega seis vírgula zero quatro watts, o cobre do primário perde zero vírgula quarenta watt, o cobre do secundário perde zero vírgula sessenta watt, o núcleo perde zero vírgula cinquenta e quatro watt, o total consumido é sete vírgula cinquenta e oito watts e o rendimento é de aproximadamente oitenta por cento. Uma nota registra que rendimento de oitenta por cento é normal em transformadores pequenos, e que um transformador de cem volt-ampères passa de noventa por cento porque a perda no núcleo cresce menos que a potência útil. A terceira caixa trata do consumo a vazio: mesmo sem carga alguma o primário puxa cerca de dezessete miliampères, quase toda reativa, com meio watt de perda real no núcleo, e essa perda existe vinte e quatro horas por dia enquanto o aparelho estiver na tomada, o que é a explicação física do consumo em modo de espera.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- lado primario ----------------
+  \draw (0,3.0) to[R, l={$R_1$}, a={130 $\Omega$}] (2.8,3.0);
+  \draw (2.8,3.0) to[L, l={$L_{d1}$}, a={100 mH}] (5.6,3.0);
+  \node[ponto] at (5.6,3.0) {};
+  \draw (0,3.0) -- (-0.9,3.0) -- (-0.9,0.0) -- (5.6,0.0);
+  \draw[<->,>=stealth, manualgray] (-0.62,2.85) -- (-0.62,0.15);
+  \node[anchor=west, font=\scriptsize] at (-0.55,1.5) {$v_1$};
+
+  % ramo de magnetizacao
+  \draw (5.6,3.0) to[R] (5.6,0.0);
+  \node[anchor=east, font=\footnotesize, align=right] at (5.2,1.5) {$R_n$\\30 k$\Omega$};
+  \draw (5.6,3.0) -- (7.1,3.0);
+  \node[ponto] at (7.1,3.0) {};
+  \draw (7.1,3.0) to[L] (7.1,0.0);
+  \node[anchor=west, font=\footnotesize, align=left] at (7.5,1.5) {$L_m$\\20 H};
+  \draw (5.6,0.0) -- (8.5,0.0);
+
+  % transformador ideal
+  \draw (7.1,3.0) -- (8.5,3.0);
+  \draw (8.5,3.0) to[cute inductor] (8.5,0.0);
+  \draw[very thick, manualgray] (9.15,3.5) -- (9.15,-0.5);
+  \draw[very thick, manualgray] (9.45,3.5) -- (9.45,-0.5);
+  \draw (10.1,3.0) to[cute inductor] (10.1,0.0);
+  \node[anchor=north, font=\scriptsize, align=center, manualgray] at (9.3,-0.7)
+       {ideal\\$n = 9{,}03$};
+
+  % ---------------- lado secundario ----------------
+  \draw (10.1,3.0) to[L, l={$L_{d2}$}, a={1,2 mH}] (12.3,3.0);
+  \draw (12.3,3.0) to[R, l={$R_2$}, a={2,4 $\Omega$}] (14.5,3.0);
+  \draw (10.1,0.0) -- (14.5,0.0);
+  \node[ponto] at (14.5,3.0) {};
+  \node[ponto] at (14.5,0.0) {};
+  \draw[<->,>=stealth, manualgray] (14.85,2.85) -- (14.85,0.15);
+  \node[anchor=west, font=\scriptsize] at (14.9,1.5) {$v_2$};
+
+  % ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.0cm] at (0,-1.4)
+       {\textbf{Cada elemento tem endereço físico.}
+        \\[3pt]
+        \textbf{$R_1$, $R_2$ --- cobre.} Resistência ôhmica do fio esmaltado. Dissipam $I^2R$:
+        \emph{crescem com a carga}.
+        \\[2pt]
+        \textbf{$L_{d1}$, $L_{d2}$ --- dispersão.} O fluxo que escapou do núcleo. Ficam em
+        \emph{série} e não são transformados: causam queda de tensão sob carga, mas
+        \textbf{não dissipam}.
+        \\[2pt]
+        \textbf{$R_n$, $L_m$ --- o núcleo.} Perda por histerese e correntes parasitas, e a
+        corrente necessária para manter o fluxo. Estão lá \textbf{mesmo a vazio}.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.3cm] at (0,-4.6)
+       {\textbf{Orçamento em plena carga (500 mA)}
+        \\[3pt]
+        saída útil \dotfill 6,04 W \\
+        cobre do primário \dotfill 0,40 W \\
+        cobre do secundário \dotfill 0,60 W \\
+        núcleo \dotfill 0,54 W \\[2pt]
+        \textbf{entrada} \dotfill \textbf{7,58 W}
+        \\[3pt]
+        $\eta = 6{,}04/7{,}58 = \mathbf{80\ \%}$ --- normal em transformador pequeno. Um de
+        100 VA passa de 90 \%, porque a perda de núcleo cresce menos que a potência útil.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.3cm] at (7.7,-4.6)
+       {\textbf{A vazio ele não é grátis.} Sem carga nenhuma o primário puxa $\approx 17$ mA,
+        quase toda reativa, e \textbf{0,54 W} de perda real no núcleo.
+        \\[3pt]
+        Meio watt, 24 horas por dia, enquanto o aparelho estiver na tomada. É a explicação
+        física do consumo em \emph{modo de espera} --- e o motivo de a fonte chaveada ter
+        substituído a linear até em carregador de 5 W.};
+
+\end{tikzpicture}
+```
+
+O transformador real, com os valores de um 127/12 V de 6 VA. Nada aqui é opcional: cada elemento
+aparece numa medida de bancada do laboratório deste capítulo.
+:::
+
+O modelo tem sete elementos, e a maneira de não decorá-los é lembrar de onde cada um vem.
+
+**A resistência dos enrolamentos** ($R_1$, $R_2$) é o fio. Um primário de 993 espiras em fio 0,15
+mm tem uns 130 Ω, e não há mistério nenhum: é o @sec-cap-010 aplicado a 60 metros de cobre fino.
+Dissipa $I^2R$, cresce com a carga, e é a maior parcela da queda de tensão.
+
+**A indutância de dispersão** ($L_{d1}$, $L_{d2}$) é o fluxo vermelho da @fig-072-acoplamento — o
+que sai do núcleo e volta pelo ar sem atravessar a outra bobina. Ela aparece **em série** com o
+enrolamento e **não é transformada**. Não dissipa nada, mas em 60 Hz produz queda, e em 100 kHz —
+o assunto do capítulo 075 — produz picos de tensão que destroem a chave.
+
+**O ramo de magnetização** ($R_n$, $L_m$) é o núcleo. $L_m$ é a indutância do primário com o
+secundário aberto: é a corrente que o transformador puxa **para manter o fluxo**, e ela existe
+com ou sem carga. $R_n$ representa duas perdas distintas que se somam:
+
+- **Histerese** — o ferro resiste a mudar de magnetização, e cada ciclo percorre a curva fechada
+  da @fig-072-nucleo. A área dessa curva é energia perdida por ciclo, e a perda por segundo é
+  proporcional a $f$.
+- **Correntes parasitas** (*eddy currents*) — o núcleo é condutor, o fluxo variável induz
+  corrente **dentro dele**, e essa corrente aquece. A perda é proporcional a $f^2$ e à espessura
+  da chapa ao quadrado, e é por isso que o núcleo é feito de **chapas finas isoladas entre si**,
+  e não de um bloco maciço.
+
+::: {.callout-tip}
+## Como cada elemento é medido, na bancada, sem instrumento caro
+
+**$R_1$ e $R_2$**: multímetro em ohms, transformador desligado. Direto.
+
+**$L_m$** (e $R_n$): energiza-se o primário com o secundário **aberto** e mede-se corrente e
+potência de entrada. A parte real da corrente dá $R_n$; a reativa dá $X_m = 2\pi f L_m$.
+
+**$L_{d1} + L_{d2}$ referidos ao primário**: curto-circuita-se o **secundário** e aplica-se uma
+tensão reduzida no primário, aumentando até circular a corrente nominal. Com o secundário em
+curto, o ramo de magnetização fica em paralelo com quase nada e some do circuito; o que sobra é
+a impedância de dispersão em série com a de cobre.
+
+Os dois últimos ensaios são chamados de **ensaio a vazio** e **ensaio em curto-circuito**, têm
+cem anos e continuam sendo como se levanta o modelo de um transformador. O laboratório faz os
+dois — no toroide de ferrite, com gerador de funções, em 10 V.
+:::
+
+## O núcleo, e o limite que ele impõe {#sec-072-nucleo}
+
+::: {#fig-072-nucleo}
+
+```{.tikz}
+%%| filename: 072-nucleo
+%%| alt: Figura em duas partes sobre a saturação do núcleo magnético. À esquerda, o laço de histerese: um gráfico da densidade de fluxo em teslas contra o campo magnético em ampères por metro, com uma curva fechada em forma de S alongado que sobe pela direita e desce pela esquerda, deixando entre os dois ramos uma área. Marcações indicam a densidade de fluxo remanente no eixo vertical, o campo coercivo no eixo horizontal, e dois joelhos onde a curva deixa de subir, marcados como saturação em cerca de mais e menos um vírgula seis tesla para o ferro-silício. Anotações registram que a área interna do laço é a energia perdida por ciclo, que é a perda por histerese, e que acima do joelho a permeabilidade despenca, ou seja, o núcleo deixa de conduzir fluxo e a bobina passa a se comportar como se estivesse com núcleo de ar. À direita, o efeito no tempo: um gráfico mostra em azul a densidade de fluxo, que é sempre uma senoide porque é a tensão aplicada que a impõe através da lei de Faraday, e em vermelho a corrente de magnetização correspondente, que não é senoide nenhuma e sim uma forma de onda com picos altos e estreitos, porque para os últimos por cento de fluxo é preciso muito mais corrente. Uma anotação registra que a corrente de magnetização distorcida é o motivo pelo qual um transformador injeta harmônicos ímpares na rede, tema do capítulo quarenta. Abaixo, duas caixas. A primeira traz a lei de Faraday na forma de projeto: a tensão eficaz é igual a quatro vírgula quarenta e quatro vezes a frequência vezes o número de espiras vezes a área efetiva do núcleo vezes a densidade de fluxo máxima, e aplica a fórmula ao transformador de referência, com cento e vinte e sete volts, sessenta hertz, área de quatro centímetros quadrados e um vírgula dois tesla, resultando em novecentas e noventa e três espiras no primário e cento e dez no secundário para catorze volts a vazio. A segunda caixa é a conclusão que sustenta todo o volume: como a tensão é proporcional ao produto da frequência pela área do núcleo pelo número de espiras, dobrar a frequência permite metade do núcleo, e passar de sessenta hertz para cem quilohertz permite reduzir o núcleo por um fator de mais de mil, o que é a razão física de a fonte chaveada ser pequena e a fonte linear ser pesada.
+
+\begin{tikzpicture}
+
+% ---------------- laco de histerese ----------------
+\begin{axis}[
+    name=bh,
+    width=8.4cm, height=7.2cm,
+    xmin=-320, xmax=320, ymin=-2.1, ymax=2.1,
+    xlabel={$H$ (A/m)}, ylabel={$B$ (T)},
+    axis lines=middle,
+    xtick={-300,-150,0,150,300}, ytick={-1.6,-0.8,0,0.8,1.6},
+    yticklabels={$-1{,}6$,$-0{,}8$,$0$,$0{,}8$,$1{,}6$},
+    label style={font=\footnotesize}, tick label style={font=\tiny},
+    axis line style={gray},
+    samples=180,
+]
+  % ramo subindo (H crescente): deslocado para a direita
+  \addplot[curva, domain=-320:320] {1.62*(1 - 2/(exp(2*(x+55)/85)+1))};
+  % ramo descendo (H decrescente): deslocado para a esquerda
+  \addplot[curva, domain=-320:320] {1.62*(1 - 2/(exp(2*(x-55)/85)+1))};
+
+  \draw[auxiliar] (axis cs:-320,1.6) -- (axis cs:320,1.6);
+  \draw[auxiliar] (axis cs:-320,-1.6) -- (axis cs:320,-1.6);
+
+  \node[anchor=north west, font=\tiny, manualred, align=left] at (axis cs:-312,2.02)
+       {\textbf{saturação}\\$\approx 1{,}6$ T};
+  \node[ponto] at (axis cs:0,0.923) {};
+  \node[ponto] at (axis cs:-55,0) {};
+  \node[anchor=west, font=\tiny, manualgray] at (axis cs:16,0.90) {$B_r$};
+  \node[anchor=south east, font=\tiny, manualgray] at (axis cs:-58,0.06) {$H_c$};
+
+  \node[anchor=north east, font=\tiny, manualgray, align=right] at (axis cs:312,-0.55)
+       {a \textbf{área} do laço é\\energia perdida\\por ciclo};
+\end{axis}
+
+% ---------------- corrente de magnetizacao ----------------
+\begin{axis}[
+    name=im, at={(bh.right of south east)}, anchor=left of south west, xshift=1.1cm,
+    width=8.4cm, height=7.2cm,
+    xmin=0, xmax=720, ymin=-1.9, ymax=1.9,
+    xlabel={$\omega t$ (graus)}, ylabel={normalizado},
+    xtick={0,180,360,540,720},
+    ytick=\empty,
+    label style={font=\footnotesize}, tick label style={font=\tiny},
+    axis line style={gray}, grid=none,
+    samples=400,
+]
+  \addplot[curva, domain=0:720] {sin(x)};
+  \addplot[destaque, line width=1.2pt, domain=0:720]
+      {0.26*ln((1+0.985*sin(x))/(1-0.985*sin(x)))};
+
+  \node[anchor=north west, font=\tiny, manualblue] at (axis cs:20,1.86) {$B(t)$ --- senoide};
+  \node[anchor=north east, font=\tiny, manualred, align=right] at (axis cs:712,1.86)
+       {$i_m(t)$ --- \textbf{não} é senoide:\\picos estreitos e altos};
+
+  \draw[auxiliar] (axis cs:0,0) -- (axis cs:720,0);
+\end{axis}
+
+% ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=8.4cm] at (-1.3,-1.5)
+       {\textbf{Faraday, na forma de projeto:}
+        \[ V_{rms} = 4{,}44\, f\, N\, A_e\, B_{max} \]
+        Com $f = 60$ Hz, $A_e = 4$ cm$^2$ e $B_{max} = 1{,}2$ T, cada espira vale
+        0,128 V. Logo:
+        \\[3pt]
+        \ \ 127 V $\Rightarrow N_1 = \mathbf{993}$ espiras \\
+        \ \ 14,07 V $\Rightarrow N_2 = \mathbf{110}$ espiras};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=8.4cm] at (8.0,-1.5)
+       {\textbf{A conclusão que sustenta o volume inteiro.} Como
+        $V \propto f\,N\,A_e\,B$, para a mesma tensão:
+        \\[3pt]
+        \textbf{dobrar $f$ permite metade do núcleo.}
+        \\[3pt]
+        De 60 Hz para 100 kHz são \textbf{1667 vezes}. É a razão \emph{física} de a fonte
+        chaveada caber na mão e a linear pesar dois quilos --- e nenhuma esperteza de circuito
+        substitui isso.};
+
+\end{tikzpicture}
+```
+
+O núcleo satura, e a saturação não é um efeito sutil: acima do joelho, a corrente de
+magnetização dispara e o transformador vira um pedaço de fio.
+:::
+
+A lei de Faraday, integrada sobre um ciclo senoidal, dá a equação que dimensiona qualquer
+transformador:
+
+$$ V_{rms} = 4{,}44\, f\, N\, A_e\, B_{max} $$
+
+onde $A_e$ é a área efetiva do núcleo em m² e $B_{max}$ a densidade de fluxo de pico em teslas.
+O 4,44 é $2\pi/\sqrt{2}$, e vem inteiramente de a onda ser senoidal.
+
+Ela é uma equação de **projeto**, mas se lê melhor de trás para frente, como uma **restrição**:
+com o núcleo e as espiras já escolhidos, é a tensão aplicada que decide $B_{max}$. Se a tensão
+subir demais, ou a frequência cair demais, $B_{max}$ ultrapassa o joelho e o núcleo satura.
+
+Daí três consequências que aparecem o volume inteiro:
+
+**Transformador de 60 Hz ligado em 50 Hz satura.** Mesma tensão, frequência 17 % menor,
+$B_{max}$ 20 % maior. Se o projeto usava 1,2 T com joelho em 1,6 T, ainda cabe; se usava 1,5 T,
+não cabe. O contrário — 50 Hz ligado em 60 Hz — é sempre seguro.
+
+**Componente contínua satura.** Uma corrente CC no enrolamento desloca o ponto de operação para
+um lado do laço, e a excursão senoidal em cima dele estoura de um dos lados. É por isso que
+retificador de meia onda com transformador é uma combinação ruim, e é o problema que o capítulo
+075 resolve com transformador de dois enrolamentos ou com reset do núcleo.
+
+**Frequência alta encolhe o ferro.** É a caixa verde da figura, e é o argumento inteiro da fonte
+chaveada.
+
+::: {.callout-note}
+## Por que a corrente a vazio não é senoidal
+
+A tensão aplicada impõe $\phi(t)$ senoidal — não há escolha, é a lei de Faraday. Mas a relação
+entre $\phi$ e a corrente é a curva **torta** da esquerda da figura. Para produzir os últimos
+por cento de fluxo, perto do joelho, é preciso muito mais corrente que proporcional.
+
+O resultado é a onda vermelha da direita: picos estreitos e altos, com forte terceiro
+harmônico. Um transformador é, portanto, uma **carga não linear** — exatamente o objeto do
+@sec-cap-040 —, e é por isso que a corrente de entrada de uma fonte linear nunca é senoidal,
+mesmo antes de o retificador entrar na história.
+:::
+
+## Regulação, VA e o que está escrito na etiqueta {#sec-072-regulacao}
+
+::: {#fig-072-regulacao}
+
+```{.tikz}
+%%| filename: 072-regulacao
+%%| alt: Gráfico da tensão de saída de dois transformadores em função da corrente de carga, com anotações e caixas. O eixo horizontal vai de zero a quinhentos miliampères e o eixo vertical de onze a quinze volts. Uma curva azul mostra o transformador pequeno de seis volt-ampères deste capítulo: sem carga nenhuma ele entrega catorze vírgula zero sete volts, e a tensão cai continuamente até doze vírgula zero sete volts na corrente nominal de quinhentos miliampères, uma queda de dois volts. Uma curva verde mostra, para comparação, um transformador grande de cem volt-ampères com o mesmo secundário nominal de doze volts, que sai de doze vírgula setenta e quatro volts a vazio e cai apenas até doze volts na mesma corrente, porque o enrolamento é muito mais grosso em relação à corrente pedida. Uma linha tracejada horizontal marca os doze volts nominais e cruza as duas curvas exatamente na corrente nominal, ilustrando que o valor nominal é definido em plena carga. Uma seta vertical do lado esquerdo marca a diferença de dois volts entre vazio e plena carga do transformador pequeno. Três caixas acompanham. A primeira define a regulação como a diferença entre a tensão a vazio e a tensão em plena carga dividida pela tensão em plena carga, em porcentagem, e calcula dezesseis vírgula seis por cento para o transformador pequeno contra seis vírgula dois por cento para o grande, registrando que transformador pequeno regula mal e que isso não é defeito e sim geometria. A segunda caixa trata da armadilha prática: quem compra um transformador de doze volts e mede catorze volts no secundário sem carga não recebeu um transformador errado, e o valor de pico correspondente é dezenove vírgula nove volts, de modo que um capacitor de filtro de vinte e cinco volts fica sem margem nenhuma e a escolha correta é trinta e cinco volts. A terceira caixa explica por que a etiqueta traz volt-ampères e não watts: o transformador é limitado por aquecimento do cobre, que depende do valor eficaz da corrente e não da potência entregue, e um retificador com filtro capacitivo puxa pulsos com fator de crista alto, de modo que a regra prática é dimensionar o transformador para pelo menos uma vez e meia a duas vezes a potência contínua que a carga vai consumir.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=12.6cm, height=7.4cm,
+    xmin=0, xmax=520, ymin=11.4, ymax=14.6,
+    xlabel={corrente de carga (mA)}, ylabel={tensão no secundário (V)},
+    xtick={0,100,200,300,400,500},
+    ytick={11.5,12,12.5,13,13.5,14},
+    yticklabels={$11{,}5$,$12{,}0$,$12{,}5$,$13{,}0$,$13{,}5$,$14{,}0$},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+    samples=120,
+]
+
+  % 6 VA: 14,07 -> 12,07
+  \addplot[curva, domain=0:500] {14.07 - 0.004*x - 0.0000001*x*x};
+  % 100 VA: 12,74 -> 12,00
+  \addplot[manualgreen, thick, domain=0:500] {12.74 - 0.00148*x};
+
+  \draw[auxiliar] (axis cs:0,12) -- (axis cs:520,12);
+  \node[anchor=south, font=\tiny, manualgray] at (axis cs:255,12.02) {12 V nominais};
+
+  \draw[<->,>=stealth, manualred, thick] (axis cs:22,14.05) -- (axis cs:22,12.09);
+  \node[anchor=west, font=\tiny, manualred, align=left] at (axis cs:32,13.1)
+       {\textbf{2 V} entre vazio\\e plena carga};
+
+  \node[anchor=south east, font=\tiny, manualblue, align=right] at (axis cs:495,13.05)
+       {transformador de \textbf{6 VA}};
+  \draw[auxiliar] (axis cs:200,11.80) -- (axis cs:200,12.42);
+  \node[anchor=north west, font=\tiny, manualgreen, align=left] at (axis cs:150,11.78)
+       {transformador de \textbf{100 VA},\\mesmo secundário nominal};
+
+  \node[ponto] at (axis cs:500,12.07) {};
+  \node[ponto] at (axis cs:500,12.00) {};
+  \node[ponto] at (axis cs:0,14.07) {};
+
+\end{axis}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (-1.3,-1.3)
+       {\textbf{Regulação}
+        \[ \text{Reg} = \frac{V_{vazio} - V_{plena}}{V_{plena}} \times 100\ \% \]
+        6 VA: $(14{,}07-12{,}07)/12{,}07 = \mathbf{16{,}6\ \%}$ \\
+        100 VA: $(12{,}74-12{,}00)/12{,}00 = \mathbf{6{,}2\ \%}$
+        \\[3pt]
+        Transformador pequeno regula mal. Não é defeito: é \textbf{geometria} --- o
+        enrolamento fino tem muita resistência para pouca potência.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (6.6,-1.3)
+       {\textbf{A armadilha que todo mundo cai uma vez.} Comprou um "12 V", mediu
+        \textbf{14 V} no secundário sem carga, achou que veio errado. Não veio: o valor da
+        etiqueta é \textbf{em plena carga}.
+        \\[3pt]
+        E o pico correspondente é $14{,}07\sqrt{2} = \mathbf{19{,}9}$ \textbf{V}. Capacitor de
+        filtro de 25 V fica \emph{sem margem nenhuma}. Use \textbf{35 V}.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.4cm] at (-1.3,-5.2)
+       {\textbf{Por que a etiqueta diz VA e não W.} O que limita o transformador é o
+        \emph{aquecimento do cobre}, e o aquecimento depende do valor \textbf{eficaz} da
+        corrente, não da potência entregue à carga.
+        \\[3pt]
+        Um retificador com filtro capacitivo puxa \textbf{pulsos estreitos} de
+        fator de crista 3 a 5: o mesmo watt de saída custa muito mais corrente eficaz no
+        enrolamento. Daí a regra prática do próximo capítulo:
+        \textbf{VA do transformador $\ge$ 1,5 a 2 $\times$ a potência contínua da carga}.};
+
+\end{tikzpicture}
+```
+
+Regulação é a inclinação desta curva. O ponto que a etiqueta informa é o **direito**, em plena
+carga — e é o esquerdo, a vazio, que decide a tensão de trabalho do capacitor de filtro.
+:::
+
+A **regulação** é a resistência interna da fonte do @sec-cap-020, expressa em porcentagem em vez
+de ohms. Para o transformador de 6 VA:
+
+$$ R_{saída} = R_2 + \frac{R_1}{n^2} = 2{,}4 + \frac{130}{81{,}5} = 2{,}4 + 1{,}6 = 4{,}0\ \Omega $$
+
+e $4{,}0 \times 0{,}5 = 2{,}0$ V de queda em plena carga, que é exatamente a diferença entre
+14,07 e 12,07 V da figura. O modelo fecha com a medida.
+
+Note o que a divisão por $n^2$ faz: os 130 Ω do primário, que parecem enormes, valem 1,6 Ω do
+lado de cá. A reflexão de impedância da @fig-072-relacao não é curiosidade acadêmica — é como se
+somam as duas resistências de enrolamento.
+
+::: {.callout-important}
+## Ligar dois secundários: a soma pode dar zero
+
+Muitos transformadores trazem dois secundários iguais (por exemplo, 2 × 12 V). Ligados em
+**série** com as fases certas dão 24 V; ligados em série com as fases trocadas dão **0 V** e a
+corrente que circula é limitada só pela dispersão.
+
+Ligados em **paralelo** o caso é pior: com as fases trocadas, é um curto-circuito franco entre
+dois enrolamentos de baixa impedância.
+
+O procedimento seguro, sempre: ligar em série, medir, e **só então** decidir. Se der o dobro,
+está certo; se der zero, inverta um dos pares. E nunca ligar em paralelo sem antes confirmar,
+com o voltímetro, que a diferença entre os dois secundários é zero.
+:::
+
+## Tipos, e por que a isolação é o ponto {#sec-072-tipos}
+
+**Transformador de núcleo EI** — chapas em forma de E e de I intercaladas, o formato clássico de
+fonte linear. Barato, robusto, com dispersão relativamente alta e um zumbido audível de 120 Hz
+(o dobro da rede, porque a força magnética não distingue polaridade).
+
+**Toroidal** — enrolamento distribuído sobre um anel fechado. Dispersão baixíssima, campo externo
+quase nulo, mais eficiente e mais caro. É o que se usa quando o campo espalhado atrapalharia —
+perto de um amplificador de áudio, por exemplo, onde o campo de um EI se acopla ao circuito de
+entrada e produz zumbido.
+
+**Autotransformador** — um único enrolamento com uma derivação. Menor e mais barato para relações
+próximas de 1 (é o que há dentro de um "transformador" 110/220 V de loja), e **não isola nada**:
+primário e secundário compartilham condutor. O `Variac` de bancada é um autotransformador, e o
+detalhe importa: **a saída de um Variac está eletricamente ligada à rede**.
+
+**Transformador de isolação 1:1** — não muda tensão nenhuma. Existe só para quebrar a continuidade
+elétrica entre a rede e o circuito, e é o instrumento que torna possível medir um circuito ligado
+à rede com um osciloscópio aterrado. É caro, e é a única resposta correta ao problema.
+
+**Transformador de corrente** — o do alicate amperímetro, descrito acima.
+
+::: {.callout-warning}
+## A isolação é o produto, não um detalhe
+
+Num transformador de fonte, o item mais importante não é a relação de espiras: é o **isolamento
+entre primário e secundário**. Ele é o que garante que nenhum ponto do circuito de baixa tensão
+esteja ligado à rede.
+
+Três coisas o comprometem, e nenhuma delas é visível por fora:
+
+- **Umidade e sujeira** na região entre enrolamentos.
+- **Sobreaquecimento** que carboniza o verniz do fio esmaltado.
+- **Autotransformador vendido como transformador.** Se o componente tem três terminais e nenhum
+  par isolado, ele não isola. Meça com o ohmímetro entre primário e secundário: um transformador
+  isolador dá **circuito aberto**; se der continuidade, é autotransformador.
+
+Um transformador com isolação comprometida coloca a rede diretamente no que deveria ser o lado
+seguro. E o sintoma costuma ser justamente o formigamento na carcaça que muita gente aprende a
+ignorar.
+:::
+
+## 🧪 Laboratório {#sec-072-lab}
+
+O objetivo é levantar o modelo completo da @fig-072-modelo com o que há na bancada, ver a
+saturação acontecer, e medir a regulação de um transformador comercial sem chegar perto do
+primário.
+
+::: {.callout-warning}
+## Antes de começar
+
+As Partes 1 a 5 são feitas **inteiramente** com gerador de funções, em 10 V, num toroide
+enrolado à mão. Não há rede elétrica em nenhum passo.
+
+A Parte 6 usa um transformador comercial **fechado, com plugue de fábrica**, e mede **apenas o
+secundário**. O primário não é aberto, não é tocado e não recebe ponta de prova. O
+transformador é ligado na tomada **depois** de a montagem estar pronta e conferida, e desligado
+**antes** de qualquer alteração.
+
+Se algum passo parecer exigir medir o lado da rede, pare: não é o que está escrito.
+:::
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | **Toroide de ferrite**, 25 a 35 mm | de fonte velha ou de filtro de cabo |
+| — | **Fio esmaltado 0,3 mm**, uns 5 m | AWG 28 a 30 |
+| 1 | Gerador de funções | senoide, 10 V pico a pico, 20 Hz a 200 kHz |
+| 1 | Osciloscópio de 2 canais | |
+| 1 | Multímetro (true RMS de preferência) | |
+| — | Resistores: 10 Ω (1 W), 22 Ω, 47 Ω, 100 Ω, 220 Ω, 1 kΩ | Partes 2 a 5 |
+| — | Resistores de carga: 100 Ω/5 W, 47 Ω/5 W, 33 Ω/10 W, 24 Ω/10 W | Parte 6 |
+| 1 | **Transformador 127/12 V, 500 mA, com plugue** | Parte 6 — fechado, de fábrica |
+| 1 | Capacitor 100 nF poliéster | Parte 4 |
+| — | Lixa fina, fita isolante | para desencapar o esmalte |
+
+**Variante simulada (plano B).** Sem toroide ou sem gerador, o LTspice cobre as Partes 2 a 5 com
+o componente `K` de acoplamento: `K1 L1 L2 0.98`. Varrer o `k` de 0,5 a 0,999 reproduz a Parte 3;
+`.ac` de 10 Hz a 1 MHz reproduz a Parte 5; e o modelo `Lm` com `Hyst` reproduz a Parte 4. O que
+a simulação **não** dá é a Parte 6, e é a única que trata de um componente real com etiqueta.
+
+### Parte 1 — Enrolar o transformador
+
+1. Enrole **40 espiras** de fio esmaltado no toroide, distribuídas por metade do anel. É o
+   primário. Deixe 15 cm de sobra nas duas pontas.
+2. Enrole **20 espiras** na outra metade. É o secundário.
+3. Lixe as pontas até o cobre aparecer, e confira com o ohmímetro: cada enrolamento deve dar
+   menos de 2 Ω, e **entre** os dois deve dar circuito aberto.
+
+Anote a relação: $n = 40/20 = 2{,}0$.
+
+### Parte 2 — A relação de transformação, e onde ela deixa de valer
+
+1. Alimente o primário com o gerador em **10 kHz**, senoide de 10 V pico a pico. Meça as duas
+   tensões com o osciloscópio.
+2. Confirme $v_1/v_2 \approx 2$.
+3. Confira também a **fase**: os dois sinais devem estar em fase se as pontas estiverem nos
+   terminais correspondentes, e em oposição se você inverter uma. É a convenção do ponto,
+   verificada.
+4. Ligue **100 Ω** no secundário e meça de novo. A tensão de saída cai um pouco: já é a
+   regulação aparecendo.
+5. Ligue **10 Ω**. A queda agora é grande, e $v_1/v_2$ deixou visivelmente de valer 2.
+
+O transformador ideal é uma aproximação, e o roteiro acabou de mostrar o limite dela.
+
+### Parte 3 — Medir $k$ com um multímetro que nem mede indutância
+
+Este é o truque mais elegante do capítulo. Duas indutâncias em série acopladas valem
+$L_1 + L_2 + 2M$ ou $L_1 + L_2 - 2M$, conforme o sentido da ligação. Logo:
+
+$$ M = \frac{L_{aditivo} - L_{subtrativo}}{4} $$
+
+1. Ligue os dois enrolamentos em **série aditiva** (ponto com não-ponto).
+2. Meça a indutância resultante. Sem medidor de indutância, use ressonância: ponha o capacitor
+   de 100 nF em série, varra a frequência e ache o pico. Então $L = 1/(4\pi^2 f_0^2 C)$ — é o
+   @sec-cap-037 sendo usado como instrumento.
+3. Inverta **um** dos enrolamentos (série subtrativa) e repita.
+4. Meça $L_1$ e $L_2$ isolados, do mesmo jeito.
+5. Calcule $M$ pela fórmula acima e $k = M/\sqrt{L_1 L_2}$.
+
+Num toroide de ferrite com os dois enrolamentos bem distribuídos, espere $k$ entre 0,95 e 0,99.
+Agora **afaste** os dois enrolamentos para lados opostos do anel e refaça: $k$ cai. Enrole um por
+cima do outro (bifilar) e refaça: $k$ sobe. O coeficiente de acoplamento é **geometria**.
+
+### Parte 4 — Ver o núcleo saturar
+
+1. Ponha um resistor de **10 Ω** em série com o primário e meça a tensão sobre ele com o
+   osciloscópio: é a corrente do primário, na escala de 100 mA por volt.
+2. Deixe o secundário **aberto** — é a corrente de magnetização pura.
+3. Comece em **20 kHz** com amplitude pequena. A corrente é aproximadamente senoidal e atrasada
+   de 90°, como manda um indutor.
+4. **Aumente a amplitude devagar.** Em algum ponto os picos da corrente deixam de crescer
+   proporcionalmente e passam a **disparar**, formando as pontas estreitas da
+   @fig-072-nucleo.
+5. **Agora baixe a frequência** mantendo a amplitude. A saturação piora — porque
+   $B_{max} \propto V/f$, e é a mesma equação de Faraday vista de outro ângulo.
+
+Registre o par (tensão, frequência) em que a distorção começa. A razão $V/f$ nesse ponto é
+uma medida direta de $N A_e B_{sat}$ do seu toroide.
+
+### Parte 5 — Os dois ensaios clássicos, e a resposta em frequência
+
+1. **Ensaio a vazio.** Secundário aberto, 10 kHz, amplitude abaixo do início da saturação. Meça
+   a corrente pelo resistor de 10 Ω e a defasagem em relação à tensão. A componente em quadratura
+   dá $L_m$; a componente em fase dá a perda de núcleo.
+2. **Ensaio em curto.** Curto-circuite o secundário e **reduza muito** a amplitude, subindo até
+   circular uma corrente semelhante à do item anterior. A impedância medida agora é
+   $R_1 + R_2 n^2 + j\omega(L_{d1} + n^2 L_{d2})$ — o ramo de magnetização sumiu, curto-circuitado
+   pelo secundário.
+3. Com os dois ensaios você tem todos os elementos da @fig-072-modelo, com o seu toroide.
+4. **A varredura.** Com 100 Ω de carga, varra de 20 Hz a 200 kHz medindo $v_2/v_1$ e trace o
+   Bode (@sec-cap-035).
+
+A curva tem **os dois joelhos** e cada um tem culpado próprio:
+
+- **Em baixa frequência**, $X_m = 2\pi f L_m$ diminui e o ramo de magnetização curto-circuita o
+  sinal. O transformador para de funcionar.
+- **Em alta frequência**, a dispersão $X_d = 2\pi f L_d$ cresce e a capacitância entre espiras
+  entra em cena. O transformador para de funcionar de novo.
+
+Entre os dois, e só entre os dois, existe transformador.
+
+### Parte 6 — O transformador comercial, sem tocar no primário
+
+1. Com o transformador **fora da tomada**, ligue os fios do secundário a uma barra de bornes.
+   Mantenha o primário e o plugue intocados e afastados.
+2. Confira a montagem inteira. **Só então** ligue na tomada.
+3. Meça a tensão do secundário **sem carga**. Espere algo entre 13 e 15 V para um "12 V".
+4. Desligue da tomada. Ligue 100 Ω. Religue e meça. Corrente $\approx 130$ mA.
+5. Repita com 47 Ω ($\approx 270$ mA), 33 Ω ($\approx 380$ mA) e 24 Ω ($\approx 500$ mA),
+   **desligando da tomada a cada troca**.
+6. Trace a curva. Ela é a azul da @fig-072-regulacao, com os seus números.
+7. Calcule a regulação e a resistência de saída equivalente pela inclinação.
+8. Toque no transformador depois de dez minutos em 24 Ω. Ele está morno, e o calor é a soma das
+   três perdas do orçamento da @fig-072-modelo.
+
+**O passo que muda a leitura de tudo:** anote a tensão a vazio e multiplique por $\sqrt{2}$. Esse
+é o valor que o capacitor de filtro vai ver no capítulo seguinte, e é uns 40 % acima do que
+está escrito na etiqueta.
+
+## 🔥 Onde Queima {#sec-072-queima}
+
+**Ligar CC no primário.** O enrolamento vira um resistor de 130 Ω ligado em 127 V: 1 A num fio
+projetado para 50 mA. Queima em segundos, e é a falha mais comum de quem confunde os dois
+tipos de fonte de parede — as de 12 V CA e as de 12 V CC têm o mesmo aspecto e o mesmo plugue.
+
+**Comprar o transformador pela tensão e esquecer o VA.** Um "12 V 500 mA" alimentando uma carga
+de 500 mA **contínuos** através de retificador e filtro capacitivo está sobrecarregado: os pulsos
+de corrente do @sec-cap-049 têm valor eficaz muito maior que o valor médio. O transformador
+aquece, a regulação piora, e a saída cai abaixo do que o projeto previa. Regra: **1,5 a 2 vezes**.
+
+**Dimensionar o capacitor de filtro pela tensão da etiqueta.** "12 V" vira 19,9 V de pico a
+vazio. Um eletrolítico de 16 V estoura; um de 25 V trabalha sem margem. 35 V.
+
+**Ligar dois secundários em paralelo sem conferir a fase.** Curto-circuito entre dois
+enrolamentos de baixa impedância, com o transformador inteiro tentando alimentá-lo. Sempre em
+série primeiro, medindo.
+
+**Usar Variac achando que isola.** É autotransformador: a saída continua ligada à rede. Baixar a
+tensão com Variac reduz o risco de queimar o circuito, e **não** reduz em nada o risco de choque.
+
+**Ligar um transformador de 60 Hz em 50 Hz.** $B_{max}$ sobe 20 %, e se o projeto já trabalhava
+perto do joelho, o núcleo satura: a corrente a vazio dispara, o transformador esquenta sem
+carga nenhuma e zumbe alto. O contrário é seguro.
+
+**Deixar o secundário de um transformador de corrente aberto.** A tensão sobe até romper a
+isolação. TC em repouso fica em curto — o oposto da intuição.
+
+**Achar que o toroide não tem campo externo.** Tem menos, não zero. E um toroide **mal
+enrolado**, com as espiras agrupadas de um lado, tem uma espira efetiva no plano do anel e
+espalha campo como qualquer outro.
+
+**Medir o primário energizado com osciloscópio.** A malha da ponta de prova está aterrada. É o
+erro que mata, e é a razão de existir o transformador de isolação.
+
+**Esquecer que a dispersão não é transformada.** Num projeto de fonte chaveada, os
+$L_{d}$ da @fig-072-modelo guardam energia que, no instante em que a chave abre, precisa ir para
+algum lugar. Se não houver um grampo, ela vai para o dreno do MOSFET, na forma de um pico de
+centenas de volts. É o assunto do capítulo 075, e começa aqui.
+
+## O que fica deste capítulo {#sec-072-resumo}
+
+**O mecanismo:** duas bobinas no mesmo fluxo. A tensão por espira é igual nos dois lados, e todo
+o resto decorre disso.
+
+$$ \frac{v_1}{v_2} = \frac{N_1}{N_2} = n \qquad \frac{i_1}{i_2} = \frac{1}{n} \qquad
+\boxed{\ Z_{in} = n^2 Z_L\ } $$
+
+**Acoplamento:** $k = M/\sqrt{L_1 L_2}$, e o que não acopla vira indutância de dispersão
+$L_{d} = (1-k)L$, em série, não transformada, responsável pela queda de tensão sob carga e pelos
+picos de comutação em alta frequência.
+
+**O modelo real** tem sete elementos, e cada um com endereço: dois resistores de cobre (dissipam,
+crescem com a carga), duas indutâncias de dispersão (derrubam a tensão, não dissipam), e o ramo
+de núcleo $R_n \parallel L_m$, que está lá **mesmo a vazio**.
+
+**O núcleo impõe o limite**, pela lei de Faraday na forma de projeto:
+
+$$ V_{rms} = 4{,}44\, f\, N\, A_e\, B_{max} $$
+
+Acima do joelho de $B$, a permeabilidade despenca, a corrente de magnetização dispara e o
+transformador vira um pedaço de fio. Componente contínua satura; frequência baixa demais satura;
+e a mesma equação, lida ao contrário, diz que **dobrar a frequência permite metade do núcleo** —
+o argumento inteiro da fonte chaveada.
+
+**Regulação** é a resistência interna da fonte em porcentagem, e num transformador pequeno ela é
+grande: 16,6 % contra 6,2 % de um de 100 VA. Consequências práticas: o "12 V" da etiqueta é o
+valor **em plena carga**, a vazio ele dá 14 V, e o pico correspondente é 19,9 V.
+
+**A etiqueta diz VA e não W** porque o limite é aquecimento do cobre, que depende do valor
+eficaz da corrente — e o retificador com filtro capacitivo puxa pulsos de fator de crista alto.
+
+**A isolação é o produto.** Um transformador com dois enrolamentos separados quebra a
+continuidade elétrica com a rede; um autotransformador não quebra nada. É a diferença entre uma
+bancada segura e um Variac.
+
+## Para o próximo capítulo {#sec-072-fecho}
+
+O transformador entrega 14 V eficazes a vazio, 12 V em plena carga, alternados, isolados da rede.
+
+O que o resto da fonte precisa fazer com isso, o Volume 8 já ensinou em pedaços: o
+@sec-cap-048 retifica, o @sec-cap-049 filtra e mostra que sobra uma ondulação que não se
+elimina com capacitância, e o @sec-cap-050 regula, mal, com um Zener.
+
+Falta montar a coisa inteira, com números que fechem: escolher o transformador a partir da
+tensão de saída pretendida, contar as quedas na ponte, dimensionar o capacitor a partir da
+ondulação que o regulador aceita, verificar que a tensão mínima do vale ainda está acima do que
+o regulador precisa, e conferir o pior caso nos dois extremos — rede baixa com carga máxima, e
+rede alta sem carga.
+
+É a fonte linear completa, e é o capítulo 073.
