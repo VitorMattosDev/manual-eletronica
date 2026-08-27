@@ -12,29 +12,31 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 57/104 |
-| **Contíguos até** | **057** — sem nenhum buraco no meio do livro |
+| **Progresso** | 58/104 |
+| **Contíguos até** | **058** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 058** | Modelo de pequenos sinais e análise em CA (fecha o Volume 9) |
+| **Próximo capítulo: 059** | JFET e MOSFET: princípio de funcionamento (abre o Volume 10) |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
 diodos especiais.
 
-**Volume 9 em andamento** (capítulos 052 a 058, transistores bipolares). O 052 traz estrutura,
-comprimento de difusão contra espessura de base, $\alpha$ e $\beta$, a exponencial de $V_{BE}$
-e a pinagem não padronizada do TO-92; o 053 traz a família de curvas, o efeito Early, a reta
-de carga com o ponto Q e a área de operação segura; o 054 traz a chave de lado baixo com
-$\beta$ forçado, o diodo de retorno, os tempos de comutação, o lado alto com PNP e o
-Darlington; o 055 traz a polarização por divisor com resistor de emissor, a fórmula
-exata com Thévenin e a estabilidade térmica; o 056 traz a transcondutância, o ganho, as
-duas impedâncias, a reta de carga em CA, a degeneração de emissor e o efeito Miller;
-o 057 traz o seguidor de emissor, a base comum e o cascode.
+**Volume 9 completo** (capítulos 052 a 058, transistores bipolares): estrutura e $\beta$ (052);
+curvas características, efeito Early, reta de carga e SOA (053); o BJT como chave, $\beta$
+forçado, diodo de retorno, tempos de comutação, lado alto com PNP e Darlington (054);
+polarização por divisor com resistor de emissor, fórmula exata com Thévenin e estabilidade
+térmica (055); emissor comum, transcondutância, impedâncias, distorção, degeneração e efeito
+Miller (056); seguidor de emissor, base comum e cascode (057); modelo híbrido-$\pi$, regras de
+reflexão, parâmetros $h$ e modelo em alta frequência (058).
 
-Convenções do Volume 8 que o Volume 9 herda: valor comercial recalculado depois do
-arredondamento, pior caso verificado nos dois extremos, e `.tikz` com `circuitikz` para
-esquemático e `pgfplots` para curva. Convenção nova do Volume 9: **$\beta$ entra em projeto
-só como desigualdade**, nunca como fator numa conta que decide tensão de saída.
+O próximo bloco é o **Volume 10** (capítulos 059 a 064), sobre MOSFETs. O capítulo 058 já monta
+a ponte: o modelo de pequenos sinais do MOSFET tem a mesma forma — transcondutância,
+resistência de saída e capacitâncias —, mas sem $r_\pi$, porque não há corrente de porta.
+
+Convenções que o Volume 10 herda: valor comercial recalculado depois do arredondamento, pior
+caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
+curva, e **parâmetro de dispositivo entra em projeto só como desigualdade**, nunca como fator
+numa conta que decide tensão de saída.
 
 Para confirmar o estado a qualquer momento:
 
@@ -153,7 +155,7 @@ cinco ocorrências como aviso.
 - [x] 055 — Polarização: divisor de base, resistor de emissor e estabilidade térmica — `capitulos/055-polarizacao-divisor-de-base-resistor-de-emissor-e.qmd`
 - [x] 056 — Emissor comum: ganho, impedâncias e limitações — `capitulos/056-emissor-comum-ganho-impedancias-e-limitacoes.qmd`
 - [x] 057 — Coletor comum e base comum — `capitulos/057-coletor-comum-e-base-comum.qmd`
-- [ ] 058 — Modelo de pequenos sinais e análise em CA — `capitulos/058-modelo-de-pequenos-sinais-e-analise-em-ca.qmd`
+- [x] 058 — Modelo de pequenos sinais e análise em CA — `capitulos/058-modelo-de-pequenos-sinais-e-analise-em-ca.qmd`
 
 
 ### Volume 10 — MOSFETs e Amplificação

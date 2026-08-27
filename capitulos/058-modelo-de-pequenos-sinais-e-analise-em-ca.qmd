@@ -1,3 +1,754 @@
 # Modelo de pequenos sinais e análise em CA {#sec-cap-058}
 
-*(em elaboração)*
+Os capítulos 056 e 057 produziram uma dúzia de fórmulas. Ganho do emissor comum, com e sem
+degeneração; impedância de entrada de três configurações; impedância de saída de três
+configurações; o efeito Miller. Decorar isso é possível e é a pior maneira de aprender
+eletrônica — porque na primeira topologia que fugir do catálogo, não há o que decorar.
+
+E não é preciso. **Todas aquelas fórmulas são consequência de um único modelo**, e este
+capítulo o constrói.
+
+A ideia é a de sempre em engenharia: **linearizar em torno do ponto de operação**. O
+transistor é um dispositivo exponencial, e exponenciais são difíceis. Mas um sinal pequeno só
+enxerga um pedacinho da curva — e um pedacinho de curva é uma reta. Trocado o transistor pela
+reta tangente a ele em Q, o que sobra é um circuito de resistores e uma fonte controlada, que
+os Volumes 2 e 3 já ensinaram a resolver.
+
+Ao final, deduzir o ganho de qualquer estágio a transistor deixa de ser exercício de memória e
+vira análise nodal.
+
+## O modelo híbrido-$\pi$ {#sec-058-hibridopi}
+
+Para pequenos sinais, o transistor na região ativa se comporta como três elementos entre os
+três terminais.
+
+::: {#fig-058-hibridopi}
+
+```{.tikz}
+%%| filename: 058-hibridopi
+%%| alt: À esquerda, o símbolo do transistor NPN com os terminais base, coletor e emissor identificados, e uma seta apontando para a direita indicando substituição. No meio, o modelo híbrido-pi: entre base e emissor há uma resistência chamada r-pi; entre coletor e emissor há uma fonte de corrente controlada, cujo valor é a transcondutância vezes a tensão base-emissor de sinal, com a corrente entrando pelo coletor; em paralelo com essa fonte há uma resistência chamada r-o. Estão anotadas as três expressões: a transcondutância é a corrente de coletor dividida pela tensão térmica; r-pi é beta dividido pela transcondutância, ou equivalentemente beta vezes a tensão térmica dividida pela corrente de coletor; e r-o é a tensão de Early dividida pela corrente de coletor. Ao lado, os valores numéricos para dois vírgula catorze miliampères e beta cento e cinquenta: transcondutância de oitenta e dois vírgula três miliampères por volt, r-pi de mil oitocentos e vinte e três ohms, r-o de quarenta e seis vírgula sete quilo-ohms. À direita, o modelo T alternativo: uma resistência r-e no emissor e uma fonte de corrente entre coletor e base valendo alfa vezes a corrente de emissor. Uma anotação registra a equivalência entre os dois modelos: r-pi é igual a beta mais um vezes r-e, e os dois descrevem exatamente o mesmo dispositivo, sendo o híbrido-pi mais cômodo quando a entrada é a base e o modelo T mais cômodo quando a entrada ou a saída é o emissor.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= símbolo =================
+  \begin{scope}
+    \node[npn, anchor=B] (Q) at (0,0) {};
+    \draw (Q.B) -- ++(-1.0,0) node[anchor=east, font=\small] {B};
+    \draw (Q.C) -- ++(0,0.9) node[anchor=south, font=\small] {C};
+    \draw (Q.E) -- ++(0,-0.9) node[anchor=north, font=\small] {E};
+  \end{scope}
+
+  \draw[-{Latex[length=3mm]}, very thick, manualblue] (1.6,0) -- (2.8,0);
+  \node[manualblue, anchor=south, font=\scriptsize] at (2.2,0.1) {vira};
+
+  % ================= híbrido-pi =================
+  \begin{scope}[shift={(4.2,0)}]
+    % nós
+    \coordinate (b) at (0,1.2);
+    \coordinate (e) at (0,-1.6);
+    \coordinate (c) at (3.2,1.2);
+
+    \draw (b) -- ++(-1.0,0) node[anchor=east, font=\small] {B};
+    \draw (c) -- ++(1.0,0) node[anchor=west, font=\small] {C};
+    \draw (e) -- ++(-1.0,0) node[anchor=east, font=\small] {E};
+
+    \draw (b) to[R, l={$r_\pi$}] (e);
+    \draw (e) -- (5.0,-1.6);
+    \draw (3.2,-1.6) to[I, l_={$g_m v_{be}$}, invert] (c);
+    \draw (5.0,-1.6) to[R, l_={$r_o$}] (5.0,1.2);
+    \draw (5.0,1.2) -- (c);
+    \node[ponto] at (c) {};
+    \node[ponto] at (3.2,-1.6) {};
+    \node[ponto] at (5.0,-1.6) {};
+
+    \draw[manualblue, {Latex[length=1.4mm]}-{Latex[length=1.4mm]}] (-0.35,1.1) -- (-0.35,-1.5);
+    \node[manualblue, anchor=east, font=\tiny] at (-0.4,-0.2) {$v_{be}$};
+  \end{scope}
+
+  % ================= fórmulas =================
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt] at (0,-2.6)
+       {\begin{tabular}{lll}
+          $g_m = \dfrac{I_C}{V_T}$ &
+          $r_\pi = \dfrac{\beta}{g_m} = \dfrac{\beta V_T}{I_C}$ &
+          $r_o = \dfrac{V_A}{I_C}$ \\[10pt]
+          $= 82{,}3$ mA/V & $= 1823\ \Omega$ & $= 46{,}7$ k$\Omega$ \\
+        \end{tabular} \\[4pt]
+        para $I_C = 2{,}14$ mA, \; $\beta = 150$, \; $V_A = 100$ V};
+
+  % ================= modelo T =================
+  \begin{scope}[shift={(11.6,-1.8)}]
+    \node[anchor=south, font=\scriptsize\bfseries] at (1.2,2.2) {modelo T};
+    \coordinate (bt) at (0,0.8);
+    \coordinate (et) at (0,-1.4);
+    \coordinate (ct) at (2.4,0.8);
+    \draw (bt) -- ++(-0.9,0) node[anchor=east, font=\small] {B};
+    \draw (ct) -- ++(0.9,0) node[anchor=west, font=\small] {C};
+    \draw (bt) -- (0,0.2);
+    \draw (0,0.2) to[R, l={$r_e$}] (et);
+    \draw (et) -- ++(-0.9,0) node[anchor=east, font=\small] {E};
+    \draw (ct) -- (2.4,0.2);
+    \draw (2.4,0.2) to[I, l_={$\alpha i_e$}, invert] (2.4,-1.4);
+    \draw (2.4,-1.4) -- (et);
+  \end{scope}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=12.4cm] at (0,-5.4)
+       {\textbf{Os dois modelos são o mesmo dispositivo:}
+        \[ r_\pi = (\beta+1)\,r_e \]
+        O híbrido-$\pi$ é mais cômodo quando a entrada é a \textbf{base};
+        o T, quando a entrada ou a saída é o \textbf{emissor}.};
+
+\end{tikzpicture}
+```
+
+O modelo híbrido-$\pi$ e o modelo T, com os valores numéricos do estágio dos capítulos 055 a
+057. Os dois descrevem o mesmo transistor; a escolha entre eles é de conveniência algébrica.
+:::
+
+Os três elementos, e de onde cada um vem:
+
+**$g_m v_{be}$, a fonte de corrente controlada.** É a exponencial derivada em Q, do
+@sec-cap-056: $g_m = I_C/V_T$. Ela é o único elemento **ativo** do modelo, e é dela que sai
+todo ganho.
+
+**$r_\pi$, entre base e emissor.** A corrente de base é $1/\beta$ da de coletor, e a tensão é
+a mesma $v_{be}$. Logo a resistência vista da base é $\beta$ vezes maior que $1/g_m$:
+
+$$ r_\pi = \frac{v_{be}}{i_b} = \frac{v_{be}}{i_c/\beta} = \frac{\beta}{g_m}
+   = \frac{\beta V_T}{I_C} $$
+
+Note o que isso significa: $r_\pi$ **depende de $\beta$**, e $g_m$ não. É por isso que o ganho
+de tensão é imune à dispersão de $\beta$ e a impedância de entrada não é — o fato que o
+@sec-cap-056 constatou e agora está explicado.
+
+**$r_o$, em paralelo com a fonte.** É o efeito Early do @sec-cap-053: as curvas não são
+horizontais, e a inclinação delas é $1/r_o = I_C/V_A$.
+
+::: {.callout-note}
+## Três refinamentos que existem e quase nunca importam
+
+O modelo completo tem mais três elementos, que valem ser conhecidos para não assustar quando
+aparecerem numa folha de dados:
+
+- **$r_x$** (ou $r_{bb'}$), a resistência ôhmica de espalhamento da base: 10 a 100 Ω em série
+  com $r_\pi$. Desprezível diante de $r_\pi$ em corrente baixa; dominante em corrente alta e
+  em ruído de baixo nível.
+- **$r_\mu$**, entre base e coletor, da ordem de $\beta r_o$. Enorme, e só importa em
+  amplificadores de ganho altíssimo.
+- **$C_\pi$ e $C_\mu$**, as capacitâncias, que são o assunto da seção @sec-058-alta.
+
+Para tudo o que este manual faz até o Volume 11, os três elementos da @fig-058-hibridopi
+bastam.
+:::
+
+## O procedimento, em cinco passos {#sec-058-procedimento}
+
+::: {#fig-058-procedimento}
+
+```{.tikz}
+%%| filename: 058-procedimento
+%%| alt: Sequência de quatro painéis mostrando a transformação de um amplificador em um circuito de resistores. O primeiro painel mostra o circuito completo com alimentação, divisor de base, resistor de coletor, resistor de emissor, capacitores de acoplamento e de desvio, e a carga. O segundo painel mostra o equivalente em corrente contínua, com todos os capacitores abertos, e a anotação de que dele se extrai a corrente de coletor de dois vírgula catorze miliampères. O terceiro painel mostra o equivalente em corrente alternada, com todos os capacitores em curto e a alimentação transformada em terra, restando os dois resistores do divisor em paralelo na base, o resistor de coletor em paralelo com a carga no coletor, e o emissor aterrado. O quarto painel mostra o transistor substituído pelo modelo híbrido-pi, resultando num circuito puramente de resistores e uma fonte de corrente controlada, com os valores numéricos anotados: mil oitocentos e vinte e três ohms de r-pi, fonte de oitenta e dois vírgula três miliampères por volt vezes a tensão base-emissor, quarenta e seis vírgula sete quilo-ohms de r-o e dois vírgula quatro quilo-ohms de resistor de coletor. Abaixo, a lista dos cinco passos numerados: analisar em corrente contínua para obter a corrente de coletor; calcular os parâmetros do modelo; desenhar o equivalente em corrente alternada curto-circuitando capacitores e aterrando a alimentação; substituir o transistor pelo modelo; e resolver por análise nodal ou por Thévenin, exatamente como nos volumes dois e três.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- 1: completo ----------
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=south, font=\scriptsize\bfseries] at (0.2,4.2) {1. o circuito};
+    \draw (-1.6,3.8) -- (0.8,3.8);
+    \draw (0.8,3.8) to[R, l_={$R_C$}] (0.8,2.2);
+    \draw (-1.6,3.8) to[R, l={$R_1$}] (-1.6,2.0);
+    \node[ponto] at (-1.6,2.0) {};
+    \draw (-1.6,2.0) to[R, l={$R_2$}] (-1.6,0.4) node[ground]{};
+    \draw (-3.4,2.0) to[C, l={$C_1$}] (-2.2,2.0);
+    \draw (-2.2,2.0) -- (-0.8,2.0);
+    \node[npn, anchor=B] (Qa) at (-0.8,2.0) {};
+    \draw (Qa.C) -| (0.8,2.2);
+    \node[ponto] at (0.8,2.2) {};
+    \draw (Qa.E) -- ++(0,-0.3) coordinate (ea);
+    \draw (ea) to[R, l_={$R_E$}] ++(0,-1.2) node[ground]{};
+    \draw (ea) -- ++(1.0,0) coordinate (eb);
+    \draw (eb) to[C, l={$C_E$}] ++(0,-1.2) node[ground]{};
+    \draw (0.8,2.2) to[C, l={$C_2$}] (2.4,2.2);
+    \draw (2.4,2.2) to[R, l={$R_L$}] (2.4,0.7) node[ground]{};
+  \end{scope}
+
+  % ---------- 2: CC ----------
+  \begin{scope}[shift={(6.8,0)}]
+    \node[anchor=south, font=\scriptsize\bfseries] at (0.0,4.2) {2. em CC};
+    \draw (-1.6,3.8) -- (0.8,3.8);
+    \draw (0.8,3.8) to[R, l_={$R_C$}] (0.8,2.2);
+    \draw (-1.6,3.8) to[R, l={$R_1$}] (-1.6,2.0);
+    \node[ponto] at (-1.6,2.0) {};
+    \draw (-1.6,2.0) to[R, l={$R_2$}] (-1.6,0.4) node[ground]{};
+    \draw (-1.6,2.0) -- (-0.8,2.0);
+    \node[npn, anchor=B] (Qb) at (-0.8,2.0) {};
+    \draw (Qb.C) -| (0.8,2.2);
+    \draw (Qb.E) -- ++(0,-0.3) coordinate (eb2);
+    \draw (eb2) to[R, l_={$R_E$}] ++(0,-1.2) node[ground]{};
+    \node[manualgreen!55!black, anchor=north, font=\tiny, align=center, text width=3.4cm]
+         at (0.4,0.3) {daqui sai\\$I_C = 2{,}14$ mA};
+  \end{scope}
+
+  % ---------- 3: CA ----------
+  \begin{scope}[shift={(10.8,0)}]
+    \node[anchor=south, font=\scriptsize\bfseries] at (0.2,4.0) {3. em CA};
+    \node[npn, anchor=B] (Qc) at (0,1.6) {};
+    \draw (Qc.B) -- (-1.6,1.6);
+    \node[ponto] at (-1.0,1.6) {};
+    \draw (-1.0,1.6) to[R, l={$R_1\!\parallel\!R_2$}] (-1.0,0.2) node[ground]{};
+    \node[anchor=east, font=\tiny] at (-1.7,1.6) {$v_s$};
+    \draw (Qc.E) -- ++(0,-0.5) node[ground]{};
+    \draw (Qc.C) -- ++(0,0.6) coordinate (cc3);
+    \node[ponto] at (cc3) {};
+    \draw (cc3) to[R, l_={$R_C\!\parallel\!R_L$}] ++(0,1.4) node[ground]{};
+    \draw (cc3) -- ++(1.2,0) node[anchor=west, font=\tiny] {$v_o$};
+  \end{scope}
+
+  % ---------- 4: modelo ----------
+  \begin{scope}[shift={(0.4,-6.0)}]
+    \node[anchor=south, font=\scriptsize\bfseries] at (3.0,2.6)
+         {4. com o modelo no lugar do transistor};
+    \coordinate (b) at (0,1.4);
+    \coordinate (e) at (0,-1.4);
+    \draw (b) -- (-2.2,1.4);
+    \node[anchor=east, font=\tiny] at (-2.3,1.4) {$v_s$};
+    \node[ponto] at (-1.4,1.4) {};
+    \draw (-1.4,1.4) to[R, l_={$3{,}87$ k}] (-1.4,-1.4);
+    \draw (b) to[R, l={$r_\pi = 1823$}] (e);
+    \draw (-1.4,-1.4) -- (7.0,-1.4);
+    \node[ground] at (1.4,-1.4) {};
+    \draw (2.8,-1.4) to[I, l_={$g_m v_{be}$}, invert] (2.8,1.4);
+    \draw (4.9,-1.4) to[R, l_={$r_o = 46{,}7$ k}] (4.9,1.4);
+    \draw (7.0,-1.4) to[R, l_={$R_C\!\parallel\!R_L$}] (7.0,1.4);
+    \draw (2.8,1.4) -- (8.0,1.4);
+    \node[ponto] at (4.9,1.4) {};
+    \node[ponto] at (7.0,1.4) {};
+    \node[anchor=west, font=\tiny] at (8.1,1.4) {$v_o$};
+    \node[ponto] at (2.8,-1.4) {};
+    \node[ponto] at (4.9,-1.4) {};
+    \node[ponto] at (7.0,-1.4) {};
+  \end{scope}
+
+  % ---------- os passos ----------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=14.0cm] at (-3.4,-9.4)
+       {\textbf{1.} Analise em \textbf{CC} (capacitores abertos) e obtenha $I_C$. \\[3pt]
+        \textbf{2.} Calcule $g_m$, $r_\pi$, $r_o$. \\[3pt]
+        \textbf{3.} Desenhe o equivalente em \textbf{CA}: capacitores em curto, alimentação
+        aterrada. \\[3pt]
+        \textbf{4.} Troque o transistor pelo \textbf{modelo}. \\[3pt]
+        \textbf{5.} Resolva por \textbf{análise nodal} ou por Thévenin --- exatamente como
+        nos Volumes 2 e 3.};
+
+\end{tikzpicture}
+```
+
+Do circuito ao modelo, em quatro desenhos. O último painel não tem transistor nenhum: é um
+circuito de resistores com uma fonte controlada, e o Volume 3 já resolveu circuitos assim.
+:::
+
+## O emissor comum, deduzido {#sec-058-ec}
+
+Com o quarto painel da @fig-058-procedimento na frente, o ganho sai em três linhas.
+
+A tensão de entrada aparece inteira sobre $r_\pi$ (o emissor está aterrado):
+
+$$ v_{be} = v_{in} $$
+
+A fonte injeta $g_m v_{be}$ no nó de coletor, e essa corrente atravessa $r_o$ em paralelo com
+$R_C \parallel R_L$. O sinal é negativo porque a corrente **entra** no nó vinda da carga:
+
+$$ v_{out} = -g_m v_{be}\,(r_o \parallel R_C \parallel R_L) $$
+
+$$ \boxed{\;A_v = -g_m\,(r_o \parallel R_C \parallel R_L)\;} $$
+
+Com os números: $r_o \parallel R_C = 46\,700 \parallel 2400 = 2283\ \Omega$, e
+
+$$ A_v = -0{,}0823 \times 2283 = -188 $$
+
+contra os $-198$ do @sec-cap-056, que desprezava $r_o$. A diferença de 5 % é exatamente o que
+o efeito Early cobra.
+
+E a impedância de entrada:
+
+$$ Z_{in} = R_1 \parallel R_2 \parallel r_\pi = 3870 \parallel 1823 = 1{,}24\ \text{k}\Omega $$
+
+idêntica ao que o @sec-cap-056 obteve por outro caminho — porque $r_\pi = \beta r_e$.
+
+### Com degeneração de emissor
+
+Agora o emissor não está aterrado, e $R_{E1}$ carrega a corrente de emissor
+$i_e = (\beta+1) i_b$. A malha de entrada dá:
+
+$$ v_{in} = i_b r_\pi + (\beta+1) i_b R_{E1}
+   \qquad\Longrightarrow\qquad
+   \boxed{\;r_{in(\text{base})} = r_\pi + (\beta+1) R_{E1}\;} $$
+
+e como $i_c = \beta i_b$ e $v_{out} = -i_c (R_C \parallel R_L)$:
+
+$$ A_v = \frac{-\beta (R_C \parallel R_L)}{r_\pi + (\beta+1)R_{E1}}
+   \;\approx\; -\frac{R_C \parallel R_L}{r_e + R_{E1}} $$
+
+que é exatamente a fórmula do @sec-cap-056 — só que agora **deduzida**, não postulada. Com
+$R_{E1} = 100\ \Omega$:
+
+$$ r_{in(\text{base})} = 1823 + 151 \times 100 = 16{,}9\ \text{k}\Omega, \qquad
+   A_v = \frac{-150 \times 2400}{16\,923} = -21{,}3 $$
+
+## As duas regras de reflexão {#sec-058-reflexao}
+
+O termo $(\beta+1)R_{E1}$ que apareceu ali é a mesma coisa que o @sec-cap-057 chamou de
+transformador de resistência. Ele merece ser destacado, porque **essas duas regras substituem
+metade das fórmulas do volume**.
+
+::: {#fig-058-reflexao}
+
+```{.tikz}
+%%| filename: 058-reflexao
+%%| alt: Duas regras de reflexão de resistência, desenhadas lado a lado. À esquerda, a regra da base para o emissor: um transistor com uma resistência ligada à base e uma seta apontando para dentro do emissor; a anotação diz que uma resistência colocada na base aparece, vista do emissor, dividida por beta mais um, e a expressão registrada é: resistência vista no emissor igual a r-e mais a resistência de base dividida por beta mais um. À direita, a regra do emissor para a base: um transistor com uma resistência ligada ao emissor e uma seta apontando para dentro da base; a anotação diz que uma resistência colocada no emissor aparece, vista da base, multiplicada por beta mais um, e a expressão registrada é: resistência vista na base igual a r-pi mais beta mais um vezes a resistência de emissor. Embaixo, uma tabela aplica as duas regras às quatro situações do volume: impedância de entrada do emissor comum com degeneração, igual ao divisor em paralelo com r-pi mais beta mais um vezes o resistor não desviado; impedância de entrada do seguidor de emissor, igual ao divisor em paralelo com r-pi mais beta mais um vezes o paralelo do resistor de emissor com a carga; impedância de saída do seguidor de emissor, igual a r-e mais a resistência de fonte dividida por beta mais um; e impedância de entrada da base comum, igual simplesmente a r-e. Uma anotação final registra que as quatro saem das mesmas duas regras, e que decorá-las é desnecessário.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- base -> emissor ----------
+  \begin{scope}
+    \node[anchor=south, font=\scriptsize\bfseries] at (0.4,3.0)
+         {da \textbf{base} para o \textbf{emissor}: divide};
+    \node[npn, anchor=B] (Q1) at (0,1.0) {};
+    \draw (Q1.C) -- ++(0,0.9) node[anchor=south, font=\tiny] {$+V$};
+    \draw (Q1.B) to[R, l={$R_B$}] ++(-2.2,0) node[ground]{};
+    \draw (Q1.E) -- ++(0,-0.7) coordinate (e1);
+    \draw[manualblue, -{Latex[length=2mm]}, very thick] ($(e1)+(0,-0.8)$) -- ++(0,0.65);
+    \node[manualblue, anchor=north, font=\scriptsize] at ($(e1)+(0,-0.85)$)
+         {$r_{in(E)}$};
+    \node[draw=manualblue, rounded corners=2pt, anchor=north, align=center,
+          font=\scriptsize, inner sep=5pt] at (-0.4,-2.6)
+         {$r_{in(E)} = r_e + \dfrac{R_B}{\beta+1}$};
+  \end{scope}
+
+  % ---------- emissor -> base ----------
+  \begin{scope}[shift={(8.0,0)}]
+    \node[anchor=south, font=\scriptsize\bfseries] at (0.4,3.0)
+         {do \textbf{emissor} para a \textbf{base}: multiplica};
+    \node[npn, anchor=B] (Q2) at (0,1.0) {};
+    \draw (Q2.C) -- ++(0,0.9) node[anchor=south, font=\tiny] {$+V$};
+    \draw (Q2.B) -- ++(-1.3,0) coordinate (b2);
+    \draw[manualblue, -{Latex[length=2mm]}, very thick] ($(b2)+(-0.9,0)$) -- ++(0.75,0);
+    \node[manualblue, anchor=east, font=\scriptsize] at ($(b2)+(-0.95,0)$) {$r_{in(B)}$};
+    \draw (Q2.E) -- ++(0,-0.4) coordinate (e2);
+    \draw (e2) to[R, l={$R_E$}] ++(0,-1.4) node[ground]{};
+    \node[draw=manualblue, rounded corners=2pt, anchor=north, align=center,
+          font=\scriptsize, inner sep=5pt] at (-0.4,-2.6)
+         {$r_{in(B)} = r_\pi + (\beta+1)R_E$};
+  \end{scope}
+
+  % ---------- aplicações ----------
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt] at (-2.2,-4.2)
+       {\begin{tabular}{ll}
+          \textbf{o que se quer} & \textbf{as duas regras dão} \\ \hline
+          $Z_{in}$ do emissor comum degenerado &
+            $R_1 \parallel R_2 \parallel [\,r_\pi + (\beta{+}1)R_{E1}\,]$ \\
+          $Z_{in}$ do seguidor de emissor &
+            $R_1 \parallel R_2 \parallel [\,r_\pi + (\beta{+}1)(R_E \!\parallel\! R_L)\,]$ \\
+          $Z_{out}$ do seguidor de emissor &
+            $R_E \parallel \left[\,r_e + \dfrac{R_s \parallel R_1 \parallel R_2}{\beta+1}\,\right]$ \\[6pt]
+          $Z_{in}$ da base comum & $R_E \parallel r_e \approx r_e$ \\
+        \end{tabular} \\[5pt]
+        \textcolor{manualred}{\textbf{As quatro saem das mesmas duas regras.}}
+        Não há o que decorar.};
+
+\end{tikzpicture}
+```
+
+As duas regras de reflexão e as quatro impedâncias do volume, todas derivadas delas. Da base
+para o emissor divide-se por $\beta+1$; do emissor para a base multiplica-se.
+:::
+
+## Os parâmetros $h$, que a folha de dados usa {#sec-058-hparam}
+
+Folhas de dados antigas — e muitas atuais — não falam em $g_m$ e $r_\pi$: falam em
+**parâmetros híbridos**, ou parâmetros $h$. É a descrição do transistor como um quadripolo,
+com duas equações:
+
+$$ v_{be} = h_{ie}\,i_b + h_{re}\,v_{ce}
+   \qquad
+   i_c = h_{fe}\,i_b + h_{oe}\,v_{ce} $$
+
+A tradução é direta:
+
+| Parâmetro $h$ | Nome | Equivale a | Valor típico |
+|---|---|---|---|
+| $h_{ie}$ | impedância de entrada | $r_\pi$ | 1 a 10 kΩ |
+| $h_{fe}$ | ganho de corrente direto | $\beta$ | 100 a 300 |
+| $h_{oe}$ | admitância de saída | $1/r_o$ | 1 a 30 µS |
+| $h_{re}$ | ganho de tensão reverso | $\approx 0$ | $10^{-4}$ |
+
+: Os parâmetros $h$ e a tradução para o híbrido-$\pi$. O índice `e` significa "emissor comum";
+existem conjuntos análogos para base comum ($h_{ib}$, $h_{fb}$…) que quase ninguém usa.
+{#tbl-058-hparam}
+
+Duas observações práticas. A primeira: **$h_{FE}$ maiúsculo é o $\beta$ de CC** (a razão
+$I_C/I_B$ do @sec-cap-052), e **$h_{fe}$ minúsculo é o $\beta$ de pequenos sinais** (a razão
+$i_c/i_b$). Eles são parecidos e não são iguais — o de pequenos sinais costuma ser 10 a 30 %
+maior no meio da faixa de corrente. A distinção maiúscula/minúscula é a convenção universal
+para separar grandeza total de grandeza incremental, e ela vale para todo o resto: $I_C$ contra
+$i_c$, $V_{BE}$ contra $v_{be}$.
+
+A segunda: **$h_{re}$ é desprezível e por isso o modelo tem três elementos e não quatro.**
+Ele descreve o quanto a saída realimenta a entrada dentro do próprio transistor, e vale
+$10^{-4}$: mil vezes menos que qualquer realimentação externa que o circuito tenha.
+
+## O modelo em alta frequência {#sec-058-alta}
+
+Acrescente duas capacitâncias e o modelo passa a explicar a banda.
+
+::: {#fig-058-alta}
+
+```{.tikz}
+%%| filename: 058-alta
+%%| alt: Em cima, o modelo híbrido-pi acrescido de duas capacitâncias: C-pi em paralelo com r-pi, entre base e emissor, e C-mu entre base e coletor, que é a capacitância responsável pelo efeito Miller. Estão anotados os valores para dois vírgula catorze miliampères: C-pi de cerca de quarenta e cinco picofarads e C-mu de quatro picofarads. Ao lado, a definição da frequência de transição: transcondutância dividida por dois pi vezes a soma das duas capacitâncias, o que dá duzentos e sessenta megahertz. Embaixo, um gráfico da frequência de transição em função da corrente de coletor, em escala logarítmica no eixo horizontal, de dez microampères a cem miliampères. A curva sobe rapidamente em correntes baixas, porque ali a transcondutância cresce mais depressa que as capacitâncias, atinge um patamar de cerca de trezentos megahertz em correntes de alguns miliampères, e cai de novo em correntes muito altas por causa do efeito Kirk, com essa queda desenhada tracejada. Um ponto marca a corrente de operação de dois vírgula catorze miliampères. Uma anotação registra que a frequência de transição não é uma constante do transistor, e sim uma função do ponto de operação, e que polarizar com corrente muito baixa custa banda.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= modelo com capacitâncias =================
+  \begin{scope}
+    \coordinate (b) at (0,1.4);
+    \coordinate (e) at (0,-1.4);
+    \coordinate (c) at (3.6,1.4);
+
+    \draw (b) -- ++(-1.0,0) node[anchor=east, font=\small] {B};
+    \draw (c) -- ++(1.0,0) node[anchor=west, font=\small] {C};
+    \draw (e) -- ++(-1.0,0) node[anchor=east, font=\small] {E};
+
+    \draw (b) to[R, l={$r_\pi$}] (e);
+    \node[ponto] at (b) {};
+    \node[ponto] at (e) {};
+    \draw (b) -- (1.3,1.4);
+    \draw (1.3,1.4) to[C, l={$C_\pi$}] (1.3,-1.4);
+    \draw (1.3,-1.4) -- (e);
+    \node[ponto] at (1.3,1.4) {};
+    \node[ponto] at (1.3,-1.4) {};
+
+    \draw[manualred, thick] (b) -- (0,2.6);
+    \draw[manualred, thick] (0,2.6) to[C, l={$C_\mu$}] (3.6,2.6);
+    \draw[manualred, thick] (3.6,2.6) -- (c);
+
+    \draw (e) -- (5.4,-1.4);
+    \draw (2.6,-1.4) to[I, l_={$g_m v_{be}$}, invert] (2.6,1.4);
+    \draw (5.4,-1.4) to[R, l_={$r_o$}] (5.4,1.4);
+    \draw (2.6,1.4) -- (5.4,1.4);
+    \node[ponto] at (2.6,-1.4) {};
+    \node[ponto] at (c) {};
+
+    \node[manualred, anchor=west, font=\tiny] at (3.9,2.6)
+         {\textbf{a culpada pelo efeito Miller}};
+  \end{scope}
+
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.2cm] at (7.6,2.8)
+       {Para $I_C = 2{,}14$ mA: \\[3pt]
+        $C_\pi = g_m \tau_F + C_{je} \approx \mathbf{45}$ \textbf{pF} \\
+        $C_\mu \approx \mathbf{4}$ \textbf{pF} (é o $C_{obo}$ da folha de dados) \\[5pt]
+        \[ f_T = \frac{g_m}{2\pi (C_\pi + C_\mu)} = 260\ \text{MHz} \]};
+
+  % ================= fT contra IC =================
+\begin{axis}[
+  at={(0cm,-9.0cm)}, anchor=south west,
+  width=12.6cm, height=6.8cm,
+  xlabel={$I_C$ (mA)}, ylabel={$f_T$ (MHz)},
+  xmode=log, xmin=0.01, xmax=200, ymin=0, ymax=340,
+  ytick={0,100,200,300},
+  grid=both, grid style={manualgray!25},
+  axis lines=left, font=\footnotesize,
+]
+  % fT = gm/(2 pi (0.52n gm + 8p)) com gm = Ic/0.026 ; Ic em mA
+  \addplot[curva, very thick, samples=200, domain=-2:1.1]
+    ({10^x}, {((10^x)*1e-3/0.026)/(6.2832*(0.52e-9*(10^x)*1e-3/0.026 + 8e-12))/1e6});
+  % queda por efeito Kirk, em corrente alta
+  \addplot[curva, very thick, dashed, samples=60, domain=1.1:2.3]
+    ({10^x}, {306/(1 + 0.9*((10^x)/13)^2)});
+
+  \node[ponto] at (axis cs:2.14,260) {};
+  \draw[auxiliar] (axis cs:2.14,0) -- (axis cs:2.14,260);
+  \node[anchor=north west, font=\tiny] at (axis cs:2.4,235)
+       {ponto de operação: $2{,}14$ mA};
+
+  \node[manualred, anchor=north west, font=\tiny, align=left, text width=3.2cm]
+       at (axis cs:0.012,150)
+       {em corrente baixa, $g_m$ é pequena e $C_{je}$ domina: \textbf{banda ruim}};
+
+  \node[manualgray, anchor=south east, font=\tiny, align=right, text width=3.4cm]
+       at (axis cs:150,35)
+       {em corrente muito alta, o efeito Kirk alarga a base e $f_T$ cai};
+\end{axis}
+
+\end{tikzpicture}
+```
+
+O modelo em alta frequência e a dependência de $f_T$ com a corrente de coletor. $f_T$ **não é
+uma constante do transistor**: é uma função do ponto de operação.
+:::
+
+$C_\mu$ é a $C_{obo}$ da folha de dados, e é a capacitância da junção base-coletor
+reversamente polarizada — a mesma do varicap do @sec-cap-051, e por isso ela **diminui**
+quando $V_{CB}$ aumenta.
+
+$C_\pi$ tem duas parcelas: a capacitância de difusão, proporcional a $g_m$ (é a carga
+armazenada na base, a mesma que causa o tempo de armazenamento do @sec-cap-054), e a
+capacitância de junção $C_{je}$, fixa.
+
+A **frequência de transição** $f_T$ é a frequência em que o ganho de corrente cai a 1:
+
+$$ \boxed{\;f_T = \frac{g_m}{2\pi(C_\pi + C_\mu)}\;} $$
+
+Como $C_\pi$ cresce com $g_m$, $f_T$ satura num valor máximo — e como $C_{je}$ e $C_\mu$ são
+fixas, $f_T$ **desaba em corrente baixa**. Um 2N3904 polarizado com 20 µA não tem 300 MHz: tem
+uns 30 MHz. Essa é uma armadilha real em circuitos de baixo consumo.
+
+Com o modelo completo, o efeito Miller do @sec-cap-056 deixa de ser regra prática e vira
+conta:
+
+$$ C_{in} = C_\pi + (1 + g_m R_C')\,C_\mu = 45 + (1 + 188)\times 4 = 801\ \text{pF} $$
+
+$$ f_H = \frac{1}{2\pi (R_s \parallel Z_{in})\,C_{in}}
+   = \frac{1}{2\pi (404)(801\ \text{pF})} = 0{,}49\ \text{MHz} $$
+
+confirmando a estimativa do @sec-cap-056.
+
+## Onde o modelo deixa de valer {#sec-058-limites}
+
+O modelo é a **reta tangente** à exponencial em Q. Ele é excelente perto de Q e mentira longe
+dele, e vale saber exatamente onde fica a fronteira.
+
+::: {.callout-important}
+## Os quatro limites
+
+**Amplitude.** A linearização vale para $v_{be} \ll V_T$, isto é, para alguns milivolts. Com
+$\hat{v}_{be} = 5$ mV, o erro do modelo é de uns 5 %; com 26 mV, ele é grosseiro. **O modelo
+não prevê distorção** — ele a exclui por construção, porque uma reta não distorce.
+
+**Ceifamento.** O modelo não sabe que existem $V_{CC}$ e $V_{CE(\text{sat})}$. Ele prevê,
+alegremente, uma saída de 100 V a partir de uma alimentação de 12 V. Os limites de excursão do
+@sec-cap-056 são informação de sinal grande, e têm de ser verificados separadamente.
+
+**Ponto de operação.** Todos os parâmetros dependem de $I_C$. Mudou a polarização, mudou o
+modelo inteiro — e é por isso que o passo 1 do procedimento é a análise em CC.
+
+**Temperatura.** $g_m = I_C/V_T$, e $V_T = kT/q$ sobe 0,33 %/°C. Além disso $\beta$, $I_C$ e
+$V_A$ derivam. O modelo descreve o transistor **naquela temperatura**.
+:::
+
+## 🧪 Laboratório {#sec-058-lab}
+
+**Extrair os três parâmetros do modelo de um transistor real por medida, e depois usá-los para
+prever — antes de montar — o ganho e as impedâncias de um circuito diferente. A verificação
+é a comparação entre o previsto e o medido.**
+
+### Material
+
+::: {.lab-material}
+- 1 fonte de bancada de 12 V
+- 1 gerador de funções, 1 osciloscópio de 2 canais, 2 multímetros
+- 2 transistores 2N3904 ou BC547 (numere-os)
+- Resistores: 100 Ω, 220 Ω, 470 Ω, 620 Ω, 1 kΩ, 2,2 kΩ, 2,4 kΩ, 4,7 kΩ, 10 kΩ, 22 kΩ, 47 kΩ
+- Capacitores: 1 µF, 4,7 µF, 220 µF
+- 1 potenciômetro de 10 kΩ
+- Protoboard, jumpers
+:::
+
+### Parte 1 — Extrair $g_m$
+
+Monte o emissor comum do @sec-cap-056 ($R_1 = 22$ k, $R_2 = 4{,}7$ k, $R_C = 2{,}4$ k,
+$R_E = 620\ \Omega$ com desvio de 220 µF).
+
+1. Meça $V_E$ e calcule $I_C \approx V_E/620$.
+2. Meça $A_v$ em 1 kHz, **sem carga**, com sinal de 5 mV de pico.
+3. Calcule $g_m = |A_v|/(R_C \parallel r_o)$ — e como $r_o$ ainda não é conhecida, use na
+   primeira passada $g_m \approx |A_v|/R_C$.
+4. Compare com a previsão $g_m = I_C/26\ \text{mV}$.
+
+Os dois valores devem bater dentro de 10 a 15 %.
+
+### Parte 2 — Extrair $r_\pi$ (e daí $\beta$)
+
+1. Meça $Z_{in}$ pelo método da metade (@sec-cap-056, Parte 4).
+2. Como $Z_{in} = R_1 \parallel R_2 \parallel r_\pi$ e o divisor é conhecido (3,87 kΩ), isole:
+
+$$ \frac{1}{r_\pi} = \frac{1}{Z_{in}} - \frac{1}{3870} $$
+
+3. Calcule $\beta = g_m r_\pi$ com o $g_m$ da Parte 1.
+4. Compare com o $\beta$ medido em CC no @sec-cap-052. Eles não vão ser iguais — o de pequenos
+   sinais ($h_{fe}$) costuma ser maior que o de CC ($h_{FE}$). Anote a razão entre eles.
+
+### Parte 3 — Extrair $r_o$
+
+$r_o$ é a mais difícil de medir, porque é grande e fica em paralelo com $R_C$. O truque é
+tornar $R_C$ **também** grande:
+
+1. Troque $R_C$ de 2,4 kΩ por 22 kΩ e reajuste o divisor de base para manter
+   $V_C \approx 6$ V (aumente $R_2$ até conseguir; a corrente de coletor vai cair para uns
+   0,3 mA).
+2. Meça $I_C$ (por $V_E/R_E$) e o novo ganho.
+3. Com $g_m = I_C/26$ mV recalculado, isole $r_o$ de $|A_v| = g_m (R_C \parallel r_o)$.
+4. Calcule $V_A = r_o I_C$.
+
+O esperado é $V_A$ entre 50 e 150 V. Compare com o valor obtido pelo método das curvas na
+Parte 2 do laboratório do @sec-cap-053: **dois métodos completamente diferentes, o mesmo
+parâmetro físico.**
+
+### Parte 4 — Prever, e só então montar
+
+Agora a parte que vale o capítulo. Com $g_m$, $r_\pi$ e $r_o$ do **seu** transistor
+\#1, **calcule no papel**, antes de montar:
+
+| Circuito a prever | Previsto | Medido |
+|---|---|---|
+| EC com $R_{E1} = 220\ \Omega$ sem desvio, $R_C = 2{,}4$ k: $A_v$ | | |
+| o mesmo: $Z_{in}$ | | |
+| EC com $R_C = 1$ kΩ e $R_L = 2{,}2$ kΩ: $A_v$ | | |
+| seguidor com $R_E = 1$ kΩ: $A_v$ | | |
+| o mesmo: $Z_{out}$ | | |
+
+: Cinco previsões feitas com o modelo extraído, e cinco medidas para confrontá-las.
+{#tbl-058-lab1}
+
+Monte os três circuitos e meça. **Acertar dentro de 15 % é um resultado excelente** — a
+diferença que sobra vem de $r_x$, da tolerância dos resistores e do carregamento das pontas de
+prova.
+
+### Parte 5 — Onde o modelo quebra
+
+1. Volte ao emissor comum com desvio total e aumente o sinal de entrada progressivamente:
+   1 mV, 5 mV, 10 mV, 25 mV de pico.
+2. Meça o ganho em cada amplitude.
+
+O ganho **cai** conforme a amplitude sobe, e a senoide fica visivelmente assimétrica. O modelo
+prevê ganho constante e não prevê nada disso. Marque a amplitude em que o erro passa de 10 %:
+é a fronteira prática de validade, e ela costuma ficar por volta de 5 a 10 mV de pico na
+junção.
+
+3. Repita com $R_{E1} = 220\ \Omega$ sem desvio. A fronteira se desloca para uma amplitude
+   **muito** maior — é a linearização feita pela realimentação, do @sec-cap-056.
+
+**Variante simulada (plano B).** No ngspice, `.op` seguido de `show q1` imprime $g_m$,
+$r_\pi$, $r_o$, $C_\pi$ e $C_\mu$ calculados pelo simulador no ponto de operação — os
+parâmetros do modelo, de graça. Compare com os extraídos na bancada. Depois, `.tf v(out) vin`
+dá ganho, impedância de entrada e impedância de saída num único comando, e a Parte 4 vira uma
+verificação de trinta segundos. Para a Parte 5, `.four 1k v(out)` com amplitudes crescentes
+quantifica a quebra do modelo em números de distorção.
+
+## 🔥 Onde Queima {#sec-058-queima}
+
+**Usar o modelo sem antes resolver o CC.** $g_m$, $r_\pi$ e $r_o$ dependem todos de $I_C$.
+Modelo sem ponto de operação é aritmética sem números.
+
+**Aplicar o modelo a sinal grande.** Ele vale para $v_{be} \ll V_T$ — alguns milivolts. Acima
+disso ele erra o ganho e, pior, não avisa que está errando.
+
+**Esperar que o modelo preveja ceifamento.** Ele não conhece $V_{CC}$. Excursão máxima é
+análise de sinal grande, feita sobre a reta de carga em CA (@sec-cap-056).
+
+**Confundir $h_{FE}$ com $h_{fe}$.** Maiúsculo é CC, minúsculo é pequenos sinais, e eles
+diferem de 10 a 30 %. A convenção maiúscula/minúscula vale para todas as grandezas do volume.
+
+**Esquecer $r_o$ quando $R_C$ é grande.** Com $R_C = 2{,}4$ kΩ e $r_o = 47$ kΩ, ignorar $r_o$
+erra 5 %. Com $R_C = 47$ kΩ, erra 50 %. E o teto absoluto do ganho de um emissor comum é
+$g_m r_o = V_A/V_T \approx 3800$, que nenhuma escolha de $R_C$ ultrapassa.
+
+**Tratar $f_T$ como constante do componente.** Ela cai muito em corrente baixa e cai de novo em
+corrente muito alta. Um transistor de 300 MHz polarizado com 50 µA é um transistor de dezenas
+de megahertz.
+
+**Somar $r_\pi$ e $(\beta+1)R_E$ com o $\beta$ errado.** Use o $\beta$ de pequenos sinais, na
+corrente de operação. E lembre: essa soma é a resistência vista **na base**, não a impedância
+de entrada do estágio, que ainda tem o divisor em paralelo.
+
+**Aplicar a regra de reflexão no sentido errado.** Da base para o emissor **divide**; do
+emissor para a base **multiplica**. Invertido, o erro é de um fator $\beta^2$ — dez mil vezes.
+
+**Aterrar a alimentação no equivalente de CA e esquecer de fazer o mesmo com a referência
+negativa.** Em circuito com alimentação simétrica, $+V_{CC}$ **e** $-V_{EE}$ são terra para o
+sinal. Esquecer o segundo produz um circuito equivalente sem caminho de retorno.
+
+**Modelar o transistor em saturação ou em corte.** O modelo de pequenos sinais só existe na
+região ativa. Numa chave, ele não significa nada.
+
+## O que fica deste capítulo {#sec-058-resumo}
+
+O modelo de pequenos sinais é **a reta tangente ao transistor no ponto de operação**. Três
+elementos:
+
+$$ g_m = \frac{I_C}{V_T}, \qquad
+   r_\pi = \frac{\beta}{g_m} = \frac{\beta V_T}{I_C} = (\beta+1)r_e, \qquad
+   r_o = \frac{V_A}{I_C} $$
+
+$g_m$ **não** depende de $\beta$; $r_\pi$ depende. É essa assimetria que faz o ganho ser
+robusto e a impedância de entrada não ser.
+
+**O procedimento, sempre o mesmo:**
+
+1. Resolver o CC e obter $I_C$.
+2. Calcular $g_m$, $r_\pi$, $r_o$.
+3. Desenhar o equivalente de CA: capacitores em curto, alimentações aterradas.
+4. Substituir o transistor pelo modelo.
+5. Resolver com as ferramentas dos Volumes 2 e 3.
+
+Aplicado ao emissor comum, ele **deduz** o que o @sec-cap-056 postulou:
+
+$$ A_v = -g_m(r_o \parallel R_C \parallel R_L), \qquad
+   A_v^{\text{(degenerado)}} = \frac{-\beta(R_C \parallel R_L)}{r_\pi + (\beta+1)R_{E1}} $$
+
+E **as duas regras de reflexão** substituem metade das fórmulas do volume:
+
+$$ r_{in(B)} = r_\pi + (\beta+1)R_E \qquad\text{(do emissor para a base: multiplica)} $$
+$$ r_{in(E)} = r_e + \frac{R_B}{\beta+1} \qquad\text{(da base para o emissor: divide)} $$
+
+Os **parâmetros $h$** da folha de dados traduzem direto: $h_{ie} = r_\pi$, $h_{fe} = \beta$,
+$h_{oe} = 1/r_o$, $h_{re} \approx 0$. E maiúscula é CC, minúscula é pequenos sinais.
+
+Em **alta frequência**, mais duas capacitâncias: $C_\pi$ (proporcional a $g_m$, mais $C_{je}$)
+e $C_\mu$ (a $C_{obo}$ da folha de dados). Delas sai
+
+$$ f_T = \frac{g_m}{2\pi(C_\pi + C_\mu)}, $$
+
+que **não é constante**: cai muito em corrente baixa. E o efeito Miller vira conta exata,
+confirmando os 0,5 MHz do @sec-cap-056.
+
+**Os quatro limites:** amplitude de poucos milivolts, nenhuma noção de ceifamento, dependência
+total do ponto de operação e da temperatura.
+
+## O Volume 9, e o que vem depois {#sec-058-fecho}
+
+Sete capítulos atrás, o transistor era duas junções PN com a região do meio fina. Agora ele é
+um bloco com quatro números — $g_m$, $r_\pi$, $r_o$ e $\beta$ — que se calcula a partir de uma
+corrente e se usa como qualquer outro componente.
+
+O caminho foi: **o dispositivo** (052, estrutura e $\beta$), **o mapa** (053, curvas, efeito
+Early, reta de carga e SOA), **o uso mais simples** (054, chave, saturação e diodo de
+retorno), **o problema** (055, a dispersão de $\beta$ e a deriva de $V_{BE}$, resolvidas com
+realimentação negativa), **o sinal** (056, transcondutância, ganho, impedâncias, distorção e
+Miller), **as outras duas configurações** (057, seguidor, base comum e cascode) e, agora, **a
+unificação**.
+
+Duas coisas ficam para o resto do manual, e as duas transcendem o transistor bipolar.
+
+A primeira é a **realimentação negativa** do @sec-cap-055: trocar desempenho bruto por
+previsibilidade, fazendo o resultado depender de resistores em vez de parâmetros de
+dispositivo. Ela reaparece no Volume 11 com outro nome e a mesma matemática, e é a ideia mais
+importante da eletrônica analógica.
+
+A segunda é o **método** deste capítulo: linearizar em torno do ponto de operação, trocar o
+dispositivo por um circuito equivalente e resolver com álgebra elementar. Ele não é sobre
+transistores bipolares — é sobre **qualquer** dispositivo não linear.
+
+E é literalmente o que o Volume 10 vai fazer a seguir. O MOSFET tem outra física — campo
+elétrico controlando um canal, sem corrente de porta nenhuma —, outra curva
+($I_D \propto (V_{GS}-V_{th})^2$ em vez de exponencial) e outros nomes. Mas o modelo de
+pequenos sinais dele tem **exatamente a mesma forma**: uma transcondutância, uma resistência de
+saída e duas capacitâncias. Falta $r_\pi$, porque não há corrente de porta — e a consequência
+disso é uma impedância de entrada praticamente infinita, que muda tudo em chaveamento de
+potência e em lógica digital.
+
+O capítulo 059 começa por aí: por que um campo elétrico consegue controlar corrente sem
+consumir corrente, e o que isso torna possível.
