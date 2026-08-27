@@ -1,3 +1,954 @@
 # O MOSFET como chave de potência: RDS(on), efeito Miller e dissipação {#sec-cap-061}
 
-*(em elaboração)*
+Uma chave ideal não dissipa nada: ligada, tem tensão zero; desligada, tem corrente zero. Nos
+dois estados, o produto $v \times i$ é zero.
+
+Um MOSFET chega perto disso nos dois estados — e é justamente **entre** eles que ele queima.
+Durante a transição, existe um intervalo em que a tensão ainda não caiu e a corrente já subiu,
+e nesse intervalo o produto $v \times i$ vale dezenas ou centenas de watts. Se a transição for
+rápida, isso não importa. Se for lenta, é o fim do componente.
+
+Este capítulo é sobre as três perdas de uma chave a MOSFET, sobre a conta térmica que decide
+se ele sobrevive, e sobre o mecanismo que torna a transição lenta quando a porta é mal
+acionada: o **efeito Miller**, que o @sec-cap-056 apresentou no bipolar e que aqui produz o
+patamar mais reconhecível de toda a eletrônica de potência.
+
+O @sec-cap-060 deixou o mapa pronto. Uma chave ligada opera na região **ôhmica**; uma chave
+desligada, no **corte**. A travessia entre as duas passa obrigatoriamente pela região de
+**saturação**, e é lá que mora o problema.
+
+## As três perdas {#sec-061-perdas}
+
+::: {#fig-061-comutacao}
+
+```{.tikz}
+%%| filename: 061-comutacao
+%%| alt: Três gráficos empilhados e alinhados no tempo, descrevendo um ciclo completo de chaveamento de um MOSFET. O eixo do tempo é comum aos três e está dividido em sete intervalos verticais marcados por linhas tracejadas. O gráfico de cima mostra a tensão dreno-fonte: ela parte de doze volts durante o intervalo de atraso, permanece em doze volts enquanto a corrente sobe, desce em rampa até quase zero durante o terceiro intervalo, fica praticamente em zero durante todo o período de condução, sobe de volta em rampa até doze volts durante o quinto intervalo e ali permanece. O gráfico do meio mostra a corrente de dreno: começa em zero, sobe em rampa de zero a cinco ampères durante o segundo intervalo, permanece em cinco ampères durante a queda de tensão e durante toda a condução e durante a subida de tensão, e só então desce em rampa de volta a zero no sexto intervalo. O gráfico de baixo mostra a potência instantânea dissipada, que é o produto dos dois anteriores: ela é praticamente zero enquanto o MOSFET está desligado, sobe formando um triângulo alto de até sessenta watts durante os intervalos de subida de corrente e de queda de tensão, cai para um valor muito pequeno durante a condução, correspondendo à perda ôhmica de menos de um watt, e sobe novamente formando um segundo triângulo alto de sessenta watts durante a subida de tensão e a queda de corrente. Os dois triângulos estão preenchidos em vermelho e rotulados como energia de comutação; a faixa fina durante a condução está preenchida em azul e rotulada como energia de condução. Uma anotação registra que os picos de sessenta watts duram nanossegundos e que a média depende de quantas vezes por segundo eles se repetem.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ----- escala de tempo comum -----
+  % 0 atraso | 1-2 subida de I | 2-3 queda de V | 3-7 conducao | 7-8 subida de V | 8-9 queda de I | 9-10 off
+  \def\T{1.25}   % unidade de tempo em cm
+
+  % linhas de divisao
+  \foreach \t in {1,2,3,7,8,9} {
+    \draw[manualgray!45, dashed, very thin] (\t*\T,-7.6) -- (\t*\T,2.1);
+  }
+
+  % =========== V_DS ===========
+  \begin{scope}[shift={(0,0)}]
+    \draw[eixo] (0,0) -- (10.6*\T,0);
+    \draw[eixo] (0,0) -- (0,2.1);
+    \node[anchor=east, font=\scriptsize] at (-0.15,1.0) {$V_{DS}$};
+    \node[anchor=east, font=\tiny] at (-0.15,1.8) {$12$ V};
+    \draw[curva] (0,1.8) -- (2*\T,1.8) -- (3*\T,0.06) -- (7*\T,0.06)
+                        -- (8*\T,1.8) -- (10.4*\T,1.8);
+    \node[manualblue, anchor=south, font=\tiny] at (5*\T,0.12) {$V_{DS}=I_D R_{DS(on)} = 0{,}19$ V};
+  \end{scope}
+
+  % =========== I_D ===========
+  \begin{scope}[shift={(0,-3.0)}]
+    \draw[eixo] (0,0) -- (10.6*\T,0);
+    \draw[eixo] (0,0) -- (0,2.1);
+    \node[anchor=east, font=\scriptsize] at (-0.15,1.0) {$I_D$};
+    \node[anchor=east, font=\tiny] at (-0.15,1.8) {$5$ A};
+    \draw[destaque] (0,0) -- (1*\T,0) -- (2*\T,1.8) -- (8*\T,1.8) -- (9*\T,0) -- (10.4*\T,0);
+  \end{scope}
+
+  % =========== p(t) ===========
+  \begin{scope}[shift={(0,-6.4)}]
+    \draw[eixo] (0,0) -- (10.6*\T,0);
+    \draw[eixo] (0,0) -- (0,2.3);
+    \node[anchor=east, font=\scriptsize] at (-0.15,1.0) {$p = v\,i$};
+    \node[anchor=east, font=\tiny] at (-0.15,1.95) {$60$ W};
+
+    % triangulo de ligar: sobe de 1 a 2 (I sobe com V=12), desce de 2 a 3 (V cai com I=5)
+    \fill[manualred!35] (1*\T,0) -- (2*\T,1.9) -- (3*\T,0.03) -- cycle;
+    % faixa de conducao
+    \fill[manualblue!45] (3*\T,0) rectangle (7*\T,0.032);
+    % triangulo de desligar
+    \fill[manualred!35] (7*\T,0.03) -- (8*\T,1.9) -- (9*\T,0) -- cycle;
+
+    \draw[thick, black] (0,0) -- (1*\T,0) -- (2*\T,1.9) -- (3*\T,0.03) -- (7*\T,0.03)
+                        -- (8*\T,1.9) -- (9*\T,0) -- (10.4*\T,0);
+
+    \node[manualred, anchor=south, font=\tiny, align=center] at (2*\T,1.95) {perda de\\comutação};
+    \node[manualred, anchor=south, font=\tiny, align=center] at (8*\T,1.95) {perda de\\comutação};
+    \node[manualblue!60!black, anchor=south, font=\tiny] at (5*\T,0.10)
+         {perda de condução: $I_D^2 R_{DS(on)} = 0{,}93$ W};
+  \end{scope}
+
+  % rotulos dos intervalos
+  \node[anchor=north, font=\tiny, align=center] at (0.5*\T,-7.7) {atraso};
+  \node[anchor=north, font=\tiny, align=center] at (1.5*\T,-7.7) {$I$ sobe};
+  \node[anchor=north, font=\tiny, align=center] at (2.5*\T,-7.7) {$V$ cai};
+  \node[anchor=north, font=\tiny, align=center] at (5*\T,-7.7) {condução (região ôhmica)};
+  \node[anchor=north, font=\tiny, align=center] at (7.5*\T,-7.7) {$V$ sobe};
+  \node[anchor=north, font=\tiny, align=center] at (8.5*\T,-7.7) {$I$ cai};
+  \node[anchor=north, font=\tiny, align=center] at (9.7*\T,-7.7) {corte};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.4cm] at (6.5*\T,-8.5)
+       {\textbf{Os dois triângulos são o assunto deste capítulo.} Sessenta watts de pico não
+        queimam nada se durarem 50 ns e se repetirem 20 mil vezes por segundo — dão 0,06 W de
+        média. Duram 2 µs e se repetem 100 mil vezes por segundo, dão \textbf{12 W}, e o
+        componente abre. \emph{A largura dos triângulos é decidida pelo acionamento da porta},
+        não pelo MOSFET.};
+
+\end{tikzpicture}
+```
+
+Um ciclo completo. A tensão e a corrente nunca são altas ao mesmo tempo — exceto durante a
+travessia, e é a largura dessa travessia que decide tudo.
+:::
+
+Três perdas, três fórmulas, três dependências diferentes:
+
+**Perda de condução.** O MOSFET ligado é um resistor:
+
+$$ P_{\text{cond}} = I_D^{2}\,R_{DS(\text{on})}\,D $$
+
+com $D$ o ciclo de trabalho. **Não depende da frequência.**
+
+**Perda de comutação.** A área dos dois triângulos, vezes a frequência:
+
+$$ P_{\text{com}} \approx \frac{1}{2}\,V_{DS}\,I_D\,\left(t_{r} + t_{f}\right)\,f $$
+
+**Proporcional à frequência**, e proporcional ao tempo de transição — que é o que o
+acionamento da porta controla.
+
+**Perda de acionamento.** Carregar e descarregar a porta a cada ciclo:
+
+$$ P_{\text{porta}} = Q_G\,V_{GS}\,f $$
+
+Também proporcional à frequência. Costuma ser a menor das três, mas ela é dissipada **no
+driver**, não no MOSFET — e um driver pequeno demais esquenta antes do transistor.
+
+Há mais duas, menores, que só aparecem em aplicações específicas: a **condução do diodo de
+corpo** durante o tempo morto de uma meia ponte ($P = V_F I t_{\text{morto}} f$) e a energia
+guardada na capacitância de saída ($P = \frac{1}{2}C_{oss}V_{DS}^{2}f$), que importa em tensão
+alta.
+
+## A perda de condução, e a espiral térmica {#sec-061-conducao}
+
+Um IRLZ44N acionando 5 A a 12 V com ciclo de trabalho de 100 %:
+
+$$ P_{\text{cond}} = 5^{2} \times 0{,}022 = 0{,}55 \text{ W} $$
+
+Só que 0,022 Ω é o valor a **25 °C**, e o @sec-cap-059 já avisou: o $R_{DS(\text{on})}$ sobe
+com a temperatura, tipicamente dobrando entre 25 °C e 125 °C. A 100 °C de junção o fator é
+cerca de 1,7:
+
+$$ P_{\text{cond}} = 5^{2} \times 0{,}022 \times 1{,}7 = 0{,}93 \text{ W} $$
+
+E isso é uma equação implícita: mais potência, mais temperatura, mais resistência, mais
+potência. A conta correta é iterativa.
+
+::: {.callout-important}
+## Sempre calcule com o $R_{DS(\text{on})}$ quente
+
+Dimensionar com o valor de 25 °C subestima a dissipação por um fator perto de dois, e a
+subestimativa realimenta a si mesma. O procedimento honesto:
+
+1. Chute $T_J$ (comece com 100 °C).
+2. Leia o fator de correção na curva "$R_{DS(\text{on})}$ normalizado × temperatura" da folha
+   de dados.
+3. Calcule $P$ e depois $T_J = T_A + P R_{\theta JA}$.
+4. Se o $T_J$ obtido não bater com o chute, repita.
+
+Duas ou três iterações convergem. Se **não** convergirem — se cada iteração der um $T_J$
+maior — é isso mesmo: o projeto tem realimentação térmica positiva e o componente vai abrir.
+:::
+
+## A conta térmica {#sec-061-termica}
+
+O calor sai da junção e atravessa uma sequência de resistências térmicas até o ar. É
+exatamente uma cadeia de resistores, com temperatura no lugar de tensão e potência no lugar de
+corrente — a analogia que o @sec-cap-011 montou.
+
+::: {#fig-061-termica}
+
+```{.tikz}
+%%| filename: 061-termica
+%%| alt: Diagrama que representa a cadeia térmica de um MOSFET em encapsulamento TO-220 como um circuito elétrico equivalente. Uma fonte de corrente à esquerda representa a potência dissipada, de dois vírgula oito watts, injetando corrente na cadeia. A partir do nó da junção, três resistores em série levam ao nó do ambiente: o primeiro é a resistência térmica da junção à cápsula, de um vírgula zero grau Celsius por watt; o segundo é a resistência do isolador de mica entre a cápsula e o dissipador, de zero vírgula cinco grau por watt; o terceiro é a resistência do dissipador ao ar ambiente, de três graus por watt. O nó final está ligado a uma fonte de tensão que representa a temperatura ambiente de vinte e cinco graus. Ao lado de cada nó está anotada a temperatura correspondente: junção a trinta e sete vírgula seis graus, cápsula a trinta e quatro vírgula oito graus, dissipador a trinta e três vírgula quatro graus e ambiente a vinte e cinco graus. Abaixo, uma segunda cadeia mostra o mesmo MOSFET sem dissipador: um único resistor de sessenta e dois graus por watt liga a junção ao ambiente, e a temperatura de junção resultante é de cento e noventa e nove graus, marcada em vermelho e acompanhada da anotação de que o limite do componente é cento e setenta e cinco graus e que portanto ele é destruído. Uma caixa final registra que a soma das resistências térmicas é o que decide, que o isolador de mica não é desprezível e que trocar o dissipador é um remédio para o sintoma quando o problema real é a perda de comutação.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ============ com dissipador ============
+  \begin{scope}
+    \node[anchor=south west, font=\small\bfseries] at (0,2.0) {com dissipador};
+
+    \draw (0,0) to[I, l={$P=2{,}8$ W}] (0,1.6);
+    \draw (0,1.6) -- (0.8,1.6) coordinate(j);
+    \draw (j) to[R, l={$R_{\theta JC}=1{,}0$}] ++(2.4,0) coordinate(c);
+    \draw (c) to[R, l={$R_{\theta CS}=0{,}5$}] ++(2.4,0) coordinate(sk);
+    \draw (sk) to[R, l={$R_{\theta SA}=3{,}0$}] ++(2.4,0) coordinate(a);
+    \draw (a) -- ++(0.7,0) -- ++(0,-0.8) node[ground]{};
+    \draw (0,0) -- (8.7,0);
+
+    \node[ponto] at (j) {};
+    \node[ponto] at (c) {};
+    \node[ponto] at (sk) {};
+    \node[ponto] at (a) {};
+    \node[anchor=north, font=\tiny, align=center] at ([yshift=-5pt]j) {junção\\$37{,}6$ °C};
+    \node[anchor=north, font=\tiny, align=center] at ([yshift=-5pt]c) {cápsula\\$34{,}8$ °C};
+    \node[anchor=north, font=\tiny, align=center] at ([yshift=-5pt]sk) {dissipador\\$33{,}4$ °C};
+    \node[anchor=north, font=\tiny, align=center] at ([yshift=-5pt]a) {ambiente\\$25$ °C};
+
+    \node[manualgreen!60!black, anchor=west, font=\scriptsize] at (9.8,1.6)
+         {$T_J = 25 + 2{,}8\times 4{,}5 = 37{,}6$ °C \checkmark};
+  \end{scope}
+
+  % ============ sem dissipador ============
+  \begin{scope}[shift={(0,-4.2)}]
+    \node[anchor=south west, font=\small\bfseries] at (0,2.0) {sem dissipador};
+
+    \draw (0,0) to[I, l={$P=2{,}8$ W}] (0,1.6);
+    \draw (0,1.6) -- (0.8,1.6) coordinate(j2);
+    \draw (j2) to[R, l={$R_{\theta JA}=62$}] ++(7.2,0) coordinate(a2);
+    \draw (a2) -- ++(0.7,0) -- ++(0,-0.8) node[ground]{};
+    \draw (0,0) -- (8.7,0);
+    \node[ponto] at (j2) {};
+    \node[ponto] at (a2) {};
+    \node[anchor=north, font=\tiny, align=center] at ([yshift=-5pt]j2) {junção};
+    \node[anchor=north, font=\tiny, align=center] at ([yshift=-5pt]a2) {ambiente\\$25$ °C};
+
+    \node[manualred, anchor=west, font=\scriptsize, align=left] at (9.8,1.6)
+         {$T_J = 25 + 2{,}8\times 62 = \mathbf{199}$ °C\\
+          limite: $175$ °C — \textbf{destruído}};
+  \end{scope}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=14.2cm] at (7.2,-5.0)
+       {\textbf{A soma é o que decide, e o isolador não é desprezível.} Meio grau por watt de
+        mica é 11 \% dos 4,5 °C/W totais. Pasta térmica mal aplicada ou parafuso frouxo dobram
+        esse número sem aviso. E note o que a comparação realmente diz: com um bom dissipador,
+        2,8 W passam batido. O dissipador é um \emph{remédio para o sintoma} — se 2,8 W vêm de
+        perda de comutação evitável, o conserto certo é o driver de porta, não o alumínio.};
+
+\end{tikzpicture}
+```
+
+A cadeia térmica, com os números de um TO-220. Cada resistência em série soma, e a
+temperatura de junção é a "tensão" no nó de entrada.
+:::
+
+$$ T_J = T_A + P\left(R_{\theta JC} + R_{\theta CS} + R_{\theta SA}\right) $$
+
+Os números típicos, que vale ter na cabeça:
+
+| Elemento | Valor típico | Comentário |
+|---|---|---|
+| $R_{\theta JC}$, TO-220 | 1 a 2 °C/W | do fabricante, não se muda |
+| $R_{\theta JC}$, TO-247 | 0,3 a 0,7 °C/W | encapsulamento maior |
+| $R_{\theta CS}$, mica + pasta | 0,4 a 0,8 °C/W | **não é desprezível** |
+| $R_{\theta CS}$, silicone | 0,8 a 1,5 °C/W | mais cômodo, pior térmico |
+| $R_{\theta CS}$, contato direto com pasta | 0,1 a 0,3 °C/W | só se a aba puder ficar no potencial do dreno |
+| $R_{\theta SA}$, dissipador pequeno de aleta | 8 a 20 °C/W | os de 2 cm que se compra avulso |
+| $R_{\theta SA}$, dissipador médio | 2 a 5 °C/W | perfil de 5 a 10 cm |
+| $R_{\theta JA}$, TO-220 ao ar livre | 55 a 70 °C/W | **sem** dissipador, sem placa |
+| $R_{\theta JA}$, SOT-23 em PCB | 200 a 350 °C/W | depende da área de cobre |
+
+: Resistências térmicas típicas. A soma da cadeia é o que entra na conta. {#tbl-061-termicas}
+
+::: {.callout-tip}
+## A regra de bolso do TO-220 nu
+
+Um TO-220 sem dissipador, ao ar parado, aguenta cerca de **1 W** com folga e **2 W** no
+limite. Acima disso, dissipador, e não é negociável.
+
+Se o seu projeto dá 2,8 W num TO-220 nu, a resposta não é "vou pôr um dissipador": é primeiro
+descobrir de onde vêm os 2,8 W. Quase sempre são perda de comutação, e quase sempre são
+evitáveis.
+:::
+
+## As capacitâncias, e o que a folha de dados chama de quê {#sec-061-capacitancias}
+
+Para entender a transição é preciso conhecer as três capacitâncias — e desfazer a confusão de
+nomes que a folha de dados cria.
+
+::: {#fig-061-capacitancias}
+
+```{.tikz}
+%%| filename: 061-capacitancias
+%%| alt: À esquerda, o símbolo de um MOSFET de canal N com três capacitores desenhados entre seus terminais: um capacitor chamado C-gs entre a porta e a fonte, um capacitor chamado C-gd entre a porta e o dreno, e um capacitor chamado C-ds entre o dreno e a fonte. O capacitor porta-dreno está destacado em vermelho e acompanhado da anotação de que ele é o vilão do capítulo. À direita, uma tabela de conversão entre esses três capacitores físicos e os três nomes que a folha de dados usa. A primeira linha diz que a capacitância de entrada C-iss é a soma de C-gs com C-gd. A segunda diz que a capacitância de saída C-oss é a soma de C-ds com C-gd. A terceira diz que a capacitância de transferência reversa C-rss é igual a C-gd sozinha. Abaixo da tabela, as fórmulas invertidas mostram como obter os valores físicos a partir dos publicados: C-gd é igual a C-rss, C-gs é igual a C-iss menos C-rss e C-ds é igual a C-oss menos C-rss. Uma coluna final aplica as fórmulas ao IRLZ44N, cujos valores publicados são três mil cento e cinquenta picofarads de entrada, quinhentos e setenta de saída e duzentos e vinte de transferência reversa, resultando em C-gd de duzentos e vinte picofarads, C-gs de dois mil novecentos e trinta picofarads e C-ds de trezentos e cinquenta picofarads. Uma caixa de aviso registra que essas capacitâncias não são constantes: C-gd varia mais de dez vezes conforme a tensão dreno-fonte cai, sendo pequena com o dreno alto e grande com o dreno baixo, e que por isso o cálculo correto usa a carga de porta e não a capacitância.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ============ símbolo com capacitâncias ============
+  \begin{scope}
+    \node[nigfete, anchor=G] (M) at (0,0) {};
+    \draw (M.D) -- ++(0,2.6) node[anchor=south, font=\scriptsize] {D};
+    \draw (M.S) -- ++(0,-2.6) node[anchor=north, font=\scriptsize] {S};
+    \draw (M.G) -- ++(-2.0,0) node[anchor=east, font=\scriptsize] {G};
+
+    % nós de derivação nas hastes
+    \coordinate (gk) at (-1.5,0);
+    \coordinate (dk) at (0.62,1.5);
+    \coordinate (sk) at (0.62,-1.5);
+    \node[ponto] at (gk) {};
+    \node[ponto] at (dk) {};
+    \node[ponto] at (sk) {};
+
+    % Cgs
+    \draw (gk) -- (-1.5,-1.5);
+    \draw (-1.5,-1.5) to[C, l_={$C_{gs}$}] (sk);
+
+    % Cgd  (destacado)
+    \draw[manualred, thick] (gk) -- (-1.5,1.5);
+    \draw[manualred, thick] (-1.5,1.5) to[C, l={$C_{gd}$}] (dk);
+
+    % Cds
+    \draw (dk) -- (2.6,1.5);
+    \draw (2.6,1.5) to[C, l={$C_{ds}$}] (2.6,-1.5);
+    \draw (2.6,-1.5) -- (sk);
+
+    \node[manualred, anchor=south, font=\tiny, align=center] at (-1.5,2.35)
+         {$C_{gd}$ é o vilão\\deste capítulo};
+    \draw[-{Latex[length=1.4mm]}, manualred] (-1.5,2.3) -- (-1.3,1.72);
+  \end{scope}
+
+  % ============ tabela de conversão ============
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=8pt] at (5.4,1.9)
+       {\begin{tabular}{@{}lll@{}}
+          \textbf{folha de dados} & \textbf{significa} & \textbf{IRLZ44N} \\ \hline
+          $C_{iss}$ (entrada)          & $C_{gs} + C_{gd}$ & $3\,150$ pF \\
+          $C_{oss}$ (saída)            & $C_{ds} + C_{gd}$ & $570$ pF \\
+          $C_{rss}$ (transf.\ reversa) & $C_{gd}$          & $220$ pF \\ \hline
+          \multicolumn{3}{@{}l@{}}{\textbf{invertendo:}} \\
+          $C_{gd} = C_{rss}$            & & $220$ pF \\
+          $C_{gs} = C_{iss} - C_{rss}$  & & $2\,930$ pF \\
+          $C_{ds} = C_{oss} - C_{rss}$  & & $350$ pF \\
+        \end{tabular}};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.8cm] at (-2.6,-3.4)
+       {\textbf{E nenhuma delas é constante.} $C_{gd}$ varia mais de \emph{dez vezes} ao longo
+        da transição: é pequena com o dreno em 12 V e grande com o dreno perto de zero — porque
+        a região de depleção que a forma encolhe junto com a tensão. Por isso o cálculo
+        correto de tempo de comutação usa \textbf{carga de porta} ($Q_G$, em nanocoulombs), que
+        já integra essa variação, e não capacitância. A capacitância serve para entender; a
+        carga serve para calcular.};
+
+\end{tikzpicture}
+```
+
+As três capacitâncias físicas e os três nomes de catálogo. A conversão é aritmética simples, e
+é o primeiro passo de qualquer projeto de acionamento.
+:::
+
+## O efeito Miller e o patamar {#sec-061-miller}
+
+Agora a parte central. Acompanhe a @fig-061-miller.
+
+::: {#fig-061-miller}
+
+```{.tikz}
+%%| filename: 061-miller
+%%| alt: Três formas de onda alinhadas no tempo, descrevendo o processo de ligar um MOSFET, dividido em quatro intervalos separados por linhas verticais tracejadas. A curva de cima é a tensão porta-fonte: no primeiro intervalo ela sobe exponencialmente de zero até a tensão de limiar, sem que nada aconteça no dreno; no segundo intervalo continua subindo até a tensão de patamar, e nesse trecho a corrente de dreno sobe junto; no terceiro intervalo a tensão porta-fonte fica travada, formando um patamar horizontal perfeitamente plano, chamado patamar de Miller; no quarto intervalo ela volta a subir até a tensão final de acionamento. A curva do meio é a corrente de dreno, que é zero no primeiro intervalo, sobe de zero ao valor de carga no segundo, e permanece constante no terceiro e no quarto. A curva de baixo é a tensão dreno-fonte, que permanece no valor da alimentação durante o primeiro e o segundo intervalos, cai em rampa até quase zero exatamente durante o terceiro intervalo, ou seja durante o patamar, e permanece em quase zero no quarto. Uma seta grande liga o patamar da curva superior à rampa de descida da curva inferior, com a anotação de que os dois acontecem ao mesmo tempo e que essa coincidência é o efeito Miller. Ao lado, um diagrama pequeno mostra a corrente do driver entrando pela porta e sendo inteiramente desviada para o capacitor porta-dreno, explicando por que a tensão porta-fonte não consegue subir enquanto o dreno está caindo. Uma caixa registra que a duração do patamar é a carga de Miller dividida pela corrente de porta disponível, e que é exatamente durante esse patamar que a tensão e a corrente são altas ao mesmo tempo, ou seja é o patamar que determina a perda de comutação.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \def\T{1.5}
+
+  \foreach \t in {1,2,3.6,4.6} {
+    \draw[manualgray!45, dashed, very thin] (\t*\T,-6.6) -- (\t*\T,2.0);
+  }
+
+  % =========== V_GS ===========
+  \begin{scope}
+    \draw[eixo] (0,0) -- (6.0*\T,0);
+    \draw[eixo] (0,0) -- (0,2.0);
+    \node[anchor=east, font=\scriptsize] at (-0.15,1.4) {$V_{GS}$};
+
+    \draw[curva, smooth] plot coordinates
+      {(0,0) (0.3*\T,0.28) (0.6*\T,0.48) (1*\T,0.62)};
+    \draw[curva, smooth] plot coordinates
+      {(1*\T,0.62) (1.4*\T,0.88) (2*\T,1.05)};
+    \draw[curva] (2*\T,1.05) -- (3.6*\T,1.05);
+    \draw[curva, smooth] plot coordinates
+      {(3.6*\T,1.05) (4.0*\T,1.38) (4.6*\T,1.63) (5.8*\T,1.75)};
+
+    \draw[auxiliar] (0,0.62) -- (6.0*\T,0.62);
+    \node[anchor=west, font=\tiny] at (6.05*\T,0.60) {$V_{th}$};
+    \draw[auxiliar] (0,1.05) -- (6.0*\T,1.05);
+    \node[anchor=west, font=\tiny] at (6.05*\T,1.07) {$V_{pl}$};
+    \node[anchor=west, font=\tiny] at (6.05*\T,1.75) {$V_{DR}$};
+
+    \node[manualred, anchor=south, font=\scriptsize\bfseries] at (2.8*\T,1.12)
+         {patamar de Miller};
+  \end{scope}
+
+  % =========== I_D ===========
+  \begin{scope}[shift={(0,-2.6)}]
+    \draw[eixo] (0,0) -- (6.0*\T,0);
+    \draw[eixo] (0,0) -- (0,1.6);
+    \node[anchor=east, font=\scriptsize] at (-0.15,1.1) {$I_D$};
+    \draw[destaque] (0,0) -- (1*\T,0) -- (2*\T,1.3) -- (5.8*\T,1.3);
+  \end{scope}
+
+  % =========== V_DS ===========
+  \begin{scope}[shift={(0,-5.2)}]
+    \draw[eixo] (0,0) -- (6.0*\T,0);
+    \draw[eixo] (0,0) -- (0,1.6);
+    \node[anchor=east, font=\scriptsize] at (-0.15,1.1) {$V_{DS}$};
+    \draw[curva] (0,1.3) -- (2*\T,1.3) -- (3.6*\T,0.05) -- (5.8*\T,0.05);
+  \end{scope}
+
+  % seta ligando patamar e queda de V_DS
+  \draw[-{Latex[length=2.5mm]}, manualgreen, very thick, opacity=0.75]
+       (2.8*\T,0.92) -- (2.8*\T,-4.4);
+  \node[manualgreen!60!black, anchor=west, font=\tiny, align=left] at (2.9*\T,-2.0)
+       {o patamar e a queda de $V_{DS}$\\são \textbf{o mesmo intervalo}};
+
+  % rotulos de intervalo
+  \node[anchor=north, font=\tiny, align=center, text width=1.5cm] at (0.5*\T,-6.8)
+       {1. carrega $C_{gs}$ até $V_{th}$};
+  \node[anchor=north, font=\tiny, align=center, text width=1.5cm] at (1.5*\T,-6.8)
+       {2. a corrente sobe};
+  \node[anchor=north, font=\tiny, align=center, text width=2.3cm] at (2.8*\T,-6.8)
+       {3. \textbf{patamar}: tudo vai para $C_{gd}$};
+  \node[anchor=north, font=\tiny, align=center, text width=1.5cm] at (4.1*\T,-6.8)
+       {4. termina $C_{gs}$};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.6cm] at (4.2*\T,-8.0)
+       {\textbf{Por que a porta trava.} No intervalo 3, o dreno está descendo. A tensão sobre
+        $C_{gd}$ é $V_{GS}-V_{DS}$, e ela muda depressa — logo $C_{gd}$ exige corrente. Toda a
+        corrente que o driver entrega escoa por ali, e não sobra nada para elevar $V_{GS}$: o
+        potencial da porta fica \emph{travado} em $V_{pl}$ até o dreno terminar de cair.
+        \\[4pt]
+        A duração é $t_{pl} = Q_{GD}/I_{\text{porta}}$. E é exatamente nesse intervalo que
+        tensão e corrente são altas ao mesmo tempo. \textbf{O patamar é a perda de
+        comutação.}};
+
+\end{tikzpicture}
+```
+
+Ligar um MOSFET, em quatro atos. O terceiro é o que custa energia, e o terceiro é o que um
+driver forte encurta.
+:::
+
+Os quatro intervalos:
+
+**1. A porta carrega até $V_{th}$.** Nada acontece no dreno. É tempo morto puro — atrasa, mas
+não dissipa.
+
+**2. A corrente sobe.** Acima de $V_{th}$, o MOSFET começa a conduzir, e $I_D = g_m(V_{GS} -
+V_{th})$. A corrente sobe até atingir o valor que a carga impõe. Nesse ponto,
+
+$$ V_{GS} = V_{pl} = V_{th} + \frac{I_D}{g_m} $$
+
+é a **tensão de patamar**. Para o IRLZ44N com $I_D = 5$ A, $V_{th} = 1{,}5$ V e $g_{fs} =
+19$ S: $V_{pl} = 1{,}5 + 5/19 = 1{,}76$ V.
+
+**3. O patamar.** A corrente não pode subir mais — a carga não deixa. Então $V_{GS}$ não pode
+subir mais, porque $V_{GS}$ e $I_D$ estão amarrados por $g_m$. Mas a corrente do driver
+continua chegando. Para onde ela vai?
+
+Vai toda para $C_{gd}$. O dreno começa a descer, a tensão sobre $C_{gd}$ muda rapidamente, e o
+capacitor engole tudo o que o driver oferece. A porta fica **travada** em $V_{pl}$ enquanto
+isso durar, e isso dura
+
+$$ \boxed{t_{pl} = \frac{Q_{GD}}{I_{\text{porta}}}} $$
+
+**É este intervalo, e só ele, que produz a maior parte da perda de comutação** — porque é aqui
+que $I_D$ já está no valor máximo e $V_{DS}$ ainda está caindo de 12 V a zero.
+
+**4. A porta termina de carregar** até a tensão do driver. Já está tudo ligado; esse trecho só
+reduz o $R_{DS(\text{on})}$ ao valor final.
+
+::: {.callout-note}
+## Por que se chama Miller
+
+É o mesmo efeito do @sec-cap-056. Um capacitor ligado entre a entrada e a saída de um estágio
+inversor de ganho $A$ parece, visto da entrada, $|A|+1$ vezes maior. Durante o patamar, o
+MOSFET é um amplificador inversor com ganho enorme (a saída varia 12 V enquanto a entrada não
+varia nada — ganho infinito, no limite). Os 220 pF de $C_{gd}$ se comportam como se fossem
+nanofarads.
+
+A diferença para o Volume 9 é o que se faz a respeito. Lá, o efeito Miller limitava a banda de
+um amplificador. Aqui, ele **dissipa energia** e queima o componente.
+:::
+
+## A carga de porta, que é a ferramenta de projeto {#sec-061-qg}
+
+Como $C_{gd}$ varia mais de dez vezes durante a transição, calcular com capacitância dá erro
+grande. O fabricante resolve isso publicando a curva de **carga de porta**: $V_{GS}$ em função
+da carga total injetada.
+
+::: {#fig-061-qg}
+
+```{.tikz}
+%%| filename: 061-qg
+%%| alt: Gráfico da curva de carga de porta de um MOSFET IRLZ44N. No eixo horizontal está a carga de porta injetada, de zero a cinquenta nanocoulombs; no eixo vertical, a tensão porta-fonte, de zero a doze volts. A curva parte da origem, sobe com inclinação constante até cerca de onze nanocoulombs, onde alcança a tensão de patamar de um vírgula oito volt; esse primeiro trecho está marcado como Q-GS. Em seguida a curva fica perfeitamente horizontal de onze até vinte e sete nanocoulombs, trecho marcado como Q-GD, a carga de Miller, com dezesseis nanocoulombs de largura. Depois do patamar a curva volta a subir, com inclinação um pouco menor que a do primeiro trecho, até chegar a doze volts em cerca de quarenta e oito nanocoulombs. Duas linhas horizontais tracejadas marcam os níveis de acionamento comuns: cinco volts, cruzando a curva em cerca de trinta nanocoulombs, e dez volts, cruzando em cerca de quarenta e três nanocoulombs; as cargas totais correspondentes estão anotadas. Uma anotação sobre o trecho do patamar registra que essa é a carga que determina o tempo de travessia e portanto a perda de comutação, e que o tempo de patamar é a carga de Miller dividida pela corrente de porta. Uma caixa abaixo apresenta a conta prática em dois cenários com o mesmo MOSFET: acionado por um driver de meio ampère, o patamar dura trinta e dois nanossegundos e a energia perdida por transição é de aproximadamente um micro joule; acionado direto por um pino de microcontrolador através de um resistor de duzentos e vinte ohms, a corrente disponível é de apenas quatorze vírgula sete miliampères, o patamar dura um vírgula zero nove microssegundo e a energia sobe para trinta e três micro joules, trinta e três vezes maior.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=12.5cm, height=7.5cm,
+  xlabel={$Q_G$ injetada (nC)}, ylabel={$V_{GS}$ (V)},
+  xmin=0, xmax=52, ymin=0, ymax=12.5,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  clip=false,
+]
+  \addplot[curva, thick] coordinates {(0,0) (11,1.8) (27,1.8) (48,12) (50,12.4)};
+
+  % marcacoes de QGS e QGD
+  \draw[manualgray, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:0,2.7) -- (axis cs:11,2.7);
+  \node[manualgray, anchor=south, font=\tiny] at (axis cs:5.5,2.78) {$Q_{GS}=11$ nC};
+
+  \draw[manualred, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:11,1.1) -- (axis cs:27,1.1);
+  \node[manualred, anchor=north, font=\tiny, align=center] at (axis cs:19,1.0)
+       {$Q_{GD}=16$ nC (carga de Miller)};
+
+  % niveis de acionamento
+  \draw[auxiliar] (axis cs:0,5) -- (axis cs:30.2,5);
+  \draw[auxiliar] (axis cs:30.2,0) -- (axis cs:30.2,5);
+  \node[anchor=south east, font=\tiny] at (axis cs:29.8,5.1) {$5$ V $\Rightarrow$ $30$ nC};
+
+  \draw[auxiliar] (axis cs:0,10) -- (axis cs:42.7,10);
+  \draw[auxiliar] (axis cs:42.7,0) -- (axis cs:42.7,10);
+  \node[anchor=south east, font=\tiny] at (axis cs:42.3,10.1) {$10$ V $\Rightarrow$ $43$ nC};
+
+  \node[manualred, anchor=west, font=\scriptsize, align=left] at (axis cs:8,8.6)
+       {o patamar é plano porque\\toda a carga está indo\\para $C_{gd}$};
+  \draw[-{Latex[length=1.4mm]}, manualred] (axis cs:14,8.3) -- (axis cs:18,2.1);
+\end{axis}
+
+\node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=7pt, text width=13.2cm] at (0,-1.5)
+     {\textbf{A mesma peça, dois acionamentos.} Patamar em $V_{pl}=1{,}76$ V, driver de 5 V.
+      \\[3pt]
+      \textbf{Driver dedicado, $R_G = 10\ \Omega$:} $I_{\text{porta}} = (5-1{,}76)/10 = 324$ mA
+      $\Rightarrow t_{pl} = 16/0{,}324 = 49$ ns $\Rightarrow E \approx \frac12 \cdot 12 \cdot 5
+      \cdot 49\text{n} = 1{,}5$ µJ.
+      \\[3pt]
+      \textbf{Pino de microcontrolador com $220\ \Omega$:} $I_{\text{porta}} =
+      (5-1{,}76)/220 = 14{,}7$ mA $\Rightarrow t_{pl} = 1{,}09$ µs $\Rightarrow E \approx
+      33$ µJ. \textbf{Vinte e duas vezes mais}, com o mesmo transistor.};
+
+\end{tikzpicture}
+```
+
+A curva de carga de porta do IRLZ44N. O trecho plano é o patamar de Miller, e a largura dele
+em nanocoulombs é a informação que decide o projeto do driver.
+:::
+
+A curva se lê da esquerda para a direita como a história da @fig-061-miller: sobe até o
+patamar ($Q_{GS}$), atravessa o patamar ($Q_{GD}$), sobe até a tensão do driver. E o tempo de
+cada trecho é carga dividida por corrente.
+
+::: {.callout-tip}
+## $Q_G$ na folha de dados vem com condição
+
+O IRLZ44N declara $Q_G = 48$ nC. Em letra miúda: *at $V_{GS}=10$ V, $V_{DS}=44$ V, $I_D=27$ A*.
+
+Se você aciona com 5 V, a carga é menor (uns 30 nC, pela curva). Se a tensão de barramento é
+12 V e não 44 V, $Q_{GD}$ é **bem** menor, porque a carga de Miller é proporcional à excursão
+de $V_{DS}$. Usar o número de catálogo direto é conservador — e conservador, aqui, é o lado
+certo do erro.
+:::
+
+## O projeto completo, e por que o pino do microcontrolador não serve {#sec-061-exemplo}
+
+Junte tudo. **Acionar uma carga de 5 A em 12 V, em PWM de 20 kHz, com um IRLZ44N.**
+
+**Cenário A — driver dedicado**, saída de 5 V, $R_G = 10\ \Omega$.
+
+| Perda | Conta | Valor |
+|---|---|---|
+| Condução ($D=50$ %) | $5^2 \times 0{,}037 \times 0{,}5$ | 0,46 W |
+| Comutação | $2 \times 1{,}5\ \mu\text{J} \times 20$ kHz | 0,06 W |
+| Porta (no driver) | $30\ \text{nC} \times 5 \text{ V} \times 20$ kHz | 3 mW |
+| **Total no MOSFET** | | **0,52 W** |
+
+: Balanço com acionamento adequado. {#tbl-061-cenarioA}
+
+$T_J = 25 + 0{,}52 \times 62 = 57$ °C, **sem dissipador nenhum**. O projeto está pronto.
+
+**Cenário B — direto do pino do microcontrolador**, 5 V, através de $R_G = 220\ \Omega$
+(valor que muita gente escolhe "para proteger o pino").
+
+Ligar: $I_{\text{porta}} = (5 - 1{,}76)/220 = 14{,}7$ mA, $t_{pl} = 1{,}09$ µs,
+$E_{\text{on}} = 33$ µJ.
+
+Desligar é **pior**, porque a única tensão disponível para descarregar a porta é o próprio
+$V_{pl}$: $I = 1{,}76/220 = 8{,}0$ mA, $t_{pl} = 2{,}0$ µs, $E_{\text{off}} = 60$ µJ.
+
+| Perda | Conta | Valor |
+|---|---|---|
+| Condução | igual ao cenário A | 0,46 W |
+| Comutação | $(33 + 60)\ \mu\text{J} \times 20$ kHz | **1,86 W** |
+| **Total no MOSFET** | | **2,3 W** |
+
+: Balanço com o pino do microcontrolador. A perda de comutação virou quatro vezes a de
+condução. {#tbl-061-cenarioB}
+
+$T_J = 25 + 2{,}3 \times 62 = 168$ °C. Abaixo dos 175 °C do limite — **por sete graus**, num
+dia de 25 °C, com o componente novo. Num gabinete a 45 °C, ele passa do limite e abre.
+
+E se alguém decidir subir o PWM para 100 kHz, achando que melhora o controle: a perda de
+comutação vai a 9,3 W, e o componente dura segundos.
+
+::: {.callout-important}
+## O diagnóstico que engana
+
+Nos dois cenários, o MOSFET, o barramento, a carga e a frequência são **idênticos**. A única
+diferença é como a porta é acionada.
+
+Quando um MOSFET esquenta sem motivo aparente, a sequência de perguntas é:
+
+1. Que tensão de porta ele está realmente recebendo? (Meça — não olhe o esquemático.)
+2. Quanto tempo a transição está durando? (Osciloscópio na porta: o patamar é visível.)
+3. Só depois: o $R_{DS(\text{on})}$ está adequado?
+
+Trocar por um MOSFET de $R_{DS(\text{on})}$ menor **não resolve** o cenário B — e piora, porque
+um transistor maior tem $Q_{GD}$ maior e o patamar fica ainda mais longo.
+:::
+
+## Escolher o tamanho: o compromisso $R_{DS(\text{on})} \times Q_G$ {#sec-061-fom}
+
+A observação acima merece um gráfico, porque contraria a intuição.
+
+Dobrar a área de silício de um MOSFET **corta** o $R_{DS(\text{on})}$ pela metade e **dobra** a
+carga de porta. O produto dos dois é aproximadamente constante dentro de uma família de
+processo, e é a **figura de mérito**:
+
+$$ \text{FOM} = R_{DS(\text{on})} \times Q_G $$
+
+Isso significa que existe um tamanho ótimo, e que ele depende da frequência.
+
+::: {#fig-061-fom}
+
+```{.tikz}
+%%| filename: 061-fom
+%%| alt: Gráfico com a resistência de condução em escala logarítmica no eixo horizontal, de cinco a duzentos miliohms, e a potência total dissipada em watts no eixo vertical, de zero a três. Duas curvas em forma de U mostram a perda total em duas frequências de chaveamento. A curva azul, para cem quilohertz, tem mínimo de cerca de zero vírgula quarenta e nove watt em torno de dezenove miliohms. A curva vermelha, para quinhentos quilohertz, tem mínimo de cerca de um vírgula zero nove watt em torno de quarenta e três miliohms, deslocado para a direita. Duas curvas auxiliares tracejadas decompõem a curva azul: uma reta crescente cinza é a perda de condução, que é proporcional à resistência e portanto favorece transistores grandes de baixa resistência; e uma curva decrescente cinza é a soma das perdas de comutação e de acionamento, que é inversamente proporcional à resistência porque um transistor maior tem mais carga de porta. Dois pontos marcam os mínimos das duas curvas em U. Uma caixa abaixo registra que a intuição de que menor resistência é sempre melhor está errada acima de certa frequência, que o transistor ótimo é menor e mais resistivo quanto mais rápido for o chaveamento, e que a grandeza que resume o compromisso é a figura de mérito, o produto da resistência de condução pela carga de porta.
+
+\begin{tikzpicture}
+\begin{semilogxaxis}[
+  width=12.5cm, height=7.5cm,
+  xlabel={$R_{DS(\text{on})}$ (m$\Omega$) — proporcional ao inverso da área de silício},
+  ylabel={perda total (W)},
+  xmin=5, xmax=150, ymin=0, ymax=3,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  legend pos=north east, legend cell align=left,
+  legend style={font=\tiny, fill=white, fill opacity=0.9, text opacity=1},
+  clip=true,
+]
+  % R em mOhm; conducao = 12.5 * R/1000 ; comutacao = coef / (R/1000)
+  \addplot[auxiliar, domain=5:150, samples=60] {12.5*x/1000};
+  \addlegendentry{perda de condução ($\propto R$)}
+
+  \addplot[auxiliar, domain=5:150, samples=120] {4.71e-3/(x/1000)};
+  \addlegendentry{comutação + porta a $100$ kHz ($\propto Q_G \propto 1/R$)}
+
+  \addplot[curva, very thick, domain=5:150, samples=200] {12.5*x/1000 + 4.71e-3/(x/1000)};
+  \addlegendentry{\textbf{total a $100$ kHz}}
+
+  \addplot[destaque, very thick, domain=5:150, samples=200] {12.5*x/1000 + 23.55e-3/(x/1000)};
+  \addlegendentry{\textbf{total a $500$ kHz}}
+
+  \node[ponto] at (axis cs:19.4,0.485) {};
+  \node[manualblue, anchor=north west, font=\tiny, align=left] at (axis cs:24,0.34)
+       {ótimo a $100$ kHz: $19$ m$\Omega$};
+  \node[ponto] at (axis cs:43.4,1.085) {};
+  \node[manualred, anchor=north west, font=\tiny, align=left] at (axis cs:60,0.55)
+       {ótimo a $500$ kHz: $43$ m$\Omega$\\(um transistor \emph{menor})};
+\end{semilogxaxis}
+
+\node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=7pt, text width=13.2cm] at (0,-1.5)
+     {\textbf{"Quanto menor o $R_{DS(\text{on})}$, melhor" é falso acima de certa
+      frequência.} O transistor grande conduz melhor e comuta pior, porque tem mais carga de
+      porta para mover. Quanto mais rápido o chaveamento, \emph{menor} deve ser o transistor
+      escolhido. Em 60 Hz ou em CC, a intuição vale e o maior ganha; a partir de dezenas de
+      quilohertz, não. Quem resume o compromisso é a figura de mérito
+      $\text{FOM} = R_{DS(\text{on})}\times Q_G$ — e é por ela que se comparam famílias de
+      componentes, não pelo $R_{DS(\text{on})}$ isolado.};
+
+\end{tikzpicture}
+```
+
+Perda total contra tamanho do dispositivo, em duas frequências. Cada curva é a soma de um
+termo que cresce com o tamanho e outro que cai.
+:::
+
+## A região linear é onde ele morre {#sec-061-soa}
+
+Duas situações põem um MOSFET de potência na região de saturação por tempo longo, e as duas
+são perigosas:
+
+**Transição lenta** — o cenário B, já visto.
+
+**Uso deliberadamente linear** — como regulador série, carga eletrônica, partida suave, ou
+controle de corrente. Aqui o problema é mais grave e menos conhecido.
+
+::: {.callout-warning}
+## MOSFET moderno em modo linear é instável
+
+O @sec-cap-059 celebrou que $R_{DS(\text{on})}$ sobe com a temperatura, o que faz MOSFETs em
+paralelo se equalizarem. Isso vale **na região ôhmica**.
+
+Na região de saturação, com $V_{GS}$ baixo, o que manda é o outro coeficiente: $V_{th}$
+**cai** com a temperatura. Uma célula que esquenta um pouco puxa mais corrente, esquenta mais,
+puxa mais ainda. E um MOSFET de potência é composto de milhões de células em paralelo dentro
+da mesma pastilha — a corrida térmica acontece **dentro** do chip, entre células, e nenhum
+dissipador do mundo detém isso.
+
+MOSFETs de tecnologia *trench* modernos, otimizados para chaveamento, têm SOA de modo linear
+péssima justamente por isso. A **área de operação segura** (SOA) da folha de dados é a
+autoridade: procure as curvas de 100 ms e de CC, e note que elas ficam muito abaixo do
+produto $V \times I$ nominal.
+
+Para operação linear de verdade, existem MOSFETs específicos (a linha *linear mode* da
+IXYS, por exemplo) e, curiosamente, o **bipolar volta a ser a escolha melhor**, porque a
+degradação de $\beta$ com a temperatura é mais suave que a deriva de $V_{th}$.
+:::
+
+Vale também registrar a **avalanche**: quando uma carga indutiva é desligada sem diodo de
+retorno, o dreno sobe até a tensão de ruptura e o MOSFET conduz em avalanche. Muitos são
+especificados para isso ($E_{AS}$, energia de avalanche em modo simples), e sobrevivem a
+eventos ocasionais. **Não** é um mecanismo de projeto: o diodo de retorno do @sec-cap-054
+continua obrigatório, e a especificação de avalanche é uma rede de segurança para o
+imprevisto.
+
+## Lado alto, lado baixo {#sec-061-lados}
+
+Tudo neste capítulo assumiu **lado baixo**: fonte no terra, carga entre o dreno e o positivo.
+É o caso fácil, porque $V_{GS}$ é medido em relação ao terra e um driver comum resolve.
+
+No **lado alto** — carga entre o dreno... perdão, entre a **fonte** e o terra, com o dreno no
+positivo — a fonte do MOSFET fica no potencial da carga, que sobe até $V_{CC}$ quando ele
+liga. Para manter $V_{GS} = 10$ V é preciso uma tensão de porta de $V_{CC} + 10$ V, **acima do
+barramento**.
+
+As três soluções, que o @sec-cap-062 desenvolve:
+
+- **MOSFET de canal $p$** no lado alto: aciona-se puxando a porta para baixo. Simples, e paga
+  com $R_{DS(\text{on})}$ duas a três vezes pior para a mesma área.
+- **Bootstrap**: um capacitor e um diodo que "empilham" uma tensão flutuante sobre a fonte. É
+  o que faz um IR2110 ou um IR2104. Barato e universal, e não funciona em ciclo de trabalho de
+  100 %.
+- **Fonte isolada** ou driver com bomba de carga: funciona sempre, custa mais.
+
+## 🧪 Laboratório {#sec-061-lab}
+
+O objetivo é **ver o patamar de Miller no osciloscópio** e medir a diferença que o resistor de
+porta faz na temperatura do componente.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | MOSFET **IRLZ44N** (nível lógico, TO-220) | com dissipador pequeno e isolador |
+| 1 | Carga de 12 V: lâmpada automotiva de 21 W, ou 4 resistores de 10 Ω / 5 W em paralelo | ≈ 2 A |
+| 1 | Fonte de 12 V capaz de 3 A | fonte de bancada ou de PC |
+| 1 | Gerador de funções (onda quadrada 0 a 5 V) ou Arduino com PWM | 1 kHz a 100 kHz |
+| 1 | Driver de porta, ou um par BC547/BC557 em totem-pole | Parte 4 |
+| — | Resistores de porta: 10 Ω, 100 Ω, 220 Ω, 1 kΩ | o experimento inteiro |
+| 1 | Resistor 10 kΩ | porta ao terra, obrigatório |
+| 1 | Diodo 1N5822 (Schottky 3 A) | retorno, se a carga for indutiva |
+| 1 | Osciloscópio de 2 canais | **indispensável** aqui |
+| 1 | Termômetro infravermelho, ou o dorso do dedo | medida de temperatura |
+
+::: {.callout-warning}
+## Antes de ligar
+
+- A aba do TO-220 é o **dreno**. Isolador de mica com bucha, ou dissipador solto e isolado.
+- A ponta de prova do osciloscópio tem o jacaré no **terra**. Como a fonte do MOSFET está no
+  terra, isso é seguro aqui — mas seria um curto-circuito num arranjo de lado alto. Não
+  improvise essa medida.
+- Resistor de 10 kΩ da porta ao terra, montado **antes** de energizar.
+- Comece em 1 kHz. Só suba a frequência depois que a Parte 3 estiver entendida.
+:::
+
+### Parte 1 — Ver o patamar
+
+1. Monte a chave de lado baixo: gerador → $R_G = 220\ \Omega$ → porta; 10 kΩ da porta ao
+   terra; carga do +12 V ao dreno; fonte ao terra.
+2. Onda quadrada de 0 a 5 V, 1 kHz, ciclo de 50 %.
+3. Canal 1 na **porta**, canal 2 no **dreno**. Dispare pela borda de subida do canal 1, e
+   amplie a base de tempo até que a transição ocupe a tela toda (uns 500 ns/div).
+
+Você vai ver a @fig-061-miller ao vivo: a subida exponencial, o **patamar plano**, a segunda
+subida. E o canal 2 mostrando que a queda do dreno acontece **exatamente durante o patamar**.
+
+4. Meça a tensão do patamar. Compare com $V_{pl} = V_{th} + I_D/g_m$.
+5. Meça a **duração** do patamar. Compare com $t_{pl} = Q_{GD}/I_{\text{porta}}$, usando
+   $Q_{GD}$ do catálogo e $I = (5 - V_{pl})/220$.
+
+Anote os dois números. Este é o experimento central do capítulo.
+
+### Parte 2 — O resistor de porta manda no tempo
+
+Repita a medida da duração do patamar com $R_G$ = 1 kΩ, 220 Ω, 100 Ω e 10 Ω.
+
+| $R_G$ | $I_{\text{porta}}$ calculada | $t_{pl}$ previsto | $t_{pl}$ medido |
+|---|---|---|---|
+| 1 kΩ | | | |
+| 220 Ω | | | |
+| 100 Ω | | | |
+| 10 Ω | | | |
+
+: O patamar contra o resistor de porta. A relação deve ser aproximadamente inversa.
+{#tbl-061-lab1}
+
+Com 10 Ω, provavelmente o gerador de funções (que tem 50 Ω de impedância de saída interna)
+vira o limitante, e o tempo para de cair. **Isso é um resultado, não um erro:** a fonte de
+acionamento tem impedância própria, e ela entra em série com $R_G$.
+
+### Parte 3 — A temperatura, que é a consequência
+
+1. Volte a $R_G = 1$ kΩ. Suba a frequência para 50 kHz.
+2. Deixe rodar dois minutos e meça a temperatura da aba do MOSFET.
+3. Desligue, espere esfriar, troque para $R_G = 10\ \Omega$ (ou 22 Ω) e repita.
+
+A diferença de temperatura é grande e imediata. Calcule a potência dissipada em cada caso, a
+partir da área do triângulo medida na tela, e confira contra a elevação de temperatura
+usando $R_{\theta JA}$.
+
+::: {.callout-warning}
+Com $R_G = 1$ kΩ e 50 kHz, o MOSFET pode passar de 100 °C em segundos se estiver sem
+dissipador. Use dissipador, monitore, e não deixe rodando enquanto anota.
+:::
+
+### Parte 4 — Um driver de verdade
+
+Monte um totem-pole simples: BC547 (NPN, coletor no +5 V) e BC557 (PNP, coletor no terra),
+emissores unidos indo à porta pelo $R_G$ de 10 Ω, bases unidas recebendo o sinal do gerador.
+
+1. Repita a Parte 1. O patamar deve encurtar bastante em relação ao acionamento direto.
+2. Repita a Parte 3 a 50 kHz e compare a temperatura.
+
+Note que o totem-pole resolve principalmente o **desligamento**, que é o pior caso do
+acionamento direto: agora há um caminho de baixa impedância para drenar a carga da porta em
+vez de esperar que ela escoe por $R_G$.
+
+### Parte 5 — A perda de condução, isolada
+
+1. Com o MOSFET **permanentemente ligado** ($V_{GS} = 5$ V contínuo, sem PWM), meça a queda
+   $V_{DS}$ e a corrente.
+2. Calcule $R_{DS(\text{on})} = V_{DS}/I_D$ e compare com o catálogo.
+3. Deixe conduzindo por cinco minutos, meça de novo, e calcule o novo $R_{DS(\text{on})}$.
+
+A resistência sobe. Você acabou de medir o coeficiente de temperatura do
+$R_{DS(\text{on})}$ — e a razão de a conta térmica ser iterativa.
+
+**Variante simulada (plano B).** No LTspice, o modelo do IRLZ44N com um `.tran` de alguns
+ciclos reproduz tudo. Ponha `V(gate)` e `V(drain)` no mesmo painel e a expressão
+`V(drain)*Id(M1)` num segundo painel: o produto é a curva de potência instantânea da
+@fig-061-comutacao. A diretiva `.meas TRAN Eon INTEG V(drain)*Id(M1) FROM=... TO=...`
+**integra** a área do triângulo e imprime a energia por transição em joules — a medida que na
+bancada exige contar quadradinhos. Varra `R_G` com `.step param RG list 10 100 220 1k` e veja
+a energia crescer proporcionalmente.
+
+## 🔥 Onde Queima {#sec-061-queima}
+
+**Resistor de porta grande "para proteger o pino".** É o erro mais comum e mais caro do
+capítulo. 220 Ω no lugar de 10 Ω multiplica a perda de comutação por vinte. Se o pino não
+aguenta a corrente, o conserto é um **driver**, não um resistor maior.
+
+**Calcular a dissipação com o $R_{DS(\text{on})}$ de 25 °C.** Subestima por um fator perto de
+dois, e o erro se realimenta. Sempre com o valor quente, e sempre iterando.
+
+**Esquecer a perda de comutação.** Em CC ou em 60 Hz ela é zero e a conta de condução basta.
+Em dezenas de quilohertz ela costuma ser **maior** que a de condução. Não há como estimá-la
+sem saber o tempo de transição, e não há como saber o tempo de transição sem olhar a porta.
+
+**Trocar por um MOSFET "melhor" quando ele esquenta.** Um transistor de $R_{DS(\text{on})}$
+menor tem $Q_G$ maior, patamar mais longo e mais perda de comutação. Se o problema é a
+transição, o componente maior **piora**.
+
+**Parafusar o TO-220 no dissipador aterrado.** A aba é o dreno. Isolador, sempre — e confira a
+isolação com o multímetro depois de apertar, porque a bucha racha.
+
+**Confundir $C_{iss}$ com o que importa.** $C_{iss}$ é grande e chama atenção; quem manda no
+patamar é $C_{rss} = C_{gd}$, que é dez vezes menor. E o cálculo bom não usa nenhuma das duas:
+usa $Q_{GD}$.
+
+**Usar um MOSFET de potência em modo linear sem consultar a SOA.** A SOA de CC de um MOSFET
+*trench* moderno é uma fração pequena do produto $V \times I$ nominal, e a falha é por corrida
+térmica dentro da pastilha — rápida e sem aviso.
+
+**Deixar a porta subir devagar demais na energização.** Se a alimentação do driver sobe mais
+devagar que a do barramento, o MOSFET passa um tempo longo na região linear, com todo o
+barramento sobre ele. Muitos MOSFETs morrem no momento em que se liga a fonte, não em
+operação.
+
+**Ignorar a indutância do laço de porta.** Fios longos entre driver e porta formam um circuito
+ressonante com $C_{iss}$, e a oscilação resultante pode ultrapassar o
+$V_{GS(\text{máx})}$ de ±20 V. Laço curto, resistor de porta junto ao MOSFET, e retorno de
+porta pelo terra do driver.
+
+**Achar que a perda de acionamento é do MOSFET.** $Q_G V_{GS} f$ é dissipado no **driver** e no
+resistor de porta. Um driver pequeno com muitos MOSFETs em paralelo esquenta antes deles.
+
+**Desligar carga indutiva sem diodo de retorno, confiando na avalanche.** A especificação
+$E_{AS}$ cobre eventos ocasionais, não operação repetitiva. O diodo do @sec-cap-054 continua
+obrigatório.
+
+## O que fica deste capítulo {#sec-061-resumo}
+
+Uma chave a MOSFET tem **três perdas**, com três dependências diferentes:
+
+$$ P_{\text{cond}} = I_D^{2}R_{DS(\text{on})}D \ \ (\text{não depende de } f), \qquad
+   P_{\text{com}} \approx \tfrac{1}{2}V_{DS}I_D(t_r+t_f)f, \qquad
+   P_{\text{porta}} = Q_G V_{GS} f $$
+
+**A conta de condução usa o $R_{DS(\text{on})}$ quente** — cerca de duas vezes o de 25 °C — e é
+**iterativa**, porque a temperatura realimenta a resistência.
+
+**A conta térmica é uma cadeia de resistores:**
+
+$$ T_J = T_A + P\left(R_{\theta JC} + R_{\theta CS} + R_{\theta SA}\right) $$
+
+Um TO-220 nu ao ar aguenta cerca de 1 W confortavelmente, 2 W no limite.
+
+**As capacitâncias de catálogo se convertem assim:**
+
+$$ C_{gd} = C_{rss}, \qquad C_{gs} = C_{iss} - C_{rss}, \qquad C_{ds} = C_{oss} - C_{rss} $$
+
+e nenhuma delas é constante, motivo pelo qual se calcula com **carga**, não com capacitância.
+
+**O patamar de Miller** é o coração do capítulo. Durante ele, o dreno cai, $C_{gd}$ engole toda
+a corrente do driver e $V_{GS}$ fica travado em
+
+$$ V_{pl} = V_{th} + \frac{I_D}{g_m}, \qquad\text{durante}\qquad
+   t_{pl} = \frac{Q_{GD}}{I_{\text{porta}}} $$
+
+**É esse intervalo que produz a perda de comutação**, e a largura dele é decidida pelo driver,
+não pelo transistor.
+
+**O exemplo que resume tudo:** o mesmo IRLZ44N acionando 5 A a 12 V em 20 kHz dissipa
+**0,52 W** com um driver de 10 Ω e **2,3 W** ligado a um pino de microcontrolador por 220 Ω.
+Mesma peça, mesma carga, mesma frequência.
+
+**"Menor $R_{DS(\text{on})}$ é sempre melhor" é falso** acima de dezenas de quilohertz, porque
+$R_{DS(\text{on})} \times Q_G$ é aproximadamente constante numa família. Existe um tamanho
+ótimo, e ele **encolhe** conforme a frequência sobe.
+
+**Na região linear o MOSFET é instável**, porque $V_{th}$ cai com a temperatura e as células
+internas competem por corrente. Consulte a SOA antes de qualquer uso linear.
+
+## Para o próximo capítulo {#sec-061-fecho}
+
+Este capítulo mostrou que o driver de porta decide a dissipação, e usou "driver" como se fosse
+óbvio o que ele é. O @sec-cap-062 constrói um.
+
+As perguntas que ficam abertas e que ele responde: quanta corrente de pico o driver precisa
+entregar, e como se dimensiona isso a partir de $Q_{GD}$ e do tempo de transição desejado. Por
+que **desligar** exige mais cuidado que ligar, e por que um resistor de porta assimétrico —
+com um diodo em paralelo — é a solução mais barata que existe. Como resolver o lado alto, com
+o capacitor de *bootstrap* e as duas armadilhas que ele traz. E por que uma transição
+**rápida demais** também é um problema: $di/dt$ alto sobre a indutância parasita gera picos de
+tensão, e $dv/dt$ alto pode religar o MOSFET sozinho, através do próprio $C_{gd}$, num efeito
+conhecido como acionamento espúrio.
+
+O resumo do próximo capítulo, adiantado em uma frase: **existe um tempo de transição ótimo, e
+ele não é zero.**
