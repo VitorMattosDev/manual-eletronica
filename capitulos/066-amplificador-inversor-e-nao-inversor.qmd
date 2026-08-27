@@ -1,3 +1,807 @@
 # Amplificador inversor e não inversor {#sec-cap-066}
 
-*(em elaboração)*
+O @sec-cap-065 resolveu um circuito com as regras de ouro, e o resultado foi ganho 1. Bom para
+impedância, inútil para amplitude.
+
+Este capítulo troca o fio da realimentação por um divisor resistivo, e é o passo que transforma
+duas regras num método de projeto. Ele produz as duas topologias que sustentam o resto do
+Volume 11 — o **não inversor** e o **inversor** —, e resolve as duas com o mesmo procedimento
+de três linhas.
+
+A parte que separa o capítulo de um formulário é o que vem depois: **por que a escolha entre as
+duas quase nunca é sobre o sinal de menos**, o que é **ganho de ruído** e por que ele decide a
+banda mesmo quando o ganho de sinal é outro, e um projeto completo com valor comercial,
+tolerância verificada nos dois extremos e alimentação simples.
+
+## As duas topologias {#sec-066-duas}
+
+::: {#fig-066-duas}
+
+```{.tikz}
+%%| filename: 066-duas
+%%| alt: Figura comparando as duas topologias de amplificador com amp-op, lado a lado, cada uma com o esquemático e a dedução completa. À esquerda, o amplificador não inversor: o sinal de entrada chega diretamente à entrada não inversora do amp-op; da saída, um resistor chamado R2 volta à entrada inversora, e desta um resistor chamado R1 vai ao terra. A dedução tem três passos: primeiro, pela regra dois, a tensão na entrada inversora é igual à da não inversora, ou seja, igual à tensão de entrada; segundo, pela regra um a entrada não puxa corrente, logo R1 e R2 formam um divisor de tensão puro entre a saída e o terra, e a tensão na entrada inversora vale a tensão de saída multiplicada por R1 dividido pela soma de R1 e R2; terceiro, igualando as duas expressões e isolando, o ganho vale um mais R2 dividido por R1. Uma anotação registra que a fração realimentada beta vale R1 sobre R1 mais R2 e que o ganho é exatamente um sobre beta, o resultado geral do capítulo sobre realimentação. À direita, o amplificador inversor: a entrada não inversora é ligada ao terra, o sinal de entrada chega através de um resistor R1 até a entrada inversora, e um resistor R2 liga a entrada inversora à saída. A dedução também tem três passos: primeiro, pela regra dois, como a entrada não inversora está no terra, a entrada inversora fica em zero volt, o que se chama terra virtual; segundo, a corrente que vem da fonte pelo R1 vale a tensão de entrada dividida por R1, e como pela regra um nada entra no amp-op, essa mesma corrente atravessa R2 inteira; terceiro, a tensão sobre R2 é essa corrente vezes R2, e como um dos lados de R2 está em zero volt, a saída vale menos a tensão de entrada vezes R2 dividido por R1. Duas anotações completam a comparação: no não inversor a impedância de entrada é altíssima e o ganho nunca pode ser menor que um; no inversor a impedância de entrada é exatamente R1, porque a fonte enxerga R1 terminado em terra virtual, e o ganho pode ter qualquer valor, inclusive menor que um.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= NAO INVERSOR =================
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\small, anchor=south] at (1.6,2.6) {\textbf{Não inversor}};
+
+    \draw[thick] (1.0,-0.9) -- (1.0,0.9) -- (2.7,0) -- cycle;
+    \node[anchor=west, font=\small] at (1.1,0.45) {$-$};
+    \node[anchor=west, font=\small] at (1.1,-0.45) {$+$};
+
+    \draw (-0.8,-0.45) -- (1.0,-0.45);
+    \node[anchor=east, font=\scriptsize] at (-0.85,-0.45) {$v_{in}$};
+
+    \draw (2.7,0) -- (4.3,0);
+    \node[ponto] at (3.7,0) {};
+    \node[anchor=west, font=\scriptsize] at (4.35,0) {$v_{out}$};
+
+    \draw (3.7,0) -- (3.7,1.7);
+    \draw (3.7,1.7) to[R, l=$R_2$] (0.3,1.7);
+    \draw (0.3,1.7) -- (0.3,0.45) -- (1.0,0.45);
+    \node[ponto] at (0.3,0.45) {};
+    \draw (0.3,0.45) -- (0.3,-1.0);
+    \draw (0.3,-1.0) to[R, l_=$R_1$] (0.3,-2.2);
+    \node[ground] at (0.3,-2.2) {};
+  \end{scope}
+
+  % ================= INVERSOR =================
+  \begin{scope}[shift={(9.4,0)}]
+    \node[font=\small, anchor=south] at (1.6,2.6) {\textbf{Inversor}};
+
+    \draw[thick] (1.0,-0.9) -- (1.0,0.9) -- (2.7,0) -- cycle;
+    \node[anchor=west, font=\small] at (1.1,0.45) {$-$};
+    \node[anchor=west, font=\small] at (1.1,-0.45) {$+$};
+
+    \draw (0.3,-0.45) -- (1.0,-0.45);
+    \draw (0.3,-0.45) -- (0.3,-1.2);
+    \node[ground] at (0.3,-1.2) {};
+
+    \draw (-1.9,0.45) to[R, l=$R_1$] (0.3,0.45);
+    \draw (0.3,0.45) -- (1.0,0.45);
+    \node[ponto] at (0.3,0.45) {};
+    \node[anchor=east, font=\scriptsize] at (-1.95,0.45) {$v_{in}$};
+
+    \draw (2.7,0) -- (4.3,0);
+    \node[ponto] at (3.7,0) {};
+    \node[anchor=west, font=\scriptsize] at (4.35,0) {$v_{out}$};
+
+    \draw (3.7,0) -- (3.7,1.7);
+    \draw (3.7,1.7) to[R, l=$R_2$] (0.3,1.7);
+    \draw (0.3,1.7) -- (0.3,0.45);
+
+    \node[anchor=east, font=\tiny, manualred, align=right] at (0.15,0.05)
+         {$0$ V\\terra virtual};
+    \draw[-{Latex[length=1.6mm]}, manualblue] (-1.1,1.05) -- (-0.3,1.05);
+    \node[anchor=south, font=\tiny, manualblue] at (-0.7,1.08) {$i$};
+    \draw[-{Latex[length=1.6mm]}, manualblue] (1.2,2.1) -- (2.0,2.1);
+    \node[anchor=south, font=\tiny, manualblue] at (1.6,2.13) {$i$};
+  \end{scope}
+
+  % ================= DEDUCOES =================
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.4cm] at (-1.2,-2.9)
+       {\textbf{1.} Regra 2: \ $v_- = v_+ = v_{in}$
+        \\[3pt]
+        \textbf{2.} Regra 1: nada entra no amp-op, logo $R_1$ e $R_2$ são um divisor puro:
+        \[ v_- = v_{out}\,\frac{R_1}{R_1+R_2} \]
+        \textbf{3.} Igualando e isolando:
+        \[ \boxed{\ A_v = \frac{v_{out}}{v_{in}} = 1 + \frac{R_2}{R_1}\ } \]};
+
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.4cm] at (8.2,-2.9)
+       {\textbf{1.} Regra 2: como $v_+ = 0$, então $v_- = 0$ --- \textbf{terra virtual}
+        \\[3pt]
+        \textbf{2.} A corrente vem da fonte por $R_1$ e, pela regra 1, atravessa $R_2$
+        inteira:
+        \[ i = \frac{v_{in} - 0}{R_1} = \frac{0 - v_{out}}{R_2} \]
+        \textbf{3.} Isolando:
+        \[ \boxed{\ A_v = \frac{v_{out}}{v_{in}} = -\,\frac{R_2}{R_1}\ } \]};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=6.4cm] at (-1.2,-7.4)
+       {$\beta = \dfrac{R_1}{R_1+R_2}$ \ e \ $A_v = \dfrac{1}{\beta}$ --- é literalmente o
+        resultado geral da realimentação.
+        \\[4pt]
+        $Z_{in}$ \textbf{altíssima} (a entrada do CI).
+        \\[3pt]
+        $A_v \ge 1$ \textbf{sempre}: não existe ganho 0,5 aqui.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=6.4cm] at (8.2,-7.4)
+       {$Z_{in} = R_1$ \textbf{exatamente} --- a fonte enxerga $R_1$ terminado num terra
+        virtual, e nada mais.
+        \\[4pt]
+        $A_v$ pode ter \textbf{qualquer} valor, inclusive $0{,}5$.
+        \\[3pt]
+        As entradas ficam \textbf{sempre em 0 V}: não há tensão de modo comum.};
+
+\end{tikzpicture}
+```
+
+As duas topologias, resolvidas com o mesmo procedimento de três linhas. A diferença de sinal é
+a mais visível e a menos importante das diferenças entre elas.
+:::
+
+Vale insistir no passo 2 de cada dedução, porque é onde está toda a física.
+
+No **não inversor**, a regra 1 é o que permite tratar $R_1$ e $R_2$ como um divisor de tensão
+comum: se a entrada inversora puxasse corrente, o divisor estaria carregado e a fórmula seria
+outra. O resultado $A_v = 1 + R_2/R_1$ é exatamente o $1/\beta$ do @sec-cap-064, com
+$\beta = R_1/(R_1+R_2)$.
+
+No **inversor**, a regra 2 põe a entrada inversora em 0 V, e a regra 1 obriga toda a corrente
+que entra por $R_1$ a sair por $R_2$. É um circuito de **corrente**: a fonte injeta
+$v_{in}/R_1$ ampères no terra virtual, e a saída se ajusta para que $R_2$ escoe exatamente essa
+corrente. Guarde essa leitura — ela é o que faz o somador do @sec-cap-067 funcionar e o que
+torna o integrador do @sec-cap-068 trivial.
+
+## Escolher entre as duas {#sec-066-escolher}
+
+| | Não inversor | Inversor |
+|---|---|---|
+| Ganho | $1 + R_2/R_1$ | $-R_2/R_1$ |
+| Faixa de ganho | $\ge 1$, sempre | qualquer, inclusive $< 1$ |
+| $Z_{in}$ | altíssima (entrada do CI) | **$R_1$**, e só |
+| $Z_{out}$ | $Z_{out,CI}/(1+T)$ | $Z_{out,CI}/(1+T)$ |
+| Tensão de modo comum na entrada | **igual a $v_{in}$** | **zero, sempre** |
+| Ganho de ruído | $1 + R_2/R_1$ | $1 + R_2/R_1$ |
+| Somar sinais | difícil | trivial (@sec-cap-067) |
+| Inverte o sinal? | não | sim |
+
+: As duas topologias, comparadas nos itens que decidem um projeto. A última linha é a que
+menos importa. {#tbl-066-comparacao}
+
+Três linhas da @tbl-066-comparacao merecem comentário, porque são as que efetivamente decidem.
+
+**A impedância de entrada.** No inversor, ela é $R_1$ — não "aproximadamente $R_1$", mas
+exatamente $R_1$, porque o outro extremo de $R_1$ está num nó que não se move. Isso é fatal
+quando a fonte tem impedância própria: um sensor de 100 kΩ ligado a um inversor com
+$R_1 = 10$ kΩ perde 91 % do sinal antes de o amp-op ver qualquer coisa. Para fonte de
+impedância alta, **não inversor**, sem discussão. E se o ganho precisar ser menor que 1, a
+solução é atenuar antes com um divisor e depois usar um seguidor — não é elegante, mas é o
+que funciona.
+
+**A tensão de modo comum.** No não inversor, as duas entradas acompanham $v_{in}$: se o sinal
+vai a 8 V, as entradas do CI vão a 8 V. Isso exige que 8 V esteja dentro da faixa de modo comum
+(@sec-cap-065), e faz a rejeição de modo comum finita do CI aparecer como distorção, porque o
+erro de modo comum varia com o sinal. No inversor, as entradas ficam paradas em 0 V o tempo
+todo. **O inversor é a topologia de baixa distorção**, e é o motivo de estágios de precisão e
+de áudio de alta qualidade preferirem inversores mesmo quando o sinal de menos incomoda.
+
+**O ganho de ruído é o mesmo nos dois.** É a linha mais surpreendente da tabela, e é o assunto
+da próxima seção.
+
+## Ganho de ruído: o que realmente decide a banda {#sec-066-ganhoruido}
+
+::: {#fig-066-ganhoruido}
+
+```{.tikz}
+%%| filename: 066-ganhoruido
+%%| alt: Diagrama de Bode que compara três circuitos construídos com o mesmo amplificador operacional de três megahertz de produto ganho-banda. O eixo horizontal é logarítmico em frequência, de cem hertz a dez megahertz, e o vertical é em decibéis, de menos vinte a cento e vinte. Uma curva azul grossa mostra o ganho de malha aberta, plano em cento e seis decibéis e caindo vinte decibéis por década a partir de dez hertz até cruzar zero decibel em três megahertz. Três linhas horizontais marcam três casos. A primeira, verde, em zero decibel, é o seguidor de tensão de ganho um, cuja banda vai até três megahertz, onde encontra a curva de malha aberta. A segunda, vermelha, em seis decibéis, é o inversor de ganho menos um, feito com dois resistores iguais: o ganho de sinal é um, ou zero decibel, mas o ganho de ruído é dois, ou seis decibéis, e é o ganho de ruído que encontra a curva de malha aberta, em um vírgula cinco megahertz. Uma seta e uma anotação destacam que o inversor de ganho unitário tem metade da banda do seguidor de ganho unitário, apesar de ambos terem ganho de módulo um. A terceira linha, laranja, em quarenta decibéis, é o amplificador de ganho cem, que cruza a curva em trinta quilohertz. Ao lado, uma caixa define o ganho de ruído como um mais R2 sobre R1, idêntico nas duas topologias, e explica que ele é o inverso da fração realimentada, que é ele que aparece na equação da realimentação, e que portanto é ele que determina a banda, a margem de estabilidade e a amplificação da tensão de desequilíbrio e do ruído do amplificador — nunca o ganho de sinal.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=13.0cm, height=7.6cm,
+    xmode=log, xmin=100, xmax=1e7,
+    ymin=-20, ymax=120,
+    xlabel={frequência (Hz)}, ylabel={ganho (dB)},
+    xtick={100,1000,10000,100000,1000000,10000000},
+    xticklabels={100,1 k,10 k,100 k,1 M,10 M},
+    ytick={0,20,40,60,80,100},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+
+  \addplot[curva] coordinates {(100,86) (3e6,0) (1e7,-10.5)};
+  \node[anchor=west, font=\scriptsize, manualblue] at (axis cs:115,78) {$A_{OL}$};
+
+  \addplot[manualgreen, thick, dashed] coordinates {(100,0) (3e6,0)};
+  \node[ponto, fill=manualgreen] at (axis cs:3e6,0) {};
+  \node[anchor=north west, font=\scriptsize, manualgreen] at (axis cs:115,-1)
+       {seguidor: ganho 1, ruído 1 (0 dB) --- corta em 3 MHz};
+
+  \addplot[destaque, dashed] coordinates {(100,6) (1.5e6,6)};
+  \node[ponto, fill=manualred] at (axis cs:1.5e6,6) {};
+  \node[anchor=south west, font=\scriptsize, manualred] at (axis cs:115,7)
+       {inversor $-1$: \textbf{ganho 1, ruído 2} (6 dB) --- corta em 1,5 MHz};
+
+  \addplot[manualyellow, thick, dashed] coordinates {(100,40) (3e4,40)};
+  \node[ponto, fill=manualyellow] at (axis cs:3e4,40) {};
+  \node[anchor=south west, font=\scriptsize, manualyellow] at (axis cs:115,41)
+       {ganho 100 (40 dB): 30 kHz};
+
+  \draw[<->, thick, manualgray] (axis cs:1.5e6,-12) -- (axis cs:3e6,-12);
+  \draw[manualgray, thin, dashed] (axis cs:1.5e6,-12) -- (axis cs:1.5e6,6);
+  \draw[manualgray, thin, dashed] (axis cs:3e6,-12) -- (axis cs:3e6,0);
+  \node[anchor=east, font=\tiny, manualgray, align=right] at (axis cs:1.2e6,-12)
+       {mesmo módulo de ganho, metade da banda};
+
+\end{axis}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=12.0cm] at (-1.2,-1.2)
+       {\textbf{Ganho de ruído:} \ $A_R = \dfrac{1}{\beta} = 1 + \dfrac{R_2}{R_1}$ ---
+        \textbf{o mesmo} nas duas topologias.
+        \\[4pt]
+        É ele que entra na equação da realimentação, e portanto é ele que decide a
+        \textbf{banda} ($\text{GBW}/A_R$), a \textbf{margem de estabilidade} e o quanto
+        $V_{OS}$ e o ruído do CI são amplificados. \textbf{Nunca} o ganho de sinal.};
+
+\end{tikzpicture}
+```
+
+Três circuitos, o mesmo CI. O inversor de ganho $-1$ e o seguidor de ganho $+1$ amplificam
+igual e têm bandas diferentes por um fator de dois, porque a banda é decidida pelo ganho de
+**ruído**, não pelo de sinal.
+:::
+
+O @sec-cap-064 mostrou que tudo — banda, estabilidade, dessensibilização — depende do ganho de
+malha $T = A_{OL}\beta$. A fração realimentada $\beta$ é fixada pela rede $R_1$–$R_2$, e ela é
+**a mesma nas duas topologias**:
+
+$$ \beta = \frac{R_1}{R_1+R_2} \qquad\Longrightarrow\qquad A_R \equiv \frac{1}{\beta} = 1 + \frac{R_2}{R_1} $$
+
+Esse $A_R$ tem nome: **ganho de ruído**. Ele é o ganho que o circuito aplica a qualquer coisa
+que apareça na entrada não inversora — inclusive à tensão de desequilíbrio $V_{OS}$ e ao ruído
+próprio do amp-op. No não inversor, ganho de sinal e ganho de ruído coincidem. No inversor,
+não: um inversor de ganho $-1$ tem ganho de ruído 2.
+
+As consequências são todas mensuráveis:
+
+| Circuito | $R_1$, $R_2$ | Ganho de sinal | Ganho de ruído | Banda (GBW 3 MHz) |
+|---|---|---|---|---|
+| Seguidor | — | $+1$ | 1 | 3 MHz |
+| Inversor $-1$ | 10 k, 10 k | $-1$ | 2 | 1,5 MHz |
+| Inversor $-0{,}1$ | 100 k, 10 k | $-0{,}1$ | 1,1 | 2,7 MHz |
+| Não inversor $+10$ | 1 k, 9,1 k | $+10{,}1$ | 10,1 | 297 kHz |
+| Inversor $-10$ | 1 k, 10 k | $-10$ | 11 | 273 kHz |
+
+: O mesmo CI em cinco projetos. A terceira linha é a mais instrutiva: um atenuador ativo de
+ganho $0{,}1$ tem ganho de ruído $1{,}1$ — ele **amplifica** o ruído do amp-op por 1,1 enquanto
+atenua o sinal por 10. {#tbl-066-ruido}
+
+A linha do atenuador da @tbl-066-ruido é a armadilha clássica: quem projeta um inversor de
+ganho $0{,}1$ para "atenuar sem carregar" descobre que a relação sinal-ruído piorou 11 vezes.
+Um divisor resistivo passivo seguido de um seguidor faz o mesmo trabalho com ganho de ruído 1.
+
+## A resistência de compensação de corrente de polarização {#sec-066-bias}
+
+::: {#fig-066-bias}
+
+```{.tikz}
+%%| filename: 066-bias
+%%| alt: Figura em duas partes sobre o erro causado pela corrente de polarização de entrada e sua compensação. À esquerda, um amplificador não inversor sem compensação, alimentado por uma fonte de sinal com cem quilohms de impedância interna. A corrente de polarização da entrada não inversora, de quarenta e cinco nanoampères num amp-op bipolar, atravessa esses cem quilohms e cria quatro vírgula cinco milivolts de erro na entrada, que o ganho de quarenta multiplica para cento e oitenta milivolts de erro na saída. A corrente de polarização da entrada inversora atravessa o paralelo de R1 com R2, que vale novecentos e setenta e cinco ohms, e cria apenas quarenta e quatro microvolts, um valor desprezível ao lado do outro. O desequilíbrio entre os dois caminhos é o problema. À direita, o mesmo circuito com um resistor de compensação de cem quilohms inserido em série com a entrada inversora, escolhido para igualar a impedância vista pelas duas entradas. Agora as duas correntes de polarização produzem quedas quase iguais, que se cancelam por serem tensões de mesmo sinal aplicadas a entradas de sinais opostos, e o que sobra é apenas o efeito da diferença entre elas, chamada corrente de desvio, de cinco nanoampères, produzindo meio milivolt na entrada. Uma caixa registra a regra geral: iguale a resistência contínua vista pelas duas entradas; que o benefício é de cerca de nove vezes, porque a corrente de desvio costuma ser um décimo da corrente de polarização; e um alerta de que em amp-ops de entrada JFET ou CMOS, cuja corrente de polarização é de picoampères, o resistor de compensação só acrescenta ruído térmico e não deve ser usado.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- sem compensacao ----------------
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\small, anchor=south] at (1.5,2.7) {\textbf{sem compensação}};
+
+    \draw[thick] (1.0,-0.9) -- (1.0,0.9) -- (2.7,0) -- cycle;
+    \node[anchor=west, font=\small] at (1.1,0.45) {$-$};
+    \node[anchor=west, font=\small] at (1.1,-0.45) {$+$};
+
+    \draw (-2.4,-0.45) to[R, l=$100$ k$\Omega$] (0.2,-0.45);
+    \draw (0.2,-0.45) -- (1.0,-0.45);
+    \node[anchor=east, font=\tiny, align=right] at (-2.45,-0.45) {fonte\\$v_{in}$};
+    \draw[-{Latex[length=1.6mm]}, manualred] (0.0,-0.05) -- (0.7,-0.05);
+    \node[anchor=south, font=\tiny, manualred] at (0.35,-0.03) {$45$ nA};
+
+    \draw (2.7,0) -- (4.0,0);
+    \node[ponto] at (3.5,0) {};
+    \draw (3.5,0) -- (3.5,1.7);
+    \draw (3.5,1.7) to[R, l=$R_2$ $39$ k] (0.3,1.7);
+    \draw (0.3,1.7) -- (0.3,0.45) -- (1.0,0.45);
+    \node[ponto] at (0.3,0.45) {};
+    \draw (0.3,0.45) -- (0.3,-1.1);
+    \draw (0.3,-1.1) to[R, l_=$R_1$ $1$ k] (0.3,-2.3);
+    \node[ground] at (0.3,-2.3) {};
+  \end{scope}
+
+  % ---------------- com compensacao ----------------
+  \begin{scope}[shift={(9.0,0)}]
+    \node[font=\small, anchor=south] at (1.5,2.7) {\textbf{com compensação}};
+
+    \draw[thick] (2.2,-0.9) -- (2.2,0.9) -- (3.9,0) -- cycle;
+    \node[anchor=west, font=\small] at (2.3,0.45) {$-$};
+    \node[anchor=west, font=\small] at (2.3,-0.45) {$+$};
+
+    \draw (-2.4,-0.45) to[R, l=$100$ k$\Omega$] (0.2,-0.45);
+    \draw (0.2,-0.45) -- (2.2,-0.45);
+    \node[anchor=east, font=\tiny, align=right] at (-2.45,-0.45) {fonte\\$v_{in}$};
+
+    \draw (3.9,0) -- (5.2,0);
+    \node[ponto] at (4.7,0) {};
+    \draw (4.7,0) -- (4.7,1.7);
+    \draw (4.7,1.7) to[R, l=$R_2$ $39$ k] (0.3,1.7);
+    \draw (0.3,1.7) -- (0.3,0.45);
+    \node[ponto] at (0.3,0.45) {};
+    \draw (0.3,0.45) to[R, l=$R_3$ $100$ k] (2.2,0.45);
+    \draw (0.3,0.45) -- (0.3,-1.1);
+    \draw (0.3,-1.1) to[R, l_=$R_1$ $1$ k] (0.3,-2.3);
+    \node[ground] at (0.3,-2.3) {};
+  \end{scope}
+
+  % ---------------- contas ----------------
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.2cm] at (-2.8,-3.0)
+       {Entrada $+$: \ $45\ \text{nA} \times 100\ \text{k}\Omega = 4{,}5$ mV
+        \\[3pt]
+        Entrada $-$: \ $45\ \text{nA} \times (1\,\text{k} \parallel 39\,\text{k}) = 44\ \mu$V
+        \\[3pt]
+        \hrulefill
+        \\[3pt]
+        \textbf{Desequilíbrio de $\approx 4{,}5$ mV}, que o ganho 40 leva a
+        \textbf{180 mV na saída}.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.2cm] at (6.4,-3.0)
+       {$R_3$ iguala a resistência \textbf{contínua} vista pelas duas entradas. As duas
+        quedas ficam iguais e se cancelam. Sobra só a \textbf{corrente de desvio}
+        $I_{OS} = |I_{B+} - I_{B-}| \approx 5$ nA:
+        \[ 5\ \text{nA} \times 100\ \text{k}\Omega = 0{,}5\ \text{mV} \]
+        \textbf{Nove vezes melhor}, e o que sobra é corrigível por ajuste.};
+
+  \node[draw=manualyellow, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.4cm] at (-2.8,-6.6)
+       {\textbf{Não faça isso com amp-op de entrada JFET ou CMOS.} Num TL072, $I_B$ é de
+        30 pA, e $30\ \text{pA} \times 100\ \text{k}\Omega = 3\ \mu$V --- irrelevante. O
+        resistor de compensação, nesse caso, só acrescenta ruído térmico e uma fonte a
+        mais de deriva com a temperatura.};
+
+\end{tikzpicture}
+```
+
+O erro que a @tbl-065-ideal antecipou, agora com números e com a correção. A regra é curta:
+**iguale a resistência contínua vista pelas duas entradas** — e só faça isso se o amp-op for
+bipolar.
+:::
+
+Note que a compensação não cancela a corrente de polarização; ela **iguala os dois caminhos**
+para que as quedas se cancelem entre si. O que sobra é o efeito da diferença entre as duas
+correntes, a **corrente de desvio** $I_{OS}$, tipicamente um décimo de $I_B$.
+
+Em números, para o não inversor da @fig-066-bias com $R_S = 100$ kΩ:
+
+$$ R_3 = R_1 \parallel R_2 \ \text{(referido à entrada $-$)} \quad\text{ou, aqui,}\quad R_3 \ \text{tal que}\ R_3 + (R_1 \parallel R_2) = R_S $$
+
+Na prática, com $R_1 \parallel R_2 = 975\ \Omega$ desprezível ao lado de 100 kΩ, basta
+$R_3 = 100$ kΩ.
+
+::: {.callout-note}
+## A conta muda de forma no inversor
+
+No amplificador inversor, a entrada $-$ vê $R_1 \parallel R_2$ e a entrada $+$ vê o que houver
+entre ela e o terra. A compensação é, portanto, um resistor $R_3 = R_1 \parallel R_2$ **entre a
+entrada não inversora e o terra**, e não um curto direto ao terra.
+
+É por isso que esquemáticos de precisão mostram um resistor aparentemente inútil no terminal
+$+$ de um inversor. Ele não é inútil, e some quando o CI é de entrada JFET.
+:::
+
+## Projeto completo: um estágio de ganho 40 {#sec-066-projeto}
+
+O enunciado: um sensor entrega de 0 a 100 mV com impedância de saída de 100 kΩ. É preciso
+levá-lo a 0–4 V para um conversor A/D, com alimentação simétrica de $\pm 12$ V, erro de ganho
+abaixo de 3 % e banda de pelo menos 10 kHz.
+
+**Passo 1 — topologia.** Impedância de fonte de 100 kΩ elimina o inversor: com $R_1 = 10$ kΩ
+sobrariam 9 % do sinal. **Não inversor.**
+
+**Passo 2 — CI.** Impedância de fonte alta pede entrada JFET ou CMOS. **TL072**, com
+$I_B = 30$ pA (erro de 3 µV nos 100 kΩ, irrelevante) e GBW de 3 MHz.
+
+**Passo 3 — ganho.**
+
+$$ A_v = \frac{4\ \text{V}}{100\ \text{mV}} = 40 \qquad\Longrightarrow\qquad 1 + \frac{R_2}{R_1} = 40 \qquad\Longrightarrow\qquad \frac{R_2}{R_1} = 39 $$
+
+**Passo 4 — valores comerciais.** $R_1 = 1$ kΩ e $R_2 = 39$ kΩ, ambos E24 e ambos exatos: a
+razão dá 39 sem arredondamento nenhum. É sorte, e vale registrar quando acontece.
+
+::: {.callout-note}
+## Quando a razão não fecha em valor comercial
+
+Se o ganho pedido fosse 37, seria $R_2/R_1 = 36$: com $R_1 = 1$ kΩ, $R_2 = 36$ kΩ existe em
+E24 e fecha exato. Se fosse 33,7, seria $R_2/R_1 = 32{,}7$, e o mais próximo em E24 com
+$R_1 = 1$ kΩ é 33 kΩ, dando ganho **34,0** em vez de 33,7 — erro de 0,9 %.
+
+Duas saídas: aumentar a resolução mudando $R_1$ (com $R_1 = 3{,}3$ kΩ, $R_2 = 108$ kΩ, que
+não existe; com $R_1 = 2{,}2$ kΩ, $R_2 = 72$ kΩ, que também não), ou pôr **dois resistores em
+série** em $R_2$. A primeira saída quase nunca ajuda; a segunda sempre funciona e custa um
+componente.
+
+O que **não** se faz é escrever 3,27 kΩ no esquemático e esperar que alguém compre.
+:::
+
+**Passo 5 — tolerância, nos dois extremos.** Com resistores de 1 %:
+
+$$ A_{v,\max} = 1 + \frac{39\ \text{k} \times 1{,}01}{1\ \text{k} \times 0{,}99} = 1 + 39{,}79 = 40{,}79 \quad (+2{,}0\ \%) $$
+
+$$ A_{v,\min} = 1 + \frac{39\ \text{k} \times 0{,}99}{1\ \text{k} \times 1{,}01} = 1 + 38{,}23 = 39{,}23 \quad (-1{,}9\ \%) $$
+
+Dentro dos 3 % pedidos. **Com resistores de 5 %**, o mesmo cálculo dá de 36,3 a 44,1, ou
+$\pm 10$ % — fora da especificação. A tolerância é uma decisão de projeto, não um detalhe de
+compra.
+
+**Passo 6 — banda.** O ganho de ruído é 40 (topologia não inversora):
+
+$$ f_c = \frac{\text{GBW}}{A_R} = \frac{3\ \text{MHz}}{40} = 75\ \text{kHz} $$
+
+Sete vezes e meia acima dos 10 kHz pedidos. Aprovado.
+
+**Passo 7 — corrente na rede.** Com a saída em 4 V, a corrente pelo divisor de realimentação é
+$4/40\ \text{k} = 100\ \mu$A, muito abaixo dos 20 mA do TL072. Se $R_1$ e $R_2$ fossem
+100 vezes menores (10 Ω e 390 Ω), a corrente seria 10 mA — metade da capacidade do CI gasta
+em aquecer a própria rede de realimentação.
+
+**Passo 8 — verificação de excursão.** Saída máxima de 4 V, com trilhos de $\pm 12$ V e
+excursão do TL072 de $\pm 10{,}5$ V. Folga confortável.
+
+O resultado: **TL072, $R_1 = 1$ kΩ e $R_2 = 39$ kΩ, ambos 1 %**, sem resistor de compensação
+(entrada JFET), com 100 nF de desacoplamento em cada pino de alimentação.
+
+## Alimentação simples: o ponto médio artificial {#sec-066-simples}
+
+::: {#fig-066-simples}
+
+```{.tikz}
+%%| filename: 066-simples
+%%| alt: Esquemático completo de um amplificador não inversor com ganho quarenta em corrente alternada, alimentado por uma única fonte de doze volts. À esquerda, um divisor formado por dois resistores de cem quilohms entre os doze volts e o terra cria um ponto médio de seis volts, desacoplado para o terra por um capacitor eletrolítico de dez microfarads que garante que esse ponto se comporte como terra para o sinal. Esse ponto médio alimenta a entrada não inversora do amp-op através de um resistor de cem quilohms, e o sinal de entrada chega à mesma entrada através de um capacitor de duzentos e vinte nanofarads, de modo que o amp-op fique polarizado em seis volts em corrente contínua enquanto o sinal se sobrepõe a esse valor. A rede de realimentação tem o resistor R2 de trinta e nove quilohms da saída para a entrada inversora, e da entrada inversora um resistor R1 de um quilohm em série com um capacitor de cem microfarads até o terra. A saída sai por um capacitor de dez microfarads para a carga. Três anotações destacam os pontos de projeto. A primeira: o capacitor em série com R1 faz o ganho em corrente contínua valer exatamente um, de modo que os seis volts do ponto médio aparecem na saída como seis volts e não como duzentos e quarenta volts, que seria o resultado de multiplicar por quarenta. A segunda: os três capacitores de acoplamento criam três filtros passa-altas, e se os três forem colocados na mesma frequência de corte, a atenuação total nessa frequência é de nove decibéis e não de três; por isso as frequências foram escalonadas. A terceira: o capacitor de dez microfarads no ponto médio é obrigatório, porque sem ele a impedância do divisor entra no caminho do sinal e o ruído da alimentação passa direto para a saída multiplicado pelo ganho.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---- trilho ----
+  \draw (0.4,5.0) -- (11.4,5.0);
+  \node[anchor=south, font=\scriptsize, manualblue] at (0.8,5.05) {$+12$ V};
+
+  % ---- divisor de meio trilho ----
+  \draw (1.0,5.0) to[R, l_=$100$ k] (1.0,3.6);
+  \node[ponto] at (1.0,3.6) {};
+  \draw (1.0,3.6) to[R, l_=$100$ k] (1.0,2.2);
+  \node[ground] at (1.0,2.2) {};
+  \node[anchor=south, font=\tiny, manualgreen] at (1.55,3.68) {$6$ V};
+
+  \draw (1.0,3.6) -- (2.1,3.6);
+  \node[ponto] at (2.1,3.6) {};
+  \draw (2.1,3.6) to[C, l=$10$ $\mu$F] (2.1,2.2);
+  \node[ground] at (2.1,2.2) {};
+
+  % ---- barramento do ponto medio ate a entrada + ----
+  \draw (2.1,3.6) -- (3.0,3.6) -- (3.0,1.3) -- (5.9,1.3);
+  \node[ponto] at (5.9,1.3) {};
+
+  % ---- entrada de sinal ----
+  \draw (3.8,0.5) to[C, l_=$220$ n] (5.2,0.5);
+  \draw (5.2,0.5) -- (5.9,0.5) -- (5.9,1.3);
+  \node[anchor=east, font=\scriptsize] at (3.75,0.5) {$v_{in}$};
+
+  % ---- amp op (+ embaixo, - em cima) ----
+  \draw[thick] (6.4,2.1) -- (6.4,3.9) -- (8.1,3.0) -- cycle;
+  \node[anchor=west, font=\small] at (6.5,3.45) {$-$};
+  \node[anchor=west, font=\small] at (6.5,2.55) {$+$};
+  \draw (5.9,1.3) -- (5.9,2.55) -- (6.4,2.55);
+
+  \draw (8.1,3.0) -- (9.5,3.0);
+  \node[ponto] at (9.1,3.0) {};
+
+  % ---- realimentacao ----
+  \draw (9.1,3.0) -- (9.1,4.4);
+  \draw (9.1,4.4) to[R, l=$R_2$ $39$ k] (5.6,4.4);
+  \draw (5.6,4.4) -- (5.6,3.45) -- (6.4,3.45);
+  \node[ponto] at (5.6,3.45) {};
+  \draw (5.6,3.45) -- (5.2,3.45);
+  \draw (5.2,3.45) to[R, l=$R_1$ $1$ k] (4.0,3.45);
+  \draw (4.0,3.45) -- (4.0,3.0);
+  \draw (4.0,3.0) to[C, l=$100$ $\mu$F] (4.0,2.0);
+  \node[ground] at (4.0,2.0) {};
+
+  % ---- saida ----
+  \draw (9.5,3.0) to[C, l=$10$ $\mu$F] (10.7,3.0);
+  \draw (10.7,3.0) -- (11.2,3.0);
+  \draw (11.2,3.0) to[R, l=$10$ k] (11.2,1.6);
+  \node[ground] at (11.2,1.6) {};
+  \node[anchor=south, font=\scriptsize] at (10.9,3.1) {$v_{out}$};
+
+  % ---- anotacoes ----
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=3.4cm] at (0.2,-0.3)
+       {\textbf{O capacitor em série com $R_1$} faz o ganho em \textbf{CC} valer 1.
+        \\[3pt]
+        Sem ele, os 6 V do ponto médio virariam $6 \times 40 = 240$ V pedidos à saída
+        --- isto é, saída grudada no trilho.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=3.4cm] at (4.1,-0.3)
+       {\textbf{Três capacitores, três passa-altas.} Nas mesmas frequências, a atenuação
+        soma: $-9$ dB em $f_c$, não $-3$ dB.
+        \\[3pt]
+        Por isso estão escalonados: 14,5 Hz (entrada), 1,6 Hz ($R_1$) e 1,6 Hz (saída).};
+
+  \node[draw=manualyellow, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=3.4cm] at (8.0,-0.3)
+       {\textbf{Os 10 $\mu$F do ponto médio não são opcionais.} Sem eles, os 50 k$\Omega$
+        do divisor entram no caminho do sinal e o ruído do trilho passa para a saída
+        multiplicado pelo ganho.};
+
+\end{tikzpicture}
+```
+
+O mesmo ganho 40 do @sec-066-projeto, agora com uma fonte só. Três capacitores de acoplamento,
+um ponto médio artificial e uma decisão que não é óbvia: o ganho em corrente contínua tem de
+ser 1.
+:::
+
+Com alimentação simples, o sinal precisa oscilar em torno de um ponto médio artificial, e três
+detalhes decidem se o circuito funciona.
+
+**O ponto médio.** Dois resistores iguais entre o trilho e o terra, com um capacitor de
+10 µF em paralelo com o de baixo. O capacitor é o que transforma um nó de 50 kΩ de impedância
+num nó de impedância baixa para sinal — sem ele, o divisor está em série com o caminho do sinal
+e o ruído da alimentação chega à saída amplificado.
+
+A entrada não inversora é ligada diretamente a esse nó, o que dispensa um resistor de
+polarização separado: o próprio divisor faz o caminho de corrente contínua, e a resistência
+que o capacitor de entrada enxerga é $100\ \text{k} \parallel 100\ \text{k} = 50$ kΩ.
+
+**O ganho em corrente contínua tem de ser 1.** O capacitor de 100 µF em série com $R_1$ abre a
+malha de realimentação em CC: nessa frequência, $R_1$ está desligado e o circuito é um seguidor.
+Os 6 V do ponto médio aparecem na saída como 6 V. Sem esse capacitor, o circuito tentaria pôr
+$6 \times 40 = 240$ V na saída, e ficaria grudado no trilho de 12 V — sem sinal nenhum, e sem
+sintoma que sugira a causa.
+
+**Os três acoplamentos.** Cada capacitor de acoplamento é um passa-altas do @sec-cap-034. Os
+três em cascata **somam** atenuação:
+
+$$ f_{C_{in}} = \frac{1}{2\pi \times 50\ \text{k}\Omega \times 220\ \text{nF}} = 14{,}5\ \text{Hz} $$
+
+$$ f_{R_1 C} = \frac{1}{2\pi \times 1\ \text{k}\Omega \times 100\ \mu\text{F}} = 1{,}6\ \text{Hz} $$
+
+$$ f_{C_{out}} = \frac{1}{2\pi \times 10\ \text{k}\Omega \times 10\ \mu\text{F}} = 1{,}6\ \text{Hz} $$
+
+Escalonados, com o corte dominante na entrada e os outros dois quase uma década abaixo, o
+resultado é um passa-altas de primeira ordem limpo em torno de 15 Hz. **Se os três estivessem
+em 15 Hz**, cada um contribuiria com $-3$ dB e a resposta em 15 Hz seria $-9$ dB — o erro de
+projeto mais comum em amplificador de áudio com alimentação simples.
+
+Note também de onde vem cada resistência da conta: 50 kΩ é o divisor visto pelo capacitor de
+entrada, 1 kΩ é o próprio $R_1$, e 10 kΩ é a **carga**, não o amp-op. Trocar a carga muda o
+corte inferior do circuito — motivo pelo qual um estágio de saída projetado para 10 kΩ soa
+diferente ao alimentar 600 Ω.
+
+## 🧪 Laboratório {#sec-066-lab}
+
+O objetivo é montar as duas topologias, medir o que a @tbl-066-comparacao promete, e verificar
+os dois resultados menos intuitivos do capítulo: a impedância de entrada do inversor e a banda
+governada pelo ganho de ruído.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | **TL072** (duplo, DIP-8) | |
+| 1 | **LM358** (duplo, DIP-8) | Parte 5 |
+| — | Resistores: 2× 1 kΩ, 2× 10 kΩ, 39 kΩ, 3× 100 kΩ, 47 kΩ, 100 Ω | |
+| — | Capacitores: 2× 100 nF cerâmico (desacoplamento), 220 nF, 10 µF, 100 µF | |
+| 1 | Fonte simétrica $\pm 12$ V | e uma simples de 12 V para a Parte 6 |
+| 1 | Gerador de funções | |
+| 1 | Osciloscópio de 2 canais | |
+| 1 | Multímetro | |
+
+Mantenha o desacoplamento de 100 nF em cada pino de alimentação, colado no CI, e o segundo
+amplificador do TL072 ligado como seguidor aterrado. As duas regras do @sec-cap-065 valem em
+todas as partes.
+
+### Parte 1 — Não inversor, ganho 40
+
+1. Monte o não inversor com $R_1 = 1$ kΩ e $R_2 = 39$ kΩ.
+2. Aplique 1 kHz, **50 mV** de pico (use a atenuação do gerador; se não houver, um divisor
+   100:1 na saída dele).
+3. Meça entrada e saída nos dois canais.
+
+Ganho esperado: 40. Meça e compare com o valor calculado a partir dos seus resistores medidos
+com o multímetro — a diferença entre "40 nominal" e "40 medido" é a tolerância do @sec-066-projeto
+em ação.
+
+4. Verifique a fase: entrada e saída **em fase**.
+
+### Parte 2 — Inversor, ganho $-10$
+
+1. Monte o inversor com $R_1 = 1$ kΩ e $R_2 = 10$ kΩ.
+2. Aplique 1 kHz, 200 mV de pico.
+3. Meça o ganho e **confirme a inversão de fase** com o osciloscópio nos dois canais.
+
+4. **Meça o terra virtual.** Ponha a ponta do osciloscópio na entrada inversora (pino 2). Com o
+   sinal aplicado, você deve ver praticamente **nada** — alguns milivolts de ruído, não os
+   200 mV de entrada nem os 2 V de saída.
+
+Este passo é a demonstração mais convincente do capítulo. O nó está em 0 V com sinal
+entrando e saindo dele.
+
+### Parte 3 — A impedância de entrada, medida
+
+1. Com o inversor de $R_1 = 1$ kΩ montado, insira um resistor de **1 kΩ em série** entre o
+   gerador e a entrada.
+2. Meça a saída antes e depois de inserir.
+
+A saída deve cair **pela metade**: o resistor inserido e o $R_1$ formam um divisor 2:1, porque
+$Z_{in} = R_1 = 1$ kΩ.
+
+3. Repita no **não inversor** da Parte 1: insira o mesmo 1 kΩ em série com a entrada.
+
+A saída **não muda de forma perceptível**. A impedância de entrada é de megaohms, e 1 kΩ em
+série não significa nada.
+
+| Circuito | Saída sem o 1 kΩ | Saída com o 1 kΩ | Razão |
+|---|---|---|---|
+| Inversor ($R_1 = 1$ k) | | | |
+| Não inversor | | | |
+
+: A diferença que decide a escolha entre as topologias, medida em dois minutos.
+{#tbl-066-lab1}
+
+### Parte 4 — O ganho de ruído decide a banda
+
+1. Monte o **seguidor** (@sec-cap-065) e varra a frequência até a queda de 3 dB. Anote.
+2. Monte o **inversor de ganho $-1$** com $R_1 = R_2 = 10$ kΩ. Varra e anote.
+
+Os dois têm ganho de módulo 1. O inversor deve cortar em aproximadamente **metade** da
+frequência do seguidor, porque o ganho de ruído dele é 2.
+
+3. Repita com o inversor de ganho $-10$ ($R_1 = 1$ k, $R_2 = 10$ k) e com o não inversor de
+   ganho $+10$ ($R_1 = 1$ k, $R_2 = 9{,}1$ k).
+
+| Circuito | Ganho de sinal | Ganho de ruído | $f_c$ medida | $A_R \times f_c$ |
+|---|---|---|---|---|
+| Seguidor | $+1$ | 1 | | |
+| Inversor $-1$ | $-1$ | 2 | | |
+| Não inversor $+10$ | $+10{,}1$ | 10,1 | | |
+| Inversor $-10$ | $-10$ | 11 | | |
+
+: A última coluna deve dar aproximadamente o mesmo número — o GBW do seu TL072.
+{#tbl-066-lab2}
+
+A quarta coluna calculada com o ganho de **sinal** não fecha; com o ganho de **ruído**, fecha.
+É a demonstração experimental da @fig-066-ganhoruido.
+
+::: {.callout-note}
+As frequências desta parte chegam a alguns megahertz, onde a capacitância do protoboard e a
+ponta de prova já interferem. Se você não conseguir medir acima de 1 MHz com confiança, faça o
+experimento com ganhos maiores (100 e 1 000), onde as frequências caem para dezenas de
+quilohertz e as medidas ficam confiáveis. A conclusão é a mesma.
+:::
+
+### Parte 5 — A corrente de polarização, e a compensação
+
+1. Monte o não inversor de ganho 40 com o **LM358** (bipolar).
+2. Com a entrada aterrada **através de um resistor de 100 kΩ**, meça a tensão contínua na
+   saída.
+3. Insira $R_3 = 100$ kΩ em série com a entrada inversora (entre o nó de $R_1$/$R_2$ e o pino
+   do CI) e meça de novo.
+
+A tensão contínua de saída deve cair substancialmente. O que sobra é $V_{OS} \times 40$ mais o
+efeito de $I_{OS}$, e é o assunto do @sec-cap-069.
+
+4. Refaça os passos 2 e 3 com o **TL072**. A inserção de $R_3$ **não melhora nada** — e se você
+   olhar o ruído na saída com acoplamento CA e a base de tempo lenta, provavelmente piora.
+
+### Parte 6 — Alimentação simples
+
+1. Monte o circuito da @fig-066-simples com uma fonte simples de 12 V.
+2. **Antes de aplicar sinal**, meça as tensões contínuas: ponto médio em 6 V, entrada $+$ em
+   6 V, entrada $-$ em 6 V, **saída em 6 V**.
+
+Se a saída estiver em 12 V ou em 0,1 V, o capacitor em série com $R_1$ está aberto, invertido ou
+ausente — o circuito está tentando amplificar os 6 V por 40.
+
+3. Aplique 1 kHz, 50 mV de pico, e verifique 2 V de pico na saída, centrados em 6 V.
+4. Varra a frequência para baixo e ache o corte inferior. Compare com os 15 Hz calculados.
+5. **Troque o capacitor de saída de 10 µF por 1 µF** e refaça a varredura. O corte sobe para
+   cerca de 16 Hz nesse ramo, e a resposta perto de 15 Hz piora visivelmente — a soma dos
+   passa-altas em ação.
+
+**Variante simulada (plano B).** No LTspice, `.ac dec 20 1 10meg` sobre as quatro montagens da
+Parte 4, com `.step param Rf list 10k 100k 1meg`, produz a @fig-066-ganhoruido inteira num
+gráfico. Para a Parte 3, uma análise `.tf V(out) Vin` devolve a impedância de entrada
+diretamente, e comparar o valor do inversor com o $R_1$ escolhido é imediato. A Parte 6 fica
+melhor no simulador do que na bancada: `.ac` de 0,1 Hz a 100 kHz mostra os três passa-altas
+separados e permite deslocá-los um a um para ver a soma acontecer.
+
+## 🔥 Onde Queima {#sec-066-queima}
+
+**Ligar um inversor a uma fonte de impedância alta.** $Z_{in} = R_1$, e essa é a regra inteira.
+Sensor de 100 kΩ com $R_1 = 10$ kΩ perde 91 % do sinal, e nenhuma calibração de ganho recupera
+a relação sinal-ruído perdida.
+
+**Calcular a banda com o ganho de sinal.** Um inversor de ganho $-1$ tem ganho de ruído 2 e
+metade da banda de um seguidor. A conta é sempre $\text{GBW}/A_R$.
+
+**Usar um inversor como atenuador.** Ganho $-0{,}1$ tem ganho de ruído 1,1: atenua o sinal por
+10 e amplifica o ruído do CI por 1,1. Divisor passivo mais seguidor faz o mesmo com ganho de
+ruído 1.
+
+**Resistores de realimentação pequenos demais.** $R_1 = 10\ \Omega$ e $R_2 = 390\ \Omega$ dão o
+mesmo ganho 40 e obrigam o CI a fornecer 10 mA só para a própria rede. Mantenha $R_1 + R_2$
+acima de alguns quilohms.
+
+**Resistores de realimentação grandes demais.** Com $R_2 = 10$ MΩ, alguns picofarads de
+capacitância parasita da placa já fazem um polo em poucos quilohertz dentro da malha, e o
+circuito toca ou oscila. Acima de 1 MΩ, considere um capacitor pequeno em paralelo com $R_2$.
+
+**Esquecer o capacitor em série com $R_1$ em alimentação simples.** O ganho em CC fica igual ao
+de CA, o ponto médio é amplificado, e a saída gruda no trilho. O sintoma não aponta para a
+causa.
+
+**Pôr os três acoplamentos na mesma frequência.** Três passa-altas de primeira ordem em $f_c$
+dão $-9$ dB em $f_c$. Escalone: o corte dominante onde você quer, os outros pelo menos uma
+década abaixo.
+
+**Omitir o capacitor do ponto médio.** O divisor de polarização fica em série com o caminho de
+sinal, e o ruído do trilho vai para a saída multiplicado pelo ganho. 10 µF é o mínimo; 47 µF
+com um cerâmico de 100 nF em paralelo é melhor.
+
+**Pôr resistor de compensação num amp-op de entrada JFET.** 30 pA em 100 kΩ dão 3 µV. O
+resistor só acrescenta ruído térmico e deriva térmica. A compensação é para entrada bipolar.
+
+**Esquecer que o não inversor impõe modo comum ao CI.** Sinal de 8 V de pico com um LM358 em
+12 V simples viola a faixa de modo comum ($V_{CC} - 1{,}5$ V), e a saída faz coisas que não se
+parecem com saturação limpa.
+
+**Confiar em resistores de 5 % para ganho de precisão.** Ganho 40 com 5 % varia de 36,3 a 44,1.
+Se o ganho importa, 1 % — e se importar muito, do mesmo lote e do mesmo fabricante, para que a
+deriva térmica seja correlacionada.
+
+## O que fica deste capítulo {#sec-066-resumo}
+
+**As duas topologias, e as duas deduções em três linhas cada:**
+
+$$ \text{não inversor:}\quad A_v = 1 + \frac{R_2}{R_1} \qquad\qquad \text{inversor:}\quad A_v = -\frac{R_2}{R_1} $$
+
+**A escolha entre elas quase nunca é sobre o sinal.** É sobre:
+
+- **impedância de entrada** — altíssima no não inversor, exatamente $R_1$ no inversor;
+- **tensão de modo comum** — igual a $v_{in}$ no não inversor, zero sempre no inversor, o que
+  faz do inversor a topologia de baixa distorção;
+- **ganho abaixo de 1** — impossível no não inversor;
+- **somar sinais** — trivial no inversor, difícil no não inversor.
+
+**Terra virtual:** no inversor, a entrada inversora fica em 0 V sem estar aterrada, e o circuito
+opera por corrente — $v_{in}/R_1$ entra, e a saída se ajusta para que $R_2$ escoe exatamente
+essa corrente.
+
+**Ganho de ruído** $A_R = 1/\beta = 1 + R_2/R_1$, **igual nas duas topologias**. É ele, e não o
+ganho de sinal, que decide a banda ($\text{GBW}/A_R$), a margem de estabilidade e o quanto
+$V_{OS}$ e o ruído do CI aparecem na saída. Um inversor de ganho $-1$ tem metade da banda de um
+seguidor.
+
+**Compensação de corrente de polarização:** iguale a resistência contínua vista pelas duas
+entradas, e o erro cai de $I_B \times R$ para $I_{OS} \times R$ — cerca de nove vezes. **Só
+para amp-op bipolar**; em entrada JFET ou CMOS o resistor só acrescenta ruído.
+
+**Projeto:** topologia pela impedância da fonte, CI pela corrente de entrada e pelo GBW, razão
+de resistores em valor comercial, **tolerância verificada nos dois extremos**, banda conferida
+por $\text{GBW}/A_R$, corrente na rede de realimentação conferida contra a capacidade do CI.
+
+**Alimentação simples:** ponto médio artificial com capacitor de desacoplamento obrigatório,
+**ganho unitário em CC** através de um capacitor em série com $R_1$, e acoplamentos
+escalonados para que os passa-altas não somem atenuação na banda útil.
+
+## Para o próximo capítulo {#sec-066-fecho}
+
+O terra virtual do inversor tem uma propriedade que este capítulo usou sem explorar: ele é um
+**somador de correntes**. Tudo o que injeta corrente naquele nó contribui, e nada do que
+injeta enxerga o que os outros estão fazendo, porque a tensão do nó não se move.
+
+Ligar três resistores no mesmo terra virtual, cada um vindo de uma fonte diferente, produz na
+saída a soma ponderada das três tensões — com os pesos escolhidos pelos resistores, um a um,
+sem interação. É o somador, e o computador analógico que deu nome ao dispositivo era feito
+disso.
+
+Da mesma ideia sai o **subtrator** — que mede a diferença entre dois sinais e rejeita o que
+eles têm em comum — e, corrigindo a falha grave de impedância de entrada do subtrator simples,
+o **amplificador de instrumentação**: o bloco com que se mede um sensor de ponte no meio de um
+ambiente elétrico hostil, e que é o assunto do @sec-cap-067.

@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 65/104 |
-| **Contíguos até** | **065** — sem nenhum buraco no meio do livro |
+| **Progresso** | 66/104 |
+| **Contíguos até** | **066** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 066** | Amplificador inversor e não inversor |
+| **Próximo capítulo: 067** | Somador, subtrator e amplificador de instrumentação |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -50,7 +50,13 @@ duas regras de ouro derivadas de $A_f = A/(1+A\beta)$ com $T \to \infty$ e — o
 capítulo insiste — as **três condições** sob as quais elas valem (há realimentação negativa, a
 saída não saturou, sobra ganho de malha); curto virtual e terra virtual; $A_{OL}$ como curva e
 não como número; o seguidor de tensão; e a distinção entre faixa de modo comum de entrada e
-excursão de saída (065).
+excursão de saída (065); as duas topologias resolvidas com o mesmo procedimento de três linhas,
+$A_v = 1 + R_2/R_1$ e $A_v = -R_2/R_1$, a escolha entre elas decidida por impedância de entrada
+($Z_{in} = R_1$ exatamente no inversor) e por tensão de modo comum (nula no inversor, o que o
+torna a topologia de baixa distorção), **ganho de ruído** $A_R = 1/\beta$ igual nas duas e
+responsável pela banda, compensação de corrente de polarização só para entrada bipolar, projeto
+completo com tolerância nos dois extremos e amplificador de alimentação simples com ganho
+unitário em CC e acoplamentos escalonados (066).
 
 Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -190,7 +196,7 @@ cinco ocorrências como aviso.
 ### Volume 11 — Amplificadores Operacionais
 
 - [x] 065 — O amp-op ideal e as regras de ouro — `capitulos/065-o-amp-op-ideal-e-as-regras-de-ouro.qmd`
-- [ ] 066 — Amplificador inversor e não inversor — `capitulos/066-amplificador-inversor-e-nao-inversor.qmd`
+- [x] 066 — Amplificador inversor e não inversor — `capitulos/066-amplificador-inversor-e-nao-inversor.qmd`
 - [ ] 067 — Somador, subtrator e amplificador de instrumentação — `capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.qmd`
 - [ ] 068 — Integrador, derivador e fontes de corrente — `capitulos/068-integrador-derivador-e-fontes-de-corrente.qmd`
 - [ ] 069 — O amp-op real: offset, slew rate, produto ganho-banda e saturação — `capitulos/069-o-amp-op-real-offset-slew-rate-produto-ganho-banda.qmd`
