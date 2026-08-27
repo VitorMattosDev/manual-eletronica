@@ -1,3 +1,897 @@
 # Drivers de gate e a comutação real {#sec-cap-062}
 
-*(em elaboração)*
+O @sec-cap-061 terminou com uma afirmação e uma dívida. A afirmação: **quem decide a
+dissipação de uma chave a MOSFET é o acionamento da porta**, não o transistor. A dívida:
+"driver de porta" foi usado o capítulo inteiro sem que nenhum fosse construído.
+
+Este capítulo paga a dívida — e desfaz uma conclusão apressada que o anterior deixou no ar.
+Lendo o @sec-cap-061 rápido demais, alguém sai com a ideia de que a transição deve ser a mais
+rápida possível. Não deve.
+
+Uma transição rápida demais tem três problemas próprios: a indutância parasita do laço de
+potência transforma $di/dt$ alto em picos de tensão sobre o dreno; o $dv/dt$ alto consegue
+**religar** o MOSFET sozinho, pelo caminho do próprio $C_{gd}$; e a energia que sobra vira
+interferência eletromagnética que atrapalha o resto da placa.
+
+Existe, portanto, uma **janela** de tempo de transição. Este capítulo mostra como calcular as
+duas bordas dela, e como construir o circuito que põe o projeto no meio.
+
+## Dimensionar o driver {#sec-062-dimensionar}
+
+A conta de partida sai direto do @sec-cap-061. Escolha o tempo de patamar desejado; a corrente
+de porta necessária é
+
+$$ I_{\text{porta}} = \frac{Q_{GD}}{t_{pl}} $$
+
+e a resistência total do laço de porta que produz essa corrente é
+
+$$ R_{\text{total}} = \frac{V_{DR} - V_{pl}}{I_{\text{porta}}}
+   \qquad\Longrightarrow\qquad
+   R_G = R_{\text{total}} - R_{\text{saída do driver}} $$
+
+Para o IRLZ44N do capítulo anterior ($Q_{GD} = 16$ nC, $V_{pl} = 1{,}76$ V), com driver de 5 V
+e alvo de $t_{pl} = 50$ ns:
+
+$$ I_{\text{porta}} = \frac{16\text{ nC}}{50\text{ ns}} = 320 \text{ mA}, \qquad
+   R_{\text{total}} = \frac{5 - 1{,}76}{0{,}32} = 10{,}1\ \Omega $$
+
+Um TC4420 tem cerca de 3 Ω de resistência de saída, então $R_G = 7\ \Omega$ — valor comercial
+mais próximo na série E24: **6,8 Ω**. Recalculando com 6,8 Ω: $R_{\text{total}} = 9{,}8\ \Omega$,
+$I = 331$ mA, $t_{pl} = 48$ ns. Dentro do alvo.
+
+Falta responder à pergunta que abre o capítulo: **por que não 1 Ω?**
+
+::: {#fig-062-janela}
+
+```{.tikz}
+%%| filename: 062-janela
+%%| alt: Gráfico com o resistor de porta em escala logarítmica no eixo horizontal, de um a trezentos ohms, e no eixo vertical uma grandeza normalizada de zero a dois, em que o valor um representa o limite aceitável de cada efeito. Uma linha horizontal tracejada preta em nível um marca esse limite. Três curvas cruzam esse limite em pontos diferentes. A curva vermelha, decrescente, é o pico de tensão sobre o dreno causado pela indutância parasita do laço de potência dividido pela tensão máxima do transistor: ela é altíssima para resistores muito pequenos, cruza o limite em cerca de um vírgula cinco ohm e cai rapidamente depois disso. A curva azul, crescente e reta em escala logarítmica, é a perda de comutação dividida pelo limite térmico de um watt: cruza o limite em cerca de vinte e quatro ohms. A curva laranja, também crescente, é a tensão espúria induzida na porta pelo efeito de dv por dt dividida pela tensão de limiar mínima: cruza o limite em cerca de dezenove ohms. A faixa entre um vírgula cinco e dezenove ohms, em que as três curvas estão abaixo do limite, está sombreada em verde e rotulada como janela de projeto. Um ponto marca o valor escolhido de dez ohms, aproximadamente no meio geométrico da janela. Setas nas duas bordas indicam o que acontece fora dela: à esquerda, rápido demais, com sobretensão por indutância parasita e interferência eletromagnética; à direita, lento demais, com perda de comutação e vulnerabilidade a acionamento espúrio.
+
+\begin{tikzpicture}
+\begin{semilogxaxis}[
+  width=13cm, height=8cm,
+  xlabel={$R_G$ total do laço de porta ($\Omega$)},
+  ylabel={grandeza / limite aceitável},
+  xmin=1, xmax=300, ymin=0, ymax=2,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  legend style={at={(0.5,-0.22)}, anchor=north, legend columns=1, font=\tiny,
+                cells={anchor=west}},
+  clip=true,
+]
+  % janela segura
+  \fill[manualgreen!14] (axis cs:1.51,0) rectangle (axis cs:19,2);
+
+  % limite
+  \draw[black, dashed, thick] (axis cs:1,1) -- (axis cs:300,1);
+  \node[anchor=south east, font=\tiny] at (axis cs:295,1.02) {limite};
+
+  % sobretensao: (12 + 64.8/R)/55
+  \addplot[destaque, very thick, domain=1:300, samples=200] {(12 + 64.8/x)/55};
+  \addlegendentry{pico de $V_{DS}$ por $L\,di/dt$, dividido por $V_{DSS}=55$ V}
+
+  % perda de comutacao: 0.042 R / 1 W
+  \addplot[curva, very thick, domain=1:300, samples=200] {0.042*x};
+  \addlegendentry{perda de comutação a $100$ kHz, dividida por $1$ W}
+
+  % dv/dt espurio: 0.0528 R / 1.0 V
+  \addplot[manualyellow, very thick, domain=1:300, samples=200] {0.0528*x};
+  \addlegendentry{$V_{GS}$ espúria por $dv/dt$ externo, dividida por $V_{th(\min)}=1{,}0$ V}
+
+  \node[ponto] at (axis cs:10,0.42) {};
+  \node[manualgreen!50!black, anchor=south, font=\scriptsize\bfseries] at (axis cs:5.4,1.55)
+       {janela de projeto};
+  \node[manualgreen!50!black, anchor=north, font=\tiny, align=center] at (axis cs:5.4,1.52)
+       {$1{,}5$ a $19\ \Omega$};
+  \node[anchor=west, font=\tiny] at (axis cs:10.6,0.38) {escolhido: $10\ \Omega$};
+
+  \node[manualred, anchor=north west, font=\tiny, align=left] at (axis cs:1.03,0.85)
+       {\textbf{rápido demais}\\sobretensão, EMI};
+  \node[manualblue, anchor=north east, font=\tiny, align=right] at (axis cs:280,0.85)
+       {\textbf{lento demais}\\perda, acionamento espúrio};
+\end{semilogxaxis}
+\end{tikzpicture}
+```
+
+As duas bordas da janela, para o exemplo do @sec-cap-061 (IRLZ44N, 12 V, 5 A, 100 kHz, 20 nH
+de laço). Nenhuma delas é o transistor — as duas são o circuito em volta dele.
+:::
+
+As três curvas da @fig-062-janela vêm de três contas:
+
+**Sobretensão** ($R_G$ pequeno demais). A corrente sobe em $t_i \approx Q_{GS2}/I_{\text{porta}}$,
+e essa variação atravessa a indutância do laço de potência:
+
+$$ V_{\text{pico}} = L_{\text{laço}}\,\frac{di}{dt} $$
+
+Com $L = 20$ nH e a corrente de 5 A subindo em 10 ns, $di/dt = 5 \times 10^{8}$ A/s e o pico é
+de 10 V — somados aos 12 V do barramento. Com $R_G = 1\ \Omega$, a subida cai para 1,5 ns e o
+pico vai a 65 V, acima dos 55 V do dispositivo.
+
+**Perda de comutação** ($R_G$ grande demais). É a conta inteira do @sec-cap-061, e ela cresce
+proporcional a $R_G$.
+
+**Acionamento espúrio** ($R_G$ grande demais, de novo). É o assunto da seção @sec-062-dvdt.
+
+::: {.callout-tip}
+## A regra prática
+
+Comece com $R_G$ calculado para uma transição de 50 a 100 ns. Depois **olhe no
+osciloscópio**: se o dreno tem sobretensão ou toca, aumente $R_G$; se o componente esquenta,
+diminua. A janela costuma ter uma década de largura, e o meio geométrico dela é um bom lugar.
+
+Um $R_G$ de 4,7 a 22 Ω resolve a esmagadora maioria dos casos com MOSFET discreto e driver
+dedicado. Valores de 100 Ω ou mais quase sempre indicam que o projeto não fez esta conta.
+:::
+
+## Ligar e desligar não são simétricos {#sec-062-assimetria}
+
+Note uma coisa nas contas do @sec-cap-061: **desligar levou o dobro do tempo de ligar**, com o
+mesmo resistor.
+
+A razão é a tensão disponível. Para **ligar**, a corrente de porta é empurrada por
+$V_{DR} - V_{pl} = 5 - 1{,}76 = 3{,}24$ V. Para **desligar**, a única tensão que resta
+empurrando a carga para fora é o próprio $V_{pl} = 1{,}76$ V — quase a metade. Mesmo resistor,
+metade da corrente, o dobro do tempo.
+
+E desligar devagar é pior que ligar devagar, por dois motivos: a perda de comutação é maior
+(o triângulo é mais largo), e uma porta de alta impedância é justamente a condição em que o
+$dv/dt$ religa o transistor.
+
+A solução é assimétrica, custa um diodo de sinal, e é uma das melhores relações
+custo-benefício da eletrônica de potência.
+
+::: {#fig-062-assimetrico}
+
+```{.tikz}
+%%| filename: 062-assimetrico
+%%| alt: Diagrama de um circuito de acionamento de porta com resistor assimétrico, mostrado em duas situações. No centro está o MOSFET de canal N com a porta ligada à saída do driver através de uma rede formada por um resistor de vinte e dois ohms em paralelo com a série de um diodo de sinal e um resistor de quatro vírgula sete ohms; o diodo está orientado com o cátodo voltado para o driver, de modo a conduzir apenas quando a corrente sai da porta em direção ao driver. Um resistor de dez quilo-ohms liga a porta à fonte. À esquerda, o desenho da situação de ligar: uma seta verde mostra a corrente saindo do driver e entrando na porta, e ela passa obrigatoriamente pelo resistor de vinte e dois ohms, porque o diodo está reversamente polarizado nesse sentido; uma anotação registra que a subida é lenta de propósito, o que limita o dv por dt e a sobretensão. À direita, o desenho da situação de desligar: uma seta vermelha mostra a corrente saindo da porta em direção ao driver, e ela encontra o diodo diretamente polarizado, contornando o resistor grande e passando apenas pelos quatro vírgula sete ohms; uma anotação registra que a descida é rápida, o que reduz a perda de desligamento e mantém a porta em baixa impedância, imune ao acionamento espúrio. Uma caixa abaixo registra que essa assimetria custa um diodo de sinal comum, que a orientação correta é cátodo para o driver num MOSFET de canal N, e que trocar a orientação inverte o efeito e piora o circuito.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \def\rede#1#2#3#4#5{%
+    \begin{scope}[shift={(#1,0)}]
+      \node[anchor=south, font=\small\bfseries] at (2.8,2.9) {#2};
+
+      % driver
+      \draw (0,0) rectangle (1.1,1.0);
+      \node[font=\tiny, align=center] at (0.55,0.5) {driver};
+
+      % rede: R grande em cima, diodo + R pequeno embaixo
+      \draw (1.1,0.5) -- (1.6,0.5);
+      \draw (1.6,0.5) -- (1.6,1.5) to[R, l={$22\ \Omega$}] (3.8,1.5) -- (3.8,0.5);
+      \draw (1.6,0.5) -- (1.6,-0.7) to[D*, invert] (2.5,-0.7);
+      \draw (2.5,-0.7) to[R, l_={$4{,}7\ \Omega$}] (3.8,-0.7) -- (3.8,0.5);
+      \node[ponto] at (1.6,0.5) {};
+      \node[ponto] at (3.8,0.5) {};
+
+      % MOSFET
+      \node[nigfete, anchor=G] (M) at (5.0,0.5) {};
+      \draw (3.8,0.5) -- (M.G);
+      \draw (M.D) -- ++(0,0.7) node[anchor=south, font=\tiny] {carga};
+      \draw (M.S) -- ++(0,-1.4) coordinate(sr);
+      \draw (sr) node[ground]{};
+      \node[ponto] at (4.3,0.5) {};
+      \draw (4.3,0.5) -- (4.3,-1.9) to[R, l_={$10$ k}] (5.6,-1.9) -- (5.6,-0.5);
+
+      % seta de corrente
+      \draw[-{Latex[length=2.6mm]}, #4, very thick] #3;
+
+      \node[anchor=north, align=center, font=\tiny, text width=5.4cm] at (2.7,-2.7) {#5};
+    \end{scope}}
+
+  \rede{0}{ligar}{(2.3,2.15) -- (3.3,2.15)}{manualgreen}
+       {a corrente \textbf{tem} de passar pelos $22\ \Omega$ (o diodo está reverso)\\[3pt]
+        subida \textbf{lenta de propósito}: limita $dv/dt$ e sobretensão}
+
+  \rede{7.8}{desligar}{(3.3,-1.6) -- (2.3,-1.6)}{manualred}
+       {a corrente contorna pelo diodo e vê só $4{,}7\ \Omega$\\[3pt]
+        descida \textbf{rápida}: menos perda, e a porta fica em \textbf{baixa impedância}}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.6cm] at (6.4,-4.4)
+       {\textbf{Um diodo de sinal, dois tempos diferentes.} Cátodo voltado para o
+        \emph{driver}, num MOSFET de canal $n$: assim ele conduz só na descarga. Invertido, o
+        efeito também inverte — subida rápida e descida lenta —, que é exatamente o pior dos
+        dois mundos. Um 1N4148 basta em qualquer aplicação de sinal; em corrente de porta
+        acima de 1 A, um BAT54 ou um 1N5819.};
+
+\end{tikzpicture}
+```
+
+O resistor assimétrico. Sobe devagar pelo resistor grande, desce depressa pelo diodo — e o
+custo total da melhoria é um 1N4148.
+:::
+
+## O acionamento espúrio por $dv/dt$ {#sec-062-dvdt}
+
+Este é o modo de falha mais traiçoeiro do capítulo, porque ele só aparece em certas
+combinações de carga e frequência e desaparece na bancada quando se tenta medi-lo.
+
+::: {#fig-062-dvdt}
+
+```{.tikz}
+%%| filename: 062-dvdt
+%%| alt: À esquerda, o esquema de uma meia ponte com dois MOSFETs de canal N em série entre o barramento positivo e o terra, com o ponto médio ligado à carga. O MOSFET de baixo está desligado, com a porta em zero volt através do resistor de porta e do driver. Sobre o MOSFET de baixo estão desenhados os dois capacitores parasitas relevantes: C-gd entre o dreno e a porta e C-gs entre a porta e a fonte. Quando o MOSFET de cima liga, o ponto médio sobe rapidamente, e uma seta mostra a corrente sendo injetada pelo capacitor C-gd para dentro do nó de porta do MOSFET de baixo, que deveria estar desligado. Uma anotação registra que essa corrente atravessa o resistor de porta e a resistência de saída do driver, produzindo uma tensão sobre a porta. À direita, três formas de onda alinhadas no tempo mostram o resultado: a tensão do ponto médio subindo em rampa íngreme; a tensão porta-fonte do MOSFET de baixo, que deveria permanecer em zero, mostrando um pulso positivo que ultrapassa a linha tracejada da tensão de limiar; e a corrente de barramento, mostrando um pico enorme de curto-circuito, porque durante esse instante os dois MOSFETs estão conduzindo ao mesmo tempo. Abaixo, uma caixa com dois blocos de contas compara dois casos: com resistor de porta de dez ohms e dv por dt de duzentos e quarenta volts por microssegundo, a tensão espúria é de zero vírgula cinco e três volt, abaixo do limiar mínimo de um volt, e o circuito sobrevive; com resistor de duzentos e vinte ohms, a tensão espúria é de onze vírgula seis volts, muito acima do limiar, e ocorre curto-circuito de braço. Ao lado, três remédios estão listados: manter o resistor de desligamento pequeno, usar tensão de porta negativa no desligamento, e usar um grampo de Miller, que é um transistor colocado junto à porta que a curto-circuita à fonte quando ela está desligada.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ============ meia ponte ============
+  \begin{scope}
+    \node[anchor=south, font=\small\bfseries] at (0.2,6.2) {o mecanismo};
+
+    \draw (2.6,5.6) node[vcc]{$V_{BUS}$} -- (2.6,5.0);
+    \node[nigfete, anchor=D] (H) at (2.6,5.0) {};
+    \draw (H.G) -- ++(-0.8,0) node[anchor=east, font=\tiny] {liga};
+    \draw (H.S) -- (2.6,2.9) coordinate(mid);
+    \node[ponto] at (mid) {};
+    \draw (mid) -- (3.9,2.9) -- (3.9,2.0) node[anchor=north, font=\tiny] {carga};
+
+    \node[nigfete, anchor=D] (L) at (2.6,2.9) {};
+    \draw (L.S) -- (2.6,1.0) node[ground]{};
+
+    % nó de porta do inferior
+    \coordinate (gl) at (0.4,2.3);
+    \draw (L.G) -- (gl);
+    \node[ponto] at (gl) {};
+    \draw (gl) to[R, l_={$R_G$}] (-1.5,2.3);
+    \draw (-1.5,2.3) -- (-1.9,2.3) node[anchor=east, font=\tiny, align=right] {driver\\($0$ V)};
+
+    % divisor capacitivo Cgd / Cgs
+    \draw[manualred, thick] (gl) -- (0.4,2.6);
+    \draw[manualred, thick] (0.4,2.6) to[C, l={$C_{gd}$}] (0.4,3.9);
+    \draw[manualred, thick] (0.4,3.9) -- (2.6,3.9);
+    \node[ponto] at (2.6,3.9) {};
+
+    \draw (gl) -- (0.4,2.0);
+    \draw (0.4,2.0) to[C, l_={$C_{gs}$}] (0.4,1.3);
+    \draw (0.4,1.3) -- (2.6,1.3);
+    \node[ponto] at (2.6,1.3) {};
+
+    \draw[-{Latex[length=2.4mm]}, manualred, very thick] (0.95,3.5) -- (0.95,2.7);
+    \node[manualred, anchor=north west, font=\tiny, align=left, text width=2.9cm]
+         at (-2.0,4.6)
+         {corrente injetada na porta de quem deveria estar \emph{desligado}};
+    \draw[-{Latex[length=1.4mm]}, manualred] (-0.3,4.05) -- (0.25,3.5);
+
+    \draw[-{Latex[length=2mm]}, manualgreen, very thick] (3.35,3.6) -- (3.35,4.5);
+    \node[manualgreen!60!black, anchor=west, font=\tiny, align=left] at (3.5,4.05)
+         {$V_{mid}$\\sobe};
+  \end{scope}
+
+  % ============ formas de onda ============
+  \begin{scope}[shift={(7.4,1.1)}]
+    \node[anchor=south, font=\small\bfseries] at (2.6,4.8) {o resultado};
+
+    % V_mid
+    \draw[eixo] (0,3.6) -- (5.4,3.6);
+    \node[anchor=east, font=\tiny] at (-0.1,4.1) {$V_{mid}$};
+    \draw[curva] (0,3.6) -- (1.4,3.6) -- (1.9,4.5) -- (5.2,4.5);
+
+    % V_GS do inferior
+    \draw[eixo] (0,1.9) -- (5.4,1.9);
+    \node[anchor=east, font=\tiny] at (-0.1,2.4) {$V_{GS}$ (inf.)};
+    \draw[auxiliar] (0,2.5) -- (5.4,2.5);
+    \node[anchor=west, font=\tiny] at (5.45,2.5) {$V_{th}$};
+    \draw[destaque] (0,1.9) -- (1.4,1.9) .. controls (1.8,3.1) and (2.1,3.0) .. (2.6,2.0)
+                    -- (5.2,1.9);
+    \node[manualred, anchor=south, font=\tiny] at (2.0,3.05) {pulso espúrio};
+
+    % corrente de barramento
+    \draw[eixo] (0,0.1) -- (5.4,0.1);
+    \node[anchor=east, font=\tiny] at (-0.1,0.6) {$I_{BUS}$};
+    \draw[thick, manualred] (0,0.1) -- (1.5,0.1) .. controls (1.9,1.5) and (2.2,1.4) ..
+                            (2.7,0.15) -- (5.2,0.15);
+    \node[manualred, anchor=west, font=\tiny, align=left] at (2.9,1.05)
+         {\textbf{curto de braço}:\\os dois conduzindo};
+  \end{scope}
+
+  % ============ contas e remédios ============
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.0cm] at (-2.4,0.2)
+       {\textbf{A conta.} $V_{GS(\text{esp})} = R_G\,C_{gd}\,\dfrac{dv}{dt}$
+        \\[4pt]
+        Com $C_{gd}=220$ pF e $dv/dt = 240$ V/µs:
+        \\[3pt]
+        $R_G = 10\ \Omega \Rightarrow 0{,}53$ V \quad — abaixo de
+        $V_{th(\min)}=1{,}0$ V \checkmark
+        \\[3pt]
+        $R_G = 220\ \Omega \Rightarrow \mathbf{11{,}6}$ V \quad — curto de braço, e o par
+        de MOSFETs abre};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=6.4cm] at (5.6,0.2)
+       {\textbf{Os três remédios}
+        \begin{enumerate}\itemsep1pt
+          \item $R_G$ \textbf{de desligamento} pequeno — o diodo da figura anterior já
+                faz isso.
+          \item Tensão de porta \textbf{negativa} ($-5$ V) no desligamento: sobra margem
+                inteira até $V_{th}$.
+          \item \textbf{Grampo de Miller}: um transistor colado na porta que a curto-circuita
+                com a fonte enquanto ela está desligada. Drivers modernos trazem isso pronto.
+        \end{enumerate}};
+
+\end{tikzpicture}
+```
+
+O $dv/dt$ de um MOSFET religando o outro. Note que o culpado não é o transistor que falha — é
+o resistor de porta dele.
+:::
+
+O mecanismo é simples de enunciar. O MOSFET de baixo está desligado, com a porta puxada ao
+terra através de $R_G$ e da impedância de saída do driver. O MOSFET de cima liga, e o ponto
+médio sobe de zero a $V_{BUS}$ num punhado de nanossegundos.
+
+Essa rampa aparece sobre $C_{gd}$ do transistor de baixo, que responde injetando corrente
+$i = C_{gd}\,dv/dt$ na porta dele. Essa corrente tem de escoar por $R_G$, e ao escoar produz
+tensão:
+
+$$ \boxed{V_{GS(\text{esp})} = R_G\,C_{gd}\,\frac{dv}{dt}} $$
+
+Se essa tensão passar de $V_{th}$, o MOSFET de baixo **liga**, os dois conduzem ao mesmo tempo
+e o barramento é curto-circuitado através dos dois. O nome disso é **curto de braço**
+(*shoot-through*), e ele destrói o par.
+
+::: {.callout-warning}
+## Por que ele some na bancada
+
+Três razões, e vale conhecê-las antes de perder um dia:
+
+- **A ponta de prova ajuda o circuito.** Os 10 a 15 pF da ponta em paralelo com $C_{gs}$
+  reduzem a tensão espúria. Você mede, está bom; tira a ponta, queima.
+- **Ele depende da corrente.** Com pouca carga, o $dv/dt$ do transistor de cima é menor. O
+  problema aparece com a carga cheia, que raramente é a condição de depuração.
+- **Ele depende da temperatura.** $V_{th}$ cai com o calor (@sec-cap-059), então a margem
+  encolhe justamente quando o equipamento está em regime.
+
+Se um par de meia ponte morre "sem motivo" depois de meia hora funcionando, este é o primeiro
+suspeito.
+:::
+
+Note também o que a fórmula diz sobre a escala: um barramento de 12 V com transição de 50 ns
+dá 240 V/µs. Um barramento de 400 V com transição de 50 ns dá **8 000 V/µs**, trinta e três
+vezes mais. É por isso que acionamento com tensão negativa é praticamente obrigatório em
+eletrônica de potência de alta tensão, e opcional em 12 V.
+
+## Os circuitos, do mais barato ao mais correto {#sec-062-circuitos}
+
+::: {#fig-062-circuitos}
+
+```{.tikz}
+%%| filename: 062-circuitos
+%%| alt: Dois circuitos de acionamento de porta lado a lado. À esquerda, o driver discreto em totem-pole: um transistor NPN BC337 com o coletor no positivo de doze volts e um transistor PNP BC327 com o coletor no terra, com os emissores unidos e ligados à porta do MOSFET através de um resistor de dez ohms, e as bases unidas recebendo o sinal lógico de entrada. Anotações registram que o arranjo é de seguidores de emissor, que por isso não há curto entre os dois transistores, que a corrente de pico é de cerca de oitocentos miliampères e que o preço é a perda de uma queda de base-emissor, de modo que a porta chega a onze vírgula três volts em vez de doze. À direita, o driver integrado dedicado: um bloco retangular rotulado como TC4420 com pino de entrada, pino de alimentação com um capacitor de desacoplamento de cem nanofarads junto ao pino, pino de terra e pino de saída ligado ao resistor de porta e à porta do MOSFET. Anotações registram que a corrente de pico é de seis ampères, que a resistência de saída é de cerca de três ohms, que a entrada é compatível com nível lógico e que o capacitor de desacoplamento tem de ficar a poucos milímetros do pino, porque é dele que sai o pico de corrente. Abaixo, uma tabela compara cinco opções de acionamento em quatro colunas: pino de microcontrolador direto, com corrente de vinte miliampères, adequado apenas para MOSFETs pequenos em baixa frequência; portas lógicas em paralelo, com cerca de cem miliampères; totem-pole discreto, com oitocentos miliampères; driver integrado dedicado, de dois a seis ampères; e driver de meia ponte com bootstrap, que além da corrente resolve o acionamento do lado alto.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ============ totem-pole ============
+  \begin{scope}
+    \node[anchor=south, font=\small\bfseries] at (2.4,5.5) {totem-pole discreto};
+
+    \draw (2.2,4.6) node[vcc]{$12$ V} -- (2.2,3.9);
+    \node[npn, anchor=C] (T1) at (2.2,3.9) {};
+    \node[pnp, anchor=C] (T2) at (2.2,0.5) {};
+    \draw (T1.E) -- (2.2,2.2);
+    \draw (T2.E) -- (2.2,2.2);
+    \node[ponto] at (2.2,2.2) {};
+    \draw (T2.C) -- ++(0,-0.6) node[ground]{};
+    \draw (T1.B) -- ++(-0.5,0) coordinate(b1);
+    \draw (T2.B) -- ++(-0.5,0) coordinate(b2);
+    \draw (b1) -- (b1 |- 0,2.2) coordinate(bm) -- (b2);
+    \node[ponto] at (bm) {};
+    \draw (bm) -- ++(-0.9,0) node[anchor=east, font=\tiny] {entrada};
+
+    \draw (2.2,2.2) -- (3.0,2.2) to[R, l={$10\ \Omega$}] (4.4,2.2);
+    \node[nigfete, anchor=G] (M1) at (4.7,2.2) {};
+    \draw (M1.D) -- ++(0,0.8);
+    \draw (M1.S) -- ++(0,-0.8) node[ground]{};
+
+    \node[anchor=north, align=left, font=\tiny, text width=5.6cm] at (2.2,-1.4)
+         {BC337 / BC327, \textbf{seguidores de emissor}: não há caminho de curto entre eles.
+          \\[2pt] $I_{\text{pico}} \approx 800$ mA
+          \\[2pt] Preço: perde-se um $V_{BE}$ — a porta chega a $11{,}3$ V, não a $12$ V.};
+  \end{scope}
+
+  % ============ driver integrado ============
+  \begin{scope}[shift={(8.6,0)}]
+    \node[anchor=south, font=\small\bfseries] at (2.4,5.5) {driver dedicado};
+
+    \draw[thick] (1.2,1.6) rectangle (3.1,3.3);
+    \node[font=\scriptsize] at (2.15,2.45) {TC4420};
+
+    % Vcc e desacoplamento a esquerda
+    \draw (2.15,3.3) -- (2.15,4.4) node[vcc]{$12$ V};
+    \draw (2.15,3.9) -- (0.4,3.9);
+    \node[ponto] at (2.15,3.9) {};
+    \draw (0.4,3.9) to[C, l_={$100$ n}] (0.4,1.6);
+    \draw (0.4,1.6) -- (0.4,1.0) node[ground]{};
+
+    % entrada por baixo, terra por baixo
+    \draw (1.7,1.6) -- (1.7,0.6) node[anchor=north, font=\tiny] {entrada};
+    \draw (2.7,1.6) -- (2.7,1.0) node[ground]{};
+
+    \draw (3.1,2.45) -- (3.7,2.45) to[R, l={$10\ \Omega$}] (5.0,2.45);
+    \node[nigfete, anchor=G] (M2) at (5.3,2.45) {};
+    \draw (M2.D) -- ++(0,0.8);
+    \draw (M2.S) -- ++(0,-0.8) node[ground]{};
+
+    \node[anchor=north, align=left, font=\tiny, text width=5.6cm] at (2.2,-1.4)
+         {$I_{\text{pico}} = 6$ A, $R_{\text{saída}} \approx 3\ \Omega$, entrada de nível
+          lógico.
+          \\[2pt] O capacitor de $100$ nF fica a \textbf{milímetros} do pino: é dele que sai o
+          pico de corrente, não da fonte.};
+  \end{scope}
+
+  % ============ tabela ============
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt] at (7.0,-3.6)
+       {\begin{tabular}{@{}llp{6.6cm}@{}}
+          \textbf{opção} & \textbf{$I_{\text{pico}}$} & \textbf{quando serve} \\ \hline
+          pino do microcontrolador & $20$ mA & MOSFET pequeno (2N7000), abaixo de 1 kHz \\
+          portas lógicas em paralelo (74HC04) & $\sim$100 mA & sinal, frequência média \\
+          totem-pole discreto & $800$ mA & potência moderada, e é barato \\
+          driver dedicado (TC4420, UCC27511) & $2$ a $6$ A & \textbf{o caso normal} \\
+          driver de meia ponte (IR2104, IR2110) & $0{,}3$ a $2$ A & quando há lado alto \\
+        \end{tabular}};
+
+\end{tikzpicture}
+```
+
+Os dois circuitos que resolvem 95 % dos casos, e a tabela de quando cada opção serve.
+:::
+
+Duas observações sobre o totem-pole discreto, que é o que se monta na protoboard:
+
+**Os transistores são seguidores de emissor, não chaves.** Por isso não existe curto entre
+eles quando os dois recebem tensão intermediária: cada um só conduz quando a base está a mais
+de $V_{BE}$ do próprio emissor, e as duas condições são mutuamente exclusivas. Se alguém
+montar o arranjo com os coletores unidos — emissor comum —, aí há curto, e aí precisa de tempo
+morto.
+
+**Ele perde um $V_{BE}$.** A porta chega a $V_{CC} - 0{,}7$ V na subida e a $+0{,}7$ V na
+descida. Com 12 V de alimentação isso é irrelevante; com 5 V acionando um MOSFET de nível
+lógico, os 4,3 V resultantes já mordem a margem, e os 0,7 V de repouso comem margem de
+$V_{th}$. Prefira alimentar o totem-pole com 12 V, ou use um driver integrado.
+
+## O lado alto e o bootstrap {#sec-062-bootstrap}
+
+O @sec-cap-061 enunciou o problema: para ligar um MOSFET de canal $n$ no lado alto, a porta
+precisa ficar cerca de 10 V **acima do barramento**, porque a fonte dele sobe junto com a
+carga.
+
+::: {#fig-062-bootstrap}
+
+```{.tikz}
+%%| filename: 062-bootstrap
+%%| alt: Diagrama do circuito de bootstrap para acionar um MOSFET de lado alto, mostrado em duas fases. O circuito comum é uma meia ponte com dois MOSFETs de canal N entre o barramento de doze volts e o terra, um driver integrado de meia ponte, um diodo de bootstrap ligado do positivo de doze volts de controle ao pino de alimentação flutuante do driver, e um capacitor de bootstrap de um microfarad ligado entre esse pino flutuante e o ponto médio da meia ponte. Na primeira fase, com o MOSFET de baixo ligado, o ponto médio está no terra e uma seta verde mostra a corrente fluindo da fonte de doze volts pelo diodo para dentro do capacitor de bootstrap, carregando-o até quase doze volts; uma anotação registra que essa é a fase de recarga e que ela exige que o MOSFET de baixo conduza. Na segunda fase, o MOSFET de baixo desliga e o de cima liga: o ponto médio sobe para doze volts, o capacitor de bootstrap, que mantém seus doze volts de carga, tem agora seu terminal superior em vinte e quatro volts, e o diodo fica reversamente polarizado; uma seta vermelha mostra que a alimentação do driver do lado alto vem agora do capacitor, e uma anotação registra que a porta do MOSFET superior recebe vinte e quatro volts em relação ao terra, ou seja doze volts em relação à própria fonte, que é o necessário para ligá-lo. Uma caixa abaixo lista as três armadilhas do bootstrap: não funciona com ciclo de trabalho de cem por cento, porque o capacitor nunca recarrega; exige um pulso inicial no lado baixo antes do primeiro acionamento do lado alto, senão o capacitor parte descarregado; e o diodo precisa ser rápido e suportar a tensão plena do barramento, sendo o 1N4007 inadequado por ser lento.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \def\ponte#1#2#3#4#5#6{%
+    \begin{scope}[shift={(#1,0)}]
+      \node[anchor=south, font=\small\bfseries, align=center, text width=6.4cm] at (3.2,6.5) {#2};
+
+      % meia ponte
+      \draw (5.4,5.2) node[vcc]{$12$ V} -- (5.4,4.8);
+      \node[nigfete, anchor=D] (H) at (5.4,4.8) {};
+      \draw (H.S) -- (5.4,2.8) coordinate(mid);
+      \node[ponto] at (mid) {};
+      \node[nigfete, anchor=D] (L) at (5.4,2.8) {};
+      \draw (L.S) -- (5.4,1.0) node[ground]{};
+
+      % driver
+      \draw[thick] (1.2,1.4) rectangle (3.0,4.0);
+      \node[font=\tiny, align=center] at (2.1,2.7) {driver de\\meia ponte};
+      \draw (3.0,3.6) -- (4.4,3.6) -- (4.4,4.2) -- (H.G);
+      \draw (3.0,2.0) -- (4.4,2.0) -- (4.4,2.2) -- (L.G);
+      \draw (3.0,2.8) -- (mid);
+      \node[anchor=south, font=\tiny] at (3.6,2.85) {$V_S$};
+      \draw (1.2,2.6) -- (0.3,2.6) node[anchor=east, font=\tiny] {PWM};
+      \draw (1.2,1.8) -- (0.3,1.8) node[anchor=east, font=\tiny] {GND};
+
+      % VB e diodo de bootstrap
+      \draw (2.1,4.0) -- (2.1,4.8) coordinate(vb);
+      \node[anchor=east, font=\tiny] at (2.05,4.45) {$V_B$};
+      \draw (vb) -- (0.7,4.8) to[D*, l={$D_{\text{boot}}$}, invert] (0.7,3.5);
+      \draw (0.7,3.5) -- (0.7,3.2) node[anchor=north, font=\tiny] {$+12$ V ctrl.};
+
+      % C_boot pela direita, acima do barramento
+      \draw (vb) -- (2.1,6.0) -- (7.0,6.0);
+      \node[ponto] at (vb) {};
+      \draw (7.0,6.0) to[C, l={$C_{\text{boot}}$}] (7.0,2.8);
+      \draw (7.0,2.8) -- (mid);
+      \node[ponto] at (6.2,2.8) {};
+      \draw (6.2,2.8) -- (6.2,1.9) node[anchor=north, font=\tiny] {carga};
+
+      % seta e anotacao
+      \draw[-{Latex[length=2.6mm]}, #4, very thick] #3;
+      \node[anchor=north, align=left, font=\tiny, text width=6.8cm] at (3.4,0.2) {#5};
+      \node[#6] at (0,0) {};
+    \end{scope}}
+
+  \ponte{0}{fase 1: o de baixo conduz}
+        {(0.35,3.9) -- (0.35,4.6)}{manualgreen}
+        {$V_{mid}=0$. O diodo conduz e $C_{\text{boot}}$ carrega até quase $12$ V.
+         \\[3pt] \textbf{É a fase de recarga}, e ela exige que o lado baixo conduza.}{black}
+
+  \ponte{9.4}{fase 2: o de cima conduz}
+        {(6.65,4.4) -- (6.65,5.6)}{manualred}
+        {$V_{mid}=12$ V, então o topo de $C_{\text{boot}}$ está em $24$ V e o diodo fica
+         \emph{reverso}. O driver do lado alto se alimenta do capacitor.
+         \\[3pt] A porta recebe $24$ V contra o terra — \textbf{$12$ V contra a própria
+         fonte}.}{black}
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.0cm] at (8.2,-1.9)
+       {\textbf{As três armadilhas do bootstrap}
+        \begin{enumerate}\itemsep2pt
+          \item \textbf{Não existe ciclo de trabalho de 100 \%.} Se o lado baixo nunca conduz,
+                $C_{\text{boot}}$ nunca recarrega e o lado alto desliga sozinho. O limite
+                prático fica em 95 a 99 \%, e há um tempo máximo de condução contínua.
+          \item \textbf{Precisa de um pulso inicial no lado baixo.} Ao energizar,
+                $C_{\text{boot}}$ está descarregado. Todo firmware de meia ponte começa
+                pulsando o lado baixo algumas vezes antes do primeiro comando ao lado alto.
+          \item \textbf{O diodo tem de ser rápido e aguentar o barramento inteiro.} Um 1N4007
+                é lento demais (microssegundos de recuperação) e descarrega
+                $C_{\text{boot}}$ de volta na fase 2. Use UF4007, ES1J ou similar; em 12 V,
+                um 1N4148 serve.
+        \end{enumerate}};
+
+\end{tikzpicture}
+```
+
+O bootstrap em duas fases. A ideia é velha e elegante: o capacitor guarda uma tensão de 12 V e
+"cavalga" no ponto médio, ficando sempre 12 V acima dele.
+:::
+
+**Dimensionar $C_{\text{boot}}$.** A carga que o capacitor precisa fornecer em cada ciclo é a
+da porta mais a corrente de repouso do lado flutuante do driver durante o tempo ligado:
+
+$$ Q_{\text{total}} = Q_G + I_{qbs}\,t_{\text{on}} $$
+
+e a queda de tensão resultante é $\Delta V = Q_{\text{total}}/C$. Com $Q_G = 30$ nC,
+$I_{qbs} = 200$ µA e $t_{\text{on}} = 5$ µs:
+
+$$ Q_{\text{total}} = 30 + 0{,}2 \times 5 = 31 \text{ nC} $$
+
+Para uma queda tolerada de 0,3 V, $C \ge 31\text{ nC}/0{,}3 = 103$ nF. **Com a margem de dez
+vezes que se recomenda** (para cobrir corrente reversa do diodo, fugas e ciclos longos),
+1 µF cerâmico — que é justamente o valor que aparece em toda nota de aplicação.
+
+::: {.callout-note}
+## As alternativas ao bootstrap
+
+- **MOSFET de canal $p$** no lado alto. Aciona-se puxando a porta *para baixo*, o que um
+  transistor de sinal resolve. Não tem nenhuma das três armadilhas, funciona em 100 % de ciclo
+  — e paga com $R_{DS(\text{on})}$ duas a três vezes pior para a mesma área e o mesmo preço.
+  Para correntes de poucos ampères, é frequentemente a escolha certa.
+- **Fonte isolada** dedicada ao lado alto (um pequeno conversor CC-CC isolado, ou um
+  enrolamento auxiliar). Funciona sempre, inclusive em 100 %, e custa mais.
+- **Bomba de carga**: gera a tensão acima do barramento com um oscilador. Funciona em 100 %,
+  mas entrega pouca corrente — só serve para chaveamento lento ou chave estática.
+:::
+
+## Tempo morto {#sec-062-tempomorto}
+
+Numa meia ponte, os dois MOSFETs **nunca** podem conduzir juntos. Como desligar leva tempo, o
+comando não pode ligar um no mesmo instante em que desliga o outro: é preciso um intervalo em
+que os dois estão desligados.
+
+::: {#fig-062-tempomorto}
+
+```{.tikz}
+%%| filename: 062-tempomorto
+%%| alt: Diagrama de temporização com quatro trilhas alinhadas no tempo, comparando o acionamento de uma meia ponte sem e com tempo morto. As duas primeiras trilhas mostram o caso errado: o comando do MOSFET de cima e o comando do MOSFET de baixo são exatamente complementares, comutando no mesmo instante. Uma faixa vermelha estreita marca o instante da comutação e a anotação registra que, como desligar demora mais que ligar, os dois conduzem simultaneamente por algumas centenas de nanossegundos, produzindo um curto de braço. As duas trilhas seguintes mostram o caso correto: o comando do MOSFET de cima desliga, decorre um intervalo em que ambos os comandos estão em nível baixo, marcado em verde e rotulado como tempo morto, e só então o comando do MOSFET de baixo liga; o mesmo intervalo aparece na transição oposta. Uma quinta trilha mostra a tensão do ponto médio durante o tempo morto, indicando que ela é fixada pelo diodo de corpo do MOSFET que vai conduzir em seguida, uma queda de diodo abaixo do terra ou acima do barramento conforme o sentido da corrente na carga. Uma caixa abaixo registra que o tempo morto típico para MOSFETs discretos fica entre cem e quinhentos nanossegundos, que muitos drivers integrados já o embutem, que tempo morto excessivo aumenta a perda por condução do diodo de corpo e distorce a forma de onda de saída, e que portanto ele deve ser o menor valor que ainda seja seguro.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \def\U{0.62}
+
+  % ======== errado ========
+  \begin{scope}
+    \node[anchor=west, font=\small\bfseries, manualred] at (0,3.6) {sem tempo morto — errado};
+
+    \fill[manualred!30] (4.7*\U,0.3) rectangle (5.3*\U,2.6);
+    \fill[manualred!30] (10.7*\U,0.3) rectangle (11.3*\U,2.6);
+
+    \node[anchor=east, font=\tiny] at (-0.15,2.1) {cmd.\ cima};
+    \draw[curva, thick] (0,2.4) -- (5*\U,2.4) -- (5*\U,1.7) -- (11*\U,1.7)
+                        -- (11*\U,2.4) -- (14*\U,2.4);
+    \node[anchor=east, font=\tiny] at (-0.15,0.9) {cmd.\ baixo};
+    \draw[curva, thick] (0,0.5) -- (5*\U,0.5) -- (5*\U,1.2) -- (11*\U,1.2)
+                        -- (11*\U,0.5) -- (14*\U,0.5);
+
+    \node[manualred, anchor=west, font=\tiny, align=left] at (14.4*\U,1.5)
+         {desligar demora mais que ligar:\\os dois conduzem por centenas\\de ns —
+          \textbf{curto de braço}};
+  \end{scope}
+
+  % ======== certo ========
+  \begin{scope}[shift={(0,-4.4)}]
+    \node[anchor=west, font=\small\bfseries, manualgreen!60!black] at (0,3.6)
+         {com tempo morto — correto};
+
+    \fill[manualgreen!30] (4.5*\U,-1.5) rectangle (5.5*\U,2.6);
+    \fill[manualgreen!30] (10*\U,-1.5) rectangle (11*\U,2.6);
+
+    \node[anchor=east, font=\tiny] at (-0.15,2.1) {cmd.\ cima};
+    \draw[curva, thick] (0,2.4) -- (4.5*\U,2.4) -- (4.5*\U,1.7) -- (11*\U,1.7)
+                        -- (11*\U,2.4) -- (14*\U,2.4);
+    \node[anchor=east, font=\tiny] at (-0.15,0.9) {cmd.\ baixo};
+    \draw[curva, thick] (0,0.5) -- (5.5*\U,0.5) -- (5.5*\U,1.2) -- (10*\U,1.2)
+                        -- (10*\U,0.5) -- (14*\U,0.5);
+
+    \node[manualgreen!50!black, anchor=south, font=\tiny, align=center] at (5*\U,2.65)
+         {tempo\\morto};
+    \node[manualgreen!50!black, anchor=south, font=\tiny, align=center] at (10.5*\U,2.65)
+         {tempo\\morto};
+
+    % V_mid
+    \node[anchor=east, font=\tiny] at (-0.15,-0.6) {$V_{mid}$};
+    \draw[destaque, thick] (0,-0.2) -- (4.5*\U,-0.2) -- (4.7*\U,-1.2) -- (5.5*\U,-1.2)
+                           -- (5.5*\U,-1.05) -- (10*\U,-1.05) -- (10.2*\U,-1.2)
+                           -- (11*\U,-1.2) -- (11*\U,-0.2) -- (14*\U,-0.2);
+    \node[manualred, anchor=west, font=\tiny, align=left] at (14.4*\U,-0.9)
+         {durante o tempo morto\\quem conduz é o\\\textbf{diodo de corpo}};
+  \end{scope}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=14.0cm] at (9*\U,-7.6)
+       {\textbf{O tempo morto é um compromisso, não uma folga gratuita.} Curto demais, há
+        curto de braço. Longo demais, o diodo de corpo conduz por mais tempo (com queda de
+        0,7 a 1,0 V, contra os poucos milivolts do canal) e a forma de onda de saída fica
+        distorcida. Para MOSFET discreto, 100 a 500 ns costuma bastar; drivers como o IR2104
+        já trazem 520 ns fixos, e os programáveis permitem ajustar. \textbf{Meça o tempo de
+        desligamento real} e use o dobro dele.};
+
+\end{tikzpicture}
+```
+
+Sem tempo morto e com tempo morto. Durante o intervalo, a corrente da carga não some — ela
+passa pelo diodo de corpo, e é por isso que o diodo do @sec-cap-059 é indispensável aqui.
+:::
+
+## O laço de porta e o layout {#sec-062-layout}
+
+Três regras que valem mais que qualquer componente caro:
+
+**O laço de porta tem de ser curto.** A corrente de porta sai do driver, atravessa $R_G$, entra
+na porta, volta pela fonte e retorna ao terra do driver. Esse laço é uma espira, e uma espira
+tem indutância. Com $C_{iss}$ ela forma um circuito ressonante que toca — e a oscilação pode
+ultrapassar o $V_{GS(\text{máx})}$ de ±20 V e furar o óxido.
+
+**$R_G$ fica junto do MOSFET**, não junto do driver. Assim ele amortece a ressonância do laço
+inteiro, e não só de um pedaço.
+
+**Ligação Kelvin da fonte.** O retorno do driver deve ir ao pino de fonte do MOSFET, não ao
+plano de terra em outro ponto. Se a corrente de potência (dezenas de ampères) e a corrente de
+porta compartilharem um trecho de trilha, o $L\,di/dt$ dessa trilha aparece **em série com a
+porta** e subtrai da tensão de acionamento justo no momento da comutação — um mecanismo de
+realimentação negativa involuntária que desacelera a transição. Encapsulamentos modernos de
+potência trazem um quarto pino só para isso, chamado *source sense* ou *Kelvin source*.
+
+## 🧪 Laboratório {#sec-062-lab}
+
+O objetivo é medir a diferença entre acionamentos e **ver o acionamento espúrio acontecer**.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 2 | MOSFET **IRLZ44N** | com dissipador |
+| 1 | **TC4420** ou **TC4429** (DIP-8) | ou MIC4420; se não houver, só o totem-pole |
+| 1 | BC337 e 1 BC327 | totem-pole discreto |
+| 1 | Diodo 1N4148 | resistor assimétrico |
+| — | Resistores: 4,7 Ω, 10 Ω, 22 Ω, 100 Ω, 220 Ω, 10 kΩ | |
+| 1 | Capacitor 100 nF cerâmico + 1 capacitor 10 µF | desacoplamento do driver |
+| 1 | Carga: lâmpada 12 V / 21 W ou resistores de potência | ≈ 2 A |
+| 1 | Fonte 12 V / 3 A | |
+| 1 | Gerador de funções ou microcontrolador com PWM | 1 kHz a 100 kHz |
+| 1 | Osciloscópio de 2 canais | com pontas em 10× |
+| 1 | Termômetro infravermelho | opcional, mas útil |
+
+::: {.callout-warning}
+## A meia ponte da Parte 4 é opcional e exige cuidado
+
+A Parte 4 monta uma meia ponte para provocar o acionamento espúrio. Se for fazê-la:
+
+- Ponha um **fusível de 2 A** em série com o barramento. Um curto de braço é um curto de
+  verdade.
+- Comece com o barramento em **5 V**, não em 12 V.
+- A ponta de prova **não pode** ser ligada à porta do MOSFET de cima com o jacaré no terra —
+  isso curto-circuita a fonte dele. Meça só o de baixo.
+- Se não estiver confortável com isso, faça só as Partes 1 a 3, que já cobrem o essencial.
+:::
+
+### Parte 1 — Medir a resistência de saída do seu acionamento
+
+1. Monte a chave de lado baixo do @sec-cap-061, acionada direto pelo gerador de funções, com
+   $R_G = 10\ \Omega$.
+2. Meça o tempo de patamar.
+3. Calcule a corrente de porta real: $I = Q_{GD}/t_{pl}$.
+4. Calcule a resistência total: $R_{\text{total}} = (V_{DR}-V_{pl})/I$.
+5. Subtraia os 10 Ω. **O que sobra é a resistência de saída do gerador de funções** —
+   tipicamente 50 Ω, e é por isso que ele é um driver ruim.
+
+Essa medida indireta é o método padrão de caracterizar um acionamento, e vale para qualquer
+fonte de sinal.
+
+### Parte 2 — O resistor assimétrico
+
+1. Monte a rede da @fig-062-assimetrico: 22 Ω em paralelo com (1N4148 + 4,7 Ω), cátodo do
+   diodo voltado para o driver.
+2. Meça $t_{pl}$ de subida e de descida separadamente.
+3. Inverta o diodo e repita.
+
+| Configuração | $t_{pl}$ ligar | $t_{pl}$ desligar |
+|---|---|---|
+| 22 Ω sozinho | | |
+| 22 Ω ∥ (diodo + 4,7 Ω), cátodo ao driver | | |
+| o mesmo, diodo invertido | | |
+
+: Os três casos. A linha do meio é a que se quer. {#tbl-062-lab1}
+
+A terceira linha demonstra o erro de montagem: descida lenta e subida rápida, o pior dos dois
+mundos. Vale montar de propósito uma vez, para reconhecer o sintoma depois.
+
+### Parte 3 — O driver de verdade
+
+1. Monte o TC4420 (ou o totem-pole discreto) alimentado com 12 V, desacoplado com 100 nF
+   **encostado no pino** mais 10 µF a alguns centímetros.
+2. Refaça as medidas da Parte 1 com $R_G$ = 4,7 Ω, 10 Ω e 22 Ω.
+3. A 50 kHz, meça a temperatura de regime do MOSFET em cada caso, e também com acionamento
+   direto pelo gerador.
+
+Você deve encontrar a curva azul da @fig-062-janela: a temperatura cai conforme $R_G$ diminui,
+até parar de cair (aí o limite é a resistência de saída do driver).
+
+4. **Tire o capacitor de 100 nF** e refaça a medida de $t_{pl}$ com $R_G = 4{,}7\ \Omega$.
+
+O tempo piora, e às vezes aparece oscilação. O pico de 1 A que a porta pede não vem da fonte:
+vem do capacitor local. Sem ele, a indutância dos fios de alimentação limita a corrente. É a
+lição do desacoplamento, e ela é visível aqui de forma inequívoca.
+
+### Parte 4 — Ver o acionamento espúrio (opcional, com fusível)
+
+1. Monte a meia ponte da @fig-062-dvdt com barramento de 5 V e carga de uns 500 mA.
+   Use um driver de meia ponte com bootstrap, ou acione o lado alto com um MOSFET de canal $p$
+   para simplificar.
+2. Ponha $R_G$ do lado **baixo** em 220 Ω. Comando: lado baixo permanentemente desligado, lado
+   alto pulsando.
+3. Osciloscópio na porta do MOSFET de baixo.
+
+Você deve ver o pulso espúrio da @fig-062-dvdt toda vez que o lado alto liga. Meça a amplitude
+e compare com $R_G C_{gd}\,dv/dt$, medindo o $dv/dt$ no canal 2.
+
+4. Troque $R_G$ do lado baixo para 10 Ω e repita. O pulso deve encolher na mesma proporção.
+5. Acrescente o diodo assimétrico e observe.
+
+### Parte 5 — O bootstrap, se houver um IR2104
+
+1. Monte a meia ponte com IR2104, $C_{\text{boot}} = 1$ µF e $D_{\text{boot}} = $ 1N4148.
+2. Meça a tensão entre os pinos $V_B$ e $V_S$ com o osciloscópio (canal diferencial, ou os dois
+   canais em modo A−B). Deve ficar perto de 12 V, caindo um pouco durante o tempo ligado.
+3. Aumente o ciclo de trabalho progressivamente para 99 %.
+
+Em algum ponto o lado alto começa a falhar: a tensão do capacitor cai abaixo do limite de
+subtensão do driver e ele desliga sozinho. **Anote em que ciclo de trabalho isso acontece** —
+é a primeira armadilha da @fig-062-bootstrap, medida.
+
+**Variante simulada (plano B).** O LTspice tem modelos dos drivers da família e faz tudo isto
+sem risco de fumaça. Três simulações valem especialmente:
+`.tran` de uma meia ponte com `Rg` variável, medindo `V(gate_low)` durante a comutação do
+lado alto — o pulso espúrio aparece limpo e sem a capacitância da ponta de prova para
+mascará-lo. Uma indutância de 20 nH em série com o dreno reproduz a sobretensão da borda
+esquerda da @fig-062-janela. E `.step param Rg list 4.7 10 22 100 220` com
+`.meas TRAN Esw INTEG V(d)*Id(M1)` produz a curva de perda contra $R_G$ ponto a ponto.
+
+## 🔥 Onde Queima {#sec-062-queima}
+
+**Resistor de porta escolhido "por segurança".** Um valor grande não protege nada: aumenta a
+perda de comutação e abre a porta para o acionamento espúrio. A escolha é uma conta, e ela tem
+duas bordas.
+
+**Resistor simétrico quando o desligamento é o problema.** Desligar tem menos tensão
+disponível e é o caso crítico. Um diodo de 20 centavos resolve.
+
+**Esquecer o desacoplamento do driver.** O pico de corrente de porta é de ampères e dura
+nanossegundos: ele **tem** de sair de um cerâmico a milímetros do pino. Sem ele, o driver não
+entrega o que promete e a placa irradia.
+
+**Laço de porta longo.** Fios de 20 cm entre driver e porta formam um ressonante com $C_{iss}$
+capaz de estourar o $V_{GS(\text{máx})}$. Se precisar afastar o driver, use par trançado e
+mantenha $R_G$ junto ao MOSFET.
+
+**Terra de porta compartilhado com o terra de potência.** O $L\,di/dt$ da trilha de potência
+entra em série com a porta e desacelera a comutação — realimentação negativa que ninguém pediu.
+Retorno de porta direto ao pino de fonte.
+
+**Bootstrap com ciclo de trabalho de 100 %.** O capacitor nunca recarrega e o lado alto
+desliga sozinho, geralmente depois de alguns milissegundos e sempre no pior momento. Se o
+projeto precisa de 100 %, o bootstrap está errado — vá de canal $p$ ou fonte isolada.
+
+**Bootstrap sem pulso inicial no lado baixo.** Ao energizar, $C_{\text{boot}}$ está vazio. O
+primeiro comando ao lado alto não liga nada, ou pior, liga parcialmente e o MOSFET passa pela
+região linear com o barramento inteiro sobre ele.
+
+**Diodo de bootstrap lento.** 1N4007 tem microssegundos de recuperação reversa e descarrega
+o capacitor de volta durante a fase alta. Ultrarrápido, sempre.
+
+**Tempo morto insuficiente, ou nenhum.** Curto de braço destrói os dois MOSFETs de uma vez, e
+o diagnóstico depois é impossível porque não sobra nada para medir. Meça o tempo de
+desligamento e use o dobro.
+
+**Tempo morto exagerado.** O diodo de corpo conduz com 0,7 a 1,0 V, contra os milivolts do
+canal. Em 10 A e 500 ns a 100 kHz isso são 0,5 W jogados fora, mais distorção na saída.
+
+**Totem-pole montado em emissor comum em vez de seguidor de emissor.** Aí sim há caminho de
+curto entre os dois transistores, e aí o totem-pole precisa de tempo morto próprio. Coletores
+nas alimentações, emissores unidos na saída.
+
+**Medir a porta do MOSFET de lado alto com ponta de prova comum.** O jacaré da ponta vai ao
+terra; a fonte do MOSFET de lado alto **não** está no terra. Isso curto-circuita o meio da
+ponte. Ponta diferencial, ou modo A−B com duas pontas, ou não meça.
+
+## O que fica deste capítulo {#sec-062-resumo}
+
+**Existe uma janela de tempo de transição, e ela tem duas bordas.**
+
+Borda lenta: perda de comutação ($\propto R_G$) e acionamento espúrio por $dv/dt$
+($\propto R_G$).
+
+Borda rápida: sobretensão por $L\,di/dt$ ($\propto 1/R_G$) e interferência eletromagnética.
+
+**Dimensionar:**
+
+$$ I_{\text{porta}} = \frac{Q_{GD}}{t_{pl}}, \qquad
+   R_G = \frac{V_{DR}-V_{pl}}{I_{\text{porta}}} - R_{\text{saída do driver}} $$
+
+Para MOSFET discreto com driver dedicado, o resultado quase sempre cai entre **4,7 e 22 Ω**.
+
+**Ligar e desligar não são simétricos.** Desligar dispõe só de $V_{pl}$ e leva o dobro do
+tempo com o mesmo resistor. O conserto é um diodo em paralelo com $R_G$, cátodo ao driver.
+
+**O acionamento espúrio** é o modo de falha traiçoeiro:
+
+$$ V_{GS(\text{esp})} = R_G\,C_{gd}\,\frac{dv}{dt} $$
+
+Ele some quando você mede (a ponta de prova ajuda), depende da carga e piora com a
+temperatura. Remédios: $R_G$ de desligamento pequeno, tensão de porta negativa, grampo de
+Miller.
+
+**Os circuitos**, em ordem: pino direto (só para MOSFET pequeno em baixa frequência), portas
+lógicas em paralelo, totem-pole discreto de seguidores de emissor (800 mA, barato), driver
+dedicado (2 a 6 A — o caso normal), driver de meia ponte com bootstrap.
+
+**O bootstrap** empilha uma alimentação flutuante sobre o ponto médio, e tem três armadilhas:
+nada de 100 % de ciclo, precisa de pulso inicial no lado baixo, e o diodo tem de ser
+ultrarrápido. $C_{\text{boot}} \approx 1$ µF resolve o caso comum.
+
+**Tempo morto** entre 100 e 500 ns para MOSFET discreto: curto demais é curto de braço, longo
+demais é condução do diodo de corpo.
+
+**O layout é parte do circuito:** laço de porta curto, $R_G$ junto ao MOSFET, retorno de porta
+no pino de fonte, desacoplamento cerâmico encostado no driver.
+
+## Para o próximo capítulo {#sec-062-fecho}
+
+Os capítulos 061 e 062 trataram o MOSFET como **chave**: ligado ou desligado, e o tempo entre
+os dois estados sendo um mal a minimizar. É o modo de operação da eletrônica de potência e da
+eletrônica digital, e é onde o MOSFET brilha.
+
+O @sec-cap-063 muda o ângulo. Ele volta para a operação **linear** e faz a pergunta que a
+Fase 3 vinha adiando: como se entrega potência de verdade a uma carga — um alto-falante, um
+motor, uma antena — sem torrar metade dela no transistor?
+
+A resposta organiza os amplificadores em **classes**, e elas formam uma escala clara de
+eficiência contra fidelidade. A **classe A** é o emissor comum do @sec-cap-056 levado à saída:
+lindo, linear e com 25 % de rendimento no melhor caso. A **classe B** desliga metade do tempo
+e chega a 78,5 %, ao preço de uma distorção característica no cruzamento do zero. A **classe
+AB** é o meio-termo que quase todo amplificador de áudio usa. A **classe C** conduz uma fração
+pequena do ciclo e só serve para sinal de frequência única, em rádio.
+
+E a **classe D** fecha o círculo do volume: ela não é um amplificador linear coisa nenhuma —
+é uma **chave** comutando a dezenas de quilohertz, com um filtro passa-baixas na saída
+reconstruindo o sinal. Tudo o que os capítulos 061 e 062 estabeleceram sobre perda de
+condução, perda de comutação, driver de porta, tempo morto e diodo de corpo se aplica letra
+por letra a um amplificador classe D — e é por isso que ela rende mais de 90 % e cabe num
+chip do tamanho de uma unha.
