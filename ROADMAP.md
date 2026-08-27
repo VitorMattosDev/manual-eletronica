@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 76/104 |
-| **Contíguos até** | **076** — sem nenhum buraco no meio do livro |
+| **Progresso** | 77/104 |
+| **Contíguos até** | **077** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 077** | Aterramento, malhas de terra, desacoplamento e proteção |
+| **Próximo capítulo: 078** | Sensores: resistivos, capacitivos e ativos (abre o Volume 13 e a Fase 4) |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -83,7 +83,7 @@ o 555 por dentro (dois comparadores, báscula RS, transistor de descarga) com as
 monoestável, e o oscilador de Wien com a exigência de ganho **exatamente 3** e os três
 mecanismos de controle automático de amplitude (071).
 
-**Volume 12 em andamento** (capítulos 072 a 077, fontes e gestão de energia): acoplamento
+**Volume 12 completo** (capítulos 072 a 077, fontes e gestão de energia): acoplamento
 magnético, indutância mútua $M$ e coeficiente $k = M/\sqrt{L_1L_2}$, com a dispersão
 $L_d = (1-k)L$ em série e não transformada; as três relações do transformador ideal e a
 reflexão de impedância $Z_{in} = n^2 Z_L$; o modelo real de sete elementos com endereço físico
@@ -132,10 +132,27 @@ platô plano demais); o perfil **CC-CV** com pré-carga, os 4,2 V exigindo 1 % d
 carregar abaixo de 0 °C depositando lítio metálico com a tensão certa, e os critérios alternativos
 das outras químicas ($-\Delta V$ em NiMH, flutuação em chumbo-ácido); a proteção de célula única
 com **dois** MOSFETs por causa do diodo de corpo; balanceamento em série e o cuidado com paralelo;
-e o orçamento de energia em seis passos, com autodescarga como a maior parcela isolada (076).
+e o orçamento de energia em seis passos, com autodescarga como a maior parcela isolada (076); e o
+fechamento, com **o terra que não é um nó** (100 nH de trilha e $L\,di/dt$ dando 1 V entre dois
+pontos do mesmo terra), a corrente de retorno escolhendo o caminho de **menor indutância** acima
+de ~100 kHz — logo abaixo da trilha de ida, porque minimiza a **área do laço** —, as três
+topologias de retorno (cadeia errada, estrela abaixo de ~1 MHz, plano contínuo acima) e o
+abandono da prática de cortar o plano entre analógico e digital; a malha de terra e as três
+soluções (isolar, diferencial, blindagem num extremo só); **desacoplamento como impedância contra
+frequência**, com todo capacitor real sendo um V (capacitivo abaixo da ressonância própria,
+indutivo acima), a indutância de encapsulamento e de trilha limitando tudo, e a
+**antirressonância** que condena a escada clássica de valores em favor de vários 100 nF iguais; e
+as quatro proteções de fronteira — PTC, MOSFET de canal P contra inversão (15 mV contra 500 mV),
+TVS/MOV em cascata, e diodo de retorno (077).
 
-O capítulo 071 já montara a ponte para o fim do volume: o desacoplamento, invocado seis vezes
-como regra de bancada ao longo do Volume 11, ganha explicação própria no capítulo 077.
+A ponte que o capítulo 071 montara está fechada: o desacoplamento, invocado dezenas de vezes como
+regra de bancada ao longo do manual, ganhou explicação própria no capítulo 077.
+
+O próximo bloco é o **Volume 13** (capítulos 078 a 082), que abre a **Fase 4** e muda o objeto:
+em vez de produzir energia, medir o mundo. A pergunta que organiza o volume é a do capítulo 078 —
+entre a grandeza física e o número que o programa lê, quantas transformações existem e onde cada
+uma introduz erro. Os blocos já estão prontos: amplificador de instrumentação (067), orçamento de
+ruído (069) e o terra da ponte de Wheatstone (077).
 
 Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -292,7 +309,7 @@ para conteúdo real e o verificador não as lista mais.
 - [x] 074 — Reguladores integrados: série, LDO e dissipação térmica — `capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.qmd`
 - [x] 075 — Fontes chaveadas: buck, boost e buck-boost — `capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.qmd`
 - [x] 076 — Baterias, células e circuitos de carga — `capitulos/076-baterias-celulas-e-circuitos-de-carga.qmd`
-- [ ] 077 — Aterramento, malhas de terra, desacoplamento e proteção — `capitulos/077-aterramento-malhas-de-terra-desacoplamento-e.qmd`
+- [x] 077 — Aterramento, malhas de terra, desacoplamento e proteção — `capitulos/077-aterramento-malhas-de-terra-desacoplamento-e.qmd`
 
 
 ### Volume 13 — Interface com o Mundo Físico

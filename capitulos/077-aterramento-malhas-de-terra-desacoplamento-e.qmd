@@ -1,3 +1,801 @@
 # Aterramento, malhas de terra, desacoplamento e proteção {#sec-cap-077}
 
-*(em elaboração)*
+Setenta e seis capítulos desenharam o retorno de corrente como um símbolo de terra e pararam
+aí. O símbolo dizia: *daqui para trás, não interessa*.
+
+Interessa muito, e este capítulo é sobre isso.
+
+O terra de um esquemático é uma **hipótese**: a de que todos os pontos marcados com aquele
+símbolo estão no mesmo potencial. Numa placa real eles não estão, porque o cobre tem
+resistência e — muito mais importante — **indutância**. Um trilho de 10 cm tem uns 100 nH, e
+100 nH conduzindo 100 mA que mudam em 10 ns produzem **1 volt** de diferença entre duas pontas
+do "mesmo" terra.
+
+Um volt entre dois pontos que o esquemático diz serem o mesmo nó. É essa a discrepância que
+produz a maior parte dos problemas que não se explicam pelo esquemático: o zumbido no áudio, o
+microcontrolador que reinicia quando o relé aciona, a leitura do sensor que muda quando o motor
+liga, a fonte chaveada que passa pelo teste na bancada e falha na certificação.
+
+O capítulo trata de três coisas, e as três são a mesma coisa vista de ângulos diferentes:
+
+- **Para onde a corrente volta**, e por que ela não escolhe o caminho mais curto.
+- **O desacoplamento**, que este manual invocou dezenas de vezes como regra de bancada e que
+  agora ganha o tratamento que merece: um problema de **impedância contra frequência**, não de
+  "colocar um capacitor".
+- **A proteção** do que entra e sai da placa, que é onde a energia de fora encontra o seu
+  circuito.
+
+## O terra não é um nó {#sec-077-terra}
+
+::: {#fig-077-retorno}
+
+```{.tikz}
+%%| filename: 077-retorno
+%%| alt: Figura em duas partes sobre o caminho da corrente de retorno num plano de terra. À esquerda, um desenho visto de cima de uma placa com um plano de terra contínuo: uma trilha de sinal vai de um circuito integrado emissor à esquerda até um receptor à direita, e abaixo dela, no plano de terra, estão desenhados dois caminhos possíveis para a corrente de retorno. Um caminho, em cinza tracejado, é a linha reta mais curta entre os dois pontos de terra, que seria o caminho de menor resistência; o outro caminho, em vermelho grosso, acompanha exatamente a trilha de sinal por baixo dela, e está marcado como o caminho realmente seguido em alta frequência, porque é o de menor indutância, já que ele minimiza a área do laço formado pela ida e pela volta. Uma anotação registra a regra: em corrente contínua e em baixa frequência a corrente volta pelo caminho de menor resistência, mas acima de aproximadamente cem quilohertz ela volta pelo caminho de menor indutância, que é o que fica logo abaixo da trilha de ida. À direita, o mesmo desenho com um corte no plano de terra atravessando o caminho abaixo da trilha: agora a corrente de retorno é obrigada a contornar o corte, o que aumenta enormemente a área do laço e portanto a indutância; setas mostram o desvio. Duas anotações registram as consequências: o laço maior aumenta a indutância e portanto a tensão de ruído gerada; e o laço maior é também uma antena melhor, tanto para emitir quanto para receber interferência. Abaixo, duas caixas. A primeira quantifica: uma trilha de dez centímetros tem cerca de cem nanohenries, e cem nanohenries com uma corrente de cem miliampères variando em dez nanossegundos produzem um volt de diferença entre dois pontos do mesmo terra, o que é maior que o ruído admissível na maioria dos circuitos analógicos e comparável à margem de ruído de um circuito digital. A segunda caixa lista as três consequências de projeto: nunca cortar um plano de terra sob uma trilha de sinal rápido; posicionar os componentes de modo que os laços de corrente fiquem pequenos, porque a área é o que importa; e considerar que qualquer fenda no plano é uma antena, não apenas um desvio.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= plano continuo =================
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=south west, font=\scriptsize] at (0,4.6) {\textbf{Plano contínuo}};
+
+    \fill[manualgray!14] (0,0.3) rectangle (7.0,4.3);
+    \node[anchor=north west, font=\tiny, manualgray] at (0.08,4.25) {plano de terra};
+
+    % CIs
+    \draw[fill=white, thick] (0.5,3.4) rectangle (1.6,4.15);
+    \node[font=\tiny] at (1.05,3.78) {emissor};
+    \draw[fill=white, thick] (5.4,3.4) rectangle (6.5,4.15);
+    \node[font=\tiny] at (5.95,3.78) {receptor};
+
+    % trilha de sinal
+    \draw[curva, line width=1.6pt] (1.6,3.78) -- (2.5,3.78) -- (2.5,3.15)
+                                   -- (4.5,3.15) -- (4.5,3.78) -- (5.4,3.78);
+    \node[anchor=south, font=\tiny, manualblue] at (3.5,3.20) {sinal (ida)};
+
+    % pinos de terra
+    \node[ponto] at (1.05,3.4) {};
+    \node[ponto] at (5.95,3.4) {};
+    \draw (1.05,3.4) -- (1.05,1.55);
+    \draw (5.95,3.4) -- (5.95,1.55);
+
+    % caminho de menor resistencia
+    \draw[manualgray, thick, dashed] (1.05,1.55) -- (5.95,1.55);
+    \node[anchor=north, font=\tiny, manualgray, align=center] at (3.5,1.48)
+         {menor \emph{resistência} --- o caminho\\que a intuição espera};
+
+    % caminho real em AF
+    \draw[destaque, line width=1.8pt]
+      (1.05,1.55) -- (1.05,3.62) -- (2.30,3.62) -- (2.30,2.95) -- (4.70,2.95)
+      -- (4.70,3.62) -- (5.95,3.62) -- (5.95,1.55);
+    \node[anchor=north, font=\tiny, manualred, align=center, text width=4.6cm] at (3.5,2.85)
+         {\textbf{retorno real em AF}: menor \emph{indutância}, porque minimiza a
+          \textbf{área do laço}};
+  \end{scope}
+
+  % ================= plano cortado =================
+  \begin{scope}[shift={(8.8,0)}]
+    \node[anchor=south west, font=\scriptsize, manualred] at (0,4.6)
+         {\textbf{Plano cortado} --- o mesmo circuito};
+
+    \fill[manualgray!14] (0,0.3) rectangle (7.0,4.3);
+    \fill[white] (3.35,1.15) rectangle (3.70,4.3);
+    \draw[manualred, thick] (3.35,1.15) rectangle (3.70,4.3);
+    \node[anchor=center, font=\tiny, manualred, rotate=90] at (3.52,2.3) {\textbf{corte}};
+
+    \draw[fill=white, thick] (0.5,3.4) rectangle (1.6,4.15);
+    \node[font=\tiny] at (1.05,3.78) {emissor};
+    \draw[fill=white, thick] (5.4,3.4) rectangle (6.5,4.15);
+    \node[font=\tiny] at (5.95,3.78) {receptor};
+
+    \draw[curva, line width=1.6pt] (1.6,3.78) -- (5.4,3.78);
+
+    \node[ponto] at (1.05,3.4) {};
+    \node[ponto] at (5.95,3.4) {};
+
+    % retorno desviado
+    \draw[destaque, line width=1.8pt]
+      (1.05,3.4) -- (1.05,0.75) -- (5.95,0.75) -- (5.95,3.4);
+    \draw[->,>=stealth, manualred, line width=1.8pt] (4.6,0.75) -- (3.0,0.75);
+
+    \draw[<->,>=stealth, manualred, thin] (1.75,0.85) -- (1.75,3.68);
+    \node[anchor=west, font=\tiny, manualred, align=left, text width=1.5cm] at (1.85,2.2)
+         {a \textbf{área} do laço explode};
+
+    \node[anchor=north, font=\tiny, manualred, align=center, text width=6.6cm] at (3.5,0.62)
+         {mais indutância $\Rightarrow$ mais ruído. E o laço maior é uma \textbf{antena melhor},
+          para emitir \emph{e} para captar};
+  \end{scope}
+
+  % ================= caixas =================
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (0,-1.3)
+       {\textbf{Um volt entre dois pontos do "mesmo" terra}
+        \[ v = L\,\frac{di}{dt} = 100\ \text{nH} \times
+             \frac{0{,}1\ \text{A}}{10\ \text{ns}} = \mathbf{1{,}0}\ \textbf{V} \]
+        Uma trilha de 10 cm tem $\approx 100$ nH. Um volt é \emph{muito} mais que o ruído
+        admissível em qualquer circuito analógico, e é da ordem da margem de ruído de um
+        circuito digital.};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (8.4,-1.3)
+       {\textbf{Três consequências de projeto}
+        \\[3pt]
+        \textbf{1.} \emph{Nunca} corte o plano de terra sob uma trilha rápida.
+        \\[2pt]
+        \textbf{2.} Posicione componentes para que os \textbf{laços} fiquem pequenos --- é a
+        \emph{área}, não o comprimento.
+        \\[2pt]
+        \textbf{3.} Toda fenda no plano é uma \textbf{antena}, não apenas um desvio.};
+
+\end{tikzpicture}
+```
+
+Onde a corrente de retorno realmente passa. Abaixo de uns 100 kHz ela procura o caminho de menor
+resistência; acima disso, o de menor **indutância** — que é logo abaixo da trilha de ida.
+:::
+
+Vale entender por que a corrente muda de caminho, porque a explicação é curta e resolve muita
+coisa.
+
+A corrente distribui-se entre os caminhos disponíveis na proporção inversa da impedância de
+cada um. Em CC, a impedância é a resistência, e o caminho reto ganha. Em frequência alta, a
+impedância é dominada por $\omega L$, e a indutância de um laço é proporcional à **área** que ele
+delimita. O caminho de retorno que fica exatamente sob a trilha de ida delimita uma área
+minúscula — a espessura do dielétrico vezes o comprimento — e por isso tem a menor indutância
+possível.
+
+A transição entre os dois regimes acontece quando $\omega L$ iguala $R$, o que para geometrias
+típicas de placa cai entre 10 e 100 kHz. Acima disso, **a corrente volta sob a trilha, sempre**,
+sem que ninguém a tenha mandado.
+
+::: {.callout-important}
+## As três impedâncias do "terra"
+
+Não existe *o* terra. Existem três coisas com nomes parecidos, e confundi-las é a origem de metade
+dos acidentes elétricos e de boa parte dos problemas de ruído:
+
+**Terra de proteção** (PE, o fio verde-amarelo). Existe para **segurança**: leva a corrente de
+falta ao ponto de aterramento, fazendo o disjuntor abrir. Ele não é referência de sinal, e a
+corrente que passa por ele em condição normal deveria ser zero.
+
+**Terra de referência** (o `0 V` do circuito). É o nó em relação ao qual as tensões do circuito
+são medidas. Pode ou não estar ligado ao PE.
+
+**Terra de retorno de potência.** É por onde a corrente de carga volta. Num circuito com relé ou
+motor, é onde passam ampères.
+
+Ligá-los todos "no mesmo lugar" é a origem do problema clássico: a corrente de retorno de
+potência atravessa o mesmo cobre que serve de referência ao circuito de sinal, e a queda $I \times
+Z$ nesse cobre aparece somada ao sinal. É o que a @fig-077-malha trata.
+:::
+
+## Malhas de terra e a topologia do retorno {#sec-077-malha}
+
+::: {#fig-077-malha}
+
+```{.tikz}
+%%| filename: 077-malha
+%%| alt: Figura com três topologias de aterramento desenhadas lado a lado, cada uma com um comentário. A primeira, marcada com um X vermelho e chamada terra em série ou em cadeia, mostra três blocos de circuito ligados em sequência ao longo de um único condutor de retorno que vai até o ponto de aterramento: o bloco sensível está no fim da cadeia, e a anotação registra que a corrente de todos os blocos anteriores atravessa o trecho de condutor que serve de referência ao bloco sensível, de modo que a queda de tensão produzida por eles aparece somada ao sinal dele. A segunda, marcada com um visto verde e chamada estrela ou ponto único, mostra os mesmos três blocos, cada um com o seu próprio condutor de retorno indo diretamente ao ponto comum: nenhuma corrente de um bloco atravessa o retorno de outro, e a anotação registra que essa é a topologia correta para circuitos de baixa frequência, tipicamente abaixo de um megahertz, como áudio e instrumentação. A terceira, também marcada com um visto verde e chamada plano de terra, mostra os três blocos montados sobre um plano contínuo de cobre, com cada um conectado por um caminho muito curto: a anotação registra que em alta frequência o plano é superior à estrela, porque a indutância de qualquer caminho é mínima e porque, como mostrado na figura anterior, a corrente escolhe sozinha o caminho sob a trilha, de modo que tentar impor uma estrela em alta frequência é lutar contra a física. Abaixo, uma caixa central registra a regra de decisão: abaixo de aproximadamente um megahertz, estrela; acima, plano contínuo; e em circuitos mistos, plano único e contínuo com separação por posicionamento em vez de separação por corte. Uma segunda caixa trata do caso de terra analógico e digital separados, registrando que a prática antiga de cortar o plano em duas ilhas unidas por uma ponte estreita foi abandonada porque o corte cria justamente o problema da figura anterior; a prática atual é usar um plano único e contínuo e posicionar os circuitos de modo que as correntes digitais não precisem passar pela região analógica. Uma terceira caixa trata da malha de terra propriamente dita, definida como o laço formado quando dois equipamentos ligados por um cabo de sinal estão ambos aterrados por caminhos diferentes: o laço fica exposto a campos magnéticos e a diferenças de potencial entre os dois pontos de aterramento, o que induz corrente e aparece como zumbido de sessenta hertz no sinal; e lista as três soluções, que são romper o laço com isolação galvânica por transformador ou acoplador óptico, usar transmissão diferencial em que o ruído comum é rejeitado, ou aterrar a blindagem em um só extremo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \tikzset{bloco/.style={draw, thick, rounded corners=2pt, minimum width=1.35cm,
+                         minimum height=0.8cm, font=\tiny, fill=white, align=center}}
+
+  % ================= serie =================
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=south west, font=\scriptsize, manualred] at (-0.2,3.5)
+         {\textbf{$\times$ \ em série (cadeia)}};
+
+    \node[bloco] (a1) at (0.75,2.6) {potência\\1 A};
+    \node[bloco] (a2) at (2.55,2.6) {lógica\\50 mA};
+    \node[bloco, fill=manualgreen!12] (a3) at (4.35,2.6) {\textbf{sensível}\\1 mA};
+
+    \draw[very thick] (0.75,2.2) -- (0.75,1.4);
+    \draw[very thick] (2.55,2.2) -- (2.55,1.4);
+    \draw[very thick] (4.35,2.2) -- (4.35,1.4);
+    \draw[very thick] (0.2,1.4) -- (4.9,1.4);
+    \node[ground] at (0.2,1.4) {};
+
+    \draw[->,>=stealth, manualred, thick] (4.35,1.15) -- (0.6,1.15);
+    \node[anchor=north, font=\tiny, manualred, align=center, text width=5.0cm] at (2.5,1.05)
+         {a corrente de \emph{todos} atravessa o retorno do \textbf{sensível}};
+  \end{scope}
+
+  % ================= estrela =================
+  \begin{scope}[shift={(5.7,0)}]
+    \node[anchor=south west, font=\scriptsize, manualgreen] at (-0.2,3.5)
+         {\textbf{$\checkmark$ \ estrela (ponto único)}};
+
+    \node[bloco] (b1) at (0.75,2.6) {potência};
+    \node[bloco] (b2) at (2.55,2.6) {lógica};
+    \node[bloco, fill=manualgreen!12] (b3) at (4.35,2.6) {\textbf{sensível}};
+
+    \draw[very thick] (0.75,2.2) -- (0.75,1.9) -- (2.55,1.3);
+    \draw[very thick] (2.55,2.2) -- (2.55,1.3);
+    \draw[very thick] (4.35,2.2) -- (4.35,1.9) -- (2.55,1.3);
+    \node[ponto] at (2.55,1.3) {};
+    \node[ground] at (2.55,1.3) {};
+
+    \node[anchor=north, font=\tiny, align=center, text width=5.0cm] at (2.55,0.72)
+         {nenhuma corrente atravessa o retorno de outro. \textbf{Correta abaixo de
+          $\approx 1$ MHz}};
+  \end{scope}
+
+  % ================= plano =================
+  \begin{scope}[shift={(11.4,0)}]
+    \node[anchor=south west, font=\scriptsize, manualgreen] at (-0.2,3.5)
+         {\textbf{$\checkmark$ \ plano contínuo}};
+
+    \fill[manualgray!22] (0.05,1.15) rectangle (5.05,3.25);
+    \node[bloco] (c1) at (0.85,2.6) {potência};
+    \node[bloco] (c2) at (2.55,2.6) {lógica};
+    \node[bloco, fill=manualgreen!12] (c3) at (4.25,2.6) {\textbf{sensível}};
+    \foreach \x in {0.85,2.55,4.25} { \draw[very thick] (\x,2.2) -- (\x,1.95);
+                                      \node[ponto] at (\x,1.95) {}; }
+    \node[anchor=north, font=\tiny, align=center, text width=5.0cm] at (2.55,1.05)
+         {a corrente escolhe sozinha o caminho sob a trilha. \textbf{Correta acima de
+          $\approx 1$ MHz}};
+  \end{scope}
+
+  % ================= caixas =================
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (-0.2,-1.15)
+       {\textbf{A regra de decisão}
+        \\[3pt]
+        abaixo de $\approx 1$ MHz \dotfill \textbf{estrela} \\
+        acima \dotfill \textbf{plano contínuo}
+        \\[3pt]
+        Em circuito misto: \textbf{plano único}, com separação por \emph{posicionamento} ---
+        nunca por corte.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (5.5,-1.15)
+       {\textbf{Terra analógico e digital "separados"}
+        \\[3pt]
+        A prática antiga --- cortar o plano em duas ilhas unidas por uma ponte estreita ---
+        \textbf{foi abandonada}: o corte cria exatamente o problema da figura anterior.
+        \\[3pt]
+        A prática atual é \textbf{plano único e contínuo}, com os circuitos posicionados de
+        modo que a corrente digital \emph{não precise} passar pela região analógica.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (11.2,-1.15)
+       {\textbf{A malha de terra propriamente dita}
+        \\[3pt]
+        Dois equipamentos ligados por cabo de sinal, \emph{ambos} aterrados por caminhos
+        diferentes: o laço capta campo magnético e a diferença de potencial entre os dois
+        aterramentos. Sai como \textbf{zumbido de 60 Hz}.
+        \\[3pt]
+        Três soluções: \textbf{isolar} (transformador, acoplador óptico); \textbf{diferencial}
+        (o modo comum é rejeitado); ou aterrar a blindagem em \textbf{um só} extremo.};
+
+\end{tikzpicture}
+```
+
+As três topologias de retorno. A escolha entre estrela e plano é uma escolha de **frequência**,
+e a prática de cortar o plano entre analógico e digital foi abandonada justamente por causa da
+figura anterior.
+:::
+
+## Desacoplamento: um problema de impedância {#sec-077-desacoplamento}
+
+::: {#fig-077-desacoplamento}
+
+```{.tikz}
+%%| filename: 077-desacoplamento
+%%| alt: Gráfico da impedância em ohms contra a frequência, ambos em escala logarítmica, de mil hertz a um gigahertz e de um miliohm a cem ohms, mostrando o comportamento real de capacitores de desacoplamento. Cada capacitor traça um V: um ramo descendente à esquerda, em que a impedância é capacitiva e vale um sobre dois pi f C, e um ramo ascendente à direita, em que a impedância é indutiva e vale dois pi f vezes a indutância série equivalente do encapsulamento; o vértice do V é a frequência de ressonância própria, abaixo da qual o componente é capacitor e acima da qual ele é indutor. Três curvas aparecem: um eletrolítico de cem microfarads, cuja curva desce cedo mas cujo vértice fica em torno de cem quilohertz por causa da resistência e da indutância maiores; um cerâmico de cem nanofarads em encapsulamento de montagem em superfície, cujo vértice fica em torno de vinte megahertz; e um cerâmico de um nanofarad, cujo vértice fica perto de duzentos megahertz. Como cada um cobre bem apenas a faixa em torno do seu vértice, associá-los mantém a impedância baixa numa faixa muito mais larga do que qualquer um deles sozinho, seguindo o envelope inferior das três curvas. Uma anotação de alerta registra, porém, o fenômeno da antirressonância: entre dois capacitores de valores muito diferentes surge um pico de impedância, porque acima da ressonância do maior ele é indutivo e forma um circuito ressonante paralelo com a capacitância do menor; esse pico é o motivo de não se usar valores separados por mais de duas décadas e de a prática moderna preferir muitos capacitores iguais de cem nanofarads em vez da escalada clássica de valores. Duas caixas acompanham. A primeira registra que a indutância do encapsulamento é o que limita tudo, com valores típicos de um vírgula seis nanohenry para um encapsulamento zero quatro zero dois, cerca de um nanohenry para um zero dois zero um, e cinco a dez nanohenries para um componente de furo passante com pernas, e conclui que em alta frequência o encapsulamento importa mais que a capacitância. A segunda caixa registra que a trilha entre o capacitor e o pino do circuito integrado soma a sua própria indutância, cerca de um nanohenry por milímetro, de modo que dois centímetros de trilha acrescentam vinte nanohenries e anulam completamente a vantagem de um capacitor de baixa indutância; daí a exigência literal de que o capacitor fique junto ao pino, com o caminho para o plano de terra feito por uma via imediatamente adjacente.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=10.6cm, height=7.8cm,
+    xmode=log, ymode=log,
+    xmin=1e3, xmax=1e9, ymin=1e-3, ymax=1e2,
+    xlabel={frequência (Hz)}, ylabel={impedância ($\Omega$)},
+    xtick={1e3,1e4,1e5,1e6,1e7,1e8,1e9},
+    xticklabels={1 k,10 k,100 k,1 M,10 M,100 M,1 G},
+    ytick={1e-3,1e-2,1e-1,1e0,1e1,1e2},
+    yticklabels={1 m,10 m,0{,}1,1,10,100},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+    samples=300,
+]
+
+  % 100 uF eletrolitico: C=100u, ESL=8nH, ESR=0,08
+  \addplot[manualyellow, thick, domain=1e3:1e9]
+      {sqrt(0.08^2 + (1/(2*pi*x*100e-6) - 2*pi*x*8e-9)^2)};
+  % 100 nF ceramico 0402: C=100n, ESL=1,6nH, ESR=0,03
+  \addplot[manualgreen, thick, domain=1e3:1e9]
+      {sqrt(0.03^2 + (1/(2*pi*x*100e-9) - 2*pi*x*1.6e-9)^2)};
+  % 1 nF ceramico: C=1n, ESL=1,2nH, ESR=0,05
+  \addplot[destaque, thick, domain=1e3:1e9]
+      {sqrt(0.05^2 + (1/(2*pi*x*1e-9) - 2*pi*x*1.2e-9)^2)};
+
+  \node[anchor=north west, font=\tiny, manualyellow] at (axis cs:1.2e3,0.9)
+       {100 µF eletrolítico};
+  \node[anchor=north west, font=\tiny, manualgreen] at (axis cs:3.6e5,0.55)
+       {100 nF cerâmico 0402};
+  \node[anchor=north west, font=\tiny, manualred] at (axis cs:3.0e7,0.42) {1 nF cerâmico};
+
+  \node[anchor=south, font=\tiny, manualgray, align=center] at (axis cs:5.0e4,1.7e-3)
+       {abaixo do vértice é \textbf{capacitor}; acima, é \textbf{indutor}};
+
+\end{axis}
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.0cm] at (10.1,7.4)
+       {\textbf{Antirressonância}
+        \\[3pt]
+        Entre dois capacitores de valores muito diferentes aparece um \textbf{pico} de
+        impedância: acima da sua ressonância o maior é \emph{indutivo} e forma um tanque
+        \textbf{paralelo} com a capacitância do menor.
+        \\[3pt]
+        Daí a regra: \textbf{não separe valores por mais de duas décadas}. A prática moderna
+        prefere \emph{vários 100 nF iguais} à escalada clássica de valores.};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.0cm] at (10.1,3.3)
+       {\textbf{A indutância do encapsulamento limita tudo}
+        \\[3pt]
+        0201 \dotfill $\approx 1$ nH \\
+        0402 \dotfill $\approx 1{,}6$ nH \\
+        furo passante \dotfill 5 a 10 nH
+        \\[3pt]
+        Em alta frequência, \textbf{o encapsulamento importa mais que a capacitância}.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.0cm] at (10.1,0.2)
+       {\textbf{E a trilha soma a dela.} $\approx 1$ nH por mm.
+        \\[3pt]
+        Dois centímetros de trilha acrescentam \textbf{20 nH} --- e anulam inteiramente a
+        vantagem de um capacitor de 1,6 nH.
+        \\[3pt]
+        É por isso que "junto ao pino" é uma exigência \emph{literal}, com a via para o plano
+        \textbf{imediatamente ao lado}.};
+
+\end{tikzpicture}
+```
+
+Cada capacitor real é um V: capacitivo à esquerda do vértice, **indutivo** à direita. O
+desacoplamento é o problema de manter a impedância baixa numa faixa larga, e é por isso que se
+usa mais de um.
+:::
+
+Agora a pergunta que o manual adiou dezenas de vezes: **de que exatamente serve o capacitor de
+100 nF colado ao pino de alimentação?**
+
+Um circuito integrado digital não consome corrente constante. Ele consome **pulsos**: a cada
+transição de clock, milhares de portas comutam e puxam corrente por alguns nanossegundos. Um
+microcontrolador em 16 MHz pode ter picos de dezenas de miliampères com bordas de poucos
+nanossegundos.
+
+Essa corrente tem de vir de algum lugar. Se vier da fonte, ela percorre centímetros de trilha
+com dezenas de nanohenries, e $L\,di/dt$ produz um afundamento na alimentação do CI — que, se for
+grande o bastante, o reinicia.
+
+O capacitor de desacoplamento é um **reservatório local**: ele fornece o pulso e é recarregado
+devagar pela fonte entre os pulsos. Para isso funcionar, a impedância entre o capacitor e o pino
+tem de ser baixa **na frequência do pulso** — e é aí que a @fig-077-desacoplamento passa a
+mandar.
+
+::: {.callout-tip}
+## As regras de desacoplamento, em ordem de importância
+
+**1. Um capacitor por pino de alimentação, junto ao pino.** Não um por CI, um por pino. E "junto"
+significa menos de 5 mm, com a via para o plano ao lado do pad.
+
+**2. 100 nF cerâmico X7R ou C0G, encapsulamento pequeno.** X5R serve; Y5V não — a capacitância
+cai 80 % com tensão e temperatura.
+
+**3. Um eletrolítico ou tântalo de 10 a 100 µF por região da placa**, para as componentes de
+baixa frequência e para degraus de carga. Não precisa estar junto ao pino.
+
+**4. Não escalone valores muito diferentes lado a lado.** 100 nF + 1 nF cria antirressonância
+entre 20 e 200 MHz. Se precisar de mais banda, use **dois ou três de 100 nF** em paralelo: eles
+baixam a indutância efetiva sem criar o pico.
+
+**5. Em CI de alta velocidade, o caminho é: pad do CI → capacitor → via → plano.** Nessa ordem, e
+com a via o mais perto possível.
+
+A regra 4 é a que mais mudou nos últimos vinte anos. A prática antiga — 100 µF, 100 nF, 1 nF,
+100 pF em escada — vem de uma época de encapsulamentos de furo passante, e faz mais mal que bem
+com componentes SMD modernos.
+:::
+
+## Proteção do que entra e sai {#sec-077-protecao}
+
+::: {#fig-077-protecao}
+
+```{.tikz}
+%%| filename: 077-protecao
+%%| alt: Diagrama de uma placa com quatro proteções desenhadas nos pontos onde o mundo externo encontra o circuito. À esquerda, na entrada de alimentação, aparecem em sequência: um fusível repositivo do tipo polímero com coeficiente positivo de temperatura, que limita corrente e se recupera sozinho depois de esfriar; um MOSFET de canal P ligado com a fonte na entrada e o dreno no circuito, que é a proteção contra inversão de polaridade e cuja vantagem sobre um diodo em série é a queda de apenas dezenas de milivolts em vez de meio volt; um diodo supressor de transientes, chamado TVS, ligado da alimentação ao terra, que grampeia picos rápidos; e um capacitor de entrada. No meio, na entrada de sinal vinda de um cabo externo, aparecem um resistor em série e dois diodos de grampeamento, um para a alimentação e outro para o terra, que desviam qualquer excursão além dos trilhos. À direita, na saída que aciona uma carga indutiva, aparecem o transistor de chaveamento e o diodo de retorno em antiparalelo com a bobina do relé, com uma anotação de que sem esse diodo a abertura do transistor produz uma tensão que sobe até romper alguma coisa, exatamente o mecanismo do indutor visto nos capítulos anteriores. Três caixas acompanham. A primeira compara o diodo supressor de transientes com o varistor: o supressor é rápido, com resposta em picossegundos, tem tensão de grampeamento precisa, mas suporta menos energia e falha em curto; o varistor absorve muito mais energia, é mais lento, tem tensão de grampeamento imprecisa que piora ao longo da vida, e é usado na entrada da rede elétrica, tipicamente combinado com o supressor em cascata, com o varistor na frente para a energia bruta e o supressor atrás para a precisão. A segunda caixa registra o cuidado com o fusível repositivo: ele não abre, apenas aumenta muito a resistência, de modo que a tensão sobre a carga cai mas não zera, e ele leva de centenas de milissegundos a segundos para atuar, o que significa que ele protege contra sobrecarga sustentada e não contra curto rápido. A terceira caixa registra a regra geral: toda linha que sai da placa e vai para um cabo precisa de proteção, porque um cabo é uma antena que capta descargas eletrostáticas e transientes, e porque o pino de um microcontrolador aguenta poucos miliampères e alguns volts além dos trilhos.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= entrada de alimentacao =================
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=south west, font=\scriptsize] at (-0.2,4.7)
+         {\textbf{Entrada de alimentação}};
+
+    \draw (0.2,4.1) -- (0.9,4.1);
+    \node[anchor=east, font=\tiny] at (0.15,4.1) {$V_{in}$};
+    \draw (0.9,4.1) to[R] (2.2,4.1);
+    \node[anchor=south, font=\tiny, align=center] at (1.55,4.28) {PTC};
+
+    % MOSFET de canal P: fonte na entrada, dreno no circuito
+    \node[pmos] (mp) at (2.95,3.50) {};
+    \draw (2.2,4.1) -- (2.95,4.1) -- (mp.S);
+    \draw (mp.D) -- (2.95,2.90) -- (4.20,2.90);
+    \draw (mp.G) -- (2.15,3.50);
+    \draw (2.15,3.50) to[R] (2.15,1.80);
+    \node[anchor=west, font=\tiny, align=left, text width=1.5cm] at (3.32,3.55)
+         {proteção de \textbf{inversão}};
+
+    \node[ponto] at (4.20,2.90) {};
+    \draw (4.20,2.90) to[zD, invert] (4.20,1.80);
+    \node[anchor=west, font=\tiny] at (4.38,2.35) {TVS};
+    \draw (4.20,2.90) -- (5.40,2.90);
+    \node[ponto] at (5.40,2.90) {};
+    \draw (5.40,2.90) to[C] (5.40,1.80);
+    \draw (5.40,2.90) -- (6.10,2.90);
+    \node[anchor=west, font=\tiny] at (6.15,2.90) {circuito};
+
+    \draw (0.2,1.80) -- (6.10,1.80);
+    \node[ground] at (3.30,1.80) {};
+  \end{scope}
+
+  % ================= entrada de sinal =================
+  \begin{scope}[shift={(7.6,0)}]
+    \node[anchor=south west, font=\scriptsize] at (-0.2,4.7)
+         {\textbf{Entrada de sinal (cabo externo)}};
+
+    \draw (0.2,3.1) -- (0.7,3.1);
+    \node[anchor=east, font=\tiny, align=right] at (0.15,3.1) {do\\cabo};
+    \draw (0.7,3.1) to[R, l={$R_s$}] (2.1,3.1);
+    \node[ponto] at (2.1,3.1) {};
+    \draw (2.1,3.1) -- (3.1,3.1);
+    \node[anchor=west, font=\tiny] at (3.15,3.1) {pino do µC};
+
+    \draw (2.1,3.1) to[D*, invert] (2.1,4.1);
+    \draw (2.1,4.1) -- (2.9,4.1);
+    \node[anchor=west, font=\tiny] at (2.95,4.1) {$V_{CC}$};
+    \draw (2.1,3.1) to[D*, invert] (2.1,2.1);
+    \draw (0.6,2.1) -- (2.1,2.1);
+    \node[ground] at (1.2,2.1) {};
+
+    \node[anchor=north, font=\tiny, align=center, text width=3.6cm] at (1.9,1.45)
+         {os diodos desviam qualquer excursão \textbf{além dos trilhos}};
+  \end{scope}
+
+  % ================= saida indutiva =================
+  \begin{scope}[shift={(12.6,0)}]
+    \node[anchor=south west, font=\scriptsize] at (-0.2,4.7)
+         {\textbf{Saída indutiva}};
+
+    \draw (0.6,4.1) -- (2.4,4.1);
+    \node[anchor=east, font=\tiny] at (0.55,4.1) {$V_{CC}$};
+    \draw (1.2,4.1) to[L, l_={relé}] (1.2,2.9);
+    \node[ponto] at (1.2,4.1) {};
+    \node[ponto] at (1.2,2.9) {};
+    \draw (2.4,4.1) to[D*] (2.4,2.9);
+    \node[anchor=west, font=\tiny, manualred, align=left, text width=1.5cm] at (2.75,3.6)
+         {\textbf{diodo de retorno}};
+    \draw (1.2,2.9) -- (2.4,2.9);
+
+    \node[npn, anchor=C] (q) at (1.2,2.9) {};
+    \draw (q.E) -- (1.2,1.80);
+    \draw (0.3,1.80) -- (2.4,1.80);
+    \node[ground] at (1.45,1.80) {};
+    \draw (q.B) -- (0.35,2.35);
+    \node[anchor=east, font=\tiny] at (0.30,2.35) {comando};
+  \end{scope}
+
+  % ================= caixas =================
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (-0.2,1.05)
+       {\textbf{TVS contra varistor}
+        \\[3pt]
+        \textbf{TVS:} rápido (ps), grampeamento \emph{preciso}, pouca energia, falha
+        \textbf{em curto}.
+        \\[2pt]
+        \textbf{Varistor (MOV):} muita energia, lento, grampeamento impreciso e que
+        \emph{piora com a vida}.
+        \\[3pt]
+        Na entrada da rede usam-se os \textbf{dois em cascata}: MOV na frente para a energia
+        bruta, TVS atrás para a precisão.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (5.5,1.05)
+       {\textbf{O fusível repositivo não é fusível}
+        \\[3pt]
+        Ele \emph{não abre}: aumenta muito a resistência. A tensão sobre a carga cai, mas
+        \textbf{não zera}.
+        \\[3pt]
+        E ele leva de \textbf{centenas de ms a segundos} para atuar: protege contra
+        \textbf{sobrecarga sustentada}, não contra curto rápido.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (11.2,1.05)
+       {\textbf{A regra geral}
+        \\[3pt]
+        \textbf{Toda linha que sai da placa} para um cabo precisa de proteção. Um cabo é uma
+        \emph{antena} que capta descarga eletrostática e transiente.
+        \\[3pt]
+        E o pino de um microcontrolador aguenta poucos mA e \emph{alguns volts} além dos
+        trilhos --- os diodos internos existem, mas não foram feitos para isso.};
+
+\end{tikzpicture}
+```
+
+As quatro proteções, nos quatro lugares onde o mundo externo encontra o circuito. O MOSFET de
+canal P na entrada custa dezenas de milivolts, contra os 0,5 V de um diodo em série.
+:::
+
+::: {.callout-note}
+## Por que o MOSFET de canal P é melhor que o diodo em série
+
+A proteção clássica contra inversão de polaridade é um diodo em série. Ela funciona e custa
+0,5 V — o que, numa alimentação de 3,3 V com 500 mA, é 250 mW e 15 % da tensão.
+
+O MOSFET de canal P faz o mesmo com $R_{DS(on)} \times I$: um de 30 mΩ com 500 mA custa **15 mV**.
+O truque de ligação é o que confunde: a **fonte** vai na entrada e o **dreno** no circuito, com o
+gate no terra através de um resistor. Com polaridade correta, $V_{GS}$ é negativo e o MOSFET
+conduz; com polaridade invertida, $V_{GS}$ é positivo e ele corta — **e o diodo de corpo também
+fica reversamente polarizado**, que é a parte que só funciona nessa orientação.
+
+É a ligação "ao contrário" do que a intuição sugere, e é a razão de muita gente montá-la errada e
+concluir que não funciona.
+:::
+
+## 🧪 Laboratório {#sec-077-lab}
+
+O objetivo é **ver** o ruído de terra com o osciloscópio, medir a diferença que o desacoplamento
+faz, provocar uma malha de terra e resolvê-la, e verificar as proteções.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | Microcontrolador (Arduino Uno/Nano ou similar) | Partes 1 a 3 |
+| 1 | **Módulo de relé** 5 V com bobina | Partes 2 e 5 |
+| 1 | Osciloscópio de 2 canais, ponta com **mola de terra** | essencial |
+| 1 | Gerador de funções | Parte 4 |
+| — | Capacitores: 100 nF cerâmico (vários), 10 µF, 100 µF eletrolítico, 1 nF | |
+| — | Resistores: 10 Ω, 100 Ω, 1 kΩ, 10 kΩ, 100 kΩ | |
+| 1 | LED + resistor 330 Ω | Parte 1 |
+| 1 | Trecho de fio fino (30 cm) e um de fio grosso | Parte 1 |
+| 1 | Diodo **1N4148** ou 1N4007 | Parte 5 |
+| 1 | **TVS** (P6KE6.8A ou SMBJ5.0A) | Parte 6 |
+| 1 | MOSFET canal P (**IRF9540** ou AO3401) | Parte 6 |
+| 1 | Fonte de bancada com limitação de corrente | |
+| 1 | Protoboard e uma placa perfurada | Partes 1 e 3 |
+
+**Variante simulada (plano B).** Este é o capítulo em que a simulação ajuda menos, porque o
+assunto é **geometria**. A única parte que simula bem é a @fig-077-desacoplamento: no LTspice,
+modele cada capacitor como C em série com R e L (ESR e ESL) e faça um `.ac` medindo a impedância;
+a antirressonância entre 100 nF e 1 nF aparece nitidamente. As Partes 1 a 3 precisam de bancada.
+
+### Parte 1 — Ver o ruído de terra
+
+1. Monte um circuito simples: o microcontrolador acendendo e apagando um LED a 1 kHz, com o LED
+   e seu resistor ligados por **30 cm de fio fino** de volta ao terra.
+2. Com o osciloscópio, meça a tensão **entre dois pontos do terra**: a garra num extremo do fio
+   fino, a ponta no outro.
+
+O esquemático diz que essa tensão é zero. O osciloscópio diz outra coisa — você vai ver picos a
+cada transição.
+
+3. Troque o fio fino por um **grosso e curto**. Meça de novo. O ruído cai.
+4. **Agora o experimento que muda a intuição:** faça o fio de retorno passar bem longe do fio de
+   ida, formando um laço grande. Depois torça os dois juntos.
+
+A área do laço é o que decide, e torcer os fios é a maneira mais barata de reduzi-la a quase
+zero.
+
+### Parte 2 — O relé que reinicia o microcontrolador
+
+1. Ligue o módulo de relé alimentado pela **mesma** fonte 5 V do microcontrolador, com o retorno
+   do relé passando pelo mesmo trecho de terra que o circuito de sinal (topologia em cadeia da
+   @fig-077-malha).
+2. Escreva um programa que acione o relé a cada segundo e pisque um LED continuamente.
+3. Observe a alimentação do microcontrolador no osciloscópio, com acoplamento CA e disparo no
+   acionamento.
+
+O afundamento no instante do acionamento é visível, e se for grande o bastante o microcontrolador
+reinicia.
+
+4. **Corrija em três passos, medindo depois de cada um:**
+   - Ponha 100 µF junto ao módulo de relé.
+   - Refaça o terra em **estrela**: um fio do relé direto ao ponto comum, outro do
+     microcontrolador.
+   - Ponha o diodo de retorno na bobina, se o módulo não tiver.
+
+Cada passo reduz o afundamento, e a ordem de eficácia costuma surpreender: a topologia de terra
+costuma resolver mais que o capacitor.
+
+### Parte 3 — O desacoplamento, medido
+
+1. Numa placa perfurada, monte um CI lógico qualquer (um 74HC04 oscilando, por exemplo) **sem
+   nenhum capacitor de desacoplamento**, alimentado por 20 cm de fio.
+2. Meça $V_{CC}$ **no pino do CI**, com acoplamento CA, mola de terra, escala de 50 mV/div.
+
+O ruído é grande e cheio de estrutura.
+
+3. Ponha **100 nF a 5 cm** do CI. Meça.
+4. Mova o mesmo capacitor para **junto do pino**. Meça.
+
+A diferença entre 3 e 4 é a exigência "junto ao pino" deixando de ser recomendação.
+
+5. Ponha **três 100 nF em paralelo**, todos junto ao pino. Meça.
+6. Substitua por **100 nF + 1 nF**. Compare com o passo 5.
+
+Se o seu osciloscópio tiver banda suficiente, o caso 6 é **pior** em alguma frequência: é a
+antirressonância.
+
+### Parte 4 — A malha de terra, criada e resolvida
+
+1. Ligue o gerador de funções (senoide de 100 mV, 1 kHz) à entrada de um amplificador simples,
+   com um cabo comum de 1,5 m, os dois instrumentos ligados na tomada.
+2. Observe a saída no osciloscópio. Além da senoide, deve haver **zumbido de 60 Hz** e seus
+   harmônicos.
+3. Aproxime um transformador ou uma fonte de parede do cabo. O zumbido aumenta.
+4. **Três correções, testadas uma a uma:**
+   - Aterre a blindagem do cabo em **um só** extremo.
+   - Use um cabo mais curto, ou enrole o excesso.
+   - Se tiver o amplificador de instrumentação do @sec-cap-067, refaça a ligação em modo
+     **diferencial** e compare.
+
+A terceira corrige de verdade, e as duas primeiras atenuam. É o conteúdo da terceira caixa da
+@fig-077-malha, medido.
+
+### Parte 5 — O diodo de retorno, com números
+
+1. Acione a bobina do relé com um transistor, **sem** o diodo de retorno, e observe o coletor no
+   osciloscópio no instante em que o transistor corta.
+
+O pico é de dezenas ou centenas de volts — muito acima do $V_{CEO}$ do transistor. Não repita
+muitas vezes.
+
+2. Ponha o **1N4148** em antiparalelo com a bobina e observe de novo. O pico some, substituído por
+   um platô em $V_{CC} + 0{,}7$ V.
+3. Meça o **tempo de desligamento** do relé nos dois casos.
+
+Com o diodo, o relé demora mais a desarmar — porque a corrente da bobina decai devagar. É o
+compromisso que o @sec-cap-054 apresentou: o diodo protege e atrasa. Um Zener em série com o
+diodo acelera o desarme sem perder a proteção.
+
+### Parte 6 — As proteções de entrada
+
+1. Monte o MOSFET de canal P como proteção de inversão, conforme o quadro. Alimente com 5 V e
+   meça a queda entre entrada e saída: deve ser de milivolts.
+2. **Inverta a polaridade** (com a fonte em limitação de corrente!). A corrente deve ser
+   praticamente zero.
+3. Compare com um diodo 1N4007 em série: meça a queda. Meia dúzia de vezes maior.
+4. Com o TVS entre a alimentação e o terra, aumente a tensão da fonte devagar e observe a
+   corrente. Ela dispara na tensão de grampeamento.
+
+**Não deixe** o TVS conduzindo: ele aquece rápido e falha em curto, que é o modo de falha
+projetado.
+
+## 🔥 Onde Queima {#sec-077-queima}
+
+**Cortar o plano de terra sob uma trilha rápida.** A corrente de retorno é obrigada a contornar,
+a área do laço explode, e o resultado é ruído gerado **e** captado. É o erro que a prática de
+"separar terra analógico e digital" produzia.
+
+**Ligar tudo "no mesmo terra" em topologia de cadeia.** A corrente de potência atravessa o cobre
+que serve de referência ao circuito sensível. É a causa mais comum de zumbido e de reinício.
+
+**Achar que "junto ao pino" é uma sugestão.** Dois centímetros de trilha somam 20 nH e anulam a
+vantagem de qualquer capacitor. A via para o plano vai ao lado do pad, não do outro lado da placa.
+
+**Escalonar capacitores de desacoplamento em décadas.** 100 nF + 1 nF cria antirressonância entre
+20 e 200 MHz — um pico de impedância exatamente onde se queria impedância baixa. Vários 100 nF
+iguais.
+
+**Usar cerâmico Y5V ou Z5U em desacoplamento.** A capacitância cai até 80 % com tensão de
+polarização e com temperatura. Um "100 nF" Y5V em 5 V pode valer 25 nF. X7R, X5R ou C0G.
+
+**Medir ruído de alta frequência com a garra de terra comprida.** A garra é uma espira de vários
+centímetros quadrados. Boa parte do que aparece na tela é captação da própria ponta. Mola de
+terra.
+
+**Aterrar a blindagem de um cabo nos dois extremos** num sistema de baixa frequência. Fecha a
+malha de terra e injeta 60 Hz no sinal. Um extremo só — e em alta frequência a regra se inverte,
+o que é o assunto do capítulo 086.
+
+**Confiar nos diodos internos do microcontrolador para proteger a entrada.** Eles existem e
+aguentam poucos miliampères. Sem o resistor em série que limita a corrente, eles conduzem, o pino
+sobrevive, e a corrente injetada eleva o trilho de alimentação inteiro — produzindo falhas em
+outras partes do circuito.
+
+**Trocar fusível por fusível repositivo achando que é equivalente.** O PTC não abre: ele aumenta
+a resistência. A tensão não zera, e ele leva de centenas de milissegundos a segundos para atuar.
+Contra curto rápido, ele não protege.
+
+**Montar o MOSFET de proteção de polaridade com fonte e dreno trocados.** Na orientação errada, o
+diodo de corpo conduz com a polaridade invertida e a proteção não protege nada.
+
+**Esquecer o diodo de retorno em qualquer carga indutiva.** Relé, solenoide, motor, até a bobina
+de um contator distante. O @sec-cap-024 explica o mecanismo; aqui basta a regra.
+
+**Confiar num TVS para energia de rede.** Um TVS de sinal absorve joules, não centenas de joules.
+Para a entrada da rede, MOV na frente.
+
+## O que fica deste capítulo {#sec-077-resumo}
+
+**O terra não é um nó.** Uma trilha de 10 cm tem 100 nH, e $L\,di/dt$ com 100 mA em 10 ns dá
+**1 V** entre dois pontos do "mesmo" terra.
+
+**A corrente de retorno escolhe o caminho de menor impedância**, que abaixo de ~100 kHz é o de
+menor resistência (o mais curto) e acima disso é o de menor **indutância** — logo abaixo da
+trilha de ida, porque minimiza a **área do laço**. Cortar o plano força um desvio, aumenta a
+área e cria uma antena.
+
+**As três topologias de retorno:** cadeia (errada), **estrela** (correta abaixo de ~1 MHz) e
+**plano contínuo** (correto acima). Em circuito misto: plano único, separação por
+posicionamento, nunca por corte.
+
+**A malha de terra** é o laço formado por dois equipamentos aterrados por caminhos diferentes e
+ligados por um cabo. Três soluções: isolar, usar diferencial, ou aterrar a blindagem em um só
+extremo.
+
+**Desacoplamento é um problema de impedância contra frequência.** Todo capacitor real é um V:
+capacitivo abaixo da ressonância própria, **indutivo** acima. A indutância do encapsulamento (1 a
+10 nH) e a da trilha (1 nH/mm) é que limitam. As regras, em ordem: um por pino de alimentação;
+junto ao pino; 100 nF X7R; um eletrolítico por região; e **vários 100 nF iguais** em vez de
+valores escalonados, para não criar antirressonância.
+
+**As quatro proteções:** PTC (sobrecarga sustentada, não curto rápido), MOSFET de canal P contra
+inversão (15 mV em vez de 500 mV, com fonte na entrada), TVS/MOV contra transiente (rápido e
+preciso / muita energia e impreciso, em cascata na entrada de rede), e diodo de retorno em toda
+carga indutiva.
+
+## O Volume 12, e o que vem depois {#sec-077-fecho}
+
+Seis capítulos atrás, a alimentação era um símbolo no esquemático — dois trilhos e um terra, que
+existiam porque tinham de existir.
+
+O caminho foi:
+
+**O transformador** (072): acoplamento magnético, reflexão de impedância $n^2 Z_L$, o modelo real
+de sete elementos, e a lei de Faraday na forma de projeto, cuja leitura ao contrário — dobrar a
+frequência permite metade do núcleo — sustentaria o volume inteiro.
+
+**A fonte linear completa** (073): o procedimento de oito passos que corre da carga para a rede, e
+os dois piores casos opostos que nenhum projeto pode dispensar.
+
+**Os reguladores integrados** (074): a referência bandgap somando dois defeitos que se cancelam, a
+distinção real entre série e LDO, e o dimensionamento térmico como o menor de três limites.
+
+**As fontes chaveadas** (075): o balanço de tensão-segundo resolvendo três topologias em duas
+linhas cada, e o layout deixando de ser implementação para virar parte do circuito.
+
+**As baterias** (076): o componente que não é fonte de tensão, o perfil CC-CV, e o orçamento de
+energia em que a autodescarga costuma ser a maior parcela.
+
+**E o fechamento** (077): para onde a corrente volta, por que o desacoplamento é um problema de
+impedância, e o que proteger nas fronteiras da placa.
+
+Duas coisas ficam para o resto do manual.
+
+A primeira é que **alimentação deixa de ser assunto**. A partir daqui, "3,3 V" num esquemático
+significa um trilho com desacoplamento adequado e retorno pensado, e o leitor sabe o que há por
+trás. O Volume 13 vai ligar sensores nesse trilho; o Volume 14 vai montá-lo numa placa; a Fase 5
+vai alimentar circuitos digitais com ele.
+
+A segunda é o **método**. Três capítulos deste volume terminaram na mesma conclusão por caminhos
+diferentes: o pior caso não é o caso nominal (073), o componente real tem parasitas que decidem
+o comportamento (074, 075), e a geometria é parte do circuito (077). São as três maneiras pelas
+quais um projeto que fecha no papel falha na bancada, e elas não são específicas de fontes.
+
+O **Volume 13** abre a Fase 4 e muda o objeto: em vez de produzir energia, medir o mundo. Começa
+no capítulo 078 com os sensores — resistivos, capacitivos e ativos — e com a pergunta que
+organiza o volume inteiro: entre a grandeza física e o número que o programa lê, quantas
+transformações existem, e onde cada uma introduz erro?
+
+O @sec-cap-067 já entregou o amplificador de instrumentação, o @sec-cap-069 já quantificou o
+ruído, e este capítulo acabou de explicar por que o terra da ponte de Wheatstone importa. O
+Volume 13 monta a cadeia inteira.
