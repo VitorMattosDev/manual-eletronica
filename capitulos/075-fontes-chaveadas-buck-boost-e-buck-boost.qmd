@@ -3,9 +3,1158 @@
 ::: {.callout-warning}
 ## Tensão perigosa
 
-Este capítulo envolve tensões capazes de matar. O roteiro de laboratório só deve
-ser executado depois de ler integralmente o Capítulo 2. *(texto de aviso a
-escrever)*
+Este capítulo é o mais perigoso do volume, e por dois motivos distintos.
+
+**O primeiro é o óbvio.** Fontes chaveadas comerciais são quase sempre **sem transformador de
+entrada em 60 Hz**: elas retificam a rede diretamente e trabalham com um barramento de
+**320 V contínuos**, atrás de capacitores que guardam energia por minutos. Nesse barramento, o
+"terra" do circuito **não é o terra**; ele flutua junto com a rede. **Nada aqui autoriza abrir,
+medir ou tocar qualquer parte de uma fonte chaveada ligada à rede**, nem hoje nem depois de
+lida esta página inteira.
+
+**O segundo é menos óbvio e mata mais gente que sabe eletrônica.** Encostar a ponta de prova de
+um osciloscópio no lado primário de uma chaveada sem transformador põe a malha do cabo — que
+está aterrada — em contato com a rede. O resultado é um curto franco através do seu cabo, do
+seu instrumento e da sua bancada. **É por isso que existe o transformador de isolação**, e é o
+único jeito correto de medir ali.
+
+**O laboratório deste capítulo é feito inteiramente em baixa tensão**, com uma fonte de bancada
+de 12 V, componentes discretos e um CI controlador de 5 V. Não há um único passo que chegue
+perto da rede. E há um passo — o do laço de comutação — que existe justamente para mostrar, com
+segurança, o mecanismo que destrói a chave numa fonte real.
+
+Três advertências específicas desta topologia, novas em relação ao capítulo 073:
+
+- **O indutor guarda energia e não aceita ter a corrente interrompida.** Abrir o circuito de um
+  indutor conduzindo produz uma tensão que sobe até algo dar passagem — e o "algo" costuma ser
+  a junção do MOSFET. É o @sec-cap-024 cobrando a conta.
+- **O boost não tem como se desligar.** Existe um caminho direto da entrada para a saída pelo
+  indutor e pelo diodo, mesmo com a chave permanentemente aberta. Um boost com a saída em curto
+  entrega toda a corrente que a entrada puder dar.
+- **Capacitor de saída invertido ou subdimensionado em tensão explode.** Vale desde o
+  @sec-cap-049; aqui, com o transitório de partida de um boost, vale mais.
 :::
 
-*(em elaboração)*
+O capítulo anterior fechou com um número desconfortável: 46 % de rendimento, e a perda toda
+concentrada num elemento de passagem que trabalha **na região linear** — um resistor variável
+comandado, dissipando $(V_{in} - V_{out})\,I$ o tempo inteiro.
+
+A saída desse impasse tem duas peças, e as duas já estão no manual.
+
+A primeira é o @sec-cap-061: um MOSFET operando como **chave** dissipa quase nada. Fechado, a
+tensão sobre ele é $R_{DS(on)} I$ — décimos de volt. Aberto, a corrente é zero. Nos dois estados
+o produto $V \times I$ é pequeno, e a dissipação fica confinada aos instantes de **transição**.
+
+A segunda é o @sec-cap-024: um indutor **guarda energia** no campo magnético e resiste a mudanças
+de corrente. Ele é o elemento que permite pegar a energia em pacotes, num instante, e entregá-la
+noutro — o que um resistor jamais faria.
+
+Junte as duas e o elemento de passagem deixa de derrubar tensão: ele passa a **cortar a tensão
+em pedaços**, e o indutor com o capacitor devolvem a média. A fonte converte em vez de
+desperdiçar, e o rendimento pula para 85 a 95 %.
+
+O preço tem nome e endereço, e este capítulo é honesto quanto a ele: ruído de comutação em toda
+parte, um laço de controle que precisa ser compensado, um layout em que centímetros de trilha
+importam, e uma classe inteira de falhas — as do @sec-cap-062 — que não existe em fonte linear.
+
+## A ideia, em uma figura {#sec-075-ideia}
+
+::: {#fig-075-ideia}
+
+```{.tikz}
+%%| filename: 075-ideia
+%%| alt: Figura em duas partes contrastando o regulador linear com o conversor chaveado. Na parte de cima, à esquerda, o regulador linear representado como um resistor variável entre a entrada de doze volts e a saída de cinco volts alimentando uma carga de um ampère; ao lado, a anotação registra que a corrente de entrada é igual à de saída, um ampère, que a potência de entrada é doze watts e a de saída cinco watts, e que os sete watts de diferença são dissipados como calor no elemento de passagem, com rendimento de quarenta e dois por cento. À direita da mesma linha, o conversor buck representado como uma chave que alterna entre a entrada e o terra, seguida de um indutor e de um capacitor; a anotação registra que a corrente de entrada é agora apenas quatrocentos e trinta e sete miliampères, que a potência de entrada é cinco vírgula vinte e cinco watts para os mesmos cinco watts de saída, e que o rendimento é de noventa e cinco por cento, destacando que a corrente de entrada é menor que a de saída, coisa que num regulador linear é impossível. Na parte de baixo, três formas de onda alinhadas no tempo ao longo de dois períodos de comutação. A primeira mostra a tensão no nó de comutação, entre a chave e o indutor: é uma onda retangular que alterna entre doze volts, enquanto a chave superior está fechada, e cerca de menos meio volt, enquanto a corrente circula pelo diodo, com o intervalo de nível alto marcado como D vezes T e o de nível baixo como um menos D vezes T. A segunda mostra a corrente no indutor: uma rampa triangular que sobe durante o tempo em que a chave está fechada, com inclinação igual à diferença entre a tensão de entrada e a de saída dividida pela indutância, e desce durante o resto do período, com inclinação igual à tensão de saída dividida pela indutância, oscilando em torno do valor médio de um ampère com uma variação pico a pico anotada como delta i. A terceira mostra a tensão de saída, praticamente reta em cinco volts, com uma ondulação minúscula de alguns milivolts em fase com a integral da corrente do indutor. Uma caixa de destaque registra a ideia central: a tensão média no nó de comutação é D vezes a tensão de entrada, o indutor e o capacitor formam um filtro passa-baixas de segunda ordem sintonizado muito abaixo da frequência de comutação, e portanto a saída é a média da onda retangular; e conclui que a razão cíclica é a variável de controle e que a tensão de saída vale D vezes a de entrada.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= LINEAR =================
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=north west, font=\scriptsize, manualred] at (-0.3,3.8)
+         {\textbf{Regulador linear}};
+    \draw (0,2.8) -- (0.9,2.8);
+    \node[anchor=east, font=\tiny] at (-0.05,2.8) {12 V};
+    \draw (0.9,2.8) to[vR] (3.0,2.8);
+    \draw (3.0,2.8) -- (4.2,2.8);
+    \draw (4.2,2.8) to[R] (4.2,1.1);
+    \node[anchor=west, font=\tiny] at (4.45,1.95) {5 $\Omega$};
+    \draw (0,1.1) -- (4.2,1.1);
+    \node[ground] at (2.1,1.1) {};
+    \draw[->,>=stealth] (0.30,3.10) -- (0.80,3.10);
+    \node[anchor=south, font=\tiny] at (0.55,3.12) {1 A};
+    \draw[->,>=stealth] (3.35,3.10) -- (3.85,3.10);
+    \node[anchor=south, font=\tiny] at (3.6,3.12) {1 A};
+
+    \node[draw=manualred, thick, rounded corners=2pt, anchor=north west, align=left,
+          font=\tiny, inner sep=4pt, text width=5.0cm] at (-0.3,0.35)
+         {$P_{in} = 12$ W \ \ $P_{out} = 5$ W
+          \\[2pt]
+          \textbf{7 W viram calor}. \ $\eta = \mathbf{42\ \%}$};
+  \end{scope}
+
+  % ================= BUCK =================
+  \begin{scope}[shift={(7.6,0)}]
+    \node[anchor=north west, font=\scriptsize, manualgreen] at (-0.3,3.8)
+         {\textbf{Conversor buck}};
+    \draw (0,2.8) -- (1.1,2.8);
+    \node[anchor=east, font=\tiny] at (-0.05,2.8) {12 V};
+    \draw (1.1,2.8) to[nos] (2.3,2.8);
+    \node[ponto] at (2.3,2.8) {};
+    \draw (2.3,2.8) to[D*, invert] (2.3,1.1);
+    \draw (2.3,2.8) to[L, l={$L$}] (4.3,2.8);
+    \node[ponto] at (4.3,2.8) {};
+    \draw (4.3,2.8) to[C] (4.3,1.1);
+    \draw (4.3,2.8) -- (5.8,2.8);
+    \draw (5.8,2.8) to[R] (5.8,1.1);
+    \node[anchor=west, font=\tiny] at (6.05,1.95) {5 $\Omega$};
+    \draw (0,1.1) -- (5.8,1.1);
+    \node[ground] at (3.3,1.1) {};
+    \draw[->,>=stealth] (0.30,3.10) -- (0.80,3.10);
+    \node[anchor=south, font=\tiny] at (0.55,3.12) {\textbf{437 mA}};
+    \draw[->,>=stealth] (4.9,3.10) -- (5.4,3.10);
+    \node[anchor=south, font=\tiny] at (5.15,3.12) {1 A};
+
+    \node[draw=manualgreen, thick, rounded corners=2pt, anchor=north west, align=left,
+          font=\tiny, inner sep=4pt, text width=6.0cm] at (-0.3,0.35)
+         {$P_{in} = 5{,}25$ W \ \ $P_{out} = 5$ W \ \ $\eta = \mathbf{95\ \%}$
+          \\[2pt]
+          A corrente de \emph{entrada} é \textbf{menor} que a de saída --- impossível num
+          linear.};
+  \end{scope}
+
+  % ================= FORMAS DE ONDA =================
+  \begin{scope}[shift={(0,-3.9)}]
+
+    % --- v no no de comutacao ---
+    \draw[eixo] (0,0) -- (11.6,0);
+    \draw[eixo] (0,-0.3) -- (0,2.4);
+    \node[anchor=east, font=\scriptsize, align=right] at (-0.15,1.3) {$v_{SW}$};
+    \draw[curva, line width=1.2pt]
+      (0,2.0) -- (2.4,2.0) -- (2.4,-0.15) -- (5.8,-0.15) -- (5.8,2.0)
+      -- (8.2,2.0) -- (8.2,-0.15) -- (11.4,-0.15);
+    \node[anchor=west, font=\tiny] at (11.5,2.0) {$V_{in}$};
+    \node[anchor=west, font=\tiny] at (11.5,-0.15) {$\approx -0{,}5$ V};
+    \draw[<->,>=stealth, manualgray] (0.05,2.25) -- (2.35,2.25);
+    \node[anchor=south, font=\tiny, manualgray] at (1.2,2.28) {$D\,T$};
+    \draw[<->,>=stealth, manualgray] (2.45,2.25) -- (5.75,2.25);
+    \node[anchor=south, font=\tiny, manualgray] at (4.1,2.28) {$(1-D)\,T$};
+
+    % --- i no indutor ---
+    \begin{scope}[shift={(0,-2.9)}]
+      \draw[eixo] (0,0) -- (11.6,0);
+      \draw[eixo] (0,-0.3) -- (0,2.4);
+      \node[anchor=east, font=\scriptsize, align=right] at (-0.15,1.2) {$i_L$};
+      \draw[destaque, line width=1.2pt]
+        (0,0.75) -- (2.4,1.75) -- (5.8,0.75) -- (8.2,1.75) -- (11.4,0.75);
+      \draw[auxiliar] (0,1.25) -- (11.4,1.25);
+      \node[anchor=west, font=\tiny, manualgray] at (11.5,1.25) {$I_{out} = 1$ A};
+      \draw[<->,>=stealth, manualgray] (2.55,1.72) -- (2.55,0.90);
+      \node[anchor=west, font=\tiny, manualgray] at (2.62,1.32) {$\Delta i$};
+      \node[anchor=south, font=\tiny, manualred] at (1.2,1.28)
+           {$\dfrac{V_{in}-V_{out}}{L}$};
+      \node[anchor=north, font=\tiny, manualred] at (4.1,1.20)
+           {$-\dfrac{V_{out}}{L}$};
+    \end{scope}
+
+    % --- v de saida ---
+    \begin{scope}[shift={(0,-5.5)}]
+      \draw[eixo] (0,0) -- (11.6,0);
+      \draw[eixo] (0,-0.3) -- (0,1.8);
+      \node[anchor=east, font=\scriptsize, align=right] at (-0.15,1.0) {$v_{out}$};
+      \draw[manualgreen, line width=1.3pt]
+        (0,1.02) -- (1.2,0.98) -- (2.4,1.02) -- (3.6,1.06) -- (4.6,1.02)
+        -- (5.8,0.98) -- (7.0,1.02) -- (8.2,1.06) -- (9.4,1.02) -- (11.4,0.99);
+      \node[anchor=west, font=\tiny, manualgreen, align=left] at (11.5,1.02)
+           {5 V $\pm$ alguns mV};
+    \end{scope}
+
+  \end{scope}
+
+  % ================= caixa =================
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.4cm] at (-0.3,-11.3)
+       {\textbf{A ideia inteira, em três frases.}
+        \\[3pt]
+        \textbf{1.} A chave produz em $v_{SW}$ uma onda retangular cuja \emph{média} vale
+        $D\,V_{in}$.
+        \\[2pt]
+        \textbf{2.} $L$ e $C$ formam um passa-baixas de \emph{segunda ordem} sintonizado muito
+        abaixo da frequência de comutação --- tipicamente 3 kHz contra 100 kHz.
+        \\[2pt]
+        \textbf{3.} Logo a saída \textbf{é essa média}, com uma ondulação pequena:
+        \[ \boxed{\ V_{out} = D\,V_{in}\ } \]
+        \textbf{A razão cíclica é a variável de controle.} O laço de realimentação não ajusta
+        uma resistência --- ajusta \emph{quanto tempo} a chave fica fechada.};
+
+\end{tikzpicture}
+```
+
+O contraste que define o capítulo. À esquerda, os 7 W que viram calor; à direita, a mesma
+conversão feita com uma chave, um indutor e um capacitor.
+:::
+
+Vale demorar num detalhe que costuma passar batido e que é a assinatura da fonte chaveada: **a
+corrente de entrada é menor que a de saída**. Num regulador linear isso é impossível — a mesma
+corrente atravessa o elemento de passagem e a carga. Num buck, a entrada entrega 437 mA e a saída
+entrega 1 A, porque o que se conserva é a **potência**, não a corrente.
+
+É exatamente o que o transformador do @sec-cap-072 faz, e não é coincidência: o conversor
+chaveado é um transformador de corrente contínua, com a razão de transformação ajustável pela
+razão cíclica em vez do número de espiras.
+
+## O balanço de tensão-segundo {#sec-075-voltseg}
+
+::: {#fig-075-voltseg}
+
+```{.tikz}
+%%| filename: 075-voltseg
+%%| alt: Figura sobre o princípio do balanço de tensão-segundo no indutor. No alto, um gráfico da tensão sobre o indutor de um conversor buck ao longo de um período de comutação: durante o intervalo em que a chave está fechada, a tensão é positiva e vale a entrada menos a saída, formando um retângulo acima do eixo cuja área está hachurada em azul; durante o resto do período, a tensão é negativa e vale menos a tensão de saída, formando um retângulo abaixo do eixo cuja área está hachurada em vermelho. Uma anotação central registra que, em regime permanente, a corrente do indutor tem de terminar o período no mesmo valor em que começou, e como a variação de corrente é a integral da tensão dividida pela indutância, a integral da tensão ao longo de um período tem de ser zero, ou seja, as duas áreas hachuradas têm de ser iguais. Abaixo, três caixas aplicam o princípio às três topologias. A primeira, para o buck, iguala a entrada menos a saída vezes D vezes T com a saída vezes um menos D vezes T, e conclui que a saída vale D vezes a entrada, sempre menor que a entrada. A segunda, para o boost, iguala a entrada vezes D vezes T com a saída menos a entrada vezes um menos D vezes T, e conclui que a saída vale a entrada dividida por um menos D, sempre maior que a entrada, com a observação de que a fórmula tende ao infinito quando D tende a um, o que não acontece na prática porque a resistência do indutor limita o ganho a algo entre quatro e seis vezes. A terceira, para o buck-boost, iguala a entrada vezes D vezes T com a saída vezes um menos D vezes T e conclui que a saída vale menos a entrada vezes D dividido por um menos D, sinal negativo incluído, de modo que ele abaixa para D menor que um meio, eleva para D maior que um meio, e sempre inverte. Uma caixa final destaca que o mesmo raciocínio de duas linhas resolve as três topologias, e que o balanço de tensão-segundo é para o indutor o que a lei de Kirchhoff das correntes é para um nó: uma restrição de conservação que vale sempre, sem depender de valores de componentes.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- grafico ----------------
+  \draw[eixo] (-0.2,0) -- (10.6,0) node[anchor=north west, font=\scriptsize] {$t$};
+  \draw[eixo] (0,-2.2) -- (0,2.6) node[anchor=south east, font=\scriptsize] {$v_L$};
+
+  \fill[manualblue!25] (0,0) rectangle (3.2,1.9);
+  \fill[manualred!25] (3.2,0) rectangle (9.6,-0.95);
+
+  \draw[curva, line width=1.3pt]
+    (0,1.9) -- (3.2,1.9) -- (3.2,-0.95) -- (9.6,-0.95) -- (9.6,1.9) -- (10.4,1.9);
+
+  \node[anchor=west, font=\scriptsize, manualblue] at (0.5,1.35) {$V_{in} - V_{out}$};
+  \node[anchor=west, font=\scriptsize, manualred] at (5.0,-0.55) {$-V_{out}$};
+
+  \draw[<->,>=stealth, manualgray] (0.05,2.25) -- (3.15,2.25);
+  \node[anchor=south, font=\tiny, manualgray] at (1.6,2.28) {$D\,T$};
+  \draw[<->,>=stealth, manualgray] (3.25,2.25) -- (9.55,2.25);
+  \node[anchor=south, font=\tiny, manualgray] at (6.4,2.28) {$(1-D)\,T$};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.0cm] at (10.9,2.6)
+       {\textbf{Em regime permanente}, $i_L$ termina o período onde começou. Como
+        \[ \Delta i_L = \frac{1}{L}\int_0^T v_L\,dt \]
+        segue que $\int_0^T v_L\,dt = 0$:
+        \\[3pt]
+        \textbf{as duas áreas hachuradas são iguais.}};
+
+  % ---------------- tres topologias ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=4.8cm] at (-0.3,-2.8)
+       {\textbf{BUCK}
+        \[ (V_{in}-V_{out})DT = V_{out}(1-D)T \]
+        \[ \boxed{\ V_{out} = D\,V_{in}\ } \]
+        Sempre \textbf{menor} que a entrada.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (5.1,-2.8)
+       {\textbf{BOOST}
+        \[ V_{in}DT = (V_{out}-V_{in})(1-D)T \]
+        \[ \boxed{\ V_{out} = \frac{V_{in}}{1-D}\ } \]
+        Sempre \textbf{maior}. A fórmula vai a $\infty$ com $D \to 1$; na prática a
+        resistência do indutor limita o ganho a \textbf{4 a 6 vezes}.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=4.8cm] at (10.9,-2.8)
+       {\textbf{BUCK-BOOST}
+        \[ V_{in}DT = V_{out}(1-D)T \]
+        \[ \boxed{\ V_{out} = -\,\frac{D}{1-D}V_{in}\ } \]
+        Abaixa se $D < \frac{1}{2}$, eleva se $D > \frac{1}{2}$, e \textbf{sempre inverte}.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=16.0cm] at (-0.3,-6.5)
+       {\textbf{O mesmo raciocínio de duas linhas resolve as três topologias} --- e resolveria
+        qualquer outra. O balanço de tensão-segundo é para o indutor o que a lei dos nós é para
+        um nó: uma restrição de \emph{conservação}, que vale sempre e não depende de valor de
+        componente nenhum.
+        \\[3pt]
+        Há uma restrição gêmea para o capacitor --- \textbf{o balanço de carga}: em regime, a
+        corrente média num capacitor é zero. É ela que dá, sem conta nenhuma, o resultado de
+        que num buck a corrente média do indutor é a corrente da carga.};
+
+\end{tikzpicture}
+```
+
+O balanço de tensão-segundo. Duas áreas iguais, e as três razões de conversão saem daí sem que
+se resolva uma única equação diferencial.
+:::
+
+O balanço de tensão-segundo é a ferramenta central deste capítulo, e vale enunciá-lo com
+cuidado, porque ele parece pequeno demais para o trabalho que faz.
+
+Num indutor, $v_L = L\,di_L/dt$. Integrando ao longo de um período de comutação:
+
+$$ \Delta i_L = \frac{1}{L}\int_0^T v_L\,dt $$
+
+Em **regime permanente** — a fonte já ligada, entregando tensão constante — a corrente do indutor
+tem de voltar, ao fim de cada período, exatamente ao valor em que começou. Se não voltasse, ela
+cresceria ou decresceria ciclo após ciclo, e não haveria regime permanente. Logo $\Delta i_L = 0$,
+logo
+
+$$ \int_0^T v_L\,dt = 0 $$
+
+A tensão sobre o indutor, integrada num período, é **zero**. É só isso. E como a tensão sobre o
+indutor é uma onda retangular de dois níveis, a integral vira uma soma de dois retângulos, e a
+razão de conversão sai em duas linhas.
+
+::: {.callout-tip}
+## O balanço de carga, o teorema gêmeo
+
+Para o capacitor, o argumento é idêntico: em regime, a **tensão** tem de voltar ao mesmo valor a
+cada período, e como $\Delta v_C = (1/C)\int i_C\,dt$, a **corrente média** num capacitor em
+regime é zero.
+
+A consequência mais útil sai de aplicá-lo ao nó de saída de um buck. Ali chegam a corrente do
+indutor e saem a corrente do capacitor e a da carga. Se a média da corrente do capacitor é zero:
+
+$$ \bar{i_L} = I_{out} $$
+
+**A corrente média do indutor de um buck é a corrente da carga.** Sem conta nenhuma.
+
+E o mesmo raciocínio aplicado ao boost dá um resultado que surpreende quem projeta o primeiro:
+ali o indutor está do lado da **entrada**, e a corrente média dele é a corrente de **entrada**,
+que é $1/(1-D)$ vezes a de saída. Um boost de 5 V para 15 V entregando 500 mA tem **1,5 A** de
+corrente média no indutor. Dimensionar o indutor pela corrente de saída é como o projeto morre.
+:::
+
+## As três topologias, em detalhe {#sec-075-topologias}
+
+::: {#fig-075-topologias}
+
+```{.tikz}
+%%| filename: 075-topologias
+%%| alt: Figura com os três conversores fundamentais desenhados em coluna, cada um com o esquemático à esquerda e uma caixa de características à direita. O primeiro é o buck, ou abaixador: da entrada parte uma chave, do outro lado da chave está o nó de comutação, desse nó um diodo desce ao terra com o catodo para cima, e do mesmo nó um indutor segue até a saída, onde há um capacitor ao terra e a carga; uma anotação destaca que o indutor está do lado da saída e que portanto a corrente de saída é contínua e suave, enquanto a corrente de entrada é pulsada. O segundo é o boost, ou elevador: da entrada parte um indutor, do outro lado do indutor está o nó de comutação, desse nó uma chave desce ao terra, e do mesmo nó um diodo segue até a saída, com o anodo do lado do nó de comutação, havendo capacitor e carga na saída; uma anotação destaca que agora é a corrente de entrada que é contínua e suave, e a de saída que é pulsada, exatamente o inverso do buck, e que existe um caminho direto da entrada à saída pelo indutor e pelo diodo, o que significa que o boost não consegue se desligar nem proteger a saída de um curto. O terceiro é o buck-boost inversor: da entrada parte uma chave até o nó de comutação, desse nó um indutor desce ao terra, e do mesmo nó um diodo aponta para a saída com o catodo do lado do nó de comutação, de modo que a saída fica negativa em relação ao terra; uma anotação destaca que tanto a corrente de entrada quanto a de saída são pulsadas, o que faz esta topologia exigir filtragem nos dois lados, e que a tensão que a chave e o diodo suportam é a soma dos módulos da entrada e da saída. Uma tabela final compara as três topologias em cinco linhas: razão de conversão, tensão suportada pela chave, corrente média no indutor, qual lado tem corrente pulsada, e uso típico. Uma nota de rodapé registra que existem topologias não inversoras que fazem o trabalho do buck-boost, notadamente a SEPIC e a Ćuk, e a de quatro chaves usada em conversores modernos, mas que todas se analisam com o mesmo balanço de tensão-segundo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \tikzset{cx/.style={font=\scriptsize}}
+
+  % ================= BUCK =================
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=south west, font=\scriptsize, manualblue] at (-0.2,3.3) {\textbf{BUCK}};
+    \draw (0.2,2.6) -- (1.3,2.6);
+    \node[anchor=east, font=\tiny] at (0.15,2.6) {$V_{in}$};
+    \draw (1.3,2.6) to[nos, l=$S$] (2.7,2.6);
+    \node[ponto] at (2.7,2.6) {};
+    \draw (2.7,2.6) to[D*, invert, l_=$D$] (2.7,0.9);
+    \draw (2.7,2.6) to[L, l=$L$] (4.6,2.6);
+    \node[ponto] at (4.6,2.6) {};
+    \draw (4.6,2.6) to[C] (4.6,0.9);
+    \draw (4.6,2.6) -- (5.6,2.6);
+    \draw (5.6,2.6) to[R] (5.6,0.9);
+    \draw (0.2,0.9) -- (5.6,0.9);
+    \node[ground] at (3.6,0.9) {};
+    \node[anchor=west, font=\tiny] at (5.7,1.75) {carga};
+
+    \node[draw=manualblue, thick, rounded corners=2pt, anchor=west, align=left,
+          font=\tiny, inner sep=5pt, text width=8.0cm] at (6.9,1.9)
+         {$\ \ V_{out} = D\,V_{in}$ \ --- \ \textbf{abaixa}
+          \\[2pt]
+          O indutor está do lado da \textbf{saída}: a corrente de saída é
+          \textbf{contínua e suave}, a de entrada é \textbf{pulsada}.};
+  \end{scope}
+
+  % ================= BOOST =================
+  \begin{scope}[shift={(0,-4.4)}]
+    \node[anchor=south west, font=\scriptsize, manualgreen] at (-0.2,3.3) {\textbf{BOOST}};
+    \draw (0.2,2.6) -- (1.1,2.6);
+    \node[anchor=east, font=\tiny] at (0.15,2.6) {$V_{in}$};
+    \draw (1.1,2.6) to[L, l=$L$] (3.0,2.6);
+    \node[ponto] at (3.0,2.6) {};
+    \draw (3.0,2.6) to[nos, l_=$S$] (3.0,0.9);
+    \draw (3.0,2.6) to[D*, l=$D$] (4.6,2.6);
+    \node[ponto] at (4.6,2.6) {};
+    \draw (4.6,2.6) to[C] (4.6,0.9);
+    \draw (4.6,2.6) -- (5.6,2.6);
+    \draw (5.6,2.6) to[R] (5.6,0.9);
+    \draw (0.2,0.9) -- (5.6,0.9);
+    \node[ground] at (2.0,0.9) {};
+    \node[anchor=west, font=\tiny] at (5.7,1.75) {carga};
+
+    \node[draw=manualgreen, thick, rounded corners=2pt, anchor=west, align=left,
+          font=\tiny, inner sep=5pt, text width=8.0cm] at (6.9,1.9)
+         {$\ \ V_{out} = V_{in}/(1-D)$ \ --- \ \textbf{eleva}
+          \\[2pt]
+          Agora a \textbf{entrada} é suave e a \textbf{saída} é pulsada --- o inverso do buck.
+          \\[2pt]
+          \textbf{Há caminho direto da entrada à saída} por $L$ e $D$: o boost \emph{não
+          consegue se desligar}, nem proteger a saída de um curto.};
+  \end{scope}
+
+  % ================= BUCK-BOOST =================
+  \begin{scope}[shift={(0,-9.0)}]
+    \node[anchor=south west, font=\scriptsize, manualred] at (-0.2,3.3)
+         {\textbf{BUCK-BOOST} (inversor)};
+    \draw (0.2,2.6) -- (1.3,2.6);
+    \node[anchor=east, font=\tiny] at (0.15,2.6) {$V_{in}$};
+    \draw (1.3,2.6) to[nos, l=$S$] (2.9,2.6);
+    \node[ponto] at (2.9,2.6) {};
+    \draw (2.9,2.6) to[L, l_=$L$] (2.9,0.9);
+    \draw (2.9,2.6) to[D*, invert, l=$D$] (4.6,2.6);
+    \node[ponto] at (4.6,2.6) {};
+    \draw (4.6,2.6) to[C] (4.6,0.9);
+    \draw (4.6,2.6) -- (5.6,2.6);
+    \draw (5.6,2.6) to[R] (5.6,0.9);
+    \draw (0.2,0.9) -- (5.6,0.9);
+    \node[ground] at (1.6,0.9) {};
+    \node[anchor=west, font=\tiny, align=left] at (5.7,1.75) {carga\\($V_{out} < 0$)};
+
+    \node[draw=manualred, thick, rounded corners=2pt, anchor=west, align=left,
+          font=\tiny, inner sep=5pt, text width=7.6cm] at (7.3,1.9)
+         {$\ \ V_{out} = -\dfrac{D}{1-D}V_{in}$ \ --- \ \textbf{abaixa, eleva e inverte}
+          \\[2pt]
+          As \textbf{duas} correntes são pulsadas: exige filtro dos dois lados.
+          \\[2pt]
+          A chave e o diodo suportam $|V_{in}| + |V_{out}|$ --- bem mais que nas outras duas.};
+  \end{scope}
+
+  % ================= tabela =================
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=16.0cm] at (-0.3,-9.6)
+       {\begin{tabular}{@{}p{3.0cm}p{3.4cm}p{3.4cm}p{4.4cm}@{}}
+          & \textbf{buck} & \textbf{boost} & \textbf{buck-boost} \\[2pt]
+          razão & $D$ & $1/(1-D)$ & $-D/(1-D)$ \\
+          tensão na chave & $V_{in}$ & $V_{out}$ & $|V_{in}|+|V_{out}|$ \\
+          $\bar{i_L}$ & $I_{out}$ & $I_{out}/(1-D)$ & $I_{out}/(1-D)$ \\
+          lado pulsado & entrada & saída & \textbf{os dois} \\
+          uso típico & 12 V $\to$ 5 V & bateria $\to$ 12 V & trilho negativo \\
+        \end{tabular}
+        \\[5pt]
+        Existem topologias \textbf{não inversoras} que fazem o trabalho do buck-boost --- a
+        SEPIC, a Ćuk, e a de \textbf{quatro chaves} dos conversores modernos. Todas se analisam
+        com o mesmo balanço de tensão-segundo.};
+
+\end{tikzpicture}
+```
+
+As três topologias. Note que são os **mesmos quatro componentes** — chave, diodo, indutor,
+capacitor — reorganizados; e que qual lado tem corrente pulsada muda em cada uma, o que decide
+onde vai o filtro.
+:::
+
+::: {.callout-important}
+## O buck síncrono, e por que quase toda fonte moderna é assim
+
+O diodo do buck dissipa $V_F \times I_{out} \times (1-D)$. Com 1 A, um Schottky de 0,45 V e
+$D = 0{,}42$, são 0,26 W — o que, numa fonte de 5 W, come 5 pontos percentuais de rendimento e é
+a maior perda do conversor.
+
+A solução é substituí-lo por **um segundo MOSFET**, comandado em oposição ao primeiro. Um
+MOSFET de 20 mΩ conduzindo 1 A dissipa 20 mV × 1 A = 20 mW em vez de 450 mW.
+
+É o **buck síncrono**, e ele é hoje a topologia padrão em praticamente tudo que alimenta lógica
+digital. O preço é a complicação que o @sec-cap-062 já descreveu: com dois MOSFETs em série
+entre a entrada e o terra, ligar os dois ao mesmo tempo por um instante é um curto franco na
+entrada. Daí o **tempo morto**, o *bootstrap* do lado alto, e o driver dedicado.
+
+Em baixa corrente há uma sutileza a mais: o MOSFET conduz nos **dois** sentidos, e o síncrono
+deixa a corrente do indutor ficar negativa em carga leve, o que piora o rendimento. Daí os modos
+de operação descontínua que os controladores modernos comutam sozinhos.
+:::
+
+## Ondulação, e o projeto do indutor {#sec-075-ondulacao}
+
+::: {#fig-075-projeto}
+
+```{.tikz}
+%%| filename: 075-projeto
+%%| alt: Figura de projeto de um conversor buck de doze volts para cinco volts e um ampère, comutando a cem quilohertz, com dois gráficos e três caixas. O gráfico da esquerda mostra a corrente no indutor ao longo de dois períodos para três valores de indutância, todas as rampas triangulares oscilando em torno do valor médio de um ampère. Com cem microhenries, o valor adotado no projeto e desenhado em azul grosso, a ondulação pico a pico é de trezentos e nove miliampères, ou trinta e um por cento da corrente média, que é o compromisso recomendado. Com trinta e três microhenries, em verde, a ondulação sobe para novecentos e trinta e oito miliampères, ou noventa e quatro por cento. Com dez microhenries, em vermelho tracejado, a ondulação seria de três vírgula zero nove ampères pico a pico, e a curva chega a tocar o zero e permanecer nele por um trecho, indicando a fronteira entre o modo de condução contínua e o descontínuo. O gráfico da direita mostra a ondulação da tensão de saída resultante em cada um dos três casos, com um capacitor de cem microfarads cerâmico de cinco miliohms de resistência série: cinco vírgula quatro milivolts pico a pico com cem microhenries, cerca de dezesseis com trinta e três, e cerca de quarenta e dois com dez, evidenciando que a ondulação de saída é proporcional à ondulação de corrente. Três caixas trazem o projeto numérico. A primeira calcula a razão cíclica considerando as quedas reais: com doze volts de entrada, cinco volts de saída, queda de zero vírgula um volt no MOSFET e zero vírgula quarenta e cinco volt no diodo Schottky, a razão cíclica resulta em zero vírgula quatrocentos e quarenta e dois em vez dos zero vírgula quatrocentos e dezessete ideais. A segunda calcula o indutor a partir da ondulação escolhida de trinta por cento: a indutância é a diferença entre as tensões multiplicada pela razão cíclica e dividida pelo produto da ondulação de corrente pela frequência de comutação, o que dá cento e três microhenries, adotando-se o valor comercial de cem microhenries; a corrente de pico é a média mais metade da ondulação, um vírgula quinze ampère, e o indutor precisa ter corrente de saturação de pelo menos um vírgula cinco ampère, ou seja, trinta por cento de margem sobre o pico e nunca sobre a média. A terceira caixa calcula a ondulação de saída e mostra que ela tem duas contribuições somadas: a parcela capacitiva, que vale a ondulação de corrente dividida por oito vezes a frequência vezes a capacitância, e a parcela resistiva, que vale a ondulação de corrente vezes a resistência série equivalente; com cem microfarads cerâmicos as parcelas valem três vírgula nove e um vírgula cinco milivolts, totalizando cinco vírgula quatro milivolts, enquanto com o mesmo valor de capacitância num eletrolítico de zero vírgula três ohm de resistência série as parcelas valem três vírgula nove e noventa e dois vírgula sete milivolts, totalizando noventa e sete milivolts, dezoito vezes pior com a mesma capacitância, o que mostra que a resistência série domina e é o motivo de fontes chaveadas modernas usarem cerâmico ou polímero na saída.
+
+\begin{tikzpicture}
+
+% ---------------- corrente no indutor ----------------
+\begin{axis}[
+    name=il,
+    width=9.0cm, height=6.6cm,
+    xmin=0, xmax=20, ymin=-0.35, ymax=3.0,
+    xlabel={tempo (µs)}, ylabel={corrente no indutor (A)},
+    xtick={0,5,10,15,20},
+    ytick={0,0.5,1.0,1.5,2.0,2.5},
+    yticklabels={$0$,$0{,}5$,$1{,}0$,$1{,}5$,$2{,}0$,$2{,}5$},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+  % 100 uH (adotado): dI = 0,309
+  \addplot[curva, line width=1.4pt] coordinates {
+    (0,0.845) (4.42,1.155) (10,0.845) (14.42,1.155) (20,0.845)};
+  % 33 uH: dI = 0,938
+  \addplot[manualgreen, thick] coordinates {
+    (0,0.531) (4.42,1.469) (10,0.531) (14.42,1.469) (20,0.531)};
+  % 10 uH: dI = 3,09 -> toca o zero
+  \addplot[destaque, thick, dashed] coordinates {
+    (0,0.00) (4.42,2.47) (9.02,0.00) (10,0.00) (14.42,2.47) (19.02,0.0) (20,0.0)};
+
+  \draw[auxiliar] (axis cs:0,1.0) -- (axis cs:20,1.0);
+  \node[anchor=south, font=\tiny, manualgray] at (axis cs:12.2,1.03) {média = 1 A};
+
+  \draw[manualblue, thin] (axis cs:7.4,0.986) -- (axis cs:7.4,0.62);
+  \node[anchor=north, font=\tiny, manualblue] at (axis cs:7.4,0.62)
+       {\textbf{100 µH} --- 31 \%};
+  \node[anchor=south west, font=\tiny, manualgreen] at (axis cs:14.6,1.49) {33 µH --- 94 \%};
+  \node[anchor=south, font=\tiny, manualred]   at (axis cs:4.42,2.52) {10 µH --- 309 \%};
+  \node[anchor=north west, font=\tiny, manualred, align=left] at (axis cs:9.35,0.34)
+       {toca o zero: fronteira do\\modo \textbf{descontínuo}};
+\end{axis}
+
+% ---------------- ondulacao de saida ----------------
+\begin{axis}[
+    name=vo, at={(il.right of south east)}, anchor=left of south west, xshift=0.9cm,
+    width=7.0cm, height=6.6cm,
+    xmin=0, xmax=20, ymin=-26, ymax=26,
+    xlabel={tempo (µs)}, ylabel={ondulação de saída (mV)},
+    xtick={0,5,10,15,20},
+    ytick={-20,-10,0,10,20},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+    samples=200,
+]
+  \addplot[curva, line width=1.4pt, domain=0:20] {2.7*sin(36*x-90)};
+  \addplot[manualgreen, thick, domain=0:20] {8.2*sin(36*x-90)};
+  \addplot[destaque, thick, dashed, domain=0:20] {21.0*sin(36*x-90)};
+  \node[anchor=south, font=\tiny, manualblue] at (axis cs:5.0,3.0)
+       {\textbf{100 µH}: 5,4 mV};
+  \node[anchor=south, font=\tiny, manualgreen] at (axis cs:14.9,8.5) {33 µH};
+  \node[anchor=south, font=\tiny, manualred] at (axis cs:5.0,21.3) {10 µH};
+  \node[anchor=south, font=\tiny, manualgray] at (axis cs:10,-25.5)
+       {com 100 µF \textbf{cerâmico} (ESR 5 m$\Omega$)};
+\end{axis}
+
+% ---------------- caixas ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.1cm] at (-1.3,-1.2)
+       {\textbf{1. A razão cíclica \emph{real}}
+        \\[3pt]
+        Ideal: $D = 5/12 = 0{,}417$.
+        \\[3pt]
+        Com $V_{DS(on)} = 0{,}1$ V e $V_F = 0{,}45$ V:
+        \[ D = \frac{V_{out}+V_F}{V_{in}-V_{DS}+V_F} = \mathbf{0{,}442} \]
+        As quedas \textbf{não} são desprezíveis.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.4cm] at (4.4,-1.2)
+       {\textbf{2. O indutor, por 30 \% de ondulação}
+        \[ L = \frac{(V_{in}-V_{out})\,D}{\Delta i \, f_{sw}}
+             = \frac{7 \times 0{,}442}{0{,}30 \times 10^5} = 103\ \mu\text{H} \]
+        Comercial: \textbf{100 µH} $\Rightarrow \Delta i = \mathbf{0{,}309}$ \textbf{A}, ou
+        31 \%.
+        \\[3pt]
+        $I_{pico} = 1 + 0{,}309/2 = \mathbf{1{,}15}$ \textbf{A}
+        \\[3pt]
+        $\Rightarrow$ indutor de $I_{sat} \ge \mathbf{1{,}5}$ \textbf{A} --- 30 \% de margem
+        sobre o \emph{pico}, nunca sobre a média.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.3cm] at (10.0,-1.2)
+       {\textbf{3. O capacitor: duas parcelas que se somam}
+        \[ V_r = \underbrace{\frac{\Delta i}{8 f_{sw} C}}_{\text{capacitiva}}
+               + \underbrace{\Delta i \cdot \text{ESR}}_{\text{resistiva}} \]
+        100 µF \textbf{cerâmico}, ESR 5 m$\Omega$:
+        \ $3{,}9 + 1{,}5 = \mathbf{5{,}4}$ \textbf{mV}.
+        \\[3pt]
+        O \emph{mesmo} 100 µF \textbf{eletrolítico}, ESR 0,3 $\Omega$:
+        \ $3{,}9 + 92{,}7 = \mathbf{97}$ \textbf{mV}.
+        \\[3pt]
+        \textbf{18 vezes pior, com a mesma capacitância.} A ESR domina --- e é por isso que
+        chaveada moderna usa cerâmico ou polímero.};
+
+\end{tikzpicture}
+```
+
+O projeto do indutor é uma escolha de compromisso entre ondulação e tamanho, e 30 % da corrente
+média é o ponto onde quase todo projeto acaba. O capacitor de saída é escolhido pela **ESR**,
+não pela capacitância.
+:::
+
+Três decisões de projeto merecem ser destacadas, porque cada uma tem um erro clássico associado.
+
+**A ondulação de corrente é uma escolha, não um resultado.** Ondulação pequena pede indutor
+grande, caro, volumoso e com resposta transitória lenta; ondulação grande pede indutor pequeno,
+mas aumenta a corrente de pico (e portanto o tamanho do núcleo, e as perdas no cobre e no
+capacitor). O consenso da indústria é **20 a 40 % da corrente média**, e 30 % é o valor que se
+adota quando não há razão para outra coisa.
+
+**A corrente que dimensiona o indutor é a de pico, não a média.** $I_{pico} = \bar{i_L} +
+\Delta i/2$. Um indutor cuja corrente de saturação seja menor que o pico **satura**, a
+indutância despenca (é o joelho da @fig-072-nucleo), a ondulação de corrente explode e a chave
+morre. Especificar $I_{sat}$ com 30 a 50 % de margem sobre o pico não é conservadorismo: é o
+mínimo.
+
+**A ESR do capacitor de saída domina a ondulação.** As duas parcelas se somam, e num eletrolítico
+comum a parcela resistiva é cinquenta vezes maior que a capacitiva. Trocar um eletrolítico de
+100 µF por um cerâmico de mesma capacitância costuma **melhorar** a ondulação em uma ordem de grandeza — o que
+é contraintuitivo até se olhar a fórmula.
+
+::: {.callout-note}
+## Modo contínuo e modo descontínuo
+
+Quando a corrente do indutor chega a zero antes do fim do período, o diodo bloqueia e a corrente
+simplesmente **para** até o próximo ciclo. É o **modo de condução descontínua** (DCM), e nele
+tudo muda:
+
+- A razão de conversão **deixa de ser** $V_{out} = D V_{in}$ e passa a depender da carga.
+- O laço de controle vê uma planta diferente, com um polo a menos.
+- Aparece um toque de alta frequência no nó de comutação — a capacitância parasita ressoando com
+  o indutor — que é o maior emissor de EMI da fonte.
+
+Um conversor projetado para 30 % de ondulação entra em DCM abaixo de **15 %** da carga nominal.
+Isso não é defeito; é o comportamento normal, e é por isso que quase todo controlador moderno
+tem um modo dedicado para carga leve.
+
+O que é defeito é **projetar em DCM sem saber**, o que acontece com quem escolheu um indutor
+pequeno demais e testou só com carga máxima.
+:::
+
+## O laço de controle {#sec-075-controle}
+
+::: {#fig-075-controle}
+
+```{.tikz}
+%%| filename: 075-controle
+%%| alt: Diagrama do laço de realimentação de um conversor buck com controle por modo de tensão, desenhado como um anel fechado com cinco blocos. Partindo da saída regulada, um divisor resistivo produz a amostra de tensão, que entra na entrada inversora de um amplificador de erro; a entrada não inversora recebe a referência bandgap de zero vírgula oito volt; entre a saída e a entrada inversora do amplificador de erro há uma rede de compensação com resistores e capacitores, destacada em azul e anotada como o ponto onde se resolve a estabilidade. A saída do amplificador de erro vai à entrada inversora de um comparador, cuja entrada não inversora recebe uma onda dente de serra vinda de um oscilador; a saída do comparador é, portanto, um sinal de largura de pulso modulada, cuja razão cíclica cresce quando a tensão de erro sobe. Esse sinal vai a um driver de porta, que aciona o MOSFET, fechando o laço através do estágio de potência com o indutor e o capacitor. Ao lado do comparador, um pequeno gráfico mostra a dente de serra com uma linha horizontal cruzando-a em dois níveis diferentes, ilustrando que a largura do pulso resultante cresce quando o nível sobe. Três caixas acompanham. A primeira explica por que o laço precisa de compensação: o filtro de saída formado pelo indutor e pelo capacitor é um sistema de segunda ordem que contribui com cento e oitenta graus de atraso acima da sua frequência de ressonância, e cento e oitenta graus de atraso com ganho maior que um é exatamente a condição de oscilação estabelecida no capítulo sobre realimentação; a rede de compensação insere zeros que devolvem margem de fase. A segunda caixa trata do controle por modo de corrente, alternativa ao modo de tensão: nele o laço interno regula a corrente de pico do indutor em vez da razão cíclica diretamente, o que converte o estágio de potência em algo de primeira ordem, torna a compensação muito mais fácil e dá limitação de corrente ciclo a ciclo de graça; o preço é a necessidade de compensação de rampa acima de cinquenta por cento de razão cíclica, para evitar oscilação subarmônica em que ciclos largos e estreitos se alternam. A terceira caixa registra três consequências práticas: a resposta a degrau de carga é limitada pela banda do laço, tipicamente um décimo da frequência de comutação; a ondulação de saída aparece na entrada do amplificador de erro e por isso um pouco de ondulação é necessária para o laço funcionar; e a compensação depende do capacitor de saída, de modo que trocar o capacitor por outro de resistência série diferente altera a estabilidade, exatamente como no caso do LDO do capítulo anterior.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \tikzset{bl/.style={draw, thick, rounded corners=2pt, align=center,
+                      font=\scriptsize, minimum height=0.95cm, fill=white}}
+
+  % ---- caminho de potencia ----
+  \node[bl, minimum width=1.8cm] (drv)  at (2.0,5.6) {driver\\de porta};
+  \node[bl, minimum width=2.4cm] (pot)  at (5.6,5.6) {estágio de potência\\$S$, $D$, $L$, $C$};
+  \node[ponto] (out) at (9.1,5.6) {};
+  \draw[->,>=stealth, thick] (drv) -- (pot);
+  \draw[->,>=stealth, thick] (pot) -- (9.1,5.6);
+  \draw[thick] (9.1,5.6) -- (10.3,5.6);
+  \node[anchor=west, font=\scriptsize, align=left] at (10.4,5.6) {$V_{out}$\\5,0 V};
+
+  % ---- divisor ----
+  \draw (9.1,5.6) -- (9.1,4.6);
+  \draw (9.1,4.6) to[R, l=$R_a$] (9.1,3.4);
+  \node[ponto] at (9.1,3.4) {};
+  \draw (9.1,3.4) to[R, l=$R_b$] (9.1,2.1);
+  \draw (9.1,2.1) -- (9.1,1.7);
+  \node[ground] at (9.1,1.7) {};
+
+  % ---- amplificador de erro ----
+  \draw[thick] (6.1,2.7) -- (6.1,4.1) -- (4.8,3.4) -- cycle;
+  \node[anchor=east, font=\tiny] at (6.03,3.82) {$-$};
+  \node[anchor=east, font=\tiny] at (6.03,2.98) {$+$};
+  \node[anchor=north, font=\tiny] at (5.45,2.62) {erro};
+  \draw (9.1,3.4) -- (7.4,3.4) -- (7.4,3.82) -- (6.1,3.82);
+  \draw (6.1,2.98) -- (7.0,2.98);
+  \node[bl, minimum width=1.4cm, anchor=west, minimum height=0.7cm] (ref) at (7.05,2.98)
+       {\tiny bandgap\\\tiny 0,8 V};
+
+  % rede de compensacao
+  \draw[manualblue, thick] (7.4,3.82) -- (7.4,4.9) -- (4.4,4.9) -- (4.4,3.4);
+  \draw[manualblue, thick] (4.4,3.4) -- (4.8,3.4);
+  \draw[manualblue, fill=white] (5.35,4.70) rectangle (6.45,5.10);
+  \node[manualblue, font=\tiny] at (5.9,4.90) {$R_c$, $C_c$};
+  \node[manualblue, anchor=north, font=\tiny, align=center] at (5.9,4.62)
+       {\textbf{compensação}};
+
+  % ---- comparador PWM ----
+  \draw[thick] (3.9,2.7) -- (3.9,4.1) -- (2.6,3.4) -- cycle;
+  \node[anchor=east, font=\tiny] at (3.83,3.82) {$-$};
+  \node[anchor=east, font=\tiny] at (3.83,2.98) {$+$};
+  \node[anchor=north, font=\tiny] at (3.25,2.62) {PWM};
+  \draw (4.4,3.82) -- (3.9,3.82);
+  \node[ponto] at (4.4,3.82) {};
+  \node[anchor=south, font=\tiny, align=center] at (4.35,3.95) {nível\\de erro};
+  \draw (2.6,3.4) -- (2.0,3.4) -- (2.0,5.13);
+  \draw[->,>=stealth] (2.0,5.05) -- (2.0,5.13);
+
+  % oscilador dente de serra
+  \node[bl, minimum width=2.2cm, minimum height=1.4cm] (osc) at (2.9,1.55) {};
+  \node[anchor=north, font=\tiny] at (2.9,0.82) {oscilador};
+  \draw[destaque] (2.1,1.25) -- (2.55,1.95) -- (2.55,1.25) -- (3.0,1.95) -- (3.0,1.25)
+                  -- (3.45,1.95) -- (3.45,1.25);
+  \draw[->,>=stealth] (2.9,2.25) -- (2.9,2.98) -- (3.9,2.98);
+
+  % ---- caixas ----
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.1cm] at (-0.3,-0.2)
+       {\textbf{Por que precisa de compensação.} O filtro $LC$ de saída é de \emph{segunda
+        ordem}: acima da ressonância ele contribui com \textbf{180° de atraso}.
+        \\[3pt]
+        E 180° de atraso com ganho maior que 1 é, palavra por palavra, a condição de oscilação
+        do capítulo 064. A rede $R_c$, $C_c$ insere \textbf{zeros} que devolvem margem de
+        fase.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.1cm] at (5.4,-0.2)
+       {\textbf{Modo corrente, a alternativa.} Um laço interno regula a \emph{corrente de pico}
+        do indutor, e não $D$ diretamente.
+        \\[3pt]
+        O estágio de potência vira \textbf{primeira ordem}: a compensação fica muito mais fácil,
+        e a limitação de corrente ciclo a ciclo vem de graça.
+        \\[3pt]
+        O preço: acima de $D = 0{,}5$ é preciso \textbf{compensação de rampa}, sem a qual
+        aparece oscilação \emph{subarmônica} --- ciclos largos e estreitos se alternando.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.1cm] at (11.1,-0.2)
+       {\textbf{Três consequências práticas}
+        \\[3pt]
+        \textbf{1.} A resposta a degrau de carga é limitada pela banda do laço --- tipicamente
+        $f_{sw}/10$.
+        \\[2pt]
+        \textbf{2.} A ondulação de saída \emph{é} o sinal que o amplificador de erro vê: um
+        pouco de ondulação é \textbf{necessária}.
+        \\[2pt]
+        \textbf{3.} A compensação depende do capacitor de saída. Trocá-lo por outro de ESR
+        diferente muda a estabilidade --- exatamente como no LDO do capítulo anterior.};
+
+\end{tikzpicture}
+```
+
+O laço de controle por modo de tensão. O bloco azul é onde mora a estabilidade, e é a razão de
+o @sec-cap-064 ter existido.
+:::
+
+## O laço de comutação, e por que o layout é o circuito {#sec-075-layout}
+
+::: {#fig-075-layout}
+
+```{.tikz}
+%%| filename: 075-layout
+%%| alt: Figura em duas partes sobre o laço de comutação de um conversor buck. À esquerda, o esquemático do conversor com o caminho da corrente destacado em vermelho grosso: o laço vai do terminal positivo do capacitor de entrada, passa pelo MOSFET, chega ao nó de comutação, desce pelo diodo e volta ao terminal negativo do capacitor de entrada. Uma anotação registra que esse é o caminho que a corrente percorre e abandona a cada comutação, ou seja, milhões de vezes por segundo, e que a área geométrica delimitada por ele é o que importa. Em série com o laço aparecem, em vermelho tracejado, as indutâncias parasitas das trilhas, anotadas como aproximadamente um nanohenry por milímetro de trilha. À direita, dois desenhos de layout de placa vistos de cima e comparados. O primeiro, marcado com um X vermelho, tem o capacitor de entrada distante do MOSFET e do diodo, com o laço formando uma área grande de cerca de trezentos milímetros quadrados; a anotação registra que a indutância parasita resultante é de cerca de trinta nanohenries. O segundo, marcado com um visto verde, tem o capacitor de entrada colado aos dois componentes, formando um laço de cerca de trinta milímetros quadrados, com indutância de cerca de cinco nanohenries. Abaixo, um gráfico do que se vê no osciloscópio no nó de comutação nos dois casos: no caso do laço grande, a borda de subida é seguida de um toque de alta frequência com sobretensão de mais de vinte volts sobre um barramento de doze; no caso do laço pequeno, o toque é muito menor e a sobretensão fica em torno de quinze volts. Três caixas registram: primeiro, a fórmula da sobretensão como a indutância parasita vezes a taxa de variação da corrente, com o exemplo de trinta nanohenries e um ampère em dez nanossegundos dando três volts, e trinta nanohenries com dois ampères em cinco nanossegundos dando doze volts, o suficiente para levar um MOSFET de vinte volts à ruptura em um barramento de doze; segundo, as quatro regras de layout, que são minimizar a área do laço de comutação acima de qualquer outra consideração, pôr o capacitor cerâmico de entrada colado aos terminais do MOSFET e do diodo, usar plano de terra contínuo sob o conversor sem cortes, e manter o nó de comutação com a menor área de cobre possível porque ele é o principal antena da placa; terceiro, o alerta de que o nó de comutação varia doze volts em dez nanossegundos, o que é uma taxa de mais de um volt por nanossegundo, e que essa borda é a fonte de interferência eletromagnética da fonte inteira, assunto do capítulo oitenta e seis.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================= esquematico com o laco =================
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=south west, font=\scriptsize] at (-0.2,4.5)
+         {\textbf{O laço de comutação}};
+
+    % laco em vermelho
+    \draw[manualred, line width=2.6pt, opacity=0.30]
+      (1.0,3.6) -- (3.6,3.6) -- (3.6,1.4) -- (1.0,1.4) -- cycle;
+
+    \draw (1.0,3.6) -- (2.2,3.6);
+    \draw (2.2,3.6) to[nos, l=$S$] (3.6,3.6);
+    \node[ponto] at (3.6,3.6) {};
+    \draw (3.6,3.6) to[D*, invert] (3.6,1.4);
+    \draw (1.0,3.6) to[C, l_={$C_{in}$}] (1.0,1.4);
+    \draw (1.0,1.4) -- (3.6,1.4);
+
+    \draw (3.6,3.6) to[L, l=$L$] (5.6,3.6);
+    \node[ponto] at (5.6,3.6) {};
+    \draw (5.6,3.6) to[C] (5.6,1.4);
+    \draw (5.6,3.6) -- (6.6,3.6);
+    \draw (6.6,3.6) to[R] (6.6,1.4);
+    \draw (3.6,1.4) -- (6.6,1.4);
+    \node[ground] at (4.6,1.4) {};
+    \draw (0.1,3.6) -- (1.0,3.6);
+    \node[anchor=east, font=\tiny] at (0.05,3.6) {$V_{in}$};
+    \draw (0.1,1.4) -- (1.0,1.4);
+
+    % indutancias parasitas
+    \node[manualred, anchor=south, font=\tiny, align=center] at (2.3,4.15)
+         {$\approx 1$ nH por mm de trilha};
+    \node[manualred, anchor=north, font=\tiny, align=center] at (2.3,1.15)
+         {a \textbf{área} deste laço é o que importa};
+  \end{scope}
+
+  % ================= dois layouts =================
+  \begin{scope}[shift={(8.4,0)}]
+
+    % ruim
+    \begin{scope}[shift={(0,0)}]
+      \draw[draw=manualred, thick, rounded corners=2pt] (-0.15,1.2) rectangle (3.5,4.4);
+      \node[anchor=north west, font=\tiny, manualred] at (-0.1,4.35)
+           {\textbf{$\times$ \ laço grande}};
+      \draw[fill=manualgray!20, draw=black] (0.1,1.5) rectangle (0.75,2.6);
+      \node[font=\tiny, rotate=90] at (0.42,2.05) {$C_{in}$};
+      \draw[fill=manualgray!20, draw=black] (2.4,3.2) rectangle (3.1,3.8);
+      \node[font=\tiny] at (2.75,3.5) {$S$};
+      \draw[fill=manualgray!20, draw=black] (2.4,1.5) rectangle (3.1,2.1);
+      \node[font=\tiny] at (2.75,1.8) {$D$};
+      \fill[manualred, opacity=0.20] (0.42,2.6) -- (0.42,3.5) -- (2.4,3.5)
+        -- (2.4,1.8) -- (0.42,1.8) -- cycle;
+      \node[anchor=south, font=\tiny, manualred, align=center] at (1.7,1.32)
+           {$\approx 300$ mm$^2$ \ $\Rightarrow$ \ $\approx 30$ nH};
+    \end{scope}
+
+    % bom
+    \begin{scope}[shift={(4.2,0)}]
+      \draw[draw=manualgreen, thick, rounded corners=2pt] (-0.15,1.2) rectangle (3.5,4.4);
+      \node[anchor=north west, font=\tiny, manualgreen] at (-0.1,4.35)
+           {\textbf{$\checkmark$ \ laço pequeno}};
+      \draw[fill=manualgray!20, draw=black] (1.15,2.35) rectangle (1.8,3.45);
+      \node[font=\tiny, rotate=90] at (1.47,2.9) {$C_{in}$};
+      \draw[fill=manualgray!20, draw=black] (2.05,3.0) rectangle (2.75,3.6);
+      \node[font=\tiny] at (2.4,3.3) {$S$};
+      \draw[fill=manualgray!20, draw=black] (2.05,2.2) rectangle (2.75,2.8);
+      \node[font=\tiny] at (2.4,2.5) {$D$};
+      \fill[manualgreen, opacity=0.25] (1.47,3.45) -- (1.47,2.35) -- (2.4,2.5)
+        -- (2.4,3.3) -- cycle;
+      \node[anchor=south, font=\tiny, manualgreen, align=center] at (1.7,1.32)
+           {$\approx 30$ mm$^2$ \ $\Rightarrow$ \ $\approx 5$ nH};
+    \end{scope}
+
+  \end{scope}
+
+  % ================= o que se ve no osciloscopio =================
+  \begin{scope}[shift={(0,-3.7)}]
+    \draw[eixo] (0,0) -- (7.4,0);
+    \draw[eixo] (0,-0.3) -- (0,3.4);
+    \node[anchor=east, font=\scriptsize] at (-0.12,1.7) {$v_{SW}$};
+    \draw[auxiliar] (0,2.0) -- (7.3,2.0);
+    \node[anchor=east, font=\tiny, manualgray] at (-0.12,2.0) {12 V};
+
+    % laco grande: toque grande
+    \draw[destaque, line width=1.2pt, samples=200, domain=1.2:4.4, variable=\x]
+         plot ({\x}, {2.0 + 1.15*exp(-2.2*(\x-1.2))*sin(560*(\x-1.2))});
+    \draw[destaque, line width=1.2pt] (0.2,0.1) -- (1.2,0.1) -- (1.2,2.0);
+    \draw[destaque, line width=1.2pt] (4.4,2.0) -- (7.3,2.0);
+
+    \node[anchor=west, font=\tiny, manualred, align=left] at (2.2,3.25)
+         {laço \textbf{grande}: pico $>$ 20 V num barramento de 12 V};
+
+    % laco pequeno
+    \begin{scope}[shift={(0,-4.0)}]
+      \draw[eixo] (0,0) -- (7.4,0);
+      \draw[eixo] (0,-0.3) -- (0,3.4);
+      \node[anchor=east, font=\scriptsize] at (-0.12,1.7) {$v_{SW}$};
+      \draw[auxiliar] (0,2.0) -- (7.3,2.0);
+      \node[anchor=east, font=\tiny, manualgray] at (-0.12,2.0) {12 V};
+      \draw[manualgreen, line width=1.2pt, samples=200, domain=1.2:4.4, variable=\x]
+           plot ({\x}, {2.0 + 0.42*exp(-3.6*(\x-1.2))*sin(560*(\x-1.2))});
+      \draw[manualgreen, line width=1.2pt] (0.2,0.1) -- (1.2,0.1) -- (1.2,2.0);
+      \draw[manualgreen, line width=1.2pt] (4.4,2.0) -- (7.3,2.0);
+      \node[anchor=west, font=\tiny, manualgreen, align=left] at (2.2,3.25)
+           {laço \textbf{pequeno}: pico $\approx$ 15 V};
+    \end{scope}
+  \end{scope}
+
+  % ================= caixas =================
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (8.2,-1.3)
+       {\textbf{De onde vem a sobretensão}
+        \[ V_{pico} = L_{par}\,\frac{di}{dt} \]
+        30 nH com 1 A em 10 ns: \ \textbf{3 V}. \\
+        30 nH com 2 A em 5 ns: \ \ \textbf{12 V}.
+        \\[3pt]
+        Doze volts de sobretensão num barramento de 12 V levam um MOSFET de 20 V à
+        \textbf{ruptura} --- e a falha é instantânea, sem aviso e sem sintoma prévio.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (8.2,-5.0)
+       {\textbf{As quatro regras de layout}
+        \\[3pt]
+        \textbf{1.} \emph{Minimize a área do laço de comutação} --- acima de qualquer outra
+        consideração.
+        \\[2pt]
+        \textbf{2.} Cerâmico de entrada \textbf{colado} aos terminais de $S$ e $D$.
+        \\[2pt]
+        \textbf{3.} Plano de terra \textbf{contínuo} sob o conversor, sem cortes.
+        \\[2pt]
+        \textbf{4.} Nó de comutação com a \textbf{menor área de cobre} possível: ele é a
+        principal antena da placa.};
+
+  \node[draw=manualgray, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=7.4cm] at (8.2,-8.2)
+       {\textbf{O nó de comutação varia 12 V em 10 ns} --- mais de \textbf{1 V por
+        nanossegundo}.
+        \\[3pt]
+        Essa borda é a fonte de EMI da fonte inteira, e é o assunto do capítulo 086. Aqui basta
+        registrar a consequência de projeto: \textbf{o layout não é a implementação do circuito.
+        Ele é parte do circuito.}};
+
+\end{tikzpicture}
+```
+
+O laço de comutação é a área que a corrente percorre e abandona milhões de vezes por segundo.
+Reduzi-la de 300 para 30 mm² tira 7 V de sobretensão do dreno do MOSFET, sem trocar componente
+nenhum.
+:::
+
+::: {.callout-warning}
+## Por que este é o capítulo em que as coisas explodem
+
+Uma fonte linear que falha entrega tensão errada. Uma fonte chaveada que falha costuma entregar
+**a tensão de entrada inteira** na carga — porque o modo de falha mais comum de um MOSFET é
+**em curto**, dreno com fonte.
+
+Num buck de 12 V para 5 V, isso põe 12 V no que esperava 5 V. Se a carga for um
+microcontrolador de 3,3 V com um regulador de 5 V antes dele, morre tudo em cascata.
+
+É por isso que fontes chaveadas sérias têm:
+
+- **Proteção de sobretensão na saída**, que desliga (ou curto-circuita deliberadamente, num
+  circuito chamado *crowbar*) quando a saída passa de um limite.
+- **Fusível na entrada**, dimensionado para abrir antes da trilha.
+- **Limitação de corrente ciclo a ciclo**, que o controle por modo de corrente dá de graça.
+
+E é por isso que a primeira ligação de um protótipo de chaveada se faz com a fonte de bancada em
+**limitação de corrente**, e com uma carga resistiva — nunca com o circuito que ela vai
+alimentar.
+:::
+
+## 🧪 Laboratório {#sec-075-lab}
+
+O objetivo é montar um buck e um boost discretos, medir a razão cíclica contra a razão de
+conversão, ver a ondulação do indutor, provocar a saturação do núcleo, e **medir o efeito do laço
+de comutação** — tudo em 12 V, sem chegar perto da rede.
+
+::: {.callout-warning}
+## Antes de começar
+
+**A fonte de alimentação de bancada fica em limitação de corrente**, ajustada em 1 A, durante o
+roteiro inteiro. É a rede de segurança que substitui todas as proteções que este circuito
+discreto não tem.
+
+Quatro cuidados específicos:
+
+1. **Ligue a carga antes de ligar a fonte.** Um boost sem carga sobe a saída até algo romper.
+2. **Confira a polaridade do eletrolítico duas vezes**, e use um de 35 V mesmo onde 16 V
+   pareceriam bastar. No boost, a saída passa por um transitório na partida.
+3. **Não desconecte a carga com a fonte ligada.** Interromper a corrente de um indutor é o
+   mecanismo de destruição descrito na abertura.
+4. **O MOSFET e o diodo esquentam.** Meça com termômetro ou com as costas do dedo, rapidamente,
+   nunca com a ponta.
+:::
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | Fonte de bancada ajustável **com limitação de corrente** | 0 a 20 V, 1 A — essencial |
+| 1 | **IRLZ44N** ou **IRF3205** (MOSFET de nível lógico) | Partes 2 a 6 |
+| 1 | **IR2117**, **TC4420** ou driver equivalente | Parte 3 — lado alto |
+| 1 | **MC34063A** | Parte 6 — controlador completo, e o CI é barato |
+| 2 | Diodos **1N5822** Schottky 3 A | e um 1N4007 para comparação |
+| — | Indutores: **100 µH / 2 A**, 33 µH / 3 A, 10 µH / 3 A | de fonte velha serve |
+| — | Capacitores: 2× 100 µF/35 V eletrolítico, 2× 100 µF cerâmico (ou 4× 22 µF em paralelo), 10 µF cerâmico, 100 nF, 1 nF | |
+| — | Resistores de carga: 5,6 Ω/10 W, 10 Ω/10 W, 22 Ω/5 W, 47 Ω/5 W | |
+| — | Resistores: 1 kΩ, 10 kΩ, 2,2 kΩ, 3,9 kΩ, 0,33 Ω/1 W (detecção) | |
+| 1 | Gerador de funções **com controle de ciclo de trabalho** | Partes 2 a 5 |
+| 1 | Osciloscópio de 2 canais, ponta com **mola de terra** se possível | |
+| 1 | Multímetro, de preferência dois | |
+
+**Variante simulada (plano B).** Este é o capítulo em que a simulação mais compensa. No LTspice,
+um buck com `.tran 2m` mostra a partida inteira; `.step param L list 10u 33u 100u` reproduz a
+@fig-075-projeto; e um indutor com `Ipk` definido reproduz a saturação da Parte 5 sem custo. O
+laço de comutação da Parte 7 pode ser simulado pondo uma indutância explícita de 30 nH em série
+com o capacitor de entrada — e o toque aparece na tela exatamente como na bancada.
+
+### Parte 1 — O balanço de tensão-segundo, sem montar nada
+
+Antes de soldar, faça as contas do seu conversor:
+
+1. Para $V_{in} = 12$ V e $V_{out} = 5$ V, calcule $D$ ideal e $D$ real (com $V_F = 0{,}45$ V do
+   Schottky e $V_{DS} = 0{,}1$ V).
+2. Com $f_{sw} = 100$ kHz e o indutor de 100 µH, calcule $\Delta i$ e $I_{pico}$. Refaça para
+   33 µH e para 10 µH.
+3. Calcule a ondulação de saída com 100 µF eletrolítico (ESR $\approx 0{,}3$ Ω) e com 100 µF
+   cerâmico (ESR $\approx 5$ mΩ).
+
+Guarde os números. Toda medida do roteiro é comparada com eles.
+
+### Parte 2 — O buck, com acionamento simples
+
+O MOSFET de um buck é de **lado alto**, e acioná-lo direto do gerador não funciona. Duas saídas:
+
+- **A honesta:** use o driver (IR2117) com o *bootstrap* do @sec-cap-062.
+- **A rápida, para começar:** monte o buck com um **MOSFET de canal P** (IRF9540), que aciona
+  com o gate abaixo da fonte e dispensa o *bootstrap*. É menos eficiente e serve perfeitamente
+  para o experimento.
+
+1. Monte o buck com 100 µH, 1N5822, 100 µF eletrolítico e 5,6 Ω de carga.
+2. Acione com o gerador em **100 kHz** e $D = 0{,}44$.
+3. Meça a tensão de saída. Esperado: perto de 5 V.
+4. **Varra $D$ de 0,2 a 0,8** e monte a tabela de $V_{out}$ contra $D$.
+
+Trace o gráfico. Ele deve ser uma **reta**, com inclinação $V_{in}$, e é o balanço de
+tensão-segundo verificado na bancada.
+
+5. Meça o rendimento: $\eta = V_{out}I_{out}/(V_{in}I_{in})$, com um multímetro em cada lado.
+   Espere 80 a 88 % — abaixo do que uma fonte comercial dá, e muito acima dos 42 % do linear.
+
+### Parte 3 — As formas de onda
+
+1. Observe $v_{SW}$ (o nó entre a chave e o indutor). Você deve ver a onda retangular da
+   @fig-075-ideia, com o patamar negativo de $-V_F$ durante a condução do diodo.
+2. **Meça a corrente do indutor** pondo o resistor de 0,33 Ω em série com ele e observando a
+   tensão sobre ele. A rampa triangular deve aparecer.
+3. Meça $\Delta i$ pico a pico e compare com a Parte 1.
+4. Meça a ondulação da saída em acoplamento CA, na escala mais sensível.
+5. **Troque o eletrolítico de 100 µF pelo cerâmico de mesma capacitância** e meça de novo.
+
+A ondulação cai por mais de uma ordem de grandeza, com **a mesma capacitância**. É a ESR
+dominando, e é o resultado mais contraintuitivo do roteiro. Se você só tiver cerâmicos de 22 µF,
+ponha quatro em paralelo — ou meça com um só e confira que, mesmo com um quinto da capacitância,
+ele ainda ganha do eletrolítico.
+
+### Parte 4 — Modo descontínuo
+
+1. Com o cerâmico e 100 µH, reduza a carga de 5,6 Ω para 47 Ω (de 900 mA para 100 mA).
+2. Observe a corrente do indutor.
+
+Ela toca o zero e fica um trecho **em zero**. É DCM.
+
+3. Meça $V_{out}$ com $D$ fixo, variando a carga de 5,6 Ω a 100 Ω.
+
+Em CCM a saída quase não muda com a carga; em DCM ela **sobe**. A razão de conversão deixou de
+ser $D V_{in}$ — é a caixa da @fig-075-projeto acontecendo.
+
+4. No nó de comutação, procure o **toque de alta frequência** durante o intervalo em que a
+   corrente é zero. É o indutor ressoando com a capacitância parasita, e é o maior emissor de
+   EMI do circuito.
+
+### Parte 5 — Saturar o indutor de propósito
+
+1. Volte à carga de 5,6 Ω. Troque o indutor de 100 µH pelo de **10 µH**.
+2. Observe a corrente do indutor. A ondulação é enorme e o pico passa de 2,5 A.
+3. **Aumente $D$ devagar**, observando o pico da corrente.
+
+Em algum ponto a rampa deixa de ser reta e **encurva para cima**, disparando no fim do ciclo. É o
+núcleo saturando: a indutância caiu, e $di/dt = v/L$ cresceu.
+
+4. **Pare aqui.** Não continue subindo — é assim que se destrói o MOSFET.
+
+Este é o experimento que dá sentido ao "$I_{sat} \ge 1{,}5$ A" da @fig-075-projeto — e mostra
+por que o número é calculado a partir do **pico**, que aqui passa de 2,5 A com o indutor errado.
+
+### Parte 6 — Um conversor de verdade, com controlador
+
+1. Monte o MC34063A como buck de 12 V para 5 V, seguindo o *datasheet*: $R_{sc} = 0{,}33$ Ω,
+   $C_T = 470$ pF, divisor de realimentação com 1 kΩ e 3 kΩ (a referência do MC34063 é 1,25 V).
+2. Meça a saída, a ondulação e o rendimento.
+3. **Regulação de linha:** varie a entrada de 8 V a 20 V. A saída fica em 5 V.
+4. **Regulação de carga:** varie a carga de 47 Ω a 5,6 Ω.
+5. **Curto-circuite a saída** por um instante, com a fonte de bancada em limitação. A limitação
+   de corrente por $R_{sc}$ atua.
+
+Compare o rendimento com o do 7805 do capítulo anterior nas mesmas condições. A diferença é o
+capítulo inteiro.
+
+### Parte 7 — Medir o laço de comutação
+
+Este é o experimento que não se pode fazer em simulação, e o mais instrutivo do roteiro.
+
+1. Com o conversor funcionando, observe $v_{SW}$ na borda de subida, com a base de tempo
+   **rápida** (20 ns/div) e a ponta em ×10.
+2. Meça a sobretensão de pico e a frequência do toque.
+3. **Agora aumente o laço de propósito:** afaste o capacitor cerâmico de entrada, ligando-o por
+   dois fios de 10 cm.
+4. Meça de novo.
+
+A sobretensão cresce muito, e a frequência do toque cai — porque $L_{par}$ aumentou. Se você
+tiver dois cerâmicos, ponha um colado e veja a melhora.
+
+5. **O erro de medição que este passo ensina:** repita a medida com a garra de terra comprida da
+   ponta de prova e depois com uma **mola de terra** curta. As duas leituras são diferentes, e a
+   diferença é o @sec-cap-044 aparecendo — parte do "toque" que você mede com garra comprida é
+   artefato da própria ponta.
+
+Meça, compare, e desconfie da medida antes de desconfiar do circuito.
+
+## 🔥 Onde Queima {#sec-075-queima}
+
+**Dimensionar o indutor pela corrente média.** O que satura o núcleo é o **pico**,
+$\bar{i_L} + \Delta i/2$. E no boost a corrente média do indutor já é $I_{out}/(1-D)$, não
+$I_{out}$ — um boost de 5 para 15 V com 500 mA de saída tem 1,5 A médios no indutor.
+
+**Deixar o laço de comutação grande.** 30 nH e 2 A em 5 ns dão 12 V de sobretensão. Num
+barramento de 12 V, um MOSFET de 20 V rompe. A falha é instantânea e não dá aviso.
+
+**Usar eletrolítico comum na saída e culpar a capacitância pela ondulação.** A parcela resistiva
+é $\Delta i \times \text{ESR}$, e num eletrolítico ela é dez a cinquenta vezes maior que a
+capacitiva. Cerâmico ou polímero.
+
+**Esquecer o capacitor cerâmico de entrada.** No buck, a corrente de **entrada** é pulsada: ela
+sai do capacitor de entrada, não da fonte. Sem ele, o pulso percorre o cabo de alimentação
+inteiro, e o cabo vira antena — além de a fonte enxergar um transitório a cada ciclo.
+
+**Ligar um boost sem carga.** Não há laço de realimentação que segure uma saída sem consumo: a
+tensão sobe até o capacitor ou o MOSFET romper. E, mesmo com controlador, o transitório de
+partida costuma passar bem acima do valor regulado.
+
+**Achar que um boost protege a saída de um curto.** Não protege: há caminho direto pela indutor e
+pelo diodo. Um boost com a saída em curto entrega toda a corrente que a entrada puder dar, com o
+controlador desligado e tudo.
+
+**Trocar o capacitor de saída por outro de ESR diferente.** A compensação do laço depende dele.
+É a mesma falha do LDO do capítulo anterior, com a mesma cara: oscilação que apareceu depois de
+uma revisão de lista de materiais.
+
+**Medir o nó de comutação com a garra de terra comprida.** A garra é uma espira de vários
+centímetros quadrados no meio do campo magnético de um circuito que comuta ampères em
+nanossegundos. Boa parte do que se vê na tela é artefato — use mola de terra.
+
+**Ligar os dois MOSFETs de um buck síncrono ao mesmo tempo.** *Shoot-through*: curto franco entre
+a entrada e o terra, por dezenas de nanossegundos, milhares de vezes por segundo. Tempo morto, e
+o driver dedicado do @sec-cap-062.
+
+**Projetar em DCM sem perceber.** A razão de conversão muda, o laço vê outra planta e a
+compensação feita para CCM pode ficar instável. Verifique a corrente do indutor em **carga
+mínima**, não só em carga máxima.
+
+**Usar um diodo comum no lugar do Schottky.** Um 1N4007 tem tempo de recuperação reversa de
+microssegundos: em 100 kHz ele ainda está conduzindo no sentido errado quando a chave fecha. O
+resultado é um pico de corrente enorme, perda alta e aquecimento dos dois componentes. Schottky,
+sempre — e com tensão reversa e corrente com folga.
+
+**Esperar que um multímetro comum meça a saída corretamente.** O ruído de comutação sobrepõe-se
+à leitura, e muitos multímetros retificam esse ruído e leem alto. Meça com osciloscópio quando o
+número importar.
+
+## O que fica deste capítulo {#sec-075-resumo}
+
+**A ideia:** trocar o elemento de passagem linear por uma **chave** (que não dissipa nos dois
+estados) mais um **indutor** (que guarda energia). A saída é a média de uma onda retangular, e a
+razão cíclica é a variável de controle.
+
+**O balanço de tensão-segundo** — em regime, $\int_0^T v_L\,dt = 0$ — resolve as três topologias
+em duas linhas cada:
+
+$$ \text{buck: } V_{out} = D V_{in} \qquad
+   \text{boost: } V_{out} = \frac{V_{in}}{1-D} \qquad
+   \text{buck-boost: } V_{out} = -\frac{D}{1-D}V_{in} $$
+
+**O balanço de carga**, o teorema gêmeo, dá que a corrente média do indutor é $I_{out}$ no buck e
+$I_{out}/(1-D)$ no boost e no buck-boost.
+
+**Onde está a corrente pulsada** muda em cada topologia — entrada no buck, saída no boost, os dois
+lados no buck-boost —, e é isso que decide onde vai o filtro.
+
+**O indutor** é dimensionado por uma escolha de ondulação (20 a 40 % da média, 30 % como padrão) e
+pela **corrente de pico**, com $I_{sat}$ 30 a 50 % acima dela.
+
+**O capacitor de saída** tem duas parcelas de ondulação que se somam, e num eletrolítico a
+**ESR domina**:
+
+$$ V_r = \frac{\Delta i}{8 f_{sw} C} + \Delta i \cdot \text{ESR} $$
+
+**O laço de controle** precisa de compensação porque o filtro $LC$ contribui com 180° de atraso —
+a condição de oscilação do @sec-cap-064. Modo corrente troca isso por uma planta de primeira
+ordem, ao preço da compensação de rampa acima de $D = 0{,}5$.
+
+**O layout é parte do circuito.** A área do laço de comutação, multiplicada por $di/dt$, é uma
+sobretensão real no dreno do MOSFET; e o nó de comutação, variando mais de 1 V por nanossegundo,
+é a antena principal da placa.
+
+**E a fonte chaveada falha diferente.** MOSFET em curto entrega a tensão de entrada inteira na
+carga. Proteção de sobretensão, fusível e limitação ciclo a ciclo não são luxo.
+
+## Para o próximo capítulo {#sec-075-fecho}
+
+Os quatro capítulos até aqui trataram a **origem** da energia como um dado: havia uma tomada, ou
+havia uma fonte de bancada. O capítulo 076 tira essa hipótese.
+
+Uma bateria não é uma fonte de tensão. Ela é um dispositivo eletroquímico cuja tensão depende do
+estado de carga, da corrente, da temperatura e da idade; que tem resistência interna crescente ao
+longo da vida; que exige um **procedimento** de recarga específico da química, e não apenas uma
+tensão; e que tem, em algumas químicas, modos de falha que envolvem fogo.
+
+O capítulo trata das químicas que o leitor realmente encontra — alcalina, NiMH, chumbo-ácido,
+lítio-íon e LiFePO₄ —, do que "capacidade em mAh" quer dizer e não quer dizer, do perfil de carga
+de corrente constante seguido de tensão constante que o lítio exige, do circuito de proteção que
+toda célula de lítio precisa ter por perto, e do dimensionamento de um sistema alimentado a
+bateria de ponta a ponta: quanto dura, quanto demora para carregar, e o que acontece quando a
+temperatura sai da faixa.
+
+E ele usa, o tempo inteiro, o conversor deste capítulo — porque carregador de bateria é um
+conversor chaveado com o laço fechado em torno da corrente em vez da tensão.

@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 74/104 |
-| **Contíguos até** | **074** — sem nenhum buraco no meio do livro |
+| **Progresso** | 75/104 |
+| **Contíguos até** | **075** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 075** | Fontes chaveadas: buck, boost e buck-boost |
+| **Próximo capítulo: 076** | Baterias, células e circuitos de carga |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -112,7 +112,18 @@ de corrente $1{,}25/R$; **série e LDO como topologias diferentes** — seguidor
 emissor comum — com a **janela de ESR** do capacitor de saída como componente do laço de
 controle; a queda da rejeição de ondulação com a frequência (60 dB em 120 Hz, 20 dB em 1 MHz), e
 o dimensionamento térmico como o menor de três limites, com os dois erros de arredondamento que
-o arruínam (074).
+o arruínam (074); a chave mais o indutor no lugar do elemento de passagem linear, com a corrente
+de entrada **menor** que a de saída como assinatura da topologia; o **balanço de tensão-segundo**
+($\int_0^T v_L\,dt = 0$ em regime) resolvendo as três razões de conversão em duas linhas cada, e
+o balanço de carga gêmeo dando $\bar{i_L} = I_{out}$ no buck e $I_{out}/(1-D)$ no boost; qual
+lado tem corrente pulsada em cada topologia e o que isso decide; o buck síncrono e o
+*shoot-through*; o projeto do indutor por escolha de ondulação (30 % da média) e pela corrente de
+**pico**, com $I_{sat}$ 30 a 50 % acima; a ondulação de saída em duas parcelas com a **ESR
+dominando** (5,4 mV com cerâmico contra 97 mV com eletrolítico de mesma capacitância); modo
+descontínuo como comportamento normal em carga leve; o laço de controle precisando de compensação
+porque o filtro $LC$ dá 180° de atraso, e o modo corrente como alternativa de primeira ordem; e o
+**laço de comutação** — área $\times\ di/dt$ virando sobretensão real no dreno, com as quatro
+regras de layout (075).
 
 O capítulo 071 já montara a ponte para o fim do volume: o desacoplamento, invocado seis vezes
 como regra de bancada ao longo do Volume 11, ganha explicação própria no capítulo 077.
@@ -270,7 +281,7 @@ para conteúdo real e o verificador não as lista mais.
 - [x] 072 — Transformadores e acoplamento magnético — `capitulos/072-transformadores-e-acoplamento-magnetico.qmd`
 - [x] 073 — Fontes lineares: do transformador ao regulador — `capitulos/073-fontes-lineares-do-transformador-ao-regulador.qmd`
 - [x] 074 — Reguladores integrados: série, LDO e dissipação térmica — `capitulos/074-reguladores-integrados-serie-ldo-e-dissipacao.qmd`
-- [ ] 075 — Fontes chaveadas: buck, boost e buck-boost — `capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.qmd`
+- [x] 075 — Fontes chaveadas: buck, boost e buck-boost — `capitulos/075-fontes-chaveadas-buck-boost-e-buck-boost.qmd`
 - [ ] 076 — Baterias, células e circuitos de carga — `capitulos/076-baterias-celulas-e-circuitos-de-carga.qmd`
 - [ ] 077 — Aterramento, malhas de terra, desacoplamento e proteção — `capitulos/077-aterramento-malhas-de-terra-desacoplamento-e.qmd`
 
