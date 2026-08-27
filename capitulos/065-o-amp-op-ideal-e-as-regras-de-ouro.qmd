@@ -1,3 +1,931 @@
 # O amp-op ideal e as regras de ouro {#sec-cap-065}
 
-*(em elaboração)*
+O @sec-cap-064 terminou com uma pergunta que não era retórica: se o ganho de um circuito
+realimentado é decidido por dois resistores sempre que o ganho de malha $T$ for grande, por que
+não fabricar um bloco pronto com ganho absurdamente alto e deixar que o projetista escolha só
+os resistores?
+
+É o amplificador operacional. E o preço dele, hoje, é de vinte a oitenta centavos.
+
+O nome vem de antes do transistor. Nos computadores analógicos dos anos 1940 e 1950, o bloco
+servia para executar **operações matemáticas** — somar, subtrair, integrar, derivar — com
+tensões representando as variáveis de uma equação diferencial. O bloco era feito de válvulas,
+custava o equivalente a alguns milhares de reais de hoje, pesava quilos e consumia dezenas de
+watts. Em 1968 a Fairchild lançou o µA741 num encapsulamento de oito pinos por vinte dólares, e
+em uma década o preço caiu duas ordens de grandeza. O nome ficou, embora hoje a maior parte dos
+amp-ops não resolva equação nenhuma.
+
+Este capítulo faz três coisas. Estabelece **o que é o dispositivo** e o que os pinos dele
+significam; deriva **as duas regras de ouro** diretamente da equação do capítulo anterior, com
+a condição de validade explícita; e mostra **quando elas mentem**, que é a parte que quase
+nenhum texto introdutório trata com o cuidado que ela merece.
+
+Nada aqui exige saber o que há dentro do encapsulamento. O @sec-cap-069 abre a caixa; até lá,
+o amp-op é uma caixa preta com propriedades declaradas.
+
+## O dispositivo, e os pinos {#sec-065-dispositivo}
+
+::: {#fig-065-simbolo}
+
+```{.tikz}
+%%| filename: 065-simbolo
+%%| alt: Prancha com três painéis sobre o amplificador operacional. No painel da esquerda, o símbolo do amp-op — um triângulo apontando para a direita — com cinco terminais identificados: na aresta esquerda, no alto, a entrada inversora marcada com sinal de menos, e embaixo a entrada não inversora marcada com sinal de mais; na ponta direita a saída; no topo e na base do triângulo, os dois terminais de alimentação, positivo em cima e negativo embaixo, desenhados em cinza porque quase nunca aparecem no esquemático. Ao lado, a equação de definição: a tensão de saída é igual ao ganho de malha aberta multiplicado pela diferença entre a entrada não inversora e a entrada inversora. Uma anotação registra que o amp-op amplifica a diferença entre as entradas e ignora o que as duas têm em comum. No painel central, o encapsulamento DIP de oito pinos de um amp-op duplo, como o TL072 ou o LM358, visto de cima, com a marca de referência à esquerda e a numeração dos pinos correndo no sentido anti-horário a partir do canto superior esquerdo: pino um, saída A; pino dois, entrada inversora A; pino três, entrada não inversora A; pino quatro, alimentação negativa; pino cinco, entrada não inversora B; pino seis, entrada inversora B; pino sete, saída B; pino oito, alimentação positiva. Uma anotação alerta que os dois pinos de alimentação são compartilhados pelos dois amplificadores e que o pino quatro fica diagonalmente oposto ao pino oito. No painel da direita, as duas maneiras de alimentar, lado a lado: alimentação simétrica, com duas fontes de quinze volts em série e o terra no ponto do meio, resultando em mais quinze e menos quinze volts em relação ao terra, situação em que o sinal pode oscilar em torno de zero volt; e alimentação simples, com uma única fonte de doze volts entre o pino de alimentação positiva e o terra, e o pino negativo ligado ao terra, situação em que o sinal precisa ser deslocado para um ponto médio artificial, indicado como seis volts.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------------- painel 1: simbolo ----------------
+  \begin{scope}[shift={(0,0)}]
+    \draw[thick] (0,-1.1) -- (0,1.1) -- (1.9,0) -- cycle;
+    \node at (0.55,0) {$A_{OL}$};
+
+    \draw (-1.3,0.55) -- (0,0.55);
+    \node[anchor=east, font=\scriptsize] at (-1.35,0.55) {$v_-$};
+    \node[anchor=west, font=\small] at (0.1,0.55) {$-$};
+
+    \draw (-1.3,-0.55) -- (0,-0.55);
+    \node[anchor=east, font=\scriptsize] at (-1.35,-0.55) {$v_+$};
+    \node[anchor=west, font=\small] at (0.1,-0.55) {$+$};
+
+    \draw (1.9,0) -- (3.1,0);
+    \node[anchor=west, font=\scriptsize] at (3.15,0) {$v_{out}$};
+
+    \draw[manualgray] (0.63,0.63) -- (0.63,1.5);
+    \node[anchor=south, font=\tiny, manualgray] at (0.63,1.5) {$+V_{CC}$};
+    \draw[manualgray] (0.63,-0.63) -- (0.63,-1.5);
+    \node[anchor=north, font=\tiny, manualgray] at (0.63,-1.5) {$-V_{EE}$};
+
+    \node[anchor=north, align=center, font=\tiny, manualgray, text width=3.9cm]
+         at (0.9,-1.95) {os dois pinos de alimentação existem sempre e quase nunca são
+                         desenhados};
+  \end{scope}
+
+  % ---------------- painel 2: DIP-8 ----------------
+  \begin{scope}[shift={(6.6,-0.2)}]
+    \draw[thick, fill=black!4] (0,-1.9) rectangle (2.3,1.9);
+    \draw[thick] (1.5,1.9) arc (0:-180:0.35);
+    \node[font=\tiny, manualgray, anchor=north] at (1.15,1.5) {marca};
+
+    \foreach \i/\y/\lab in {1/0.95/{OUT A}, 2/0.25/{IN$-$ A}, 3/-0.45/{IN$+$ A},
+                            4/-1.15/{$-V_{EE}$}}{
+      \draw[thick] (0,\y) -- (-0.45,\y);
+      \node[font=\tiny, anchor=east] at (-0.5,\y) {\i};
+      \node[font=\tiny, anchor=west] at (0.1,\y) {\lab};
+    }
+    \foreach \i/\y/\lab in {8/0.95/{$+V_{CC}$}, 7/0.25/{OUT B}, 6/-0.45/{IN$-$ B},
+                            5/-1.15/{IN$+$ B}}{
+      \draw[thick] (2.3,\y) -- (2.75,\y);
+      \node[font=\tiny, anchor=west] at (2.8,\y) {\i};
+      \node[font=\tiny, anchor=east] at (2.2,\y) {\lab};
+    }
+
+    \node[anchor=north, align=center, font=\tiny, text width=4.4cm] at (1.15,-2.1)
+         {\textbf{TL072, LM358, NE5532} --- duplo, DIP-8, visto \textbf{por cima}};
+  \end{scope}
+
+  % ---------------- painel 3: caixas de texto ----------------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=4.3cm] at (10.4,1.9)
+       {\[ v_{out} = A_{OL}\,(v_+ - v_-) \]
+        \vspace{-6pt}
+        \begin{itemize}\setlength\itemsep{0pt}\setlength\leftmargini{10pt}
+        \item amplifica a \textbf{diferença}
+        \item ignora o que as duas entradas têm em \textbf{comum}
+        \item $A_{OL}$ vale de $10^5$ a $10^6$
+        \end{itemize}};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=4.3cm] at (10.4,-1.4)
+       {A alimentação é \textbf{compartilhada} pelos dois amplificadores: um par de pinos
+        serve os dois.
+        \\[3pt]
+        O pino 4 fica \textbf{na diagonal} do 8. Ligar invertido destrói o CI em segundos.};
+
+  % ---------------- linha 2: alimentacao ----------------
+  \begin{scope}[shift={(0.4,-6.2)}]
+    \node[font=\scriptsize, anchor=south] at (0.8,1.9) {\textbf{alimentação simétrica}};
+    \draw (0,1.5) to[battery1, l=$15$ V] (0,0.3);
+    \draw (0,0.3) to[battery1, l=$15$ V] (0,-0.9);
+    \draw (0,1.5) -- (1.5,1.5);
+    \node[anchor=west, font=\tiny, manualblue] at (1.55,1.5) {$+15$ V};
+    \draw (0,-0.9) -- (1.5,-0.9);
+    \node[anchor=west, font=\tiny, manualblue] at (1.55,-0.9) {$-15$ V};
+    \draw (0,0.3) -- (-0.8,0.3);
+    \node[ground] at (-0.8,0.3) {};
+    \node[anchor=south, font=\tiny] at (-1.0,0.45) {0 V};
+    \node[anchor=north, align=center, font=\tiny, text width=3.8cm] at (0.6,-1.35)
+         {o sinal oscila \textbf{em torno de zero}; nada mais é preciso};
+  \end{scope}
+
+  \begin{scope}[shift={(5.9,-6.2)}]
+    \node[font=\scriptsize, anchor=south] at (0.8,1.9) {\textbf{alimentação simples}};
+    \draw (0,1.5) to[battery1, l=$12$ V] (0,-0.9);
+    \draw (0,1.5) -- (1.5,1.5);
+    \node[anchor=west, font=\tiny, manualblue] at (1.55,1.5) {$+12$ V};
+    \draw (0,-0.9) -- (1.5,-0.9);
+    \node[anchor=west, font=\tiny, manualblue] at (1.55,-0.9) {0 V};
+    \draw (0,-0.9) -- (-0.8,-0.9);
+    \node[ground] at (-0.8,-0.9) {};
+    \node[anchor=north, align=center, font=\tiny, text width=3.8cm] at (0.6,-1.35)
+         {os dois pinos do CI veem os mesmos 12 V de sempre};
+  \end{scope}
+
+  \node[draw=manualyellow, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=6pt, text width=4.3cm] at (10.4,-4.8)
+       {Com alimentação \textbf{simples}, o sinal \textbf{não pode} ficar negativo: é preciso
+        criar um ponto médio artificial (6 V) e referenciar todo o sinal a ele.
+        \\[3pt]
+        O CI não sabe onde fica o terra --- só conhece a diferença entre os dois pinos.};
+
+\end{tikzpicture}
+```
+
+O símbolo, o encapsulamento e as duas maneiras de alimentar. O triângulo tem cinco terminais,
+mas o esquemático quase sempre mostra três — os dois de alimentação ficam subentendidos, e é
+por isso que tanta montagem de iniciante não funciona.
+:::
+
+Três leituras da @fig-065-simbolo merecem destaque.
+
+**O amp-op é um amplificador diferencial.** Ele não amplifica $v_+$ nem $v_-$; amplifica a
+**diferença** $v_+ - v_-$. Se as duas entradas subirem juntas 3 V, idealmente nada acontece na
+saída. Essa propriedade tem nome — **rejeição de modo comum** — e é o motivo de o amp-op ser a
+base de toda medição de sinal pequeno em ambiente ruidoso, assunto do @sec-cap-067.
+
+**O ganho de malha aberta $A_{OL}$ é grande a ponto de ser inutilizável sozinho.** Um TL072
+tem $A_{OL} \approx 200\,000$. Com $\pm 15$ V de alimentação, a saída satura em cerca de
+$\pm 13{,}5$ V, o que significa que a faixa útil de entrada diferencial é
+
+$$ \frac{13{,}5\ \text{V}}{200\,000} \approx 68\ \mu\text{V} $$
+
+Sessenta e oito microvolts. Qualquer coisa maior que isso — e a tensão de desequilíbrio interna
+do próprio CI já é de alguns milivolts — joga a saída contra um dos extremos de alimentação. **O
+amp-op sem realimentação não é um amplificador; é um comparador**, que é justamente o uso que o
+@sec-cap-070 faz dele.
+
+**Os dois pinos de alimentação não aparecem no esquemático, mas existem no protoboard.** É a
+causa número um de circuito com amp-op que "não funciona" na primeira montagem. O símbolo tem
+três terminais visíveis e cinco reais.
+
+::: {.callout-note}
+## `$-V_{EE}$` nem sempre é negativo
+
+A notação $+V_{CC}$ / $-V_{EE}$ é herdada da época em que alimentação simétrica era a norma.
+Em alimentação simples, o pino "negativo" vai ao **terra**, e o CI enxerga 12 V entre os dois
+pinos exatamente como enxergaria $\pm 6$ V. O dispositivo não sabe onde está o terra; ele só
+conhece a diferença entre os dois pinos de alimentação e a posição dos sinais dentro dela.
+
+O que muda é o **projeto ao redor**: com alimentação simples, todo sinal que precise ir para
+os dois lados exige um ponto médio artificial. O @sec-cap-066 monta um.
+:::
+
+## O amp-op ideal {#sec-065-ideal}
+
+O modelo ideal é uma lista curta de exageros deliberados. Cada linha dela é falsa, e cada uma
+é falsa por uma margem tão grande que ignorar a diferença dá um erro menor que a tolerância dos
+resistores do circuito.
+
+| Propriedade | Ideal | TL072 (JFET) | LM358 (bipolar) | Erro que o ideal comete |
+|---|---|---|---|---|
+| Ganho de malha aberta $A_{OL}$ | $\infty$ | $2\times10^5$ | $10^5$ | $< 0{,}01$ % em ganho 100 |
+| Impedância de entrada $Z_{in}$ | $\infty$ | $10^{12}\ \Omega$ | $\approx 2\ \text{M}\Omega$ | desprezível abaixo de 100 kΩ |
+| Corrente de entrada $I_B$ | 0 | 30 pA | 45 nA | veja o alerta abaixo |
+| Impedância de saída $Z_{out}$ | 0 | $\approx 100\ \Omega$ | $\approx 100\ \Omega$ | dividida por $1+T$ ao fechar a malha |
+| Tensão de desequilíbrio $V_{OS}$ | 0 | 3 mV típ. | 2 mV típ. | fatal em CC com ganho alto |
+| Banda passante | $\infty$ | 3 MHz (GBW) | 1 MHz (GBW) | limita o ganho útil |
+| Excursão de saída | trilho a trilho | $V_{CC} - 1{,}5$ V | $V_{CC} - 1{,}5$ V | 3 V perdidos de 15 |
+| Rejeição de modo comum | $\infty$ | 86 dB | 85 dB | erro de $\approx 50\ \mu$V/V |
+
+: O amp-op ideal contra dois amp-ops reais de bancada. Cada exagero da segunda coluna vale
+até a coluna da direita deixar de ser desprezível — e o @sec-cap-069 é inteiro sobre isso.
+{#tbl-065-ideal}
+
+A @tbl-065-ideal contém um número que merece atenção imediata, porque é a diferença prática
+entre os dois CIs mais comuns da bancada: **a corrente de entrada**.
+
+O TL072 tem entrada por JFET e puxa 30 picoampères — mil e quinhentas vezes menos que o LM358,
+que tem entrada bipolar e puxa 45 nanoampères. Quarenta e cinco nanoampères parecem nada até
+passarem por um resistor de 1 MΩ:
+
+$$ V_{erro} = 45\ \text{nA} \times 1\ \text{M}\Omega = 45\ \text{mV} $$
+
+Quarenta e cinco milivolts de erro num circuito que talvez esteja medindo um sensor de 100 mV.
+A regra prática que resolve isso está no @sec-065-queima, e a lição geral é a mesma do
+@sec-cap-020: **impedância alta é onde as correntes parasitas viram tensão**.
+
+## As duas regras de ouro {#sec-065-regras}
+
+::: {#fig-065-regras}
+
+```{.tikz}
+%%| filename: 065-regras
+%%| alt: Figura em duas partes que deriva as regras de ouro do amp-op. Na parte de cima, um amp-op desenhado como triângulo, com a saída realimentada à entrada inversora através de um resistor, e outro resistor da entrada inversora ao terra, formando a rede de realimentação. Setas indicam a tensão de erro entre as duas entradas, chamada v epsilon, e a tensão de saída. À direita, a dedução em três passos. Primeiro passo: da definição do amp-op, a tensão de erro é igual à tensão de saída dividida pelo ganho de malha aberta. Segundo passo: com a saída limitada a treze vírgula cinco volts pela alimentação e o ganho de malha aberta valendo duzentos mil, a tensão de erro é no máximo sessenta e oito microvolts. Terceiro passo: sessenta e oito microvolts comparados aos volts que circulam pelo resto do circuito são zero para qualquer efeito prático, logo as duas entradas estão na mesma tensão. Uma caixa destaca as duas regras: regra um, as entradas não puxam corrente; regra dois, a saída faz o que for necessário para igualar as tensões das duas entradas. Na parte de baixo, uma faixa de aviso com as três condições de validade das regras, cada uma numa célula: existe realimentação negativa, ou seja, o caminho de volta chega à entrada inversora; a saída não está saturada, isto é, está dentro da faixa que a alimentação permite; e a frequência é baixa o bastante para que ainda haja ganho de malha sobrando. Um aviso final diz que fora dessas três condições as regras não apenas perdem precisão, elas ficam completamente erradas.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ----- circuito -----
+  \begin{scope}[shift={(0,0)}]
+    \draw[thick] (0,-0.9) -- (0,0.9) -- (1.7,0) -- cycle;
+    \node[anchor=west, font=\small] at (0.1,0.45) {$-$};
+    \node[anchor=west, font=\small] at (0.1,-0.45) {$+$};
+
+    % entrada nao inversora
+    \draw (-2.2,-0.45) -- (0,-0.45);
+    \node[anchor=east, font=\scriptsize] at (-2.25,-0.45) {$v_{in}$};
+
+    % no de realimentacao na entrada inversora
+    \draw (-1.2,0.45) -- (0,0.45);
+    \node[ponto] at (-1.2,0.45) {};
+
+    \draw (1.7,0) -- (3.2,0);
+    \node[ponto] at (2.6,0) {};
+    \node[anchor=west, font=\scriptsize] at (3.25,0) {$v_{out}$};
+
+    \draw (2.6,0) -- (2.6,1.5);
+    \draw (2.6,1.5) to[R, l=$R_2$] (-1.2,1.5);
+    \draw (-1.2,1.5) -- (-1.2,0.45);
+    \draw (-1.2,0.45) -- (-1.2,-1.2);
+    \draw (-1.2,-1.2) to[R, l_=$R_1$] (-1.2,-2.4);
+    \node[ground] at (-1.2,-2.4) {};
+
+    \draw[<->, manualred, thick] (-0.28,0.45) -- (-0.28,-0.45);
+    \node[anchor=east, font=\tiny, manualred] at (-0.33,0) {$v_\varepsilon$};
+  \end{scope}
+
+  % ----- deducao -----
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=4.8cm] at (3.9,1.9)
+       {\textbf{1.} Da definição do dispositivo:
+        \[ v_\varepsilon = v_+ - v_- = \frac{v_{out}}{A_{OL}} \]
+        \textbf{2.} A alimentação limita $v_{out}$ a $13{,}5$ V, e $A_{OL} = 200\,000$:
+        \[ |v_\varepsilon| \le \frac{13{,}5}{2\times10^5} = 68\ \mu\text{V} \]
+        \textbf{3.} $68\ \mu$V ao lado de \emph{volts} é zero para qualquer efeito prático.};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=4.2cm] at (9.5,1.9)
+       {\textbf{Regra 1.} As entradas \textbf{não puxam corrente}.
+        \[ i_+ = i_- = 0 \]
+        \textbf{Regra 2.} A saída faz o que for preciso para que
+        \[ v_+ = v_- \]
+        Não é uma lei da natureza: é o que a realimentação negativa \emph{consegue} impor.};
+
+  % ----- condicoes -----
+  \node[anchor=north west, font=\scriptsize] at (-2.5,-3.3)
+       {\textbf{As regras valem sob três condições. Fora delas, não valem \emph{nem aproximadamente}:}};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\tiny, inner sep=6pt, text width=4.5cm] at (-2.5,-3.9)
+       {\textbf{1. Há realimentação negativa.} O caminho de volta chega à entrada
+        \textbf{inversora}. Se chegar à não inversora, o circuito trava num extremo.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\tiny, inner sep=6pt, text width=4.5cm] at (2.6,-3.9)
+       {\textbf{2. A saída não está saturada.} Se $v_{out}$ bateu no trilho, a saída não pode
+        mais ``fazer o que for preciso'', e $v_+ \ne v_-$.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\tiny, inner sep=6pt, text width=4.5cm] at (7.7,-3.9)
+       {\textbf{3. Sobra ganho de malha.} $T = A_{OL}\beta$ cai 20 dB por década. Em 100 kHz
+        já não há $T$ suficiente para a regra 2.};
+
+\end{tikzpicture}
+```
+
+As duas regras, e as três condições sob as quais elas valem. A dedução é o capítulo anterior
+com $T \to \infty$; a faixa de baixo é o que separa quem usa as regras de quem apanha delas.
+:::
+
+Escritas por extenso, e nesta ordem:
+
+::: {.callout-tip}
+## As regras de ouro
+
+**Regra 1.** As entradas de um amp-op **não puxam corrente**: $i_+ = i_- = 0$.
+
+**Regra 2.** Quando há realimentação negativa e a saída não está saturada, **a saída faz o que
+for necessário para que as duas entradas fiquem na mesma tensão**: $v_+ = v_-$.
+:::
+
+A regra 1 vem da impedância de entrada, e é quase literalmente verdadeira num TL072: 30 pA são
+$3\times10^{-11}$ A, e a corrente de sinal num circuito típico é de microampères. Seis ordens de
+grandeza de folga.
+
+A regra 2 é a mais poderosa e a mais mal-entendida. Ela **não diz** que as entradas estão
+ligadas uma à outra. Diz que a saída, através da realimentação, **empurra** o nó de entrada até
+que a diferença suma. É um resultado de comportamento, não de topologia — e é exatamente a
+equação do @sec-cap-064:
+
+$$ v_\varepsilon = \frac{v_{out}}{A_{OL}} \xrightarrow{\ A_{OL} \to \infty\ } 0 $$
+
+Note o que a regra 2 exige e que a @fig-065-regras coloca na faixa inferior. Se a saída bateu
+no trilho de alimentação, ela **não pode mais** fazer o que for preciso, e as duas entradas
+ficam com uma diferença perfeitamente mensurável. Se a realimentação chega à entrada **não**
+inversora, o mecanismo é o oposto: a saída empurra o nó de entrada para **longe** do equilíbrio,
+e o circuito trava num extremo. As regras não degradam graciosamente nesses casos; elas invertem
+de sinal.
+
+::: {.callout-important}
+## O erro conceitual mais comum do Volume 11
+
+"As entradas do amp-op estão sempre no mesmo potencial."
+
+**Falso.** A frase correta é: *quando a realimentação negativa está operando e a saída está
+dentro da faixa linear*, as entradas ficam no mesmo potencial. Um comparador do @sec-cap-070
+é um amp-op sem realimentação negativa, e nele as entradas ficam com volts de diferença — é
+justamente disso que ele vive.
+
+Antes de aplicar a regra 2, **ache o caminho de realimentação com o dedo** e confirme que ele
+termina no terminal marcado com o sinal de menos.
+:::
+
+## O curto virtual e o terra virtual {#sec-065-curtovirtual}
+
+A regra 2 recebe dois nomes conforme o contexto, e os dois aparecem em todo esquemático
+comentado.
+
+**Curto virtual** é o nome geral: as duas entradas comportam-se como se estivessem
+curto-circuitadas, no sentido de terem a mesma tensão. O "virtual" é essencial — **não há
+corrente entre elas**, porque a regra 1 diz que não há corrente entrando em nenhuma das duas.
+Um curto real conduz corrente; este não conduz.
+
+**Terra virtual** é o caso particular em que a entrada não inversora está ligada ao terra. Pela
+regra 2, a entrada inversora fica em 0 V também — mas sem estar ligada a nada. É um ponto que
+mede zero volt no multímetro e que, se você o ligar ao terra de verdade, muda o circuito
+inteiro.
+
+Essa distinção é o que faz o amplificador inversor do @sec-cap-066 funcionar, e é o que torna o
+somador do @sec-cap-067 possível. Vale gravar a frase: **um nó pode estar em zero volt sem
+estar aterrado**.
+
+## O ganho de malha aberta é uma curva, não um número {#sec-065-ganho}
+
+::: {#fig-065-ganho}
+
+```{.tikz}
+%%| filename: 065-ganho
+%%| alt: Diagrama de Bode do ganho de malha aberta de um amplificador operacional típico, com o eixo horizontal em escala logarítmica de um hertz a dez megahertz e o eixo vertical em decibéis de menos vinte a cento e vinte. Uma curva azul grossa parte de cento e seis decibéis em corrente contínua, permanece plana até cerca de dez hertz e a partir daí cai numa reta com inclinação de vinte decibéis por década, cruzando zero decibel em três megahertz. Duas linhas horizontais tracejadas marcam ganhos de malha fechada: uma em quarenta decibéis, correspondente a ganho cem, e outra em zero decibel, correspondente a ganho unitário de um seguidor. Em cada uma, um ponto marca onde ela encontra a curva de malha aberta: trinta quilohertz para o ganho cem e três megahertz para o ganho unitário. Setas verticais duplas mostram a distância vertical entre a linha de ganho fechado e a curva de malha aberta em uma frequência de mil hertz, e essa distância é identificada como o ganho de malha disponível naquela frequência. Uma caixa de texto registra que o ganho de malha aberta em corrente contínua é enorme mas cai vinte decibéis por década, que o produto do ganho fechado pela banda é constante e igual a três megahertz, e que toda a precisão das regras de ouro depende dessa distância vertical — quando ela chega a zero, não há mais realimentação e o amp-op deixa de obedecer.
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=13.5cm, height=8.2cm,
+    xmode=log, xmin=1, xmax=1e7,
+    ymin=-20, ymax=125,
+    xlabel={frequência (Hz)}, ylabel={ganho (dB)},
+    xtick={1,10,100,1000,10000,100000,1000000,10000000},
+    xticklabels={1,10,100,1 k,10 k,100 k,1 M,10 M},
+    ytick={0,20,40,60,80,100,120},
+    grid=both, grid style={gray!22},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    axis line style={gray},
+]
+
+  \addplot[curva] coordinates {(1,106) (10,106) (3e6,0) (1e7,-10.5)};
+  \node[anchor=west, font=\scriptsize, manualblue] at (axis cs:1.2,109)
+       {$A_{OL}$ (malha aberta)};
+
+  % ganho fechado 100
+  \addplot[destaque, dashed] coordinates {(1,40) (3e4,40)};
+  \node[anchor=south west, font=\scriptsize, manualred] at (axis cs:1.3,41)
+       {$A_f = 100$ (40 dB)};
+  \node[ponto, fill=manualred] at (axis cs:3e4,40) {};
+  \node[anchor=south west, font=\tiny, manualred] at (axis cs:3.4e4,42) {30 kHz};
+
+  % ganho fechado 1
+  \addplot[manualgreen, thick, dashed] coordinates {(1,0) (3e6,0)};
+  \node[anchor=south west, font=\scriptsize, manualgreen] at (axis cs:1.3,1)
+       {$A_f = 1$ (seguidor)};
+  \node[ponto, fill=manualgreen] at (axis cs:3e6,0) {};
+  \node[anchor=north east, font=\tiny, manualgreen] at (axis cs:2.6e6,-2) {3 MHz};
+
+  % ganho de malha em 1 kHz
+  \draw[<->, manualyellow, very thick] (axis cs:1000,40) -- (axis cs:1000,66);
+  \node[anchor=west, font=\tiny, manualyellow, align=right, anchor=east] at (axis cs:850,58)
+       {$T$ disponível\\em 1 kHz: 26 dB};
+
+  \node[draw=manualgray, rounded corners=3pt, anchor=north east, align=left,
+        font=\scriptsize, inner sep=6pt] at (axis cs:8e6,121)
+       {$A_{OL}$ em CC: $2\times10^5$ (106 dB)\\
+        Cai \textbf{20 dB/década} a partir de 10 Hz\\
+        $A_f \times f_c = \text{GBW} = 3$ MHz\\
+        A \textbf{distância vertical} é o $T$ que sobra};
+
+\end{axis}
+\end{tikzpicture}
+```
+
+O ganho de malha aberta de um TL072. O número de catálogo — 106 dB — vale em corrente contínua
+e em mais nada. A distância vertical entre a reta do ganho fechado e a curva azul é o ganho de
+malha $T$ do @sec-cap-064, e é ela que decide o quanto as regras de ouro são verdadeiras
+naquela frequência.
+:::
+
+O ganho $A_{OL} = 200\,000$ da @tbl-065-ideal é um valor de **corrente contínua**. A
+@fig-065-ganho mostra o que acontece com ele: um polo em torno de 10 Hz, deliberadamente posto
+lá dentro pelo fabricante — é o capacitor de compensação do @sec-cap-064, tipicamente 30 pF de
+silício —, e a partir dali uma queda de 20 dB por década até cruzar 0 dB.
+
+A frequência de cruzamento é o **produto ganho-banda**, e o @sec-cap-064 já demonstrou por que
+ele é constante:
+
+$$ A_f \times f_{c} = \text{GBW} $$
+
+Para um TL072 com GBW de 3 MHz:
+
+| Ganho fechado $A_f$ | Banda $f_c$ | $T$ disponível em 1 kHz |
+|---|---|---|
+| 1 (seguidor) | 3 MHz | 106 dB $-$ 0 dB $=$ 106 dB... menos a queda: $\approx 70$ dB |
+| 10 | 300 kHz | $\approx 50$ dB |
+| 100 | 30 kHz | $\approx 26$ dB |
+| 1 000 | 3 kHz | $\approx 6$ dB |
+
+: O mesmo CI, quatro projetos diferentes. Ganho e banda são a mesma moeda. {#tbl-065-gbw}
+
+A última linha da @tbl-065-gbw é o alerta de projeto: pedir ganho 1 000 de um TL072 deixa 6 dB
+de ganho de malha em 1 kHz, o que significa **um fator 2** de correção — não os $10^5$ que as
+regras de ouro pressupõem. O ganho real vai estar visivelmente abaixo de 1 000, a distorção vai
+ser mensurável e a banda vai acabar em 3 kHz. A solução é a de sempre: dois estágios de ganho
+32 em cascata, cada um com $T$ de sobra.
+
+## Aplicar as regras: o seguidor de tensão {#sec-065-seguidor}
+
+::: {#fig-065-seguidor}
+
+```{.tikz}
+%%| filename: 065-seguidor
+%%| alt: Figura em três partes sobre o seguidor de tensão. Na parte da esquerda, o problema: um divisor de tensão formado por dois resistores de cem quilohms entre dez volts e o terra, cujo ponto médio deveria fornecer cinco volts, ligado diretamente a uma carga de dez quilohms. O cálculo ao lado mostra que o paralelo de cem quilohms com dez quilohms dá nove vírgula um quilohms, e a tensão desaba de cinco volts para zero vírgula oitenta e três volt, um erro de oitenta e três por cento. Na parte do meio, a solução: o mesmo divisor, mas com um amp-op ligado como seguidor entre o ponto médio e a carga — a saída do amp-op vai diretamente à entrada inversora, e o ponto médio do divisor entra na entrada não inversora. Ao lado, a aplicação das regras de ouro em duas linhas: pela regra um, a entrada não puxa corrente, logo o divisor não é carregado e permanece em cinco volts; pela regra dois, a entrada inversora, que está ligada à saída, tem de igualar a não inversora, logo a saída também fica em cinco volts. Um destaque registra que a carga de dez quilohms agora puxa meio miliampère do amp-op e não do divisor. Na parte da direita, uma tabela compara as duas montagens: tensão na carga de zero vírgula oitenta e três volt sem o seguidor contra cinco volts com ele; corrente extraída do divisor de noventa e um microampères contra trinta picoampères; erro de oitenta e três por cento contra menos de zero vírgula um por cento. Uma anotação final observa que o ganho do seguidor é um, ou seja, ele não amplifica tensão nenhuma, e que a coisa que ele amplifica é a corrente.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ---------- problema ----------
+  \begin{scope}[shift={(0,0)}]
+    \node[font=\scriptsize, anchor=south] at (1.0,2.6) {\textbf{sem o seguidor}};
+    \draw (0,2.2) node[anchor=south, font=\tiny] {$10$ V} -- (0,2.0);
+    \draw (0,2.0) to[R, l=$100$ k$\Omega$] (0,0.6);
+    \node[ponto] at (0,0.6) {};
+    \draw (0,0.6) to[R, l=$100$ k$\Omega$] (0,-0.8);
+    \node[ground] at (0,-0.8) {};
+    \draw (0,0.6) -- (1.6,0.6);
+    \draw (1.6,0.6) to[R, l=$10$ k$\Omega$] (1.6,-0.8);
+    \node[ground] at (1.6,-0.8) {};
+    \node[anchor=south, font=\tiny, manualred] at (0.85,0.78) {$0{,}83$ V ?!};
+
+    \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+          font=\tiny, inner sep=5pt, text width=3.7cm] at (-1.3,-1.3)
+         {$100\,\text{k} \parallel 10\,\text{k} = 9{,}1$ k$\Omega$
+          \[ 10 \cdot \frac{9{,}1}{109{,}1} = 0{,}83\ \text{V} \]
+          \textbf{Erro de 83 \%.} É o carregamento do Volume 3 de novo.};
+  \end{scope}
+
+  % ---------- solucao ----------
+  \begin{scope}[shift={(5.6,0)}]
+    \node[font=\scriptsize, anchor=south] at (1.4,2.6) {\textbf{com o seguidor}};
+    \draw (0,2.2) node[anchor=south, font=\tiny] {$10$ V} -- (0,2.0);
+    \draw (0,2.0) to[R, l=$100$ k$\Omega$] (0,0.6);
+    \node[ponto] at (0,0.6) {};
+    \draw (0,0.6) to[R, l_=$100$ k$\Omega$] (0,-0.8);
+    \node[ground] at (0,-0.8) {};
+    \node[anchor=south east, font=\tiny, manualgreen] at (-0.15,0.72) {$5{,}00$ V};
+
+    % amp op
+    \draw[thick] (1.3,-0.75) -- (1.3,1.05) -- (3.0,0.15) -- cycle;
+    \node[anchor=west, font=\small] at (1.4,0.72) {$-$};
+    \node[anchor=west, font=\small] at (1.4,-0.42) {$+$};
+    \draw (0,0.6) -- (0.6,0.6) -- (0.6,-0.42) -- (1.3,-0.42);
+    \draw (3.0,0.15) -- (4.4,0.15);
+    \node[ponto] at (3.6,0.15) {};
+    \draw (3.6,0.15) -- (3.6,1.7) -- (0.95,1.7) -- (0.95,0.72) -- (1.3,0.72);
+    \draw (4.4,0.15) to[R, l=$10$ k$\Omega$] (4.4,-1.3);
+    \node[ground] at (4.4,-1.3) {};
+    \node[anchor=south, font=\tiny, manualgreen] at (4.0,0.25) {$5{,}00$ V};
+  \end{scope}
+
+  % ---------- caixas ----------
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\tiny, inner sep=5pt, text width=5.4cm] at (4.7,-2.3)
+       {\textbf{Regra 1:} a entrada não puxa corrente $\Rightarrow$ o divisor não é
+        carregado e continua em 5,00 V.
+        \\[3pt]
+        \textbf{Regra 2:} a entrada $-$ está ligada à saída, e tem de igualar a $+$
+        $\Rightarrow$ $v_{out} = 5{,}00$ V.
+        \\[3pt]
+        Os 0,5 mA da carga saem do \textbf{amp-op}.};
+
+  % ---------- tabela ----------
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\tiny, inner sep=6pt, text width=4.3cm] at (10.6,2.4)
+       {\begin{tabular}{@{}lrr@{}}
+          & \textbf{sem} & \textbf{com} \\[2pt]
+          \hline \\[-6pt]
+          $v_{carga}$ & $0{,}83$ V & $5{,}00$ V \\
+          $i$ do divisor & $91\ \mu$A & $30$ pA \\
+          erro & $83$ \% & $< 0{,}1$ \% \\
+        \end{tabular}
+        \\[6pt]
+        O ganho do seguidor é \textbf{1}: ele não amplifica tensão nenhuma.
+        \\[3pt]
+        O que ele amplifica é \textbf{corrente} --- e é para isso que ele existe.};
+
+\end{tikzpicture}
+```
+
+O primeiro circuito com amp-op deste manual, e o mais usado de todos. As duas regras resolvem
+o circuito em duas linhas, e o resultado é a solução para o problema de carregamento que o
+Volume 3 apresentou sem ter como resolver.
+:::
+
+O seguidor de tensão — também chamado de **buffer** ou *voltage follower* — é o circuito mais
+simples possível: a saída ligada diretamente à entrada inversora, o sinal na não inversora, e
+nenhum resistor.
+
+Resolvê-lo com as regras leva duas linhas:
+
+1. Regra 2: $v_- = v_+ = v_{in}$.
+2. Mas $v_-$ **é** a saída, porque estão ligadas por um fio. Logo $v_{out} = v_{in}$.
+
+Ganho unitário. Um amplificador que não amplifica parece inútil até se olhar as impedâncias.
+Do @sec-cap-064, fechando a malha com $\beta = 1$ e portanto $T = A_{OL}$:
+
+$$ Z_{in,f} = Z_{in}(1+T) \approx 10^{12} \times 2\times10^5 \quad\text{(limitada por outros efeitos)} $$
+
+$$ Z_{out,f} = \frac{Z_{out}}{1+T} = \frac{100\ \Omega}{2\times10^5} = 0{,}5\ \text{m}\Omega $$
+
+Meio miliohm de impedância de saída em corrente contínua. O seguidor **transforma impedância**:
+apresenta uma entrada que não carrega nada e uma saída que se comporta como uma fonte ideal —
+dentro dos limites de corrente do CI, que num TL072 são cerca de 20 mA.
+
+É a resposta definitiva ao @sec-cap-020, ao @sec-cap-044 e a metade dos problemas de medição do
+Volume 7: **quando uma fonte de sinal não aguenta a carga, ponha um seguidor entre as duas**.
+
+## Faixa de modo comum e excursão de saída {#sec-065-excursao}
+
+::: {#fig-065-excursao}
+
+```{.tikz}
+%%| filename: 065-excursao
+%%| alt: Figura comparando as faixas úteis de tensão de três amplificadores operacionais alimentados com uma única fonte de cinco volts. Uma barra vertical em cinza representa a faixa entre zero e cinco volts para cada CI, e dentro de cada barra uma região verde marca a faixa realmente utilizável. Para o TL072, a região utilizável na entrada vai de aproximadamente quatro volts para baixo até um vírgula cinco volt, e na saída de três vírgula cinco a um vírgula cinco volt, sobrando apenas dois volts de faixa útil dos cinco disponíveis, com um alerta de que este CI não funciona bem em cinco volts. Para o LM358, a entrada vai de zero volt, incluindo o terra, até três vírgula cinco volts, e a saída vai de vinte milivolts acima do terra até três vírgula cinco volts, sobrando três vírgula cinco volts, com uma anotação de que a entrada chega ao trilho de baixo mas a saída não chega ao de cima. Para o MCP6002, tanto a entrada quanto a saída cobrem praticamente toda a faixa de zero a cinco volts, com a anotação trilho a trilho na entrada e na saída. Uma caixa lateral explica que a faixa de modo comum de entrada e a excursão de saída são especificações separadas e independentes, que um CI pode ser trilho a trilho numa e não na outra, e que violar a faixa de modo comum de entrada não gera um erro suave: em vários amp-ops a saída inverte de fase, o que na bancada parece uma oscilação inexplicável.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \foreach \x/\nome/\ein/\eout/\sin/\sout/\obs in {%
+     0/{TL072}/1.5/3.5/1.5/3.5/{não serve para 5 V},
+     4.4/{LM358}/0.0/3.5/0.02/3.5/{entra no terra, sai não},
+     8.8/{MCP6002}/0.0/5.0/0.03/4.97/{trilho a trilho}}{
+
+    \begin{scope}[shift={(\x,0)}]
+      % barra entrada
+      \draw[fill=black!7, draw=gray] (0,0) rectangle (0.8,5);
+      \fill[manualgreen, opacity=0.42] (0,\ein) rectangle (0.8,\eout);
+      \node[font=\tiny, anchor=north] at (0.4,-0.1) {entrada};
+
+      % barra saida
+      \draw[fill=black!7, draw=gray] (1.3,0) rectangle (2.1,5);
+      \fill[manualblue, opacity=0.42] (1.3,\sin) rectangle (2.1,\sout);
+      \node[font=\tiny, anchor=north] at (1.7,-0.1) {saída};
+
+      \node[font=\scriptsize, anchor=south] at (1.05,5.15) {\textbf{\nome}};
+      \node[font=\tiny, anchor=north, align=center, text width=2.6cm, manualgray]
+           at (1.05,-0.45) {\obs};
+    \end{scope}
+  }
+
+  % escala
+  \foreach \v in {0,1,2,3,4,5}{
+    \draw[gray] (-0.35,\v) -- (-0.15,\v);
+    \node[font=\tiny, anchor=east] at (-0.35,\v) {\v\ V};
+  }
+  \draw[gray, thin] (-0.15,0) -- (11.1,0);
+  \draw[gray, thin] (-0.15,5) -- (11.1,5);
+  \node[font=\tiny, anchor=west, manualgray] at (11.2,5) {$+V_{CC} = 5$ V};
+  \node[font=\tiny, anchor=west, manualgray] at (11.2,0) {terra};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=10.5cm] at (-0.4,-1.9)
+       {\textbf{São duas especificações diferentes.}
+        \\[4pt]
+        A \emph{faixa de modo comum de entrada} e a \emph{excursão de saída} são
+        independentes. Um CI pode ser trilho a trilho numa e não na outra.
+        \\[5pt]
+        \textbf{Violar a faixa de entrada não dá erro suave.} Em vários amp-ops a saída
+        \textbf{inverte de fase}, e na bancada isso parece oscilação inexplicável.};
+
+\end{tikzpicture}
+```
+
+Três amp-ops alimentados com 5 V. A faixa cinza é o que a alimentação oferece; a colorida é o
+que o CI realmente entrega. O TL072, excelente em $\pm 15$ V, é uma escolha ruim em 5 V — e o
+motivo não está na primeira página da folha de dados.
+:::
+
+Duas especificações limitam por onde os sinais podem andar, e confundi-las custa uma tarde de
+bancada.
+
+**Faixa de modo comum de entrada** (*input common-mode range*) é a faixa de tensão em que as
+**entradas** podem estar para que o CI funcione. Fora dela, o estágio diferencial de entrada
+sai da região ativa e o dispositivo faz coisas estranhas.
+
+**Excursão de saída** (*output voltage swing*) é a faixa que a **saída** consegue atingir, e
+depende da corrente de carga: um LM358 que chega a 20 mV do terra sem carga chega a talvez
+200 mV com 2 mA.
+
+O termo **trilho a trilho** (*rail-to-rail*) refere-se a uma ou a outra, e folhas de dados
+escrevem "rail-to-rail output" quando só a saída é. Ler qual das duas está sendo prometida é
+parte de escolher o componente.
+
+::: {.callout-warning}
+## Inversão de fase por violação de modo comum
+
+Vários amp-ops bipolares antigos — o LM358 entre eles, em algumas condições — apresentam um
+comportamento chamado *phase reversal*: quando a entrada não inversora vai abaixo do trilho
+negativo por mais de uma queda de junção, uma junção interna polariza-se diretamente e **a
+saída inverte de polaridade**.
+
+Num circuito realimentado, isso é catastrófico: a realimentação negativa vira positiva e o
+circuito trava ou oscila. Na bancada aparece como um circuito que funciona bem em amplitude
+pequena e "enlouquece" em amplitude grande.
+
+A defesa é um resistor de alguns quilohms em série com a entrada, que limita a corrente da
+junção parasita, ou escolher um CI que declare imunidade a inversão de fase.
+:::
+
+## O que escolher para a bancada {#sec-065-escolha}
+
+Três CIs cobrem quase tudo o que o Volume 11 pede:
+
+**TL072** (duplo) ou **TL074** (quádruplo). Entrada JFET, corrente de entrada desprezível,
+3 MHz de banda, ruído baixo, alimentação de $\pm 5$ a $\pm 18$ V. É o padrão de áudio e de
+instrumentação de bancada. **Não use em 5 V simples** — a faixa de modo comum não inclui o
+terra, e nem a saída nem a entrada chegam perto dos trilhos.
+
+**LM358** (duplo) ou **LM324** (quádruplo). Bipolar, lento (1 MHz, 0,3 V/µs), corrente de
+entrada de 45 nA, mas alimentação simples de 3 a 32 V com faixa de modo comum que **inclui o
+terra**. É o CI de circuito alimentado por bateria e de leitura de sensor lento. O estágio de
+saída tem distorção de cruzamento perceptível — o @sec-cap-063 explica exatamente por quê, e a
+correção é uma resistência de alguns quilohms da saída ao trilho negativo.
+
+**MCP6002** (duplo) ou equivalente CMOS trilho a trilho. Alimentação de 1,8 a 6 V, entrada e
+saída de trilho a trilho, corrente de entrada de picoampères. É o que se usa ao lado de um
+microcontrolador de 3,3 V, e é o companheiro natural dos conversores do Volume 13.
+
+O **µA741** aparece em todo livro-texto e não deveria aparecer em nenhum projeto novo: 1 MHz de
+banda, 0,5 V/µs de taxa de subida, corrente de entrada de 80 nA e nenhuma capacidade de operar
+com alimentação simples abaixo de 10 V. Ele está aqui por razões históricas e porque a
+literatura o cita; a bancada usa TL072.
+
+## 🧪 Laboratório {#sec-065-lab}
+
+O objetivo é estabelecer a confiança nas duas regras **medindo-as**, e depois quebrá-las de
+propósito para ver o que acontece.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | **TL072** (duplo, DIP-8) | o CI principal deste volume |
+| 1 | **LM358** (duplo, DIP-8) | para a comparação da Parte 5 |
+| — | Resistores: 2× 100 kΩ, 2× 10 kΩ, 1 kΩ, 1 MΩ, 100 Ω | 5 % serve |
+| — | Capacitores: 2× 100 nF cerâmico | **desacoplamento — obrigatório** |
+| 1 | Fonte simétrica $\pm 12$ V ou $\pm 15$ V | ou duas fontes de bancada em série |
+| 1 | Multímetro | |
+| 1 | Osciloscópio de 2 canais | Partes 3 a 6 |
+| 1 | Gerador de funções | Partes 3 a 6 |
+| 1 | Protoboard e fios | |
+
+::: {.callout-note}
+## Como fazer alimentação simétrica com uma fonte só
+
+Se a sua fonte tem duas saídas independentes: ajuste as duas para 12 V, ligue o **positivo da
+primeira** ao **negativo da segunda**, e chame esse ponto de **terra**. O positivo da segunda é
+$+12$ V; o negativo da primeira é $-12$ V.
+
+Se a sua fonte tem uma saída só, este capítulo pode ser feito inteiro com 24 V simples e um
+divisor de dois resistores de 10 kΩ criando um terra artificial em 12 V — mas todas as medidas
+passam a ser referidas a esse ponto, não ao terra da fonte. É mais confuso para o primeiro
+contato; se puder, use duas fontes.
+:::
+
+### Antes de energizar
+
+1. **Confira a orientação do CI.** A marca semicircular fica no mesmo lado do pino 1. Pino 4 é
+   $-V_{EE}$; pino 8 é $+V_{CC}$. Invertidos, o CI aquece e morre em poucos segundos.
+2. **Ponha os capacitores de desacoplamento.** Um de 100 nF do pino 8 ao terra e outro do pino 4
+   ao terra, **fisicamente colados no CI**. Sem eles, metade dos amp-ops oscila em alguns
+   megahertz e todas as medidas do laboratório saem erradas de um jeito difícil de
+   diagnosticar. O @sec-cap-042 explica por quê; o Volume 12 volta ao assunto.
+3. **Ligue as entradas não usadas.** O segundo amplificador do TL072 (pinos 5, 6, 7) não pode
+   ficar com as entradas soltas. Ligue o pino 6 ao 7 e o pino 5 ao terra: vira um seguidor
+   inofensivo. Entradas flutuantes fazem o amplificador ocioso oscilar e o ruído acopla no que
+   você está medindo, através da alimentação compartilhada.
+
+### Parte 1 — O ganho de malha aberta é grande demais para ser usado
+
+1. Monte o amp-op A **sem realimentação nenhuma**: pino 3 ($+$) ao terra por 10 kΩ, pino 2 ($-$)
+   ao terra por 10 kΩ.
+2. Meça a tensão de saída (pino 1).
+
+Ela está grudada em $+13$ V ou em $-13$ V. Com as duas entradas nominalmente em zero, a saída
+deveria dar zero — e dá o extremo da alimentação, porque a tensão de desequilíbrio de alguns
+milivolts multiplicada por 200 000 é muito maior do que a alimentação permite.
+
+3. Toque a entrada 3 com o dedo e observe a saída pular de um extremo ao outro.
+
+**Este é o amp-op sem realimentação.** Anote em qual extremo ele parou; troque o CI de posição
+no protoboard e veja se o extremo muda. Ele é decidido pelo sinal do desequilíbrio interno, que
+é aleatório de peça para peça.
+
+### Parte 2 — O seguidor, e o curto virtual medido
+
+1. Monte o seguidor: pino 1 (saída) ligado diretamente ao pino 2 ($-$). Sinal na entrada pino 3
+   ($+$).
+2. Monte o divisor da @fig-065-seguidor: dois resistores de 100 kΩ entre $+10$ V e o terra.
+3. Meça o ponto médio do divisor **sem carga**: deve dar 5,0 V.
+4. Ligue um resistor de 10 kΩ do ponto médio ao terra e meça de novo.
+5. Retire o resistor de 10 kΩ, ligue o ponto médio à entrada do seguidor e a carga de 10 kΩ à
+   **saída** do seguidor. Meça os dois pontos.
+
+| Ponto | Sem seguidor | Com seguidor |
+|---|---|---|
+| Ponto médio do divisor | | |
+| Tensão sobre a carga | | |
+
+: O carregamento, antes e depois. {#tbl-065-lab1}
+
+6. **Meça o curto virtual.** Ponha o multímetro em milivolts contínuos entre o pino 2 e o
+   pino 3. Você deve ler alguns milivolts — que é a tensão de desequilíbrio $V_{OS}$, não a
+   tensão de erro $v_\varepsilon$ real, que é de microvolts e está abaixo do que qualquer
+   multímetro de bancada resolve.
+
+Este passo 6 é conceitualmente importante. O que você mede **não** é a violação da regra 2; é o
+$V_{OS}$ do @sec-cap-069, que é um erro de outro tipo e some da conta quando se refere tudo à
+entrada. A regra 2 continua verdadeira dentro de microvolts.
+
+### Parte 3 — A banda, e o produto ganho-banda
+
+1. Com o seguidor montado, aplique uma senoide de 1 V de pico, 1 kHz, na entrada.
+2. Verifique nos dois canais do osciloscópio que entrada e saída são idênticas.
+3. Suba a frequência até a saída cair 3 dB (para 0,707 V de pico).
+
+Anote a frequência. Para um TL072, ela fica em torno de 3 MHz — e provavelmente a sua ponta de
+prova e o seu protoboard vão limitar antes disso. Se você chegar a 1 MHz com o sinal ainda
+inteiro, o experimento cumpriu o objetivo.
+
+4. Suba a amplitude para 5 V de pico e refaça a varredura.
+
+A frequência de queda **diminui**, e a senoide vira um triângulo antes de diminuir de
+amplitude. Isso **não** é o produto ganho-banda: é a taxa de subida, e é o assunto do
+@sec-cap-069. Anote o formato e volte a ele naquele capítulo.
+
+### Parte 4 — Quebrar a regra 2 de propósito
+
+1. Volte ao seguidor com 1 kHz.
+2. Aumente a amplitude de entrada até 15 V de pico, além do que a alimentação permite.
+3. Observe as duas pontas: entrada e saída.
+
+A saída ceifa em $\pm 13$ V enquanto a entrada continua subindo. **Nesse intervalo, $v_+ \ne
+v_-$**, e você pode medi-lo: ponha a ponta no pino 2 e no pino 3 em modo diferencial (ou use a
+função A$-$B do osciloscópio). Durante o ceifamento a diferença é de volts, não de microvolts.
+
+Este é o item 2 da faixa de condições da @fig-065-regras, medido.
+
+### Parte 5 — Quebrar a regra 1: a corrente de entrada
+
+1. Monte dois seguidores, um com o **TL072** e outro com o **LM358**.
+2. Na entrada de cada um, ponha um resistor de **1 MΩ** em série com o terra — de modo que a
+   entrada esteja aterrada através de 1 MΩ.
+3. Meça a saída de cada um.
+
+O TL072 deve dar alguns milivolts (só o $V_{OS}$). O LM358 deve dar dezenas de milivolts a mais,
+porque os 45 nA de corrente de entrada atravessam o 1 MΩ:
+
+$$ 45\ \text{nA} \times 1\ \text{M}\Omega = 45\ \text{mV} $$
+
+4. Troque o 1 MΩ por 1 kΩ e refaça as duas medidas. A diferença some.
+
+A regra 1 não é absoluta: ela é uma afirmação sobre a corrente de entrada **comparada com as
+correntes do circuito**. Em impedância alta, ela falha primeiro.
+
+### Parte 6 — Quebrar tudo: realimentação positiva
+
+::: {.callout-warning}
+Este passo faz o circuito travar num extremo de alimentação, o que é seguro com carga alta,
+mas não deixe a saída ceifada em curto com o terra por muito tempo.
+:::
+
+1. Monte um amplificador com $R_1 = 10$ kΩ do pino 2 ao terra e $R_2 = 10$ kΩ do pino 1 ao
+   pino 2. Sinal no pino 3. Isso é o não inversor de ganho 2 do @sec-cap-066, e funciona.
+2. Verifique com o osciloscópio: saída igual ao dobro da entrada.
+3. Agora **troque os pinos 2 e 3 de lugar** — sinal no pino 2, rede de realimentação no pino 3.
+
+O circuito trava num extremo de alimentação e não sai de lá, independentemente do sinal de
+entrada. A rede é a mesma, os resistores são os mesmos, o CI é o mesmo. O que mudou foi o sinal
+da realimentação.
+
+Guarde o resultado: no @sec-cap-070, essa mesma montagem vira um circuito **útil** — o gatilho
+de Schmitt.
+
+**Variante simulada (plano B).** No LTspice, o modelo `UniversalOpamp2` permite ajustar
+$A_{OL}$, GBW e os trilhos de saída como parâmetros. Com uma análise `.ac dec 20 1 10meg` sobre
+um seguidor obtém-se a @fig-065-ganho diretamente; com `.step param Aol list 1e3 1e4 1e5` vê-se
+o ganho fechado convergindo para o valor ideal conforme $A_{OL}$ cresce, que é a demonstração
+numérica do limite $T \to \infty$. Uma análise `.tran` com o sinal de entrada além dos trilhos
+reproduz a Parte 4, e sondar o nó da entrada inversora mostra o curto virtual em microvolts —
+medida que a bancada não oferece.
+
+## 🔥 Onde Queima {#sec-065-queima}
+
+**Esquecer os pinos de alimentação.** O símbolo tem três terminais; o CI tem oito. Circuito com
+amp-op que "não faz nada" é, na maioria das vezes, um CI sem alimentação ou com o pino 4 ligado
+ao terra numa montagem que exige $-V_{EE}$.
+
+**Inverter a alimentação.** O pino 4 na diagonal do 8 torna o erro fácil, e o CI aquece rápido
+demais para dar tempo de desligar. Se o encapsulamento estiver quente ao toque no primeiro
+segundo, desligue.
+
+**Omitir o desacoplamento.** 100 nF cerâmico em cada pino de alimentação, colado no CI. Sem
+isso, a impedância dos fios da fonte fecha um caminho de realimentação parasita em alta
+frequência, e o CI oscila em torno de alguns megahertz. Na tela aparece como "ruído" grosso
+sobre o sinal, e o consumo fica maior que o esperado.
+
+**Deixar as entradas do amplificador ocioso soltas.** Num TL072 usado pela metade, o segundo
+amplificador com entradas flutuantes oscila e contamina o primeiro pela alimentação
+compartilhada. Ligue-o como seguidor aterrado.
+
+**Aplicar a regra 2 sem verificar se há realimentação negativa.** Antes de escrever
+$v_+ = v_-$, siga o caminho de volta com o dedo e confirme que ele chega ao terminal $-$. Se
+chegar ao $+$, o circuito não é um amplificador, e a resposta correta é "trava num extremo".
+
+**Aplicar a regra 2 com a saída saturada.** O cálculo dá um resultado limpo e a bancada dá
+outro. Sempre confira se o $v_{out}$ que você calculou cabe entre os trilhos. Se não couber, o
+circuito ceifa e todas as tensões internas mudam.
+
+**Usar TL072 em 5 V simples.** A faixa de modo comum não inclui o terra e a saída não chega perto
+dos trilhos: dos 5 V, sobram uns 2 V úteis. Nessa alimentação, use um CMOS trilho a trilho.
+
+**Alimentar a entrada antes da alimentação.** Se o sinal chega ao pino 3 antes de o pino 8 ter
+tensão, as junções de proteção conduzem e a corrente entra pelo caminho errado. Em bancada, ligue
+a fonte primeiro e o gerador depois; em placa, um resistor em série com a entrada de sinal
+resolve.
+
+**Confiar em $A_{OL}$ como número.** Os 106 dB de catálogo são de corrente contínua. Em 100 kHz
+o mesmo CI tem 30 dB, e o ganho de malha que sustenta as regras de ouro já é de fator 30, não de
+200 000.
+
+**Fonte de impedância alta com amp-op bipolar.** 45 nA num divisor de 1 MΩ dão 45 mV de erro que
+nenhuma calibração de ganho corrige, porque é um deslocamento, não uma escala. Ou se usa entrada
+JFET/CMOS, ou se abaixa a impedância da fonte.
+
+**Carga capacitiva na saída.** Cabo blindado, entrada de conversor A/D, um piezo — todos põem um
+polo dentro da malha e reduzem a margem de fase, exatamente como o @sec-cap-064 mostrou. Um
+resistor de 10 a 100 Ω em série com a saída resolve a maioria dos casos.
+
+## O que fica deste capítulo {#sec-065-resumo}
+
+**O amp-op é um amplificador diferencial de ganho enorme**, com dois terminais de entrada, um de
+saída e dois de alimentação que o esquemático não mostra:
+
+$$ v_{out} = A_{OL}\,(v_+ - v_-) $$
+
+**Sozinho ele é inútil como amplificador.** Com $A_{OL} = 2\times10^5$ e trilhos de $\pm 13{,}5$ V,
+a faixa linear de entrada tem 68 µV de largura — menor que a própria tensão de desequilíbrio
+interna do CI. Sem realimentação, o amp-op é um comparador.
+
+**As duas regras de ouro:**
+
+::: {.callout-tip}
+**Regra 1.** $i_+ = i_- = 0$ — as entradas não puxam corrente.
+
+**Regra 2.** $v_+ = v_-$ — a saída faz o que for preciso para igualar as entradas.
+:::
+
+**E as três condições sob as quais elas valem:** há realimentação negativa (o caminho de volta
+chega ao terminal $-$); a saída não está saturada; e sobra ganho de malha $T$ na frequência de
+interesse. Fora dessas condições as regras não perdem precisão — elas ficam **erradas**.
+
+**Curto virtual** é o nome geral da regra 2; **terra virtual** é o caso particular em que a
+entrada não inversora está aterrada, e a inversora fica em 0 V sem estar ligada a nada.
+
+**O ganho de malha aberta é uma curva.** 106 dB em CC, polo em 10 Hz, queda de 20 dB por década,
+cruzamento em 3 MHz. O produto $A_f \times f_c$ é constante, e a distância vertical entre o
+ganho fechado e a curva aberta **é** o $T$ do @sec-cap-064.
+
+**O seguidor de tensão** aplica as duas regras em duas linhas e entrega ganho 1, impedância de
+entrada altíssima e impedância de saída de miliohms. É a solução para o carregamento do
+@sec-cap-020.
+
+**Faixa de modo comum de entrada e excursão de saída são especificações separadas.** Trilho a
+trilho pode se referir a uma e não à outra, e violar a faixa de entrada pode inverter a fase da
+saída em vez de simplesmente saturar.
+
+## Para o próximo capítulo {#sec-065-fecho}
+
+As duas regras resolveram um circuito: o seguidor, de ganho 1. É pouco para um dispositivo que
+promete substituir o projeto de amplificador inteiro do Volume 10.
+
+Falta o passo que transforma as regras num método. Se a realimentação chega à entrada inversora
+através de um divisor resistivo em vez de um fio, a saída precisa subir **mais** que a entrada
+para que o nó de erro se anule — e o quanto ela precisa subir é decidido pela razão de dois
+resistores. É o ganho $1/\beta$ do @sec-cap-064, agora com resistores concretos no lugar da
+letra grega.
+
+O @sec-cap-066 monta as duas topologias que saem daí — o amplificador inversor e o não inversor
+—, calcula as impedâncias de cada uma, mostra por que a escolha entre elas quase nunca é sobre
+o sinal de menos, e projeta um estágio completo com valores comerciais, tolerância verificada e
+alimentação simples.

@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 64/104 |
-| **Contíguos até** | **064** — sem nenhum buraco no meio do livro |
+| **Progresso** | 65/104 |
+| **Contíguos até** | **065** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 065** | O amp-op ideal e as regras de ouro (abre o Volume 11) |
+| **Próximo capítulo: 066** | Amplificador inversor e não inversor |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -44,9 +44,13 @@ potência de saída (063); realimentação negativa como assunto próprio — $A
 ganho de malha $T$, produto ganho-banda constante, as quatro topologias, margem de fase e de
 ganho, compensação por polo dominante e a relação entre margem de fase e sobrelevação (064).
 
-O próximo bloco é o **Volume 11** (capítulos 065 a 071), sobre amplificadores operacionais. O
-capítulo 064 já monta a ponte explícita: as "regras de ouro" do amp-op são a equação da
-realimentação com $T \to \infty$.
+**Volume 11 em andamento** (capítulos 065 a 071, amplificadores operacionais): o dispositivo,
+os cinco terminais e o encapsulamento DIP-8, o modelo ideal confrontado com TL072 e LM358, as
+duas regras de ouro derivadas de $A_f = A/(1+A\beta)$ com $T \to \infty$ e — o ponto em que o
+capítulo insiste — as **três condições** sob as quais elas valem (há realimentação negativa, a
+saída não saturou, sobra ganho de malha); curto virtual e terra virtual; $A_{OL}$ como curva e
+não como número; o seguidor de tensão; e a distinção entre faixa de modo comum de entrada e
+excursão de saída (065).
 
 Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -185,7 +189,7 @@ cinco ocorrências como aviso.
 
 ### Volume 11 — Amplificadores Operacionais
 
-- [ ] 065 — O amp-op ideal e as regras de ouro — `capitulos/065-o-amp-op-ideal-e-as-regras-de-ouro.qmd`
+- [x] 065 — O amp-op ideal e as regras de ouro — `capitulos/065-o-amp-op-ideal-e-as-regras-de-ouro.qmd`
 - [ ] 066 — Amplificador inversor e não inversor — `capitulos/066-amplificador-inversor-e-nao-inversor.qmd`
 - [ ] 067 — Somador, subtrator e amplificador de instrumentação — `capitulos/067-somador-subtrator-e-amplificador-de-instrumentacao.qmd`
 - [ ] 068 — Integrador, derivador e fontes de corrente — `capitulos/068-integrador-derivador-e-fontes-de-corrente.qmd`
