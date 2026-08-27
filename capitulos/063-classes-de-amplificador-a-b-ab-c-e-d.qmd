@@ -1,3 +1,893 @@
 # Classes de amplificador: A, B, AB, C e D {#sec-cap-063}
 
-*(em elaboração)*
+O @sec-cap-056 montou um amplificador de emissor comum que entrega alguns milivolts de sinal a
+uma carga de alguns quilohms. Todo o Volume 9 e a primeira metade deste tratam de **sinal**.
+
+Este capítulo trata de **potência**. A carga deixa de ser um resistor de 10 kΩ e passa a ser um
+alto-falante de 8 Ω, um motor, o enrolamento de um transformador, uma antena. E a pergunta
+muda junto: já não é "qual o ganho?", é **"quanto da energia que sai da fonte chega à carga, e
+quanto vira calor no transistor?"**
+
+A resposta a essa pergunta organiza os amplificadores de potência em **classes**, que são
+essencialmente respostas diferentes a uma única decisão de projeto: **durante que fração do
+ciclo do sinal cada transistor conduz?**
+
+::: {#fig-063-angulo}
+
+```{.tikz}
+%%| filename: 063-angulo
+%%| alt: Quatro painéis lado a lado, cada um mostrando uma senoide completa de entrada e destacando em azul o trecho do ciclo em que o transistor de saída conduz. No primeiro painel, rotulado classe A com ângulo de condução de trezentos e sessenta graus, o ciclo inteiro está destacado, e a anotação registra rendimento máximo de vinte e cinco por cento e distorção mínima. No segundo painel, rotulado classe AB com ângulo de condução entre cento e oitenta e trezentos e sessenta graus, tipicamente perto de duzentos, está destacado o semiciclo positivo mais uma pequena sobreposição em torno do cruzamento por zero, e a anotação registra rendimento entre sessenta e setenta e cinco por cento e distorção baixa. No terceiro painel, rotulado classe B com ângulo de condução de cento e oitenta graus, está destacado exatamente o semiciclo positivo, e a anotação registra rendimento máximo de setenta e oito vírgula cinco por cento e distorção de cruzamento. No quarto painel, rotulado classe C com ângulo de condução menor que cento e oitenta graus, tipicamente noventa, está destacado apenas o pico do semiciclo positivo, e a anotação registra rendimento acima de oitenta por cento e distorção altíssima, servindo apenas para sinal de frequência única com circuito ressonante na saída. Uma caixa abaixo registra que existe um compromisso monotônico: quanto menor o ângulo de condução, maior o rendimento e maior a distorção, e que a classe D escapa desse compromisso por não ser um amplificador linear, sendo tratada mais adiante no capítulo.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  \def\painel#1#2#3#4#5{%
+    \begin{scope}[shift={(#1,0)}]
+      \draw[eixo] (-0.2,0) -- (3.6,0);
+      \draw[manualgray, thin] (0,-1.1) -- (0,1.1);
+      % senoide completa em cinza
+      \draw[manualgray!60, thin, domain=0:360, samples=140, smooth]
+        plot ({\x/360*3.4},{sin(\x)});
+      % trecho conduzindo em azul
+      \draw[curva, domain=#2:#3, samples=120, smooth]
+        plot ({\x/360*3.4},{sin(\x)});
+      \node[anchor=south, font=\scriptsize\bfseries] at (1.7,1.3) {#4};
+      \node[anchor=north, align=center, font=\tiny, text width=3.6cm] at (1.7,-1.3) {#5};
+    \end{scope}}
+
+  \painel{0}{0}{360}{classe A}
+         {$360^{\circ}$\\[3pt]$\eta_{\max} = 25\ \%$\\distorção mínima}
+  \painel{4.2}{-10}{190}{classe AB}
+         {$180^{\circ}$ a $360^{\circ}$ (típico $\approx 200^{\circ}$)\\[3pt]$\eta \approx 60$ a
+          $75\ \%$\\distorção baixa}
+  \painel{8.4}{0}{180}{classe B}
+         {exatamente $180^{\circ}$\\[3pt]$\eta_{\max} = 78{,}5\ \%$\\distorção de cruzamento}
+  \painel{12.6}{45}{135}{classe C}
+         {$< 180^{\circ}$ (típico $90^{\circ}$)\\[3pt]$\eta > 80\ \%$\\distorção altíssima}
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=15.2cm] at (8.1,-3.4)
+       {\textbf{O compromisso é monotônico:} menos ângulo de condução, mais rendimento, mais
+        distorção. As quatro classes acima são apenas quatro pontos dessa mesma reta.
+        \\[4pt]
+        A \textbf{classe D} escapa do compromisso porque não é um amplificador linear
+        coisa nenhuma — é uma \emph{chave}, e por isso herda tudo o que os capítulos 061 e
+        062 estabeleceram. Ela fecha o capítulo.};
+
+\end{tikzpicture}
+```
+
+As quatro classes lineares, definidas pelo ângulo de condução. O azul é o trecho do ciclo em
+que o transistor de saída está conduzindo.
+:::
+
+## O problema, em números {#sec-063-problema}
+
+Fixe uma meta concreta, e ela vai valer o capítulo inteiro: **10 W eficazes numa carga de
+8 Ω**.
+
+Isso significa uma tensão eficaz de $\sqrt{10 \times 8} = 8{,}94$ V, e portanto um pico de
+
+$$ V_p = \sqrt{2 P R_L} = \sqrt{2 \times 10 \times 8} = 12{,}65 \text{ V} $$
+
+com pico de corrente de $12{,}65/8 = 1{,}58$ A. A alimentação precisa de pelo menos
+$\pm 14$ V para acomodar isso com folga de saturação.
+
+Guarde esses quatro números: **±14 V, 8 Ω, 12,65 V de pico, 1,58 A de pico.**
+
+## Classe A {#sec-063-classea}
+
+Classe A é o que o Volume 9 vinha fazendo sem dar nome: o transistor conduz o ciclo **inteiro**,
+com uma corrente de repouso maior que qualquer excursão do sinal. Nunca corta.
+
+::: {#fig-063-classea}
+
+```{.tikz}
+%%| filename: 063-classea
+%%| alt: À esquerda, o esquema de um seguidor de emissor classe A alimentado por fonte simétrica de mais e menos quatorze volts. Um transistor NPN tem o coletor no positivo, a base recebendo o sinal de entrada e o emissor ligado à saída; do emissor sai também um sumidouro de corrente constante de um vírgula cinco e oito ampère para o negativo, desenhado como uma fonte de corrente. A carga de oito ohms liga a saída ao terra. À direita, um diagrama de barras horizontais comparando a potência que sai da fonte com a que chega à carga. A barra total, de quarenta e quatro vírgula dois watts, está dividida em duas partes: uma fatia azul de dez watts, rotulada como potência útil na carga, correspondente a vinte e dois vírgula seis por cento do total, e uma fatia vermelha muito maior de trinta e quatro vírgula dois watts, rotulada como calor nos transistores. Abaixo, uma segunda barra mostra a situação em repouso, sem sinal algum: a fonte continua entregando quarenta e quatro vírgula dois watts, a carga recebe zero, e os quarenta e quatro watts inteiros viram calor. Uma caixa de destaque registra o fato central da classe A: ela dissipa a potência máxima quando está em silêncio, e a dissipação diminui à medida que o sinal aumenta, o que é o oposto da intuição.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ============ circuito ============
+  \begin{scope}
+    \draw (1.6,4.0) node[vcc]{$+14$ V} -- (1.6,3.4);
+    \node[npn, anchor=C] (Q) at (1.6,3.4) {};
+    \draw (Q.B) -- ++(-1.4,0) node[anchor=east, font=\scriptsize] {$v_{in}$};
+    \draw (Q.E) -- (1.6,1.4) coordinate(out);
+    \node[ponto] at (out) {};
+    \draw (out) to[I, l_={$I_Q = 1{,}58$ A}] (1.6,-0.6);
+    \draw (1.6,-0.6) -- (1.6,-1.1) node[vee]{$-14$ V};
+    \draw (out) -- (3.6,1.4) node[anchor=west, font=\scriptsize] {saída};
+    \node[ponto] at (3.4,1.4) {};
+    \draw (3.4,1.4) -- (3.4,0.6) to[R, l_={$8\ \Omega$}] (3.4,-0.6) -- (3.4,-1.0) node[ground]{};
+  \end{scope}
+
+  % ============ barras ============
+  \begin{scope}[shift={(6.4,0)}]
+    \node[anchor=south west, font=\scriptsize\bfseries] at (0,3.4) {com sinal máximo};
+    \fill[manualblue!70] (0,2.6) rectangle (1.86,3.2);
+    \fill[manualred!55] (1.86,2.6) rectangle (8.2,3.2);
+    \draw (0,2.6) rectangle (8.2,3.2);
+    \node[white, font=\tiny] at (0.93,2.9) {$10$ W};
+    \node[font=\tiny] at (5.0,2.9) {$34{,}2$ W de calor nos transistores};
+    \node[anchor=north, font=\tiny] at (0.93,2.55) {útil: $22{,}6\ \%$};
+
+    \node[anchor=south west, font=\scriptsize\bfseries] at (0,1.2) {em repouso, sem sinal};
+    \fill[manualred!55] (0,0.4) rectangle (8.2,1.0);
+    \draw (0,0.4) rectangle (8.2,1.0);
+    \node[font=\tiny] at (4.1,0.7) {$44{,}2$ W de calor — \textbf{tudo}};
+    \node[anchor=north, font=\tiny] at (0.4,0.35) {útil: $0$};
+
+    \draw[{Latex[length=1.4mm]}-{Latex[length=1.4mm]}, manualgray] (0,4.0) -- (8.2,4.0);
+    \node[manualgray, anchor=south, font=\tiny] at (4.1,4.05)
+         {a fonte entrega $44{,}2$ W \emph{sempre}};
+  \end{scope}
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=14.4cm] at (7.4,-2.2)
+       {\textbf{A classe A dissipa o máximo quando está em silêncio.} A fonte entrega
+        $2V_{CC}I_Q$ o tempo todo, independentemente do sinal. Sem sinal, nada disso vai para a
+        carga: os 44 W inteiros viram calor. Conforme o sinal cresce, parte migra para a carga
+        e o transistor \emph{esfria}. É o oposto da intuição, e é a razão de um amplificador
+        valvulado classe A queimar os dedos tocando nada.};
+
+\end{tikzpicture}
+```
+
+Um seguidor de emissor classe A entregando 10 W a 8 Ω. Note o orçamento: 44 W entram, 10 W
+saem.
+:::
+
+A conta é direta. Para que o transistor nunca corte, a corrente de repouso $I_Q$ precisa ser
+maior ou igual ao pico exigido pela carga: $I_Q \ge 1{,}58$ A. A fonte simétrica entrega
+$P_{\text{fonte}} = 2 V_{CC} I_Q$, e isso é **constante** — não depende do sinal:
+
+$$ P_{\text{fonte}} = 2 \times 14 \times 1{,}58 = 44{,}2 \text{ W} $$
+
+$$ \eta = \frac{10}{44{,}2} = 22{,}6\ \% $$
+
+No caso ideal, com $V_p = V_{CC}$ exato, o teto é
+
+$$ \boxed{\eta_{A,\max} = 25\ \%} $$
+
+Três consequências práticas:
+
+**Setenta e cinco por cento do consumo vira calor.** Um amplificador de 50 W classe A precisa
+dissipar 150 W. Isso são dissipadores enormes, e frequentemente ventilação forçada.
+
+**Em repouso é pior.** Sem sinal, os 44 W inteiros se dividem entre o transistor e o sumidouro
+de corrente. **A dissipação máxima da classe A é no silêncio**, e ela *cai* quando o sinal
+aparece.
+
+**A fonte tem de ser dimensionada para o repouso.** Nada de "consumo médio" — a corrente é
+constante e permanente.
+
+::: {.callout-note}
+## O acoplamento por transformador dobra o rendimento
+
+Existe uma variante em que a carga é acoplada por um **transformador**, com o primário no
+coletor. A vantagem é que o primário não tem resistência de CC apreciável: a tensão de repouso
+no coletor é praticamente $V_{CC}$, e o sinal pode oscilar **de zero a $2V_{CC}$** — o dobro
+da excursão.
+
+Isso leva o teto de rendimento a
+
+$$ \eta_{A,\text{transformador},\max} = 50\ \% $$
+
+É por isso que o rádio a válvula do seu avô, e o amplificador de saída única de guitarra,
+usam transformador de saída. O preço é o transformador: caro, pesado e responsável por boa
+parte da distorção e da limitação de banda do conjunto — assunto do capítulo 072, no
+Volume 12.
+:::
+
+Então por que alguém usaria classe A? Porque ela é a **mais linear que existe**. Nenhum
+transistor corta, nenhum entra ou sai de condução, não há transição nenhuma no meio do sinal.
+Em pré-amplificadores e em estágios de sinal pequeno, onde a potência total é de miliwatts,
+75 % de desperdício não custa nada e a linearidade é de graça. É a razão de todo o Volume 9
+ter sido classe A sem precisar dizer.
+
+## Classe B {#sec-063-classeb}
+
+A ideia da classe B é simples: se o transistor só precisa empurrar durante o semiciclo
+positivo, **deixe-o desligado no negativo** — e ponha um segundo transistor, complementar, para
+cuidar do outro semiciclo.
+
+O arranjo se chama **push-pull** (empurra-puxa), e é um NPN em cima com um PNP embaixo, os dois
+seguidores de emissor, com os emissores unidos na saída.
+
+A economia é enorme. Cada transistor conduz uma meia onda, então a corrente média que cada
+fonte entrega é o valor médio de uma meia senoide:
+
+$$ I_{\text{méd}} = \frac{I_p}{\pi} = \frac{1{,}58}{\pi} = 0{,}503 \text{ A} $$
+
+$$ P_{\text{fonte}} = 2 V_{CC} I_{\text{méd}} = 2 \times 14 \times 0{,}503 = 14{,}1 \text{ W}
+   \qquad\Longrightarrow\qquad \eta = \frac{10}{14{,}1} = 71\ \% $$
+
+Contra 44,2 W da classe A. E no limite, com $V_p = V_{CC}$:
+
+$$ \boxed{\eta_{B,\max} = \frac{\pi}{4} = 78{,}5\ \%} $$
+
+::: {.callout-important}
+## Onde a classe B dissipa mais — e não é no volume máximo
+
+Derivando a dissipação em relação à amplitude, o máximo cai em $V_p = 2V_{CC}/\pi = 0{,}637
+V_{CC}$, e vale
+
+$$ P_{D,\max} = \frac{2 V_{CC}^{2}}{\pi^{2} R_L}
+   = \frac{2 \times 14^{2}}{9{,}87 \times 8} = 4{,}97 \text{ W} $$
+
+repartidos entre os dois transistores — cerca de 2,5 W cada.
+
+Isso acontece com a saída em **4,96 W**, que é 40 % da potência máxima. Dimensionar o
+dissipador para a potência de saída máxima **subestima** a necessidade: o pior caso térmico é
+em volume médio, não no máximo.
+:::
+
+E o preço da classe B tem nome.
+
+## A distorção de cruzamento {#sec-063-cruzamento}
+
+::: {#fig-063-cruzamento}
+
+```{.tikz}
+%%| filename: 063-cruzamento
+%%| alt: Dois gráficos lado a lado. O da esquerda mostra a característica de transferência de um estágio push-pull classe B: a tensão de entrada no eixo horizontal, de menos três a mais três volts, e a tensão de saída no eixo vertical. A curva é composta de três trechos: para entrada acima de mais zero vírgula sete volt, uma reta de inclinação um; para entrada abaixo de menos zero vírgula sete volt, outra reta de inclinação um; e entre menos zero vírgula sete e mais zero vírgula sete volt, um trecho horizontal em zero, marcado como zona morta e sombreado em vermelho. Uma anotação registra que a zona morta existe porque nenhum dos dois transistores conduz enquanto a entrada não vence uma queda de base-emissor, e que ela tem um vírgula quatro volt de largura total. O gráfico da direita mostra o resultado no tempo: uma senoide de entrada em cinza tracejado e a saída correspondente em azul, que reproduz a senoide bem nos picos mas apresenta um degrau achatado toda vez que cruza o zero, com a forma característica de um patamar seguido de um salto. Uma anotação registra que essa deformação é a distorção de cruzamento, que ela é proporcionalmente pior em sinal pequeno, porque um vírgula quatro volt de zona morta é desprezível num sinal de doze volts de pico mas devora um sinal de dois volts, e que por isso ela é audível justamente nas passagens suaves. Uma caixa abaixo registra que a realimentação negativa reduz muito a distorção de cruzamento, mas não a elimina, porque a correção exige que o amplificador reaja a um erro que aparece de repente, e em alta frequência a reação chega atrasada.
+
+\begin{tikzpicture}
+
+% ============ característica de transferência ============
+\begin{axis}[
+  name=tc,
+  width=7.6cm, height=7.2cm,
+  xlabel={$v_{in}$ (V)}, ylabel={$v_{out}$ (V)},
+  xmin=-3, xmax=3, ymin=-2.4, ymax=2.4,
+  axis lines=middle, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  title={\scriptsize característica de transferência},
+]
+  \fill[manualred!22] (axis cs:-0.7,-2.4) rectangle (axis cs:0.7,2.4);
+  \addplot[curva, very thick, domain=0.7:3, samples=2] {x-0.7};
+  \addplot[curva, very thick, domain=-3:-0.7, samples=2] {x+0.7};
+  \addplot[curva, very thick, domain=-0.7:0.7, samples=2] {0};
+  \node[manualred, anchor=south, font=\tiny, align=center] at (axis cs:0,0.15)
+       {zona morta\\$1{,}4$ V};
+\end{axis}
+
+% ============ formas de onda ============
+\begin{axis}[
+  name=wf, at={(tc.right of east)}, anchor=left of west,
+  width=8.4cm, height=7.2cm,
+  xlabel={tempo}, ylabel={tensão (V)},
+  xmin=0, xmax=360, ymin=-2.6, ymax=2.6,
+  axis lines=middle, font=\footnotesize,
+  xtick=\empty, grid=both, grid style={manualgray!18},
+  title={\scriptsize o resultado no tempo},
+]
+  \addplot[manualgray, dashed, domain=0:360, samples=200] {2*sin(x)};
+  \addplot[destaque, very thick, domain=0:360, samples=400]
+          {2*sin(x) > 0.7 ? 2*sin(x)-0.7 : (2*sin(x) < -0.7 ? 2*sin(x)+0.7 : 0)};
+  \node[manualred, anchor=west, font=\tiny, align=left] at (axis cs:196,1.7)
+       {o degrau no cruzamento};
+  \draw[-{Latex[length=1.2mm]}, manualred] (axis cs:194,1.6) -- (axis cs:182,0.15);
+\end{axis}
+
+\node[draw=manualred, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=7pt, text width=15.2cm]
+     at ([yshift=-1.1cm]tc.below south west)
+     {\textbf{Por que ela incomoda mais em volume baixo.} A zona morta tem 1,4 V de largura,
+      \emph{sempre}. Num sinal de 12 V de pico ela é 12 \% da excursão; num sinal de 0,5 V de
+      pico, o amplificador simplesmente não produz nada. É por isso que a distorção de
+      cruzamento é percebida nas passagens suaves e some no volume alto — exatamente ao
+      contrário do ceifamento.
+      \\[4pt]
+      A \textbf{realimentação negativa} do próximo capítulo reduz muito esse degrau, mas não o
+      elimina: corrigi-lo exige reagir a um erro que aparece de repente, e em alta frequência
+      a correção chega atrasada. É por isso que quase ninguém usa classe B pura.};
+
+\end{tikzpicture}
+```
+
+A zona morta de $\pm 0{,}7$ V e o degrau que ela produz. Note que o defeito é **aditivo e de
+tamanho fixo**: ele não encolhe quando o sinal encolhe.
+:::
+
+O problema é que um transistor bipolar não começa a conduzir em zero: começa em $V_{BE}
+\approx 0{,}6$ a 0,7 V. Entre $-0{,}7$ V e $+0{,}7$ V de entrada, **nenhum dos dois transistores
+conduz**, e a saída fica travada em zero.
+
+O resultado é um degrau toda vez que o sinal cruza o zero — a **distorção de cruzamento**
+(*crossover distortion*). Ela é o defeito característico da classe B, e é audível: produz
+harmônicos ímpares de ordem alta, que o ouvido detesta.
+
+## Classe AB {#sec-063-classeab}
+
+A solução tem uma linha: **polarize os dois transistores com uma corrente de repouso pequena,
+mas não nula.**
+
+Se cada transistor já está levemente conduzindo com sinal zero, não há zona morta: quando o
+sinal sobe, um assume gradualmente enquanto o outro se apaga. A transição fica suave.
+
+O nome disso é **classe AB**, porque o ângulo de condução fica entre os 360° da A e os 180° da
+B — tipicamente uns 200°. É o que praticamente todo amplificador de áudio do mundo usa.
+
+::: {#fig-063-classeab}
+
+```{.tikz}
+%%| filename: 063-classeab
+%%| alt: Esquema completo de um estágio de saída classe AB. Da alimentação positiva de mais quatorze volts desce uma fonte de corrente de polarização até o nó de base do transistor NPN de saída. Entre esse nó e o nó de base do transistor PNP de saída está o circuito de polarização, desenhado como um transistor NPN de sinal com um divisor resistivo entre coletor e emissor, o cursor do divisor ligado à base; esse bloco está rotulado como multiplicador de tensão base-emissor e está marcado como termicamente acoplado ao dissipador. O sinal de entrada entra pelo nó superior de base. O transistor NPN de saída tem o coletor no positivo e o PNP tem o coletor no negativo; os emissores de ambos passam por resistores de zero vírgula vinte e dois ohm antes de se unirem no nó de saída, que alimenta a carga de oito ohms. Anotações registram: que o multiplicador estabelece uma tensão de aproximadamente um vírgula quatro volt entre as duas bases, suficiente para manter ambos os transistores levemente conduzindo; que a corrente de repouso típica é de vinte a cem miliampères; que os resistores de emissor introduzem realimentação local que estabiliza essa corrente contra variações de temperatura; e que o transistor do multiplicador precisa estar fisicamente parafusado no mesmo dissipador dos transistores de saída, porque é essa ligação térmica que faz a tensão de polarização cair quando o conjunto esquenta, compensando a queda das tensões base-emissor dos transistores de saída. Uma caixa de aviso registra que sem esse acoplamento térmico ocorre disparo térmico: o aquecimento aumenta a corrente de repouso, que aquece mais, num ciclo que destrói o estágio.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % alimentações
+  \draw (3.0,5.4) node[vcc]{$+14$ V} -- (3.0,4.9);
+  \coordinate (vpos) at (3.0,4.9);
+  \draw (3.0,-3.0) node[vee]{$-14$ V} -- (3.0,-2.5);
+  \coordinate (vneg) at (3.0,-2.5);
+
+  % fonte de corrente de polarização
+  \draw (vpos) -- (0.6,4.9);
+  \draw (0.6,4.9) to[I, l_={$I_{\text{pol}}$}] (0.6,3.4);
+  \coordinate (bn) at (0.6,3.4);
+  \node[ponto] at (bn) {};
+  \draw (bn) -- (0.6,4.1);
+  \draw (0.6,3.4) -- (-3.4,3.4) node[anchor=east, font=\scriptsize] {$v_{in}$};
+
+  % transistor de saída NPN
+  \node[npn, anchor=B] (QN) at (1.2,3.4) {};
+  \draw (bn) -- (QN.B);
+  \draw (QN.C) -- (QN.C |- vpos) coordinate(cn);
+  \node[ponto] at (cn) {};
+  \draw (QN.E) -- (2.0,1.7) coordinate(en);
+  \draw (en) to[R, l_={$0{,}22\ \Omega$}] (2.0,0.9);
+
+  % multiplicador de VBE, à esquerda
+  \draw (0.6,3.4) -- (-1.0,3.4) -- (-1.0,2.3);
+  \draw[thick] (-2.1,0.5) rectangle (0.1,2.3);
+  \node[font=\tiny, align=center] at (-1.0,1.4) {multiplicador\\de $V_{BE}$\\($\approx 1{,}4$ V)};
+  \draw (-1.0,0.5) -- (-1.0,-0.8) -- (0.6,-0.8);
+  \coordinate (bp) at (0.6,-0.8);
+  \node[ponto] at (bp) {};
+
+  % transistor de saída PNP
+  \node[pnp, anchor=B] (QP) at (1.2,-0.8) {};
+  \draw (bp) -- (QP.B);
+  \draw (QP.C) -- (QP.C |- vneg) coordinate(cp);
+  \node[ponto] at (cp) {};
+  \draw (QP.E) -- (2.0,-1.1) coordinate(ep);
+  \draw (ep) to[R, l_={$0{,}22\ \Omega$}] (2.0,-0.3);
+
+  % saída e carga
+  \coordinate (out) at (2.0,0.3);
+  \draw (2.0,0.9) -- (2.0,-0.3);
+  \node[ponto] at (out) {};
+  \draw (out) -- (4.4,0.3) node[anchor=west, font=\scriptsize] {saída};
+  \node[ponto] at (4.2,0.3) {};
+  \draw (4.2,0.3) to[R, l={$8\ \Omega$}] (4.2,-1.6) -- (4.2,-2.0) node[ground]{};
+
+  % acoplamento térmico
+  \draw[manualred, thick, dashed] (-2.1,1.4) -- (-3.2,1.4);
+  \node[manualred, anchor=east, font=\tiny, align=right, text width=2.6cm] at (-3.25,1.4)
+       {\textbf{parafusado no mesmo dissipador} dos transistores de saída};
+
+  % anotações
+  \node[anchor=west, font=\tiny, align=left, text width=5.2cm] at (5.9,3.4)
+       {\textbf{O que o multiplicador faz}\\[2pt]
+        Mantém $\approx 1{,}4$ V entre as duas bases — exatamente a soma dos dois $V_{BE}$ —,
+        de modo que os dois transistores ficam \emph{levemente} conduzindo com sinal zero.
+        \\[4pt] Corrente de repouso típica: \textbf{$20$ a $100$ mA}.};
+
+  \node[anchor=west, font=\tiny, align=left, text width=5.2cm] at (5.9,0.4)
+       {\textbf{O que os $0{,}22\ \Omega$ fazem}\\[2pt]
+        Realimentação local: se a corrente de repouso tenta subir, a queda sobre eles subtrai
+        do $V_{BE}$ e a freia. É o resistor de emissor do capítulo 055, na saída.};
+
+  \node[draw=manualred, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.6cm] at (3.6,-3.8)
+       {\textbf{Sem acoplamento térmico, dispara.} Os transistores de saída esquentam, os
+        $V_{BE}$ deles caem 2 mV/°C (capítulo 055), a corrente de repouso sobe, eles esquentam
+        mais. O multiplicador no mesmo dissipador \textbf{também} esquenta, e a tensão que ele
+        produz cai na mesma proporção — cancelando a deriva. É a única parte do amplificador
+        cuja posição \emph{física} é parte do circuito.};
+
+\end{tikzpicture}
+```
+
+O estágio de saída classe AB completo. Três elementos fazem o trabalho: o multiplicador de
+$V_{BE}$, os resistores de emissor e o parafuso que prende o multiplicador ao dissipador.
+:::
+
+O rendimento cai pouco em relação à classe B, porque a corrente de repouso é pequena. Com
+$I_Q = 50$ mA e $\pm 14$ V, o consumo de repouso é $2 \times 14 \times 0{,}05 = 1{,}4$ W, e no
+sinal máximo:
+
+$$ \eta_{AB} = \frac{12{,}25}{15{,}6 + 1{,}4} = 72\ \% $$
+
+Contra 78,5 % da classe B pura e 25 % da classe A. **É por isso que a classe AB venceu.**
+
+::: {.callout-warning}
+## O ajuste da corrente de repouso é delicado
+
+Pouca corrente de repouso: sobra distorção de cruzamento. Muita: o rendimento cai e o risco de
+disparo térmico sobe. O ajuste típico é feito medindo a queda sobre um resistor de emissor —
+com 0,22 Ω e 50 mA de repouso, procura-se **11 mV**.
+
+E o ajuste tem de ser feito com o amplificador **quente**, depois de meia hora ligado, nunca
+frio. Ajustado frio, ele sobe sozinho e o estágio dispara.
+:::
+
+## Classe C {#sec-063-classec}
+
+Empurrando a lógica ao extremo: e se o transistor conduzir **menos** que meio ciclo?
+
+O rendimento sobe acima de 80 %, e a saída deixa de parecer com a entrada — vira uma sequência
+de pulsos estreitos. Isso é inútil para áudio e perfeitamente utilizável em **rádio**, porque:
+
+- O sinal de RF é de **frequência única** (ou de banda estreita).
+- A carga é um **circuito ressonante** LC, sintonizado nessa frequência.
+
+O tanque LC do @sec-cap-037 é excitado por pulsos e responde com uma senoide limpa na sua
+frequência de ressonância, exatamente como um sino badalado uma vez por ciclo. Os harmônicos
+que os pulsos carregam caem fora da banda e o $Q$ do tanque os rejeita.
+
+Transmissores de AM, estágios finais de rádio VHF, aquecimento por indução e o magnetron de um
+forno de micro-ondas são todos classe C ou primos dela. Em áudio, classe C não existe.
+
+## Classe D {#sec-063-classed}
+
+E aqui o volume fecha o círculo.
+
+A classe D não é um amplificador linear com ângulo de condução pequeno. Ela **abandona a
+operação linear**: os transistores só ficam **totalmente ligados** ou **totalmente
+desligados**, comutando a centenas de quilohertz, e a informação vai na **largura dos pulsos**.
+
+::: {#fig-063-classed}
+
+```{.tikz}
+%%| filename: 063-classed
+%%| alt: Diagrama em blocos de um amplificador classe D, acompanhado das formas de onda em cada ponto. À esquerda, o sinal de áudio de entrada chega a um comparador. A outra entrada do comparador recebe uma onda triangular de frequência muito mais alta, gerada por um oscilador. A saída do comparador é uma onda quadrada de largura variável, que alimenta um driver de porta, que por sua vez comanda uma meia ponte de dois MOSFETs entre mais e menos quatorze volts. A saída da meia ponte passa por um filtro passa-baixas formado por um indutor em série e um capacitor em paralelo, e daí para o alto-falante de oito ohms. Acima do diagrama, quatro formas de onda alinhadas mostram o processo: a primeira é a senoide de áudio sobreposta à onda triangular de alta frequência; a segunda é a saída do comparador, uma sequência de pulsos cuja largura acompanha a amplitude instantânea da senoide, larga nos picos positivos e estreita nos negativos; a terceira é a mesma sequência de pulsos comutando entre mais e menos quatorze volts na saída da meia ponte; e a quarta é o resultado depois do filtro, uma senoide limpa de grande amplitude. Uma caixa de anotação registra que os transistores nunca operam na região linear, que por isso o rendimento passa de noventa por cento, e que todos os mecanismos de perda estudados nos capítulos anteriores se aplicam diretamente: perda de condução pela resistência de canal, perda de comutação pelo patamar de Miller, necessidade de tempo morto entre os dois MOSFETs e condução do diodo de corpo durante esse tempo morto.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ================ formas de onda ================
+  \begin{scope}[shift={(0,3.2)}]
+    % triangular + senoide
+    \draw[eixo] (0,0) -- (10.4,0);
+    \node[anchor=east, font=\tiny, align=right] at (-0.15,0.3) {áudio +\\triangular};
+    \draw[manualgray, thin] plot[domain=0:10.2, samples=205]
+         ({\x},{0.55*(abs(mod(\x*4,2)-1)*2-1)});
+    \draw[curva, thick, domain=0:10.2, samples=200] plot ({\x},{0.42*sin(\x*36)});
+
+    % PWM
+    \begin{scope}[shift={(0,-1.5)}]
+      \draw[eixo] (0,0) -- (10.4,0);
+      \node[anchor=east, font=\tiny] at (-0.15,0.3) {PWM};
+      \draw[destaque, thick]
+        (0,0.32) -- (0.30,0.32) -- (0.30,0) -- (0.50,0) -- (0.50,0.32)
+        -- (0.86,0.32) -- (0.86,0) -- (1.00,0) -- (1.00,0.32)
+        -- (1.40,0.32) -- (1.40,0) -- (1.50,0) -- (1.50,0.32)
+        -- (1.94,0.32) -- (1.94,0) -- (2.00,0) -- (2.00,0.32)
+        -- (2.46,0.32) -- (2.46,0) -- (2.50,0) -- (2.50,0.32)
+        -- (2.96,0.32) -- (2.96,0) -- (3.00,0) -- (3.00,0.32)
+        -- (3.44,0.32) -- (3.44,0) -- (3.50,0) -- (3.50,0.32)
+        -- (3.90,0.32) -- (3.90,0) -- (4.00,0) -- (4.00,0.32)
+        -- (4.30,0.32) -- (4.30,0) -- (4.50,0) -- (4.50,0.32)
+        -- (4.70,0.32) -- (4.70,0) -- (5.00,0) -- (5.00,0.32)
+        -- (5.14,0.32) -- (5.14,0) -- (5.50,0) -- (5.50,0.32)
+        -- (5.60,0.32) -- (5.60,0) -- (6.00,0) -- (6.00,0.32)
+        -- (6.10,0.32) -- (6.10,0) -- (6.50,0) -- (6.50,0.32)
+        -- (6.56,0.32) -- (6.56,0) -- (7.00,0) -- (7.00,0.32)
+        -- (7.10,0.32) -- (7.10,0) -- (7.50,0) -- (7.50,0.32)
+        -- (7.60,0.32) -- (7.60,0) -- (8.00,0) -- (8.00,0.32)
+        -- (8.20,0.32) -- (8.20,0) -- (8.50,0) -- (8.50,0.32)
+        -- (8.80,0.32) -- (8.80,0) -- (9.00,0) -- (9.00,0.32)
+        -- (9.40,0.32) -- (9.40,0) -- (9.50,0) -- (9.50,0.32)
+        -- (10.2,0.32);
+    \end{scope}
+
+    % saída filtrada
+    \begin{scope}[shift={(0,-3.0)}]
+      \draw[eixo] (0,0) -- (10.4,0);
+      \node[anchor=east, font=\tiny, align=right] at (-0.15,0.3) {depois\\do filtro};
+      \draw[manualgreen, very thick, domain=0:10.2, samples=200]
+        plot ({\x},{0.62*sin(\x*36)});
+    \end{scope}
+  \end{scope}
+
+  % ================ diagrama de blocos ================
+  \begin{scope}[shift={(0,-3.2)}]
+    \node[anchor=east, font=\scriptsize] at (-0.2,0) {áudio};
+    \draw (-0.2,0) -- (0.6,0);
+
+    \draw[thick] (0.6,-0.6) rectangle (1.9,0.6);
+    \node[font=\tiny, align=center] at (1.25,0) {compa-\\rador};
+    \draw (0.6,-0.35) -- (0.0,-0.35) -- (0.0,-1.2);
+    \node[anchor=north, font=\tiny, align=center] at (0.0,-1.25) {oscilador\\triangular};
+
+    \draw (1.9,0) -- (2.6,0);
+    \draw[thick] (2.6,-0.6) rectangle (3.9,0.6);
+    \node[font=\tiny, align=center] at (3.25,0) {driver\\de porta};
+
+    \draw (3.9,0) -- (4.6,0);
+    \draw[thick] (4.6,-0.9) rectangle (6.0,0.9);
+    \node[font=\tiny, align=center] at (5.3,0) {meia\\ponte};
+    \draw (5.3,0.9) -- (5.3,1.5) node[vcc]{$+14$ V};
+    \draw (5.3,-0.9) -- (5.3,-1.5) node[vee]{$-14$ V};
+
+    \draw (6.0,0) to[L, l={$L$}] (7.8,0);
+    \node[ponto] at (7.8,0) {};
+    \draw (7.8,0) to[C, l_={$C$}] (7.8,-1.3) -- (7.8,-1.7) node[ground]{};
+    \draw (7.8,0) -- (9.0,0);
+    \draw (9.0,0) to[R, l={$8\ \Omega$}] (9.0,-1.3) -- (9.0,-1.7) node[ground]{};
+    \node[anchor=south, font=\tiny, align=center] at (6.9,0.35) {filtro passa-baixas};
+  \end{scope}
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north, align=left,
+        font=\scriptsize, inner sep=7pt, text width=14.6cm] at (5.0,-6.6)
+       {\textbf{Os transistores nunca entram na região linear} — e é só isso. Ligado, o
+        MOSFET tem milivolts sobre ele; desligado, corrente nula. O rendimento passa de
+        \textbf{90 \%}, e o dissipador some.
+        \\[4pt]
+        Em compensação, \emph{tudo} o que os capítulos 061 e 062 estabeleceram vale aqui letra
+        por letra: perda de condução $I^2R_{DS(\text{on})}$, perda de comutação e o patamar de
+        Miller, dimensionamento do driver, tempo morto obrigatório entre os dois MOSFETs e
+        condução do diodo de corpo durante ele. \textbf{Um amplificador classe D é uma fonte
+        chaveada que persegue o sinal de áudio em vez de uma referência fixa.}};
+
+\end{tikzpicture}
+```
+
+Classe D em uma figura: comparar o áudio com uma triangular, chavear, filtrar. O que sai do
+filtro é o áudio amplificado.
+:::
+
+O mecanismo é o do @sec-cap-039: comparar o sinal com uma onda triangular de frequência muito
+maior produz uma onda quadrada cuja **largura de pulso** acompanha a amplitude instantânea do
+áudio. O filtro LC na saída remove a portadora e deixa a média — que é o sinal original,
+amplificado.
+
+Três coisas para observar:
+
+**O filtro de saída é obrigatório e não é trivial.** Ele tem de rejeitar a portadora (uns
+400 kHz) sem cortar o áudio (20 kHz), e a carga faz parte dele: um alto-falante não é 8 Ω
+constantes, e a resposta do filtro muda com a impedância real. É a razão de amplificadores
+classe D baratos soarem diferentes em caixas diferentes.
+
+**Em potência baixa o rendimento despenca.** As perdas de comutação e de acionamento não
+dependem do sinal — existem mesmo em silêncio. Com 0,4 W de perda fixa, entregar 0,1 W à carga
+dá 20 % de rendimento. É o inverso exato da classe A.
+
+**Ela irradia.** Bordas de nanossegundos com dezenas de volts de excursão são um transmissor de
+rádio. Filtro de saída bem feito, laço curto e blindagem não são opcionais.
+
+## Comparando as classes {#sec-063-comparacao}
+
+::: {#fig-063-rendimento}
+
+```{.tikz}
+%%| filename: 063-rendimento
+%%| alt: Dois gráficos lado a lado. O da esquerda tem a potência de saída em escala logarítmica no eixo horizontal, de zero vírgula um a doze watts, e o rendimento percentual no eixo vertical, de zero a cem. Quatro curvas comparam as classes. A curva cinza da classe A é quase colada no zero em toda a faixa e só chega a vinte e cinco por cento na potência máxima, porque a fonte entrega quarenta e nove watts constantes independentemente do sinal. A curva vermelha da classe B cresce com a raiz da potência de saída e atinge setenta e oito vírgula cinco por cento no máximo. A curva laranja da classe AB fica ligeiramente abaixo da classe B em toda a faixa, por causa da potência de repouso de um vírgula quatro watt, atingindo setenta e dois por cento no máximo. A curva verde da classe D é a mais alta em quase toda a faixa, chegando a noventa e seis por cento na potência máxima, mas cai abruptamente abaixo de um watt, cruzando a curva da classe AB perto de zero vírgula sete watt, porque a perda fixa de comutação passa a dominar. O gráfico da direita tem a potência de saída em escala linear no eixo horizontal, de zero a doze vírgula vinte e cinco watts, e a potência dissipada nos transistores em watts no eixo vertical. A curva da classe A é uma reta decrescente que parte de quarenta e nove watts com saída zero e desce continuamente, ilustrando que a classe A esquenta mais em silêncio. A curva da classe B é um arco que parte de zero, sobe até um máximo de quatro vírgula noventa e sete watts quando a saída vale quatro vírgula noventa e seis watts, ou seja quarenta por cento da máxima, e depois desce. Um ponto marca esse máximo, com a anotação de que é ele, e não a potência de saída máxima, que dimensiona o dissipador.
+
+\begin{tikzpicture}
+
+% ============ rendimento ============
+\begin{semilogxaxis}[
+  name=ef,
+  width=8.4cm, height=7.0cm,
+  xlabel={$P_{\text{saída}}$ (W)}, ylabel={$\eta$ (\%)},
+  xmin=0.1, xmax=12.25, ymin=0, ymax=100,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  legend style={at={(0.02,0.98)}, anchor=north west, font=\tiny, fill=white,
+                fill opacity=0.85, text opacity=1},
+  title={\scriptsize rendimento},
+]
+  \addplot[manualgray, very thick, domain=0.1:12.25, samples=100] {100*x/49};
+  \addlegendentry{classe A ($\eta_{\max}=25\ \%$)}
+  \addplot[destaque, very thick, domain=0.1:12.25, samples=100] {22.44*sqrt(x)};
+  \addlegendentry{classe B ($78{,}5\ \%$)}
+  \addplot[manualyellow, very thick, domain=0.1:12.25, samples=100]
+          {100*x/(4.456*sqrt(x)+1.4)};
+  \addlegendentry{classe AB ($72\ \%$)}
+  \addplot[manualgreen, very thick, domain=0.1:12.25, samples=100]
+          {100*x/(1.0125*x+0.4)};
+  \addlegendentry{classe D ($96\ \%$)}
+\end{semilogxaxis}
+
+% ============ dissipação ============
+\begin{axis}[
+  name=di, at={(ef.right of east)}, anchor=left of west,
+  width=8.0cm, height=7.0cm,
+  xlabel={$P_{\text{saída}}$ (W)}, ylabel={calor nos transistores (W)},
+  xmin=0, xmax=12.25, ymin=0, ymax=52,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  legend style={at={(0.98,0.98)}, anchor=north east, font=\tiny},
+  title={\scriptsize dissipação},
+]
+  \addplot[manualgray, very thick, domain=0:12.25, samples=2] {49-x};
+  \addlegendentry{classe A}
+  \addplot[destaque, very thick, domain=0:12.25, samples=120] {4.456*sqrt(x) - x};
+  \addlegendentry{classe B}
+
+  \node[ponto] at (axis cs:4.96,4.97) {};
+  \node[manualred, anchor=west, font=\tiny, align=left] at (axis cs:5.4,9.5)
+       {máximo em $40\ \%$ da\\potência de saída:\\$4{,}97$ W — \textbf{é este} que\\
+        dimensiona o dissipador};
+  \draw[-{Latex[length=1.2mm]}, manualred] (axis cs:5.5,8.6) -- (axis cs:5.05,5.5);
+\end{axis}
+
+\end{tikzpicture}
+```
+
+Rendimento e dissipação das classes, para o mesmo alvo de 10 W em 8 Ω com $\pm 14$ V. A curva
+cinza é a razão de a classe A existir só em sinal pequeno.
+:::
+
+| Classe | Ângulo | $\eta_{\max}$ | Distorção | Onde se usa |
+|---|---|---|---|---|
+| **A** | 360° | 25 % (50 % com transformador) | mínima | pré-amplificadores, sinal pequeno, áudio de nicho |
+| **B** | 180° | 78,5 % | cruzamento | quase nunca pura |
+| **AB** | ~200° | 60 a 75 % | baixa | **o padrão em áudio linear** |
+| **C** | < 180° | > 80 % | altíssima | RF sintonizada, só |
+| **D** | — (chaveada) | > 90 % | depende do filtro e da realimentação | áudio portátil, subwoofer, potência |
+
+: As cinco classes. Note que só a classe D quebra o compromisso entre rendimento e distorção —
+porque ela não joga o mesmo jogo. {#tbl-063-classes}
+
+::: {.callout-note}
+## E as classes G e H
+
+Duas variações da classe AB que atacam a mesma perda por outro lado. A dissipação de um
+estágio AB é $(V_{CC} - v_{out}) \times i_{out}$: quanto mais folga sobra entre o sinal e a
+alimentação, mais calor. Então **reduza a folga**.
+
+- **Classe G**: duas (ou mais) alimentações. Em volume baixo o estágio roda com $\pm 15$ V; nos
+  picos, comuta para $\pm 50$ V.
+- **Classe H**: a alimentação **acompanha** o sinal continuamente, gerada por um conversor
+  chaveado que fica sempre alguns volts acima da saída.
+
+As duas chegam a 70 a 85 % mantendo a linearidade da classe AB. São comuns em amplificadores
+profissionais de palco, onde a classe D ainda encontra resistência por causa do filtro de
+saída.
+:::
+
+## 🧪 Laboratório {#sec-063-lab}
+
+O objetivo é **ouvir e ver a distorção de cruzamento**, fazê-la desaparecer com a polarização
+correta, e medir o rendimento das duas configurações.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 1 | **TIP31C** (NPN de potência, TO-220) | ou BD139 para potência menor |
+| 1 | **TIP32C** (PNP complementar) | ou BD140 |
+| 1 | **BD139** extra | o multiplicador de $V_{BE}$ |
+| 2 | Resistor 0,47 Ω / 2 W | resistores de emissor |
+| 1 | Trimpot 1 kΩ multivoltas | ajuste da polarização |
+| 2 | Resistor 2,2 kΩ | multiplicador |
+| 2 | Resistor 470 Ω / 1 W | fontes de corrente simples de polarização |
+| 1 | **Carga de 8 Ω / 10 W** (resistor de fio) | **use o resistor, não o alto-falante**, para as medidas |
+| 1 | Alto-falante de 8 Ω | só para a parte auditiva, em volume baixo |
+| 1 | Amp-op TL071 ou LM358 | acionamento, opcional |
+| 1 | Dissipador comum aos três transistores | com isoladores de mica |
+| 1 | Fonte simétrica ±12 V / 1 A | ou duas fontes em série |
+| 1 | Osciloscópio, 1 gerador de funções | |
+| 2 | Multímetro | tensão de saída e corrente de repouso |
+| 1 | Termômetro infravermelho | opcional |
+
+::: {.callout-warning}
+## Antes de energizar
+
+- **Os três transistores no mesmo dissipador**, com isolador de mica. A aba do TO-220 é o
+  coletor.
+- Ajuste o trimpot para a **mínima** tensão entre as bases antes de ligar (cursor no extremo
+  que curto-circuita o multiplicador). Ligar com a polarização no máximo destrói o par em
+  segundos.
+- Ponha um **fusível de 1 A** em cada alimentação, ou use uma fonte com limitação de corrente
+  ajustada em 0,8 A. Você vai errar pelo menos uma vez.
+- Ligue a fonte com o trimpot no mínimo e suba **devagar**, olhando a corrente de repouso.
+:::
+
+### Parte 1 — Classe B pura, e o degrau
+
+1. Monte o push-pull sem o multiplicador: as duas bases ligadas **juntas** ao sinal de entrada,
+   resistores de emissor de 0,47 Ω, carga de 8 Ω.
+2. Gerador em 1 kHz, 2 V de pico. Osciloscópio na entrada (canal 1) e na saída (canal 2).
+
+O degrau da @fig-063-cruzamento aparece na tela, sem margem para dúvida.
+
+3. Reduza a amplitude para 0,5 V de pico. **A saída praticamente some** — a zona morta de 1,4 V
+   engoliu o sinal.
+4. Aumente para 8 V de pico. O degrau continua lá, mas agora é uma fração pequena da onda.
+
+5. Ligue o alto-falante em vez do resistor, **em volume baixo**, e ouça a diferença entre
+   2 V e 8 V de pico. A aspereza em volume baixo é a distorção de cruzamento.
+
+### Parte 2 — Classe AB, e o degrau some
+
+1. Insira o multiplicador de $V_{BE}$ entre as duas bases, com o trimpot no mínimo.
+2. Suba o trimpot devagar, monitorando a queda sobre **um** dos resistores de emissor com o
+   multímetro em mV.
+3. Pare quando a queda for de **10 a 25 mV** (o que dá 20 a 50 mA de repouso com 0,47 Ω).
+
+Olhe a tela enquanto ajusta: o degrau encolhe continuamente e desaparece. **Anote em que
+corrente de repouso ele deixa de ser visível** — esse é o ponto de projeto, e é surpreendente
+como ele é baixo.
+
+4. Continue subindo o trimpot além disso e observe a temperatura do dissipador. Volte ao valor
+   correto antes de prosseguir.
+
+### Parte 3 — O rendimento, medido
+
+Com a carga de 8 Ω e sinal senoidal de 1 kHz:
+
+| Medida | Classe B | Classe AB |
+|---|---|---|
+| $V_{\text{saída}}$ eficaz | | |
+| $P_{\text{saída}} = V^2/8$ | | |
+| $I$ da fonte positiva (média) | | |
+| $I$ da fonte negativa (média) | | |
+| $P_{\text{fonte}} = V_{CC}(I_+ + I_-)$ | | |
+| $\eta = P_{\text{saída}}/P_{\text{fonte}}$ | | |
+
+: O rendimento medido nas duas configurações, com o mesmo sinal. {#tbl-063-lab1}
+
+Repita para três amplitudes: 2 V, 5 V e 8 V eficazes de saída. Trace $\eta$ contra
+$P_{\text{saída}}$ e compare com a @fig-063-rendimento.
+
+::: {.callout-note}
+## Medir corrente média com multímetro comum
+
+O multímetro em CC mede o **valor médio** da corrente da fonte, que é exatamente o que a conta
+de rendimento pede. Não use a escala CA aqui: ela mede o valor eficaz da **ondulação**, que é
+outra coisa.
+
+Se a leitura oscilar muito, ponha um capacitor de 470 µF em paralelo com a entrada de cada
+alimentação; ele estabiliza a leitura sem alterar a média.
+:::
+
+### Parte 4 — A dissipação máxima não é no volume máximo
+
+1. Com a classe AB ajustada, meça a temperatura do dissipador (ou a potência calculada
+   $P_{\text{fonte}} - P_{\text{saída}}$) em cinco amplitudes: 0, 25 %, 40 %, 70 % e 100 % da
+   máxima.
+2. Trace a curva.
+
+Ela deve reproduzir o arco vermelho da @fig-063-rendimento, com máximo perto de 40 % da
+potência de saída. **Este é o número que dimensiona o dissipador**, e é a razão de
+amplificadores queimarem em festa com música comprimida em volume médio-alto, e não no pico.
+
+### Parte 5 — Classe A, para comparar
+
+1. Desligue o transistor PNP (retire a base dele) e ligue um resistor de 15 Ω / 10 W do emissor
+   do NPN para $-12$ V, criando um sumidouro grosseiro de corrente constante de uns 0,8 A.
+2. Meça a corrente de repouso e a temperatura **sem sinal nenhum**.
+3. Aplique sinal e meça de novo.
+
+O dissipador esquenta imediatamente ao ligar, **antes de qualquer sinal**, e esfria um pouco
+quando o sinal aparece. É a @fig-063-classea acontecendo na sua bancada.
+
+::: {.callout-warning}
+Com 0,8 A e 12 V, o transistor dissipa perto de 10 W em repouso. Dissipador **obrigatório**, e
+não deixe rodando mais que o necessário para as medidas.
+:::
+
+**Variante simulada (plano B).** No ngspice ou no LTspice, um `.tran` de alguns ciclos com
+`.four 1k V(out)` quantifica a distorção harmônica total das Partes 1 e 2 em números, o que a
+bancada só permite estimar a olho. A diretiva
+`.meas TRAN Pout AVG V(out)*I(Rload)` junto com `.meas TRAN Pcc AVG V(vcc)*I(Vcc)` dá o
+rendimento direto. E `.step param Ibias list 0 5m 20m 50m 100m` produz de uma vez a família de
+curvas de distorção contra corrente de repouso — o gráfico que justifica escolher 20 a 50 mA e
+não mais.
+
+## 🔥 Onde Queima {#sec-063-queima}
+
+**Dimensionar o dissipador de um classe AB para a potência de saída máxima.** A dissipação
+máxima ocorre em 40 % da saída, e vale $2V_{CC}^2/(\pi^2 R_L)$. Dimensionar pelo pico
+subestima o pior caso.
+
+**Ajustar a corrente de repouso com o amplificador frio.** Os $V_{BE}$ caem com a temperatura,
+a polarização sobe, e o estágio dispara. Ajuste sempre quente, depois de meia hora ligado.
+
+**Multiplicador de $V_{BE}$ sem acoplamento térmico.** Sem ele não há compensação, e o disparo
+térmico é questão de minutos. O transistor do multiplicador precisa estar **parafusado no mesmo
+dissipador**, não apenas perto.
+
+**Estágio de saída sem resistores de emissor.** Eles parecem desperdício (0,22 Ω dissipando
+corrente de saída ao quadrado) e são a única coisa que estabiliza a repartição de corrente
+entre os transistores. Sem eles, um dos dois assume tudo e queima.
+
+**Esquecer que a classe A esquenta em silêncio.** Fonte, dissipador e fusível dimensionados
+pelo "consumo médio" não sobrevivem, porque o consumo é constante e máximo.
+
+**Ligar um classe D sem o filtro de saída.** Além de não funcionar, os pulsos de dezenas de
+volts em centenas de quilohertz chegam ao alto-falante e ao ambiente. O *tweeter* não gosta e o
+rádio do vizinho menos ainda.
+
+**Testar o estágio de saída com alto-falante em vez de carga resistiva.** O alto-falante é uma
+carga complexa e variável com a frequência; ele mascara medidas e reage mal a ceifamento. Para
+medir, use resistor de fio. Para ouvir, use o alto-falante em volume baixo.
+
+**Ceifar um amplificador ligado a um *tweeter*.** Onda quadrada é rica em harmônicos, e o
+divisor de frequência manda todos eles para o alto-falante de agudos, que tem uma fração
+pequena da potência total. **Amplificador subdimensionado queima *tweeter* — amplificador
+grande, não.** É contraintuitivo e é verdade.
+
+**Confundir a classe C com uma opção de áudio.** Ela só funciona com carga ressonante e sinal
+de banda estreita. Sem o tanque LC, a saída é uma sequência de pulsos.
+
+**Trocar os transistores complementares por um par não casado.** TIP31C/TIP32C e BD139/BD140
+são pares projetados juntos. Um NPN qualquer com um PNP qualquer tem $\beta$ e $V_{BE}$
+diferentes, e a assimetria vira distorção de segundo harmônico.
+
+**Não prever proteção de corrente.** Um curto na saída de um estágio AB destrói os dois
+transistores instantaneamente. Estágios reais levam um par de transistores de proteção que
+limitam a corrente lendo a queda sobre os resistores de emissor.
+
+## O que fica deste capítulo {#sec-063-resumo}
+
+A classe de um amplificador é definida pelo **ângulo de condução**, e ele impõe um compromisso
+monotônico entre rendimento e distorção:
+
+$$ \eta_{A} = 25\ \% \ (50\ \%\text{ com transformador}) \quad<\quad
+   \eta_{AB} \approx 72\ \% \quad<\quad
+   \eta_{B} = \frac{\pi}{4} = 78{,}5\ \% \quad<\quad
+   \eta_{C} > 80\ \% $$
+
+**Classe A** conduz o ciclo inteiro e **dissipa o máximo em silêncio**, porque a fonte entrega
+$2V_{CC}I_Q$ constantes. Linearíssima; usada onde a potência é pequena.
+
+**Classe B** é o push-pull com ângulo de 180°. Rende bem e tem **distorção de cruzamento** —
+uma zona morta de $\pm V_{BE}$ que produz um degrau fixo, proporcionalmente devastador em sinal
+pequeno.
+
+A dissipação máxima da classe B é
+
+$$ P_{D,\max} = \frac{2V_{CC}^{2}}{\pi^{2}R_L} \qquad\text{em}\qquad V_p = \frac{2V_{CC}}{\pi}
+   \ \ (40\ \%\text{ da potência de saída}) $$
+
+e é **esse** número que dimensiona o dissipador.
+
+**Classe AB** é a classe B com uma corrente de repouso pequena (20 a 100 mA), estabelecida por
+um **multiplicador de $V_{BE}$ termicamente acoplado ao dissipador** e estabilizada por
+**resistores de emissor**. Perde poucos pontos de rendimento e elimina o degrau. É o padrão em
+áudio linear.
+
+**Classe C** conduz menos que meio ciclo e só existe com carga ressonante: RF, indução,
+micro-ondas.
+
+**Classe D** não é linear — é uma **chave**. PWM comparando o áudio com uma triangular,
+meia ponte de MOSFETs, filtro LC na saída. Passa de 90 % de rendimento e herda integralmente o
+ferramental dos capítulos 061 e 062: $R_{DS(\text{on})}$, patamar de Miller, driver de porta,
+tempo morto, diodo de corpo. Em potência baixa, o rendimento dela **despenca**, porque a perda
+de comutação não depende do sinal.
+
+**Classes G e H** reduzem a folga entre o sinal e a alimentação, chegando a 70 a 85 % com a
+linearidade da AB.
+
+## Para o próximo capítulo {#sec-063-fecho}
+
+Ficou uma promessa por cumprir. A @fig-063-cruzamento afirmou que a realimentação negativa
+reduz muito a distorção de cruzamento sem eliminá-la, e usou o mecanismo como se ele já
+estivesse estabelecido. Não está — pelo menos não com o rigor que ele merece.
+
+O @sec-cap-064, que fecha o Volume 10, trata **a realimentação negativa como assunto
+próprio**. Ela já apareceu três vezes neste manual, sempre de passagem e sempre resolvendo o
+mesmo tipo de problema: no @sec-cap-055, estabilizando o ponto de operação contra a dispersão
+de $\beta$; no @sec-cap-056, linearizando o emissor comum com degeneração de emissor; e agora,
+consertando o cruzamento de um estágio classe AB.
+
+As três são a mesma ideia, e ela se enuncia numa linha: **medir a saída, comparar com a
+entrada e corrigir a diferença** — o que faz o resultado depender de resistores, que são
+precisos, em vez de parâmetros de dispositivo, que não são.
+
+O próximo capítulo quantifica isso. O ganho em malha fechada $A_f = A/(1+A\beta)$, a redução da
+distorção pelo mesmo fator $1+A\beta$, o alargamento da banda pelo mesmo fator ainda — e o
+preço: perde-se ganho, exatamente na mesma proporção.
+
+E há um preço mais sério, que nenhum dos capítulos anteriores mencionou. Realimentação
+negativa em alta frequência pode virar **positiva**, porque o próprio circuito atrasa o sinal
+de retorno. Quando o atraso chega a meio ciclo, o que devia corrigir passa a reforçar, e o
+amplificador **oscila**. Margem de ganho, margem de fase e compensação — as ferramentas para
+garantir que isso não aconteça — são o assunto final do volume, e a ponte direta para o
+amplificador operacional, que abre o Volume 11.

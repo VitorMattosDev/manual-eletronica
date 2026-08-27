@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 62/104 |
-| **Contíguos até** | **062** — sem nenhum buraco no meio do livro |
+| **Progresso** | 63/104 |
+| **Contíguos até** | **063** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 063** | Classes de amplificador: A, B, AB, C e D |
+| **Próximo capítulo: 064** | Realimentação negativa: ganho, distorção e estabilidade |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -38,7 +38,9 @@ e o modelo de pequenos sinais sem $r_\pi$ (060); as três perdas de uma chave, c
 conversão entre $C_{iss}$/$C_{oss}$/$C_{rss}$, patamar de Miller, carga de porta e o
 compromisso $R_{DS(on)} \times Q_G$ (061); a janela de tempo de transição, resistor de porta
 assimétrico, acionamento espúrio por $dv/dt$, totem-pole e driver dedicado, bootstrap de lado
-alto e tempo morto (062).
+alto e tempo morto (062); ângulo de condução, as classes A, B, AB, C e D, distorção de
+cruzamento, multiplicador de $V_{BE}$ com acoplamento térmico e a dissipação máxima em 40 % da
+potência de saída (063).
 
 Convenções que o Volume 10 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
@@ -171,7 +173,7 @@ cinco ocorrências como aviso.
 - [x] 060 — Curvas, região ôhmica e região de saturação — `capitulos/060-curvas-regiao-ohmica-e-regiao-de-saturacao.qmd`
 - [x] 061 — O MOSFET como chave de potência: RDS(on), efeito Miller e dissipação — `capitulos/061-o-mosfet-como-chave-de-potencia-rds-on-efeito.qmd`
 - [x] 062 — Drivers de gate e a comutação real — `capitulos/062-drivers-de-gate-e-a-comutacao-real.qmd`
-- [ ] 063 — Classes de amplificador: A, B, AB, C e D — `capitulos/063-classes-de-amplificador-a-b-ab-c-e-d.qmd`
+- [x] 063 — Classes de amplificador: A, B, AB, C e D — `capitulos/063-classes-de-amplificador-a-b-ab-c-e-d.qmd`
 - [ ] 064 — Realimentação negativa: ganho, distorção e estabilidade — `capitulos/064-realimentacao-negativa-ganho-distorcao-e.qmd`
 
 
