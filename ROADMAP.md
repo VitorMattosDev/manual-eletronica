@@ -12,10 +12,10 @@ Commit por capítulo: `cap NNN: <título>`, com o status abaixo atualizado **no 
 
 | | |
 |---|---|
-| **Progresso** | 63/104 |
-| **Contíguos até** | **063** — sem nenhum buraco no meio do livro |
+| **Progresso** | 64/104 |
+| **Contíguos até** | **064** — sem nenhum buraco no meio do livro |
 | **Lacunas abertas** | **nenhuma** |
-| **Próximo capítulo: 064** | Realimentação negativa: ganho, distorção e estabilidade |
+| **Próximo capítulo: 065** | O amp-op ideal e as regras de ouro (abre o Volume 11) |
 
 Fases 1 e 2 completas (Volumes 1 a 7, capítulos 001 a 045) e **Volume 8 completo**
 (capítulos 046 a 051): semicondutores, diodo, retificadores, filtro capacitivo, Zener e
@@ -29,7 +29,7 @@ térmica (055); emissor comum, transcondutância, impedâncias, distorção, deg
 Miller (056); seguidor de emissor, base comum e cascode (057); modelo híbrido-$\pi$, regras de
 reflexão, parâmetros $h$ e modelo em alta frequência (058).
 
-**Volume 10 em andamento** (capítulos 059 a 064, MOSFETs e amplificação): princípio de
+**Volume 10 completo** (capítulos 059 a 064, MOSFETs e amplificação): princípio de
 funcionamento do JFET e do MOSFET, modo depleção e modo enriquecimento, diodo de corpo,
 leitura dos símbolos, a porta como capacitor e a dispersão de $V_{th}$ (059); região ôhmica e
 região de saturação, a armadilha de vocabulário em relação ao bipolar, $R_{DS(on)}$, lei
@@ -40,12 +40,18 @@ compromisso $R_{DS(on)} \times Q_G$ (061); a janela de tempo de transição, res
 assimétrico, acionamento espúrio por $dv/dt$, totem-pole e driver dedicado, bootstrap de lado
 alto e tempo morto (062); ângulo de condução, as classes A, B, AB, C e D, distorção de
 cruzamento, multiplicador de $V_{BE}$ com acoplamento térmico e a dissipação máxima em 40 % da
-potência de saída (063).
+potência de saída (063); realimentação negativa como assunto próprio — $A_f = A/(1+A\beta)$, o
+ganho de malha $T$, produto ganho-banda constante, as quatro topologias, margem de fase e de
+ganho, compensação por polo dominante e a relação entre margem de fase e sobrelevação (064).
 
-Convenções que o Volume 10 herda: valor comercial recalculado depois do arredondamento, pior
+O próximo bloco é o **Volume 11** (capítulos 065 a 071), sobre amplificadores operacionais. O
+capítulo 064 já monta a ponte explícita: as "regras de ouro" do amp-op são a equação da
+realimentação com $T \to \infty$.
+
+Convenções que o Volume 11 herda: valor comercial recalculado depois do arredondamento, pior
 caso verificado nos dois extremos, `.tikz` com `circuitikz` para esquemático e `pgfplots` para
-curva, e **parâmetro de dispositivo entra em projeto só como desigualdade**, nunca como fator
-numa conta que decide tensão de saída.
+curva, **parâmetro de dispositivo entra em projeto só como desigualdade**, e a notação $\beta$
+para a fração realimentada estabelecida no capítulo 064 (que não é o $\beta$ do bipolar).
 
 Para confirmar o estado a qualquer momento:
 
@@ -174,7 +180,7 @@ cinco ocorrências como aviso.
 - [x] 061 — O MOSFET como chave de potência: RDS(on), efeito Miller e dissipação — `capitulos/061-o-mosfet-como-chave-de-potencia-rds-on-efeito.qmd`
 - [x] 062 — Drivers de gate e a comutação real — `capitulos/062-drivers-de-gate-e-a-comutacao-real.qmd`
 - [x] 063 — Classes de amplificador: A, B, AB, C e D — `capitulos/063-classes-de-amplificador-a-b-ab-c-e-d.qmd`
-- [ ] 064 — Realimentação negativa: ganho, distorção e estabilidade — `capitulos/064-realimentacao-negativa-ganho-distorcao-e.qmd`
+- [x] 064 — Realimentação negativa: ganho, distorção e estabilidade — `capitulos/064-realimentacao-negativa-ganho-distorcao-e.qmd`
 
 
 ### Volume 11 — Amplificadores Operacionais

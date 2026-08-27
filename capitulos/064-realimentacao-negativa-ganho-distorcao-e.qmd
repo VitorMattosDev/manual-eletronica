@@ -1,3 +1,894 @@
 # Realimentação negativa: ganho, distorção e estabilidade {#sec-cap-064}
 
-*(em elaboração)*
+A realimentação negativa já apareceu três vezes neste manual, sempre de passagem e sempre
+resolvendo o mesmo tipo de problema.
+
+No @sec-cap-055, um resistor de emissor estabilizou o ponto de operação contra a dispersão de
+$\beta$ e a deriva de $V_{BE}$. No @sec-cap-056, o mesmo resistor sem capacitor de desvio
+linearizou o emissor comum, trocando ganho por previsibilidade. No @sec-cap-063, ela foi
+invocada para reduzir a distorção de cruzamento de um estágio classe AB.
+
+As três são a mesma ideia, e o enunciado dela cabe numa linha: **medir a saída, comparar com a
+entrada e corrigir a diferença.**
+
+O que isso compra é sempre o mesmo: o resultado passa a depender de **resistores**, que são
+precisos, estáveis e baratos, em vez de **parâmetros de dispositivo**, que variam de peça para
+peça, com a temperatura e com o ponto de operação. É a ideia mais importante da eletrônica
+analógica, e é a razão de o amplificador operacional do Volume 11 ser possível.
+
+Este capítulo a trata como assunto próprio: quanto ela melhora cada coisa, o que ela cobra em
+troca, e — a parte que os capítulos anteriores não tocaram — **por que ela às vezes transforma
+um amplificador num oscilador**.
+
+## A equação fundamental {#sec-064-equacao}
+
+::: {#fig-064-blocos}
+
+```{.tikz}
+%%| filename: 064-blocos
+%%| alt: Diagrama de blocos canônico de um sistema realimentado. À esquerda entra o sinal de entrada, que chega a um somador desenhado como um círculo com dois sinais: mais para a entrada e menos para o sinal que volta da realimentação. A saída do somador é chamada sinal de erro e alimenta um bloco triangular grande rotulado com a letra A, o ganho de malha aberta. A saída desse bloco é a saída do sistema. Da saída parte uma derivação que desce e volta para trás através de um bloco retangular rotulado com a letra beta, a fração realimentada, cuja saída entra no terminal negativo do somador. Anotações identificam cada sinal. Abaixo do diagrama, a dedução em três linhas: a saída é igual a A vezes o erro; o erro é igual à entrada menos beta vezes a saída; substituindo e isolando, obtém-se a saída dividida pela entrada igual a A dividido por um mais A beta. Um destaque registra que o produto A beta é chamado ganho de malha e recebe o símbolo T, e que ele é a grandeza que governa tudo neste capítulo. Uma segunda caixa mostra o caso limite: quando o ganho de malha é muito maior que um, o ganho de malha fechada tende a um sobre beta, que depende apenas da rede de realimentação e não depende mais do amplificador. Um exemplo numérico acompanha: com ganho de malha aberta de cem mil e beta igual a um centésimo, o ganho fechado é noventa e nove vírgula nove; se o ganho de malha aberta cair pela metade, para cinquenta mil, o ganho fechado passa a noventa e nove vírgula oito, uma variação de apenas zero vírgula um por cento contra cinquenta por cento na entrada.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % somador
+  \draw[thick] (0,0) circle (0.32);
+  \draw[thick] (-0.32,0) -- (0.32,0);
+  \draw[thick] (0,-0.32) -- (0,0.32);
+  \node[font=\tiny] at (-0.16,0.16) {$+$};
+  \node[font=\tiny] at (-0.16,-0.18) {$-$};
+
+  \draw[-{Latex[length=2mm]}] (-2.2,0) -- (-0.34,0);
+  \node[anchor=south, font=\scriptsize] at (-1.3,0.1) {$v_{in}$};
+
+  % amplificador
+  \draw[thick] (1.6,-0.8) -- (1.6,0.8) -- (3.4,0) -- cycle;
+  \node[font=\small] at (2.1,0) {$A$};
+  \draw[-{Latex[length=2mm]}] (0.34,0) -- (1.58,0);
+  \node[anchor=south, font=\scriptsize] at (0.96,0.1) {$v_\varepsilon$};
+  \node[anchor=north, font=\tiny, manualred] at (0.96,-0.12) {erro};
+
+  \draw[-{Latex[length=2mm]}] (3.4,0) -- (6.0,0);
+  \node[anchor=south, font=\scriptsize] at (5.2,0.1) {$v_{out}$};
+  \node[ponto] at (4.6,0) {};
+
+  % realimentação
+  \draw (4.6,0) -- (4.6,-1.6);
+  \draw[thick] (2.7,-2.0) rectangle (1.3,-1.2);
+  \node[font=\small] at (2.0,-1.6) {$\beta$};
+  \draw[-{Latex[length=2mm]}] (4.6,-1.6) -- (2.72,-1.6);
+  \draw (1.3,-1.6) -- (0,-1.6);
+  \draw[-{Latex[length=2mm]}] (0,-1.6) -- (0,-0.34);
+  \node[anchor=west, font=\tiny] at (0.12,-1.05) {$\beta v_{out}$};
+
+  % dedução
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt] at (-2.4,-2.6)
+       {$v_{out} = A\,v_\varepsilon$ \\[3pt]
+        $v_\varepsilon = v_{in} - \beta v_{out}$ \\[3pt]
+        \hrulefill \\[3pt]
+        $\displaystyle A_f \equiv \frac{v_{out}}{v_{in}} = \frac{A}{1 + A\beta}$};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.2cm] at (2.6,-2.6)
+       {O produto $T \equiv A\beta$ é o \textbf{ganho de malha}, e é ele que governa tudo
+        neste capítulo.
+        \\[4pt]
+        Com $T \gg 1$:
+        \[ A_f \approx \frac{1}{\beta} \]
+        que \textbf{não depende mais do amplificador}.};
+
+  \node[draw=manualgreen, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=5.6cm] at (8.4,-2.6)
+       {\textbf{O número que convence.} $A = 100\,000$, $\beta = 1/100$:
+        \[ A_f = \frac{10^5}{1+1000} = 99{,}9 \]
+        Agora o transistor envelhece e $A$ cai \textbf{pela metade}, para $50\,000$:
+        \[ A_f = \frac{5\times10^4}{1+500} = 99{,}8 \]
+        \textbf{$50\ \%$ de variação na entrada viraram $0{,}1\ \%$ na saída.}};
+
+\end{tikzpicture}
+```
+
+O diagrama canônico e a equação que sai dele em duas linhas. Todo o resto do capítulo é
+consequência de $A_f = A/(1+A\beta)$.
+:::
+
+Da @fig-064-blocos:
+
+$$ \boxed{A_f = \frac{A}{1 + A\beta} = \frac{A}{1+T}} \qquad\text{com}\qquad T \equiv A\beta $$
+
+O **ganho de malha** $T = A\beta$ é a grandeza central. Ele é literalmente o ganho que um sinal
+sofre ao dar uma volta completa no laço, e o fator $1+T$ vai aparecer em todas as fórmulas que
+seguem.
+
+::: {.callout-note}
+## $\beta$ aqui não é o $\beta$ do transistor
+
+Colisão de notação infeliz, e universal. Neste capítulo, $\beta$ é a **fração realimentada** —
+um número entre 0 e 1, tipicamente definido por um divisor resistivo. Não tem relação nenhuma
+com o ganho de corrente do transistor bipolar do Volume 9.
+
+Alguns textos escrevem $F$ ou $H$ para evitar a confusão. Este manual usa $\beta$ porque é o
+que a literatura de amp-op usa, e o Volume 11 vai depender disso.
+:::
+
+## O que ela melhora, e sempre pelo mesmo fator {#sec-064-beneficios}
+
+O fator $1+T$ é notavelmente democrático: quase tudo melhora exatamente por ele.
+
+**Sensibilidade ao ganho.** Derivando $A_f$ em relação a $A$:
+
+$$ \frac{dA_f/A_f}{dA/A} = \frac{1}{1+T} $$
+
+Uma variação relativa no ganho de malha aberta produz uma variação $1+T$ vezes menor no ganho
+fechado. É o exemplo numérico da @fig-064-blocos.
+
+**Distorção.** Qualquer não linearidade do amplificador pode ser modelada como uma tensão de
+erro somada na saída. A malha a enxerga, a realimenta e a corrige:
+
+$$ \text{THD}_f = \frac{\text{THD}}{1+T} $$
+
+Um estágio com 5 % de distorção dentro de uma malha com $T = 1000$ entrega 0,005 %.
+
+::: {#fig-064-linearizacao}
+
+```{.tikz}
+%%| filename: 064-linearizacao
+%%| alt: Dois gráficos lado a lado com o mesmo par de eixos, mostrando o efeito da realimentação sobre a linearidade. No gráfico da esquerda, rotulado malha aberta, a curva azul da característica de transferência é fortemente encurvada: cresce depressa perto da origem e vai achatando conforme a entrada aumenta, afastando-se muito da reta cinza tracejada que representa o comportamento ideal. Uma anotação registra ganho alto mas muito variável, com distorção da ordem de cinco por cento. No gráfico da direita, rotulado malha fechada com ganho de malha igual a mil, a curva azul é praticamente indistinguível da reta ideal; uma inserção ampliada mostra que o desvio residual existe mas é mil vezes menor. Uma anotação registra ganho muito menor mas quase perfeitamente constante, com distorção da ordem de cinco milésimos de por cento. Abaixo dos dois gráficos, uma caixa explica o mecanismo: a malha não conhece a curva do amplificador nem precisa conhecer; ela apenas percebe que a saída não é beta vezes menor que a entrada e ajusta o sinal de erro até que seja, e faz isso instante a instante ao longo da forma de onda, o que corresponde a endireitar a curva ponto a ponto.
+
+\begin{tikzpicture}
+
+\begin{axis}[
+  name=ma,
+  width=7.6cm, height=6.6cm,
+  xlabel={$v_{in}$}, ylabel={$v_{out}$},
+  xmin=0, xmax=1, ymin=0, ymax=1.05,
+  axis lines=left, font=\footnotesize,
+  xtick=\empty, ytick=\empty,
+  grid=both, grid style={manualgray!18},
+  title={\scriptsize malha aberta},
+]
+  \addplot[auxiliar, domain=0:1, samples=2] {x};
+  \addplot[curva, very thick, domain=0:1, samples=100] {tanh(1.9*x)/tanh(1.9)};
+  \node[anchor=south east, font=\tiny, align=right, manualblue] at (axis cs:0.98,0.06)
+       {ganho \textbf{alto} e muito variável\\THD $\approx 5\ \%$};
+\end{axis}
+
+\begin{axis}[
+  name=mf, at={(ma.right of east)}, anchor=left of west,
+  width=7.6cm, height=6.6cm,
+  xlabel={$v_{in}$}, ylabel={$v_{out}$},
+  xmin=0, xmax=1, ymin=0, ymax=1.05,
+  axis lines=left, font=\footnotesize,
+  xtick=\empty, ytick=\empty,
+  grid=both, grid style={manualgray!18},
+  title={\scriptsize malha fechada, $T = 1000$},
+]
+  \addplot[auxiliar, domain=0:1, samples=2] {x};
+  \addplot[curva, very thick, domain=0:1, samples=100]
+          {x + 0.001*(tanh(1.9*x)/tanh(1.9) - x)};
+  \node[anchor=south east, font=\tiny, align=right, manualblue] at (axis cs:0.98,0.06)
+       {ganho \textbf{muito menor} e quase constante\\THD $\approx 0{,}005\ \%$};
+\end{axis}
+
+\node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=7pt, text width=14.6cm]
+     at ([yshift=-1.1cm]ma.below south west)
+     {\textbf{A malha não conhece a curva do amplificador, e não precisa conhecer.} Ela só
+      percebe que a saída não está $\beta$ vezes abaixo da entrada e ajusta o erro até que
+      esteja — instante a instante, ao longo da forma de onda inteira. Endireitar a curva é
+      uma consequência, não um objetivo.};
+
+\end{tikzpicture}
+```
+
+A mesma característica de transferência, sem e com realimentação. A curva da direita não é
+outra curva: é a mesma, corrigida mil vezes por segundo por milhão.
+:::
+
+**Banda passante.** Se o amplificador tem um polo dominante em $f_p$,
+
+$$ A(f) = \frac{A_0}{1 + jf/f_p} \qquad\Longrightarrow\qquad
+   f_{c,f} = f_p\,(1+T_0) $$
+
+A banda **multiplica** pelo mesmo $1+T$ pelo qual o ganho dividiu. O produto dos dois é
+constante:
+
+$$ \boxed{A_f \times f_{c,f} = A_0 \times f_p = \text{GBW}} $$
+
+**Impedâncias.** Dependem da topologia (@sec-064-topologias), mas sempre pelo fator $1+T$.
+
+**E o que ela *não* melhora:**
+
+::: {.callout-important}
+## Realimentação negativa não reduz ruído
+
+O ruído gerado **na entrada** do amplificador é indistinguível do sinal: a malha o amplifica
+com o mesmo carinho. A relação sinal-ruído referida à entrada é **exatamente a mesma** com e
+sem realimentação.
+
+Ruído gerado nos **estágios posteriores** é reduzido por $1+T$, do mesmo jeito que a distorção.
+Mas o ruído que importa é quase sempre o do primeiro estágio, e esse não melhora.
+
+A regra prática que sai daí: **o primeiro estágio decide o ruído do amplificador inteiro**, e
+nenhuma quantidade de realimentação conserta um primeiro estágio ruidoso. É a razão de
+estágios de entrada de baixo ruído ainda serem bipolares (@sec-cap-060) e de o projeto deles
+ser feito com cuidado desproporcional.
+:::
+
+| Grandeza | Efeito da realimentação negativa |
+|---|---|
+| Ganho | **dividido** por $1+T$ |
+| Sensibilidade do ganho a $A$ | dividida por $1+T$ |
+| Distorção do amplificador | dividida por $1+T$ |
+| Banda passante | **multiplicada** por $1+T$ |
+| $Z_{in}$ | × ou ÷ $(1+T)$, conforme a topologia |
+| $Z_{out}$ | × ou ÷ $(1+T)$, conforme a topologia |
+| Ruído do primeiro estágio | **inalterado** |
+| Estabilidade | **piora** — é o preço real |
+
+: O balanço. Uma coluna de melhorias, uma linha de custo óbvio e uma linha de custo escondido.
+{#tbl-064-beneficios}
+
+## As quatro topologias {#sec-064-topologias}
+
+Há duas decisões independentes: **o que se amostra na saída** (tensão ou corrente) e **como se
+compara na entrada** (em série ou em paralelo). Duas escolhas binárias, quatro topologias.
+
+::: {#fig-064-topologias}
+
+```{.tikz}
+%%| filename: 064-topologias
+%%| alt: Figura dividida em duas metades no alto e uma tabela embaixo. A metade da esquerda, intitulada como se amostra a saída, tem dois esquemas. No de cima, a saída de um amplificador triangular alimenta um resistor de carga ligado ao terra, e um fio vermelho parte do nó de saída, em paralelo com a carga, indo para a rede de realimentação; a anotação diz que amostrar em paralelo é amostrar tensão e que isso faz a impedância de saída cair. No de baixo, a carga está em série com um pequeno resistor sensor até o terra, e o fio vermelho parte do nó entre a carga e o resistor sensor; a anotação diz que amostrar em série é amostrar corrente e que isso faz a impedância de saída subir. A metade da direita, intitulada como se compara na entrada, tem outros dois esquemas. No de cima, o sinal de entrada passa por uma fonte de tensão azul, chamada v subscrito f, colocada em série no caminho antes do amplificador; a anotação diz que comparar em série na malha faz a impedância de entrada subir. No de baixo, o sinal de entrada é uma corrente que chega a um nó, e desse mesmo nó desce uma fonte de corrente azul chamada i subscrito f para o terra; a anotação diz que comparar em paralelo no nó faz a impedância de entrada cair. A tabela embaixo tem quatro linhas, uma para cada combinação. Série-paralelo: impedância de entrada multiplicada por um mais T, impedância de saída dividida por um mais T, estabiliza ganho de tensão, exemplos o seguidor de emissor e o amplificador não inversor. Paralelo-paralelo: entrada dividida, saída dividida, estabiliza transresistência, exemplo o receptor de fotodiodo. Série-série: entrada multiplicada, saída multiplicada, estabiliza transcondutância, exemplo o emissor comum com resistor de emissor sem desvio. Paralelo-série: entrada dividida, saída multiplicada, estabiliza ganho de corrente, exemplo o espelho de corrente realimentado. Uma caixa final registra a intuição: a malha defende a grandeza que amostra, de modo que amostrar tensão produz uma fonte de impedância baixa e amostrar corrente produz uma fonte de impedância alta.
+
+\begin{tikzpicture}[font=\footnotesize]
+
+  % ======== como se amostra a saída ========
+  \begin{scope}[shift={(0,0)}]
+    \node[anchor=south, font=\scriptsize\bfseries] at (2.4,2.5) {como se \emph{amostra} a saída};
+
+    % paralelo (tensão)
+    \draw[thick] (0,1.1) -- (0,2.1) -- (1.0,1.6) -- cycle;
+    \draw (1.0,1.6) -- (2.6,1.6);
+    \draw (2.6,1.6) to[R, l={carga}] (2.6,0.7) -- (2.6,0.5) node[ground]{};
+    \node[ponto] at (2.0,1.6) {};
+    \draw[manualred, thick] (2.0,1.6) -- (2.0,2.3) -- (3.9,2.3);
+    \node[manualred, anchor=west, font=\tiny, align=left] at (3.95,2.3)
+         {\textbf{em paralelo} $\Rightarrow$ amostra \textbf{tensão}\\
+          $\Rightarrow$ $Z_{out}$ \emph{cai}};
+
+    % série (corrente)
+    \draw[thick] (0,-0.9) -- (0,0.1) -- (1.0,-0.4) -- cycle;
+    \draw (1.0,-0.4) -- (2.6,-0.4);
+    \draw (2.6,-0.4) to[R, l={carga}] (2.6,-1.3);
+    \draw (2.6,-1.3) to[R, l_={$R_s$}] (2.6,-2.1) -- (2.6,-2.3) node[ground]{};
+    \node[ponto] at (2.6,-1.3) {};
+    \draw[manualred, thick] (2.6,-1.3) -- (3.4,-1.3) -- (3.4,-0.4) -- (3.9,-0.4);
+    \node[manualred, anchor=west, font=\tiny, align=left] at (3.95,-0.4)
+         {\textbf{em série} $\Rightarrow$ amostra \textbf{corrente}\\
+          $\Rightarrow$ $Z_{out}$ \emph{sobe}};
+  \end{scope}
+
+  % ======== como se compara na entrada ========
+  \begin{scope}[shift={(9.0,0)}]
+    \node[anchor=south, font=\scriptsize\bfseries] at (2.4,2.5) {como se \emph{compara} na entrada};
+
+    % série (na malha)
+    \draw (0,2.3) node[anchor=east, font=\tiny] {$v_{in}$} -- (0.7,2.3);
+    \draw[manualblue, thick] (0.7,2.3) to[V, l={$v_f$}] (0.7,1.4);
+    \draw (0.7,1.4) -- (1.5,1.4);
+    \draw[thick] (1.5,0.9) -- (1.5,1.9) -- (2.5,1.4) -- cycle;
+    \node[manualblue, anchor=west, font=\tiny, align=left] at (2.7,1.7)
+         {\textbf{em série} (na malha)\\$\Rightarrow$ $Z_{in}$ \emph{sobe}};
+
+    % paralelo (no nó)
+    \draw (0,-0.4) node[anchor=east, font=\tiny] {$i_{in}$} -- (1.5,-0.4);
+    \node[ponto] at (1.0,-0.4) {};
+    \draw[manualblue, thick] (1.0,-0.4) -- (1.0,-1.4);
+    \draw[manualblue, thick] (1.0,-1.4) to[I, l_={$i_f$}] (1.0,-2.3);
+    \draw[thick] (1.5,-0.9) -- (1.5,0.1) -- (2.5,-0.4) -- cycle;
+    \node[manualblue, anchor=west, font=\tiny, align=left] at (2.7,-0.1)
+         {\textbf{em paralelo} (no nó)\\$\Rightarrow$ $Z_{in}$ \emph{cai}};
+  \end{scope}
+
+  % ======== matriz 2x2 ========
+  \node[draw=manualgray, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=8pt] at (0,-3.4)
+       {\begin{tabular}{@{}lccl@{}}
+          \textbf{topologia} & $\mathbf{Z_{in}}$ & $\mathbf{Z_{out}}$ & \textbf{estabiliza / exemplo} \\ \hline
+          série-paralelo    & $\times(1+T)$ & $\div(1+T)$   & ganho $V/V$ — seguidor de emissor; não inversor \\
+          paralelo-paralelo & $\div(1+T)$   & $\div(1+T)$   & transresistência $V/I$ — receptor de fotodiodo \\
+          série-série       & $\times(1+T)$ & $\times(1+T)$ & transcondutância $I/V$ — EC com $R_E$ sem desvio \\
+          paralelo-série    & $\div(1+T)$   & $\times(1+T)$ & ganho $I/I$ — espelho realimentado \\
+        \end{tabular}};
+
+  \node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+        font=\scriptsize, inner sep=7pt, text width=13.6cm] at (0,-6.0)
+       {\textbf{A intuição, e ela é boa:} a malha \emph{defende} a grandeza que amostra. Se
+        amostra tensão, luta para manter a tensão de saída aconteça o que acontecer com a
+        carga — e isso \emph{é} uma fonte de impedância baixa. Se amostra corrente, luta para
+        manter a corrente, e isso é uma fonte de impedância alta.};
+
+\end{tikzpicture}
+```
+
+As quatro topologias e o que cada uma faz com as impedâncias. Repare que a regra é intuitiva:
+a malha "defende" a grandeza que ela amostra.
+:::
+
+A intuição por trás da regra: se a malha **amostra tensão**, ela luta para manter a tensão de
+saída no valor certo aconteça o que acontecer com a carga — e uma fonte que mantém a tensão
+independentemente da carga é uma fonte de impedância **baixa**. Se ela amostra **corrente**,
+luta para manter a corrente — e isso é uma fonte de impedância **alta**.
+
+O @sec-cap-056 já tinha feito isso sem dar nome: o emissor comum com $R_E$ sem desvio é
+série-série, e é exatamente por isso que ele tem impedância de entrada maior.
+
+## O produto ganho-banda {#sec-064-banda}
+
+::: {#fig-064-banda}
+
+```{.tikz}
+%%| filename: 064-banda
+%%| alt: Diagrama de Bode de magnitude com a frequência em escala logarítmica no eixo horizontal, de um hertz a dez megahertz, e o ganho em decibéis no eixo vertical, de menos vinte a cem. Uma curva azul grossa representa o ganho de malha aberta de um amplificador: ela é plana em cem decibéis até dez hertz, ponto marcado como polo dominante, e a partir daí desce em linha reta com inclinação de menos vinte decibéis por década, cruzando zero decibel em um megahertz, ponto anotado como produto ganho-banda. Três linhas horizontais coloridas representam ganhos de malha fechada de sessenta, quarenta e vinte decibéis, ou seja mil, cem e dez vezes. Cada uma delas segue plana até encontrar a curva de malha aberta e depois acompanha a descida dela. Os pontos de encontro estão marcados e anotados com as frequências de corte correspondentes: mil hertz para o ganho de mil, dez quilohertz para o ganho de cem e cem quilohertz para o ganho de dez. Setas verticais entre cada linha horizontal e a curva de malha aberta indicam a quantidade de realimentação disponível naquela frequência, ou seja o ganho de malha em decibéis, mostrando que ela encolhe conforme a frequência aumenta e vai a zero na frequência de corte. Uma caixa abaixo registra que o produto do ganho pela banda é constante e igual a um megahertz nos três casos, que a quantidade de correção disponível cai vinte decibéis por década, e que por isso a distorção de um amplificador realimentado piora com a frequência mesmo dentro da banda nominal.
+
+\begin{tikzpicture}
+\begin{semilogxaxis}[
+  width=13.5cm, height=8.5cm,
+  xlabel={frequência (Hz)}, ylabel={ganho (dB)},
+  xmin=1, xmax=1e7, ymin=-20, ymax=105,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  ytick={-20,0,20,40,60,80,100},
+  clip=true,
+]
+  % malha aberta: 100 dB, polo em 10 Hz
+  \addplot[curva, very thick, domain=1:1e7, samples=300]
+          {100 - 10*log10(1 + (x/10)^2)};
+
+  % ganhos fechados
+  \addplot[destaque, thick, domain=1:1000, samples=2] {60};
+  \addplot[destaque, thick, domain=1000:1e7, samples=200]
+          {100 - 10*log10(1 + (x/10)^2)};
+  \addplot[manualgreen, thick, domain=1:1e4, samples=2] {40};
+  \addplot[manualgreen, thick, domain=1e4:1e7, samples=200]
+          {100 - 10*log10(1 + (x/10)^2)};
+  \addplot[manualyellow, thick, domain=1:1e5, samples=2] {20};
+  \addplot[manualyellow, thick, domain=1e5:1e7, samples=200]
+          {100 - 10*log10(1 + (x/10)^2)};
+
+  % marcações
+  \node[ponto] at (axis cs:10,97) {};
+  \node[manualblue, anchor=west, font=\tiny] at (axis cs:13,99) {polo dominante, $10$ Hz};
+  \node[ponto] at (axis cs:1e6,0) {};
+  \node[anchor=south east, font=\tiny, align=right] at (axis cs:8e5,3)
+       {GBW $= 1$ MHz};
+
+  \node[ponto] at (axis cs:1000,60) {};
+  \node[ponto] at (axis cs:1e4,40) {};
+  \node[ponto] at (axis cs:1e5,20) {};
+  \node[manualred, anchor=south west, font=\tiny] at (axis cs:1100,61) {$1$ kHz};
+  \node[manualgreen!50!black, anchor=south west, font=\tiny] at (axis cs:1.1e4,41) {$10$ kHz};
+  \node[manualyellow, anchor=south west, font=\tiny] at (axis cs:1.1e5,21) {$100$ kHz};
+
+  % realimentação disponível
+  \draw[manualgray, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:100,60) -- (axis cs:100,80);
+  \node[manualgray, anchor=east, font=\tiny, align=right] at (axis cs:92,70)
+       {$T = 20$ dB};
+  \draw[manualgray, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:10,60) -- (axis cs:10,97);
+  \node[manualgray, anchor=east, font=\tiny, align=right] at (axis cs:9,80)
+       {$T = 37$ dB};
+
+  \node[anchor=north west, font=\tiny, align=left, text width=3.2cm] at (axis cs:1.3,33)
+       {ganhos fechados:\\$60$, $40$ e $20$ dB};
+\end{semilogxaxis}
+
+\node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=7pt, text width=13.6cm] at (0,-1.2)
+     {\textbf{O produto é o mesmo nos três casos:}
+      $1000 \times 1$ kHz $= 100 \times 10$ kHz $= 10 \times 100$ kHz $= 1$ MHz.
+      \\[4pt]
+      E note a consequência menos óbvia: a \emph{distância vertical} entre a linha fechada e a
+      curva aberta é o ganho de malha $T$ disponível naquela frequência — e ela encolhe
+      20 dB por década. \textbf{A distorção de um amplificador realimentado piora com a
+      frequência}, mesmo dentro da banda nominal, porque sobra menos correção.};
+
+\end{tikzpicture}
+```
+
+O diagrama de Bode que resume a troca. Cada 20 dB de ganho abandonados compram uma década de
+banda — e uma década a mais de correção de distorção.
+:::
+
+## Quando a correção vira reforço {#sec-064-estabilidade}
+
+Até aqui, tudo foram vantagens. Agora o preço sério.
+
+A dedução da @fig-064-blocos assumiu, sem dizer, que o sinal que volta pela malha chega **em
+oposição** ao de entrada. Em corrente contínua isso é verdade por construção. Em frequência
+alta, não.
+
+Todo amplificador real tem capacitâncias, e cada polo introduz um **atraso de fase** que cresce
+até 90°. Com dois polos abaixo de uma certa frequência, o atraso total chega a 180° — e um
+sinal atrasado de meio ciclo, subtraído, é o mesmo que um sinal **somado**.
+
+Nessa frequência, a realimentação deixou de ser negativa. Se, além disso, o ganho de malha
+ainda for maior que 1, o circuito satisfaz o **critério de Barkhausen** e **oscila**:
+
+$$ |T| \ge 1 \quad\text{e}\quad \angle T = -180^{\circ}
+   \qquad\Longrightarrow\qquad \text{oscilação} $$
+
+Note que a equação $A_f = A/(1+T)$ já contém isso: se $T = -1$, o denominador é zero e o ganho
+é infinito. Um amplificador com ganho infinito produz saída sem entrada. É a definição de
+oscilador.
+
+::: {#fig-064-margens}
+
+```{.tikz}
+%%| filename: 064-margens
+%%| alt: Dois gráficos empilhados e alinhados em frequência, formando um diagrama de Bode completo do ganho de malha. O eixo horizontal comum é a frequência em escala logarítmica, de dez hertz a dez megahertz. O gráfico de cima mostra a magnitude do ganho de malha em decibéis, de menos quarenta a mais oitenta. O gráfico de baixo mostra a fase em graus, de menos duzentos e setenta a zero. Duas situações são comparadas. Na primeira, em vermelho, o amplificador não compensado: a magnitude parte de sessenta decibéis, começa a cair em dez hertz, cai mais rápido depois de trezentos quilohertz e cruza zero decibel em cerca de quinhentos e quarenta quilohertz; a fase correspondente já passou de menos cento e sessenta graus nesse ponto, deixando uma margem de fase de apenas vinte graus, marcada com uma seta vertical entre a curva de fase e a linha de menos cento e oitenta graus. A frequência em que a fase atinge menos cento e oitenta graus está marcada, e nela a magnitude vale menos dez decibéis, o que é a margem de ganho, também marcada com uma seta. Na segunda situação, em verde, o mesmo amplificador com compensação por polo dominante: o polo dominante foi movido de dez para um hertz, a curva de magnitude inteira desceu uma década e agora cruza zero decibel em cerca de cem quilohertz, bem antes de os polos secundários agirem; a fase nesse ponto é de apenas menos cento e dez graus, deixando margem de fase de setenta graus. Uma caixa abaixo registra os critérios usuais de projeto: margem de fase acima de quarenta e cinco graus é o mínimo aceitável, sessenta graus é o alvo usual por dar resposta ao degrau com pouca sobrelevação, e margem de ganho acima de dez decibéis; e registra que a compensação por polo dominante compra estabilidade pagando com banda.
+
+\begin{tikzpicture}
+
+% ================= magnitude =================
+\begin{semilogxaxis}[
+  name=mag,
+  width=13cm, height=5.6cm,
+  ylabel={$|T|$ (dB)},
+  xmin=10, xmax=1e7, ymin=-40, ymax=80,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  xticklabels=\empty,
+  ytick={-40,-20,0,20,40,60,80},
+  legend style={at={(0.02,0.05)}, anchor=south west, font=\tiny},
+]
+  % nao compensado: 60 dB, polos em 10, 3e5, 3e6
+  \addplot[destaque, very thick, domain=10:1e7, samples=300]
+    {60 - 10*log10(1+(x/10)^2) - 10*log10(1+(x/3e5)^2) - 10*log10(1+(x/3e6)^2)};
+  \addlegendentry{sem compensação}
+  % compensado: polo dominante em 1 Hz
+  \addplot[manualgreen, very thick, domain=10:1e7, samples=300]
+    {60 - 10*log10(1+(x/1)^2) - 10*log10(1+(x/3e5)^2) - 10*log10(1+(x/3e6)^2)};
+  \addlegendentry{com polo dominante em $1$ Hz}
+
+  \draw[black, dashed] (axis cs:10,0) -- (axis cs:1e7,0);
+
+  \node[ponto] at (axis cs:5.4e5,0) {};
+  \node[ponto] at (axis cs:9.45e5,-10.3) {};
+  \draw[manualred, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:9.45e5,-10.3) -- (axis cs:9.45e5,0);
+  \node[manualred, anchor=west, font=\tiny, align=left] at (axis cs:1.02e6,-14)
+       {margem de ganho\\$10$ dB};
+  \node[ponto] at (axis cs:1e5,0) {};
+  \node[manualgreen!50!black, anchor=south east, font=\tiny] at (axis cs:9e4,1)
+       {$100$ kHz};
+\end{semilogxaxis}
+
+% ================= fase =================
+\begin{semilogxaxis}[
+  name=fase, at={(mag.below south west)}, anchor=north west,
+  width=13cm, height=5.6cm,
+  xlabel={frequência (Hz)}, ylabel={$\angle T$ (graus)},
+  xmin=10, xmax=1e7, ymin=-280, ymax=0,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  ytick={-270,-225,-180,-135,-90,-45,0},
+]
+  \addplot[destaque, very thick, domain=10:1e7, samples=300]
+    {-atan(x/10) - atan(x/3e5) - atan(x/3e6)};
+  \addplot[manualgreen, very thick, domain=10:1e7, samples=300]
+    {-atan(x/1) - atan(x/3e5) - atan(x/3e6)};
+
+  \draw[black, dashed] (axis cs:10,-180) -- (axis cs:1e7,-180);
+  \node[anchor=south east, font=\tiny] at (axis cs:9e6,-178) {$-180^{\circ}$};
+
+  \draw[manualred, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:5.4e5,-160.5) -- (axis cs:5.4e5,-180);
+  \node[manualred, anchor=east, font=\tiny, align=right] at (axis cs:3.2e5,-118)
+       {margem de fase\\$20^{\circ}$ — \textbf{toca muito}};
+
+  \draw[manualgreen, {Latex[length=1.2mm]}-{Latex[length=1.2mm]}]
+       (axis cs:1e5,-110) -- (axis cs:1e5,-180);
+  \node[manualgreen!50!black, anchor=west, font=\tiny, align=left] at (axis cs:1.3e5,-198)
+       {margem de fase $70^{\circ}$\\ \textbf{limpo}};
+\end{semilogxaxis}
+
+\node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=7pt, text width=13.6cm]
+     at ([yshift=-1.2cm]fase.below south west)
+     {\textbf{Os critérios de projeto.} Margem de fase acima de $45^{\circ}$ é o mínimo
+      aceitável; $60^{\circ}$ é o alvo usual, porque dá resposta ao degrau com pouca
+      sobrelevação. Margem de ganho acima de $10$ dB.
+      \\[4pt]
+      A \textbf{compensação por polo dominante} é a solução mais simples e a mais usada:
+      empurre o primeiro polo para uma frequência bem mais baixa, de modo que o ganho já tenha
+      cruzado $0$ dB antes de os polos secundários somarem fase. Ela compra estabilidade
+      \emph{pagando com banda} — e é exatamente o que o capacitor de compensação de um amp-op
+      faz.};
+
+\end{tikzpicture}
+```
+
+Margem de fase e margem de ganho, medidas no ganho de malha $T$. O mesmo amplificador, antes e
+depois de um capacitor de compensação.
+:::
+
+**Margem de fase** é quanto falta para $-180^\circ$ na frequência em que $|T| = 0$ dB.
+**Margem de ganho** é quanto $|T|$ está abaixo de 0 dB na frequência em que a fase chega a
+$-180^\circ$.
+
+::: {.callout-warning}
+## O paradoxo que confunde todo mundo na primeira vez
+
+**Menos realimentação é mais estável.** Um amplificador com ganho fechado de 1 (um seguidor,
+$\beta = 1$) tem $T$ máximo e é o **caso mais difícil** de estabilizar. Com ganho fechado de
+100 ($\beta = 1/100$), $T$ é 40 dB menor, o cruzamento de 0 dB acontece uma frequência bem mais
+baixa, e sobra fase de sobra.
+
+É por isso que folhas de dados de amp-op dizem "estável em ganho unitário" como se fosse uma
+virtude — e é. E é por isso que existem amp-ops "descompensados", que só são estáveis acima de
+um certo ganho: eles trocaram estabilidade em ganho baixo por muito mais banda em ganho alto.
+:::
+
+## Margem de fase e resposta ao degrau {#sec-064-degrau}
+
+A margem de fase tem uma tradução direta no domínio do tempo, e é assim que se mede na bancada
+sem precisar de analisador de rede.
+
+::: {#fig-064-degrau}
+
+```{.tikz}
+%%| filename: 064-degrau
+%%| alt: Gráfico da resposta ao degrau de um sistema realimentado de segunda ordem, com o tempo normalizado no eixo horizontal, de zero a vinte, e a amplitude de saída no eixo vertical, de zero a um vírgula cinco. Uma linha horizontal tracejada marca o valor final igual a um. Três curvas comparam margens de fase diferentes. A curva vermelha, com margem de fase de trinta graus, dispara muito acima do valor final, atingindo cerca de um vírgula trinta e sete, e depois oscila várias vezes em torno de um antes de assentar; ela está anotada como trinta e sete por cento de sobrelevação e muitos ciclos de oscilação. A curva laranja, com margem de fase de quarenta e cinco graus, atinge cerca de um vírgula vinte e um e oscila menos, com anotação de vinte e um por cento de sobrelevação. A curva verde, com margem de fase de sessenta e cinco graus, atinge apenas um vírgula zero sete e assenta rapidamente, com anotação de sete por cento de sobrelevação, sendo identificada como o alvo usual de projeto. Uma caixa abaixo registra que a relação aproximada entre o coeficiente de amortecimento e a margem de fase é o coeficiente igual à margem em graus dividida por cem, e que por isso medir a sobrelevação de um degrau na bancada é uma maneira prática de estimar a margem de fase sem analisador de rede; registra também que sobrelevação acima de vinte por cento é sinal de projeto no limite, e que oscilação sustentada significa margem nula ou negativa.
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=13cm, height=7.5cm,
+  xlabel={tempo (normalizado, $\omega_n t$)}, ylabel={saída},
+  xmin=0, xmax=20, ymin=0, ymax=1.5,
+  axis lines=left, font=\footnotesize,
+  grid=both, grid style={manualgray!18},
+  legend style={at={(0.98,0.98)}, anchor=north east, font=\tiny},
+  clip=true,
+]
+  \draw[black, dashed] (axis cs:0,1) -- (axis cs:20,1);
+
+  \addplot[destaque, very thick, domain=0:20, samples=400]
+    {1 - exp(-0.30*x)*(cos(deg(0.954*x)) + 0.3145*sin(deg(0.954*x)))};
+  \addlegendentry{margem de fase $30^{\circ}$ — sobrelevação $37\ \%$}
+
+  \addplot[manualyellow, very thick, domain=0:20, samples=400]
+    {1 - exp(-0.45*x)*(cos(deg(0.893*x)) + 0.504*sin(deg(0.893*x)))};
+  \addlegendentry{$45^{\circ}$ — $21\ \%$}
+
+  \addplot[manualgreen, very thick, domain=0:20, samples=400]
+    {1 - exp(-0.65*x)*(cos(deg(0.760*x)) + 0.855*sin(deg(0.760*x)))};
+  \addlegendentry{$65^{\circ}$ — $7\ \%$ \ \textbf{(o alvo usual)}}
+\end{axis}
+
+\node[draw=manualblue, thick, rounded corners=3pt, anchor=north west, align=left,
+      font=\scriptsize, inner sep=7pt, text width=13.6cm] at (0,-1.2)
+     {\textbf{A regra prática:} $\zeta \approx \text{MF}[^{\circ}]/100$. Medir a
+      \emph{sobrelevação} de um degrau no osciloscópio é, portanto, uma maneira de estimar a
+      margem de fase sem analisador de rede — e é como quase todo mundo faz na bancada.
+      \\[4pt]
+      Acima de $20\ \%$ de sobrelevação, o projeto está no limite. Oscilação sustentada
+      significa margem \textbf{nula ou negativa}, e o circuito virou o oscilador que ninguém
+      pediu.};
+
+\end{tikzpicture}
+```
+
+A mesma informação da @fig-064-margens, vista no osciloscópio. Sobrelevação e margem de fase
+são a mesma grandeza em duas linguagens.
+:::
+
+## Carga capacitiva: o desestabilizador escondido {#sec-064-cargacapacitiva}
+
+Um caso prático que pega todo mundo: **um seguidor com carga capacitiva oscila.**
+
+A impedância de saída do amplificador em malha aberta, junto com a capacitância da carga, forma
+um polo adicional dentro da malha:
+
+$$ f_{p,\text{extra}} = \frac{1}{2\pi R_{out} C_L} $$
+
+Com $R_{out} = 100\ \Omega$ e $C_L = 1$ nF, isso é 1,6 MHz — dentro da banda de qualquer
+amplificador razoável, e um polo a mais é 90° a mais de atraso.
+
+É por isso que ligar um cabo coaxial longo (100 pF/m), um transdutor piezoelétrico ou a entrada
+de um conversor A/D à saída de um seguidor produz oscilação onde não havia nenhuma.
+
+**A solução mais barata** é um resistor de isolamento de 10 a 100 Ω em série com a saída, **do
+lado de dentro** da amostragem de realimentação. Ele separa a capacitância do nó de saída do
+amplificador, ao custo de uma pequena queda de tensão sob carga. Amplificadores de linha e
+saídas de amp-op para cabo longo trazem esse resistor invariavelmente.
+
+## 🧪 Laboratório {#sec-064-lab}
+
+O objetivo é medir, num amplificador de dois transistores, os quatro efeitos do capítulo:
+dessensibilização, banda, distorção e — o mais instrutivo — **fazê-lo oscilar de propósito** e
+depois compensá-lo.
+
+### Material
+
+| Qtd. | Item | Observação |
+|---|---|---|
+| 3 | Transistor **BC548** | dois para o amplificador, um sobressalente com $\beta$ diferente |
+| — | Resistores: 2× 4,7 kΩ, 100 Ω, 470 Ω, 10 kΩ, 47 kΩ, 100 kΩ, 1 kΩ, 22 kΩ | |
+| — | Capacitores: 2× 10 µF, 100 µF, 1 nF, 10 nF, 100 pF, 220 pF, 470 pF | |
+| 1 | Trimpot 100 kΩ | ajuste de $\beta$ |
+| 1 | Fonte 12 V | |
+| 1 | Gerador de funções (senoide e **onda quadrada**) | a quadrada é essencial na Parte 5 |
+| 1 | Osciloscópio de 2 canais | |
+| 1 | Multímetro | |
+| 1 | Estágio classe AB do @sec-cap-063 | Parte 4, opcional mas recomendada |
+
+### O amplificador de base
+
+Dois estágios de emissor comum em cascata, acoplados diretamente, alimentados com 12 V:
+
+- **Q1:** $R_{C1} = 4{,}7$ kΩ; emissor ao terra por $R_{E1a} = 100\ \Omega$ (**sem desvio**) em
+  série com $R_{E1b} = 470\ \Omega$ (**com** 100 µF de desvio); base polarizada por divisor
+  47 kΩ / 10 kΩ.
+- **Q2:** base acoplada ao coletor de Q1 por 10 µF; $R_{C2} = 4{,}7$ kΩ; emissor ao terra por
+  1 kΩ com 100 µF de desvio; divisor de base 47 kΩ / 10 kΩ.
+- Saída no coletor de Q2, acoplada por 10 µF.
+- Entrada na base de Q1, acoplada por 10 µF.
+
+Duas inversões dão saída **em fase** com a entrada — que é o que a malha precisa para ser
+negativa quando fechada no emissor de Q1.
+
+**Confira o CC antes de qualquer sinal:** os dois coletores devem estar entre 5 e 8 V. Se
+algum estiver em 12 V ou em 0,2 V, o estágio está cortado ou saturado; ajuste o divisor antes
+de prosseguir.
+
+### Parte 1 — O ganho de malha aberta
+
+1. Aplique 1 kHz, **1 mV** de pico na entrada (use um divisor 100:1 na saída do gerador — 1 mV
+   direto é difícil de ajustar).
+2. Meça a saída. O ganho deve ficar entre 2 000 e 8 000.
+3. Aumente a entrada até a saída ceifar e volte para metade disso. Anote a amplitude máxima
+   sem ceifamento.
+4. Meça a distorção a olho: com 80 % da excursão máxima, a senoide de saída fica visivelmente
+   assimétrica.
+
+Este é $A$. Anote-o; tudo depende dele.
+
+### Parte 2 — Fechar a malha, e a dessensibilização
+
+1. Ligue $R_f = 10$ kΩ do coletor de Q2 (saída) ao **nó entre $R_{E1a}$ e $R_{E1b}$**, em série
+   com um capacitor de 10 µF (para não mexer na polarização de CC).
+
+Agora $\beta = R_{E1a}/(R_{E1a} + R_f) = 100/10100 = 1/101$, e o ganho fechado esperado é
+$\approx 101$.
+
+2. Meça o ganho fechado. Compare com 101 e com a previsão exata $A/(1+A\beta)$.
+3. Calcule $T = A\beta$ a partir do seu $A$ medido.
+
+4. **A demonstração central:** troque **Q2** por outro BC548, de preferência de outro lote.
+   Meça o ganho de malha **aberta** de novo (retirando $R_f$) e o ganho **fechado**.
+
+| | Q2 original | Q2 substituto | variação |
+|---|---|---|---|
+| $A$ (malha aberta) | | | |
+| $A_f$ (malha fechada) | | | |
+
+: A dessensibilização, medida. A variação de $A_f$ deve ser $1+T$ vezes menor que a de $A$.
+{#tbl-064-lab1}
+
+Se o ganho aberto variou 30 % e o fechado variou 0,5 %, você acabou de medir $1+T \approx 60$.
+
+### Parte 3 — A banda, e o produto constante
+
+1. Em malha aberta, varra a frequência e ache $f_c$ (queda de 3 dB). Provavelmente entre 20 e
+   200 kHz.
+2. Feche a malha com $R_f = 10$ kΩ e refaça a varredura.
+3. Repita com $R_f = 22$ kΩ e com $R_f = 100$ kΩ (ganhos fechados de $\approx 221$ e
+   $\approx 1001$).
+
+| $R_f$ | $\beta$ | $A_f$ medido | $f_c$ medida | $A_f \times f_c$ |
+|---|---|---|---|---|
+| — (aberta) | 0 | | | |
+| 100 kΩ | 1/1001 | | | |
+| 22 kΩ | 1/221 | | | |
+| 10 kΩ | 1/101 | | | |
+
+: O produto ganho-banda, verificado em quatro pontos. A última coluna deve dar
+aproximadamente o mesmo número. {#tbl-064-lab2}
+
+A última coluna é o resultado do experimento, e ela reproduz a @fig-064-banda com o seu
+próprio circuito.
+
+### Parte 4 — A distorção de cruzamento, corrigida
+
+Se você montou o estágio classe AB do @sec-cap-063:
+
+1. Ligue o estágio de saída classe AB **depois** de Q2, e tire a polarização dele (volte à
+   classe B pura, com o degrau bem visível).
+2. Feche a malha **do outro lado do estágio de saída** — isto é, o $R_f$ sai da saída do
+   push-pull, não do coletor de Q2.
+3. Observe a saída.
+
+O degrau **encolhe drasticamente**. Meça a altura dele antes e depois de fechar a malha, e
+compare a razão com o $1+T$ calculado.
+
+4. Aumente a frequência para 10 kHz e depois 50 kHz, mantendo a amplitude.
+
+O degrau **volta a crescer**. É a @fig-064-banda em ação: em frequência alta sobra menos $T$, e
+sobra menos correção. Este é o motivo real de amplificadores de áudio realimentados soarem
+diferentes uns dos outros apesar de todos medirem 0,01 % de distorção em 1 kHz.
+
+### Parte 5 — Fazer oscilar
+
+Agora a parte divertida, e a mais instrutiva.
+
+1. Volte ao amplificador de dois estágios com $R_f = 10$ kΩ.
+2. Acrescente um capacitor de **1 nF** do coletor de Q1 ao terra. Isso cria um segundo polo
+   dentro da malha.
+3. Aplique uma **onda quadrada** de 1 kHz, amplitude pequena, e olhe a saída.
+
+Você deve ver **sobrelevação e toque** — a @fig-064-degrau ao vivo. Meça a sobrelevação em
+porcentagem e estime a margem de fase por $\text{MF} \approx 100\zeta$.
+
+4. Aumente o capacitor: 10 nF. A sobrelevação cresce.
+5. Continue até o circuito **oscilar sozinho**, com o gerador desligado. Meça a frequência da
+   oscilação.
+
+Essa frequência é onde a fase do laço chega a $-180^\circ$. Compare com a estimativa a partir
+dos dois polos: $f_{p1}$ do coletor de Q1 com o capacitor que você pôs, e $f_{p2}$ do
+amplificador original.
+
+::: {.callout-warning}
+Um amplificador oscilando pode ir a ceifamento nos dois extremos e esquentar. Não deixe
+oscilando por muito tempo, e confira se os transistores estão aquecendo antes de continuar.
+:::
+
+### Parte 6 — Compensar
+
+Com o circuito oscilando:
+
+1. Ponha um capacitor de **100 pF** entre o coletor e a base de Q1 (compensação Miller).
+2. Se não parar, tente 220 pF e depois 470 pF.
+
+A oscilação para. O capacitor multiplica-se pelo ganho de Q1 (efeito Miller do @sec-cap-056) e
+empurra o polo dominante para uma frequência muito mais baixa — exatamente a curva verde da
+@fig-064-margens.
+
+3. Meça a banda fechada agora e compare com a da Parte 3.
+
+Você pagou banda por estabilidade, e o preço está medido. **Este é o capacitor que existe
+dentro de todo amp-op compensado internamente**, e é a razão de o produto ganho-banda de um
+741 ser 1 MHz e não 100 MHz.
+
+4. Reduza a compensação até a sobrelevação ficar em torno de 7 %. É a margem de fase de 65°, o
+   alvo de projeto.
+
+**Variante simulada (plano B).** No ngspice ou no LTspice, a análise que a bancada não oferece
+é a do **ganho de malha** diretamente: abra a malha, injete o sinal e faça `.ac dec 20 1 100meg`
+sobre a razão entre o sinal que volta e o injetado. O resultado é literalmente a
+@fig-064-margens, com magnitude e fase, e dá as duas margens medidas em vez de estimadas. A
+diretiva `.step param Cc list 0 100p 220p 470p` mostra as três compensações da Parte 6 num
+gráfico só. E `.tran` com fonte `PULSE` reproduz a @fig-064-degrau, permitindo conferir a
+relação entre margem de fase e sobrelevação nos dois domínios ao mesmo tempo.
+
+## 🔥 Onde Queima {#sec-064-queima}
+
+**Achar que mais realimentação é sempre melhor.** Mais $T$ é mais correção e **menos margem de
+fase**. O ganho fechado unitário é o caso mais difícil de estabilizar, não o mais fácil.
+
+**Esquecer que $T$ cai com a frequência.** Um amplificador com 60 dB de realimentação em CC
+tem 20 dB em 10 kHz e nenhuma em 1 MHz. As especificações de distorção medidas em 1 kHz não
+descrevem o comportamento em 20 kHz.
+
+**Esperar que a realimentação melhore o ruído.** Não melhora. O ruído do primeiro estágio
+passa intacto. Projeto de baixo ruído é projeto do primeiro estágio.
+
+**Fechar a malha com a fase errada.** Duas inversões dão realimentação negativa; uma ou três
+dão positiva, e o circuito trava num dos extremos de alimentação em vez de amplificar. Conte
+as inversões antes de ligar.
+
+**Carga capacitiva num seguidor.** Cabo coaxial, piezo, entrada de conversor A/D — todos
+adicionam um polo dentro da malha. Resistor de isolamento de 10 a 100 Ω em série com a saída.
+
+**Diagnosticar oscilação como "interferência".** Um amplificador que oscila em 3 MHz mostra na
+tela um sinal de áudio "sujo" e um consumo maior que o esperado. Antes de culpar o ambiente,
+olhe a saída com a base de tempo em microssegundos e a entrada aterrada.
+
+**Compensar demais.** Um capacitor de compensação generoso torna o circuito estabilíssimo e
+lento, com resposta ao degrau arrastada e distorção pior em frequência alta (menos $T$
+disponível). O alvo é 60 a 65° de margem de fase, não 90°.
+
+**Medir a margem de fase pelo ganho fechado.** Margem de fase é uma propriedade do **ganho de
+malha $T$**, não de $A$ nem de $A_f$. Medir a resposta em frequência da saída não dá a margem;
+o degrau dá, indiretamente, pela sobrelevação.
+
+**Esquecer que a rede de realimentação também tem polos.** Um $R_f$ grande com a capacitância
+parasita da placa forma um polo **no caminho de volta**, e ele conta na fase do laço tanto
+quanto os polos do amplificador. Em malhas de alta impedância, um capacitor pequeno em paralelo
+com $R_f$ (compensação de avanço) frequentemente resolve.
+
+**Deixar a malha aberta em CC.** Se o caminho de realimentação passa por um capacitor, em CC
+não há realimentação nenhuma, e o ponto de operação fica à mercê da dispersão. Ou se fecha a
+malha em CC também, ou se estabiliza a polarização por outro meio.
+
+## O que fica deste capítulo {#sec-064-resumo}
+
+$$ \boxed{A_f = \frac{A}{1+A\beta} = \frac{A}{1+T}}, \qquad
+   T \equiv A\beta \ \ (\text{ganho de malha}) $$
+
+Com $T \gg 1$, $A_f \approx 1/\beta$ — **o resultado depende da rede de realimentação, não do
+amplificador**. É a ideia inteira.
+
+**Tudo melhora por $1+T$:** sensibilidade, distorção, banda (multiplicada), impedâncias.
+**Menos o ruído do primeiro estágio**, que passa intacto.
+
+**O produto ganho-banda é constante:**
+
+$$ A_f \times f_{c,f} = A_0 \times f_p = \text{GBW} $$
+
+e a distância vertical entre o ganho fechado e o ganho aberto num diagrama de Bode **é** o $T$
+disponível naquela frequência — que encolhe 20 dB por década.
+
+**As quatro topologias**, e a regra: amostrar tensão abaixa $Z_{out}$, amostrar corrente a
+levanta; comparar em série levanta $Z_{in}$, comparar em paralelo a abaixa.
+
+**O preço sério é a estabilidade.** Cada polo atrasa até 90°. Com atraso de 180° e $|T| \ge 1$,
+a realimentação vira positiva e o circuito **oscila** (critério de Barkhausen).
+
+**Margem de fase**: quanto falta para $-180^\circ$ quando $|T| = 0$ dB. Mínimo 45°, alvo 60 a
+65°. **Margem de ganho**: quanto $|T|$ está abaixo de 0 dB quando a fase chega a $-180^\circ$.
+Alvo acima de 10 dB.
+
+**No tempo:** $\zeta \approx \text{MF}[^{\circ}]/100$, e a sobrelevação do degrau mede a margem
+de fase sem analisador de rede. 30° dá 37 % de sobrelevação; 65° dá 7 %.
+
+**Compensação por polo dominante** empurra o primeiro polo para baixo, de modo que o ganho
+cruze 0 dB antes de os polos secundários somarem fase. Compra estabilidade pagando banda, e é
+o capacitor que existe dentro de todo amp-op.
+
+**Carga capacitiva** adiciona um polo em $1/(2\pi R_{out}C_L)$ e desestabiliza seguidores.
+Resistor de isolamento na saída.
+
+## O Volume 10, e o que vem depois {#sec-064-fecho}
+
+Seis capítulos atrás, o transistor de efeito de campo era uma curiosidade histórica ao lado do
+bipolar. Agora ele é o componente mais fabricado da história humana, e o caminho até aqui foi:
+
+**O dispositivo** (059): campo elétrico controlando um canal sem consumir corrente, JFET com
+porta por junção e MOSFET com porta por óxido, modo depleção e modo enriquecimento, o diodo de
+corpo e a fragilidade do óxido.
+
+**O mapa** (060): região ôhmica, região de saturação e a armadilha de vocabulário em relação ao
+bipolar; $R_{DS(\text{on})} = 1/[k(V_{GS}-V_{th})]$; a lei quadrática e o limite honesto dela em
+potência; $g_m \propto \sqrt{I_D}$, que é o preço da porta isolada.
+
+**A chave** (061): três perdas, cadeia térmica, o patamar de Miller e a carga de porta; o
+mesmo transistor dissipando 0,52 W ou 2,3 W conforme o acionamento.
+
+**O acionamento** (062): a janela de tempo de transição com suas duas bordas; resistor
+assimétrico, acionamento espúrio por $dv/dt$, bootstrap e tempo morto.
+
+**A potência** (063): o ângulo de condução organizando as classes A, B, AB, C e D; a distorção
+de cruzamento e o multiplicador de $V_{BE}$; a dissipação máxima em 40 % da saída.
+
+**E o método** (064): realimentação negativa, que amarra o volume ao Volume 9 e abre o
+Volume 11.
+
+Duas coisas ficam para o resto do manual.
+
+A primeira é a **chave**. O MOSFET operando em corte e em região ôhmica, comutando depressa, é
+literalmente a base de tudo o que ainda falta: o conversor buck do capítulo 075, o driver de
+motor do 082 e — sobretudo — a porta lógica CMOS do capítulo 092, que é um par de MOSFETs
+complementares e nada mais. A Fase 5 inteira é feita do dispositivo do capítulo 059.
+
+A segunda é este capítulo. A equação $A_f = A/(1+A\beta)$ com $T$ grande diz que **o ganho de
+um circuito realimentado é decidido por dois resistores**. Ela vale para qualquer amplificador
+com ganho alto o bastante — e a pergunta natural é: por que não fabricar um bloco pronto, com
+ganho absurdamente alto, entrada de altíssima impedância, saída de baixa impedância e
+compensação já embutida, e deixar que o projetista escolha só os dois resistores?
+
+Foi exatamente o que a indústria fez em 1968, com o µA741, e é o que o Volume 11 estuda a
+partir do capítulo 065. As "regras de ouro" do amplificador operacional — a entrada não puxa
+corrente, e a saída faz o que for preciso para igualar as duas entradas — não são axiomas nem
+mágica. **São a equação deste capítulo com $T \to \infty$.**
